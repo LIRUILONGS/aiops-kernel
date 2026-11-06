@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { MetricChart } from '@/features/flows/performance/metric-chart';
+import { type MetricSeries, parseMetricSeries } from '@/features/flows/performance/metric-series';
 import {
     type BaselineSample,
     type DiffReport,
@@ -38,6 +40,12 @@ export function samplesOf(calls: ToolcallRow[]): BaselineSample[] {
         .filter((call) => call.name === 'ops_baseline')
         .map((call) => parseBaseline(call.result))
         .filter((sample): sample is BaselineSample => sample !== null);
+}
+
+export function seriesOf(calls: ToolcallRow[]): MetricSeries[] {
+    return calls
+        .filter((call) => call.name === 'prom_query')
+        .flatMap((call) => parseMetricSeries(call.result));
 }
 
 function Comparison({ diff }: { diff: DiffReport }) {
@@ -128,10 +136,11 @@ function FlowPerformance({ flowId }: { flowId: string }) {
 
     const samples = useMemo(() => samplesOf(calls), [calls]);
     const diffs = useMemo(() => diffsOf(calls), [calls]);
+    const series = useMemo(() => seriesOf(calls), [calls]);
 
     // A flow that never measured anything gets no panel: an empty card would read
     // as "measured, found nothing".
-    if (!samples.length && !diffs.length) {
+    if (!samples.length && !diffs.length && !series.length) {
         return null;
     }
 
@@ -144,7 +153,7 @@ function FlowPerformance({ flowId }: { flowId: string }) {
                 </CardTitle>
                 <CardDescription>
                     {samples.length} sample{samples.length === 1 ? '' : 's'} from ops_baseline, {diffs.length}{' '}
-                    comparison{diffs.length === 1 ? '' : 's'} from ops_diff
+                    comparison{diffs.length === 1 ? '' : 's'} from ops_diff, {series.length} series from prom_query
                 </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-6">
@@ -152,6 +161,14 @@ function FlowPerformance({ flowId }: { flowId: string }) {
                     <div className="text-muted-foreground flex items-center gap-2 text-sm">
                         <AlertTriangle className="size-4" />
                         Could not read the measurements: {error}
+                    </div>
+                )}
+                {series.length > 0 && (
+                    <div className="flex flex-col gap-4">
+                        <h3 className="text-sm font-medium">Metrics over time</h3>
+                        {series.map((sery, index) => (
+                            <MetricChart key={`${sery.name}-${index}`} series={sery} />
+                        ))}
                     </div>
                 )}
                 {samples.length > 0 && <Samples samples={samples} />}

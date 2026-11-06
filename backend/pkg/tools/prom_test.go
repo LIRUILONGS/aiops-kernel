@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"opsagi/pkg/config"
 )
@@ -168,5 +169,105 @@ func TestProm_Series_SortsPointsAndSkipsUnparseableValues(t *testing.T) {
 	}
 	if points[0].value != 1 || points[2].value != 2 {
 		t.Fatalf("points are not sorted by time: %+v", points)
+	}
+}
+
+func TestProm_StructuredBlock_CarriesWhatAChartNeeds(t *testing.T) {
+	body := `{"status":"success","data":{"resultType":"matrix","result":[
+		{"metric":{"__name__":"node_load1","instance":"lab:9100"},"values":[[1000,"0.5"],[1030,"0.6"],[1060,"4.1"]]}
+	]}}`
+
+	tools, _ := promToolsFor(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(body))
+	}))
+
+	out, err := tools.HandleQuery(context.Background(), PromQueryToolName, json.RawMessage(`{"query":"node_load1","range":"1m","step":"30s"}`))
+	if err != nil {
+		t.Fatalf("HandleQuery() = %v", err)
+	}
+
+	const marker = "### 结构化结果"
+	if !strings.Contains(out, marker) {
+		t.Fatalf("output carries no structured block:\n%s", out)
+	}
+
+	block := out[strings.Index(out, marker):]
+	start := strings.Index(block, "```json\n")
+	end := strings.LastIndex(block, "\n```")
+	if start < 0 || end < 0 {
+		t.Fatalf("the structured block is not fenced as json:\n%s", block)
+	}
+
+	var payload struct {
+		End    int64  `json:"end"`
+		Query  string `json:"query"`
+		Range  string `json:"range"`
+		Step   string `json:"step"`
+		Series []struct {
+			Name   string      `json:"name"`
+			Points [][2]string `json:"points"`
+		} `json:"series"`
+	}
+	if err := json.Unmarshal([]byte(block[start+len("```json\n"):end]), &payload); err != nil {
+		t.Fatalf("the structured block is not valid JSON: %v\n%s", err, block)
+	}
+
+	if payload.Query != "node_load1" || payload.Range != "1m0s" || payload.Step != "30s" || payload.End == 0 {
+		t.Errorf("payload = %+v, want the query, window, step and end to be carried", payload)
+	}
+	if len(payload.Series) != 1 {
+		t.Fatalf("series = %d, want 1", len(payload.Series))
+	}
+	if payload.Series[0].Name != `node_load1{instance="lab:9100"}` {
+		t.Errorf("series name = %q, want the full selector", payload.Series[0].Name)
+	}
+	if len(payload.Series[0].Points) != 3 {
+		t.Fatalf("points = %d, want 3", len(payload.Series[0].Points))
+	}
+	if payload.Series[0].Points[0][0] != "1000" || payload.Series[0].Points[2][1] != "4.1" {
+		t.Errorf("points = %v, want epoch seconds and plain values", payload.Series[0].Points)
+	}
+}
+
+func TestProm_StructuredBlock_IsAbsentWhenThereIsNothingToDraw(t *testing.T) {
+	tools, _ := promToolsFor(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"status":"success","data":{"resultType":"matrix","result":[]}}`))
+	}))
+
+	out, err := tools.HandleQuery(context.Background(), PromQueryToolName, json.RawMessage(`{"query":"absent"}`))
+	if err != nil {
+		t.Fatalf("HandleQuery() = %v", err)
+	}
+	if strings.Contains(out, "结构化结果") {
+		t.Fatalf("an empty window must not ship an empty chart payload:\n%s", out)
+	}
+}
+
+func TestProm_Downsample_KeepsBothEndsAndTheStride(t *testing.T) {
+	points := make([]promPoint, 0, 500)
+	for i := range 500 {
+		points = append(points, promPoint{at: time.Unix(int64(i), 0), value: float64(i)})
+	}
+
+	kept := downsamplePoints(points, 120)
+
+	if len(kept) != 120 {
+		t.Fatalf("kept %d points, want 120", len(kept))
+	}
+	if kept[0].at.Unix() != 0 || kept[len(kept)-1].at.Unix() != 499 {
+		t.Fatalf("kept first %d and last %d, want the whole window", kept[0].at.Unix(), kept[len(kept)-1].at.Unix())
+	}
+	for i := 1; i < len(kept); i++ {
+		if kept[i].at.Unix() <= kept[i-1].at.Unix() {
+			t.Fatalf("points are not strictly increasing at %d", i)
+		}
+	}
+}
+
+func TestProm_Downsample_LeavesASmallSeriesAlone(t *testing.T) {
+	points := []promPoint{{at: time.Unix(0, 0), value: 1}, {at: time.Unix(1, 0), value: 2}}
+
+	if kept := downsamplePoints(points, 120); len(kept) != 2 {
+		t.Fatalf("kept %d points, want both", len(kept))
 	}
 }

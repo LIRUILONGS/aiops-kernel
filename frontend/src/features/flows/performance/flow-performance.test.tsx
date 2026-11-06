@@ -29,6 +29,39 @@ cpu	2.0%	5.0%	+3.0% (+150%)	持平
 
 有两项显著变化，本次变更产生了可测量的恶化。`;
 
+const PROM_SERIES = [
+    {
+        name: 'prometheus_tsdb_head_series{instance="127.0.0.1:9091", job="prometheus"}',
+        points: [
+            ['1793976323', '727'],
+            ['1793976353', '760'],
+            ['1793976383', '900'],
+        ],
+    },
+];
+
+const PROM = [
+    '监控查询：prometheus_tsdb_head_series',
+    '窗口：2026-11-06T22:45:23+08:00 到 2026-11-06T22:50:23+08:00（步长 15s，5m0s）',
+    '序列数：1',
+    '',
+    '1. prometheus_tsdb_head_series{instance="127.0.0.1:9091", job="prometheus"}',
+    '   点数 3，首值 727，末值 900（+23.8% 上升），最小 727 @22:45:23，最大 900 @22:48:53',
+    '   最大跳变 +23.8% 上升：22:48:38 727 → 900 @22:48:53',
+    '',
+    '### 结构化结果',
+    '',
+    '```json',
+    JSON.stringify({
+        end: 1793976623,
+        query: 'prometheus_tsdb_head_series',
+        range: '5m0s',
+        series: PROM_SERIES,
+        step: '15s',
+    }),
+    '```',
+].join('\n');
+
 function answer(rows: { name: string; result: string }[]) {
     return {
         data: { toolcalls: rows.map((row, index) => ({ ...row, created_at: `2026-11-06T12:5${index}:00Z` })) },
@@ -85,6 +118,28 @@ describe('FlowPerformance', () => {
         expect(deltas[0]).toHaveTextContent('worsened');
         expect(screen.getByText(/1 of 2 material/)).toBeInTheDocument();
         expect(screen.getByText(/可测量的恶化/)).toBeInTheDocument();
+    });
+
+    it('draws a curve for every metric series a flow queried', async () => {
+        toolcalls.mockResolvedValue(answer([{ name: 'prom_query', result: PROM }]));
+
+        const { container } = render(<FlowPerformance flowId="15" />);
+
+        await screen.findByText('Metrics over time');
+        expect(container.querySelectorAll('[data-testid="metric-chart"]')).toHaveLength(1);
+        expect(screen.getByText('prometheus_tsdb_head_series{instance="127.0.0.1:9091", job="prometheus"}')).toBeInTheDocument();
+        expect(container.querySelector('[data-testid="metric-chart-jump"]')).not.toBeNull();
+    });
+
+    it('renders a metrics query that produced no series as no panel at all', async () => {
+        toolcalls.mockResolvedValue(
+            answer([{ name: 'prom_query', result: '监控查询：absent\n窗口内没有数据。' }]),
+        );
+
+        const { container } = render(<FlowPerformance flowId="15" />);
+
+        await waitFor(() => expect(toolcalls).toHaveBeenCalled());
+        expect(container.querySelector('[data-testid="flow-performance"]')).toBeNull();
     });
 
     it('says so when the measurements cannot be read', async () => {

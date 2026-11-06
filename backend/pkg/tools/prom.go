@@ -31,6 +31,10 @@ const (
 	promMaxRange     = 24 * time.Hour
 	promMaxPoints    = 11000
 	promMaxQueryLen  = 2000
+
+	// What the structured block carries, as opposed to what the server may return.
+	promMaxChartPoints = 120
+	promMaxChartSeries = 6
 )
 
 type promTools struct {
@@ -234,7 +238,90 @@ func renderPromResult(query string, window, step time.Duration, end time.Time, d
 		}
 	}
 
+	b.WriteString(promStructuredBlock(query, window, step, end, data))
+
 	return b.String()
+}
+
+// promStructuredBlock carries the series themselves, because the prose above is
+// what a model reads and this is what a chart needs. The points are capped: a
+// dashboard draws a few hundred pixels and the block travels through a database
+// row and a model's context, so a full 11000-point matrix helps nobody.
+func promStructuredBlock(query string, window, step time.Duration, end time.Time, data promData) string {
+	if len(data.Result) == 0 {
+		return ""
+	}
+
+	type jsonSerie struct {
+		Name   string      `json:"name"`
+		Points [][2]string `json:"points"`
+	}
+
+	type jsonPayload struct {
+		End    int64       `json:"end"`
+		Query  string      `json:"query"`
+		Range  string      `json:"range"`
+		Series []jsonSerie `json:"series"`
+		Step   string      `json:"step"`
+	}
+
+	payload := jsonPayload{
+		End:    end.Unix(),
+		Query:  query,
+		Range:  window.String(),
+		Series: make([]jsonSerie, 0, min(len(data.Result), promMaxChartSeries)),
+		Step:   step.String(),
+	}
+
+	for _, serie := range data.Result {
+		if len(payload.Series) == promMaxChartSeries {
+			break
+		}
+
+		points := downsamplePoints(serie.points(), promMaxChartPoints)
+		if len(points) == 0 {
+			continue
+		}
+
+		rendered := make([][2]string, 0, len(points))
+		for _, point := range points {
+			rendered = append(rendered, [2]string{strconv.FormatInt(point.at.Unix(), 10), strconv.FormatFloat(point.value, 'f', -1, 64)})
+		}
+
+		payload.Series = append(payload.Series, jsonSerie{Name: promSeriesName(serie.Metric), Points: rendered})
+	}
+
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		return ""
+	}
+
+	return "\n### 结构化结果\n\n```json\n" + string(encoded) + "\n```\n"
+}
+
+// downsamplePoints keeps the first and last sample and takes an even stride
+// between them, so a chart shows the shape of the window rather than its busiest
+// second.
+func downsamplePoints(points []promPoint, limit int) []promPoint {
+	if len(points) <= limit || limit < 2 {
+		return points
+	}
+
+	kept := make([]promPoint, 0, limit)
+	stride := float64(len(points)-1) / float64(limit-1)
+
+	for i := range limit {
+		index := int(math.Round(float64(i) * stride))
+		if index >= len(points) {
+			index = len(points) - 1
+		}
+		if len(kept) > 0 && kept[len(kept)-1] == points[index] {
+			continue
+		}
+		kept = append(kept, points[index])
+	}
+
+	return kept
 }
 
 type promPoint struct {
