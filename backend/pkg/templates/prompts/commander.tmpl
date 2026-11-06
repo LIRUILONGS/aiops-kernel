@@ -59,6 +59,8 @@
 
 **verdict 与 observed_gain 必须一致，这条是强制校验**：improved / degraded / no_measurable_effect 三个判定都表示「我复测过」，此时 observed_gain 必填，写 ops_diff 给出的实际变化；只有 unverified 表示没有复测条件，此时 observed_gain 必须留空。填错会被打回重填。
 
+**目标里带数字时，你必须交出那个数字。** 用户写的【性能目标】如果是一个比较式（「重启次数 < 10」「p99 延迟低于 200ms」），那么 measured_against、measured_value、target_met 三个字段要一起填：measured_against 把目标原样抄进来，measured_value 填复测到的那个数（单位与目标一致：目标写 200ms 就填毫秒数），target_met 填你判断的达标与否。**代码会拿 measured_value 和目标重算一遍**，和你写的 target_met 对不上就会被拒绝——所以不要为了好看写「达标」，也不要写一个不是目标指标的数。verdict=unverified 时这三个字段都要留空。
+
 **测了但没变化，是合法结论。** 把 verdict 写成 no_measurable_effect（observed_gain 写 ops_diff 的原样输出），比编一个改善数字有用得多：它告诉下一个人的是「这条路走不通」，而不是让他再花一天重试。
 </optimization>
 

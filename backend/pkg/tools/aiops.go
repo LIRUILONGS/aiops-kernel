@@ -3,6 +3,8 @@ package tools
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -49,17 +51,20 @@ type Diagnosis struct {
 // required fields, and "no measurable effect" is a legal verdict rather than a
 // failure the model has to talk its way out of.
 type OptimizationResult struct {
-	Bottleneck      string         `json:"bottleneck" jsonschema:"required" jsonschema_description:"瓶颈是什么，靠哪条证据定位：CPU 饱和、内存压力、磁盘 IO、网络、锁竞争、GC、慢查询、串行化，还是配置不当"`
-	Baseline        string         `json:"baseline" jsonschema:"required" jsonschema_description:"变更前的测量结果：ops_baseline 或监控给出的关键数值与采集时刻；没有基线就不要提出改动"`
-	Proposal        string         `json:"proposal" jsonschema:"required" jsonschema_description:"具体改动：改哪个文件、哪个参数、改成什么值。写清楚到别人能照着执行"`
-	ExpectedGain    string         `json:"expected_gain" jsonschema:"required" jsonschema_description:"预期改善哪个指标、改善多少、依据是什么"`
-	ObservedGain    string         `json:"observed_gain,omitempty" jsonschema_description:"变更后用 ops_diff 复测到的实际变化。verdict 不是 unverified 时必填（那三个判定都表示已经复测），verdict=unverified 时必须留空"`
-	MeasuredAgainst string         `json:"measured_against,omitempty" jsonschema_description:"这次复测对照的目标：把用户给的指标与目标值原样抄进来（例如「p99 延迟 < 200ms」）。flow 声明了【性能目标】且 verdict 不是 unverified 时必填"`
-	Verdict         string         `json:"verdict" jsonschema:"required,type=string" jsonschema_description:"结论：improved=有可测量改善，no_measurable_effect=测过但没变化（这是合法结论），degraded=变差了，unverified=没有复测条件"`
-	Rollback        string         `json:"rollback" jsonschema:"required" jsonschema_description:"怎么把这次改动改回去；无需回滚也要写「无需回滚」"`
-	Evidence        []EvidenceItem `json:"evidence" jsonschema:"required,type=array" jsonschema_description:"至少两条能靠 query 复现的证据：基线一条、结论一条"`
-	Confidence      *float64       `json:"confidence" jsonschema:"type=number" jsonschema_description:"0 到 1 之间的置信度，按基线与复测的可信度给，不要按改动的自信程度给"`
-	Message         string         `json:"message,omitempty" jsonschema_description:"一句话交代这次优化的结论走向，写入性能记录"`
+	Bottleneck      string   `json:"bottleneck" jsonschema:"required" jsonschema_description:"瓶颈是什么，靠哪条证据定位：CPU 饱和、内存压力、磁盘 IO、网络、锁竞争、GC、慢查询、串行化，还是配置不当"`
+	Baseline        string   `json:"baseline" jsonschema:"required" jsonschema_description:"变更前的测量结果：ops_baseline 或监控给出的关键数值与采集时刻；没有基线就不要提出改动"`
+	Proposal        string   `json:"proposal" jsonschema:"required" jsonschema_description:"具体改动：改哪个文件、哪个参数、改成什么值。写清楚到别人能照着执行"`
+	ExpectedGain    string   `json:"expected_gain" jsonschema:"required" jsonschema_description:"预期改善哪个指标、改善多少、依据是什么"`
+	ObservedGain    string   `json:"observed_gain,omitempty" jsonschema_description:"变更后用 ops_diff 复测到的实际变化。verdict 不是 unverified 时必填（那三个判定都表示已经复测），verdict=unverified 时必须留空"`
+	MeasuredAgainst string   `json:"measured_against,omitempty" jsonschema_description:"这次复测对照的目标：把用户给的指标与目标值原样抄进来（例如「p99 延迟 < 200ms」）。flow 声明了【性能目标】且 verdict 不是 unverified 时必填"`
+	MeasuredValue   *float64 `json:"measured_value,omitempty" jsonschema_description:"复测到的指标数值，单位与目标一致（目标写 200ms 就填毫秒数）。flow 声明了带数字的目标且 verdict 不是 unverified 时必填：这个数用来和目标做算术比较"`
+	TargetMet       *Bool    `json:"target_met,omitempty" jsonschema_description:"复测结果是否满足声明的目标。你判断，代码用 measured_value 与目标重算一遍并对照；两边不一致会被拒绝"`
+
+	Verdict    string         `json:"verdict" jsonschema:"required,type=string" jsonschema_description:"结论：improved=有可测量改善，no_measurable_effect=测过但没变化（这是合法结论），degraded=变差了，unverified=没有复测条件"`
+	Rollback   string         `json:"rollback" jsonschema:"required" jsonschema_description:"怎么把这次改动改回去；无需回滚也要写「无需回滚」"`
+	Evidence   []EvidenceItem `json:"evidence" jsonschema:"required,type=array" jsonschema_description:"至少两条能靠 query 复现的证据：基线一条、结论一条"`
+	Confidence *float64       `json:"confidence" jsonschema:"type=number" jsonschema_description:"0 到 1 之间的置信度，按基线与复测的可信度给，不要按改动的自信程度给"`
+	Message    string         `json:"message,omitempty" jsonschema_description:"一句话交代这次优化的结论走向，写入性能记录"`
 }
 
 type TriageResult struct {
@@ -308,12 +313,24 @@ type PerformanceGoal struct {
 	Constraint string
 	Metric     string
 	Target     string
+
+	// Op and Value are the numeric half of the goal, set only when the target
+	// states a comparison such as "重启次数 < 10". Text a model can only agree
+	// with; a number it can be checked against.
+	Op    string
+	Value *float64
 }
 
 // Empty reports whether the flow declared no goal at all, in which case every
 // goal check is skipped rather than guessed.
 func (g PerformanceGoal) Empty() bool {
 	return g.Metric == "" && g.Target == "" && g.Constraint == ""
+}
+
+// Numeric reports whether the goal states a number the exit has to be compared
+// with, as opposed to a direction the model is free to interpret.
+func (g PerformanceGoal) Numeric() bool {
+	return g.Value != nil && g.Op != ""
 }
 
 func (g PerformanceGoal) String() string {
@@ -367,7 +384,68 @@ func ParsePerformanceGoal(input string) PerformanceGoal {
 		}
 	}
 
+	goal.Op, goal.Value = parseGoalNumber(goal.Target)
+	if goal.Op == "" {
+		goal.Op, goal.Value = parseGoalNumber(goal.Constraint)
+	}
+
 	return goal
+}
+
+// goalNumber matches a comparison followed by a number anywhere in a sentence:
+// the goal is written by a person, so "p99 延迟应低于 200ms" has to yield the
+// same pair as "p99 < 200". Words are mapped to the operator they mean rather
+// than to a guess about intent.
+var goalNumber = regexp.MustCompile(`(<=|>=|≤|≥|<|>|=|不超过|低于|不高于|高于|不少于|不低于)\s*(-?[0-9]+(?:\.[0-9]+)?)`)
+
+func parseGoalNumber(text string) (string, *float64) {
+	match := goalNumber.FindStringSubmatch(text)
+	if match == nil {
+		return "", nil
+	}
+
+	value, err := strconv.ParseFloat(match[2], 64)
+	if err != nil {
+		return "", nil
+	}
+
+	return goalOp(match[1]), &value
+}
+
+func goalOp(word string) string {
+	switch word {
+	case "<", "低于":
+		return "<"
+	case "<=", "≤", "不超过", "不高于":
+		return "<="
+	case ">", "高于":
+		return ">"
+	case ">=", "≥", "不少于", "不低于":
+		return ">="
+	case "=":
+		return "="
+	default:
+		return ""
+	}
+}
+
+// meetsGoal is the arithmetic the model is not trusted with: whether a measured
+// number satisfies the declared target.
+func meetsGoal(op string, measured, target float64) bool {
+	switch op {
+	case "<":
+		return measured < target
+	case "<=":
+		return measured <= target
+	case ">":
+		return measured > target
+	case ">=":
+		return measured >= target
+	case "=":
+		return measured == target
+	default:
+		return false
+	}
 }
 
 func splitGoalLine(line string) (string, string) {
@@ -400,11 +478,35 @@ func (o OptimizationResult) ValidateAgainst(goal PerformanceGoal) error {
 	if goal.Metric != "" && !strings.Contains(normalizeText(o.MeasuredAgainst), normalizeText(goal.Metric)) {
 		return fmt.Errorf("measured_against=%q 没有提到这次 flow 要看的指标 %q：复测只能对着用户要的指标，换了指标就另开一个结论", o.MeasuredAgainst, goal.Metric)
 	}
+	if goal.Numeric() {
+		if o.MeasuredValue == nil || o.TargetMet == nil {
+			return fmt.Errorf("这个 flow 的目标带数字（%s），所以 verdict=%s 时必须填 measured_value（复测到的数值，单位与目标一致）和 target_met（复测是否达标）：代码会拿 measured_value 与目标重算一遍，只写「达标」两个字没有用", goal.String(), o.Verdict)
+		}
+
+		met := meetsGoal(goal.Op, *o.MeasuredValue, *goal.Value)
+		if bool(*o.TargetMet) != met {
+			return fmt.Errorf("target_met 与算术不一致：目标 %s %s，复测 measured_value=%.4g，按此计算%s达标，而 target_met 写的是%s达标。改 target_met，或检查 measured_value 是不是目标那个指标的数",
+				goal.Op, formatGoalValue(*goal.Value), *o.MeasuredValue, ternary(met, "", "不"), ternary(met, "", "不"))
+		}
+	}
+
 	if !o.citesDiff() {
 		return fmt.Errorf("声明了性能目标就必须有一次 before/after 对比，而 evidence 里没有任何一条来自 ops_diff：先采 before，做完改动再采 after，用 ops_diff 算出差值，并把那次调用写进 query")
 	}
 
 	return nil
+}
+
+func formatGoalValue(value float64) string {
+	return strconv.FormatFloat(value, 'f', -1, 64)
+}
+
+func ternary(condition bool, whenTrue, whenFalse string) string {
+	if condition {
+		return whenTrue
+	}
+
+	return whenFalse
 }
 
 func (o OptimizationResult) citesDiff() bool {
@@ -472,6 +574,15 @@ func (o OptimizationResult) Render() (string, error) {
 	fmt.Fprintf(&b, "**回滚**：%s\n\n", o.Rollback)
 	if o.MeasuredAgainst != "" {
 		fmt.Fprintf(&b, "**对照目标**：%s\n\n", o.MeasuredAgainst)
+	}
+	if o.MeasuredValue != nil {
+		verdict := "未填"
+
+		if o.TargetMet != nil {
+			verdict = ternary(bool(*o.TargetMet), "达标", "未达标")
+		}
+
+		fmt.Fprintf(&b, "**复测值**：%s（%s）\n\n", formatGoalValue(*o.MeasuredValue), verdict)
 	}
 
 	b.WriteString("### 证据\n\n")

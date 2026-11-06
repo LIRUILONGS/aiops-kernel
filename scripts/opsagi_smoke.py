@@ -41,7 +41,12 @@ def toolcalls(client, flow_id):
     if not isinstance(rows, list):
         return []
 
-    return [row for row in rows if isinstance(row, dict)]
+    # The list endpoint does not promise an order, and "the exit the flow ended
+    # on" is a claim about the newest row, so the order is established here.
+    calls = [row for row in rows if isinstance(row, dict)]
+    calls.sort(key=lambda row: (row.get("id") or 0, row.get("created_at") or ""))
+
+    return calls
 
 
 def exits(calls, name):

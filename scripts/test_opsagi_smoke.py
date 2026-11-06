@@ -190,6 +190,28 @@ class CheckOptimization(unittest.TestCase):
         self.assertTrue(any("that is not a measurement" in failure for failure in failures), failures)
 
 
+class Toolcalls(unittest.TestCase):
+    class Client:
+        def __init__(self, rows):
+            self.rows = rows
+
+        def call(self, _path):
+            return {"data": {"toolcalls": self.rows}}
+
+    def test_rows_come_back_in_the_order_they_were_written(self):
+        rows = [
+            {"id": 306, "name": "diagnosis", "status": "finished"},
+            {"id": 304, "name": "diagnosis", "status": "failed"},
+        ]
+
+        calls = opsagi_smoke.toolcalls(Toolcalls.Client(rows), 20)
+
+        self.assertEqual([304, 306], [call["id"] for call in calls])
+
+    def test_a_payload_that_is_not_a_list_is_no_calls(self):
+        self.assertEqual(opsagi_smoke.toolcalls(Toolcalls.Client(None), 20), [])
+
+
 class ReadPayload(unittest.TestCase):
     def test_a_dict_is_returned_as_is(self):
         payload = diagnosis()

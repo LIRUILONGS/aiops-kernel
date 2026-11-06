@@ -2,6 +2,7 @@ package tools
 
 import (
 	"encoding/json"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -559,7 +560,7 @@ func TestAIOps_PerformanceGoal_ReadsWhatIsThereAndNothingElse(t *testing.T) {
 		{
 			name:   "ascii colons and no bullets",
 			input:  "【性能目标】\n指标: p99 延迟\n目标: < 200ms",
-			wanted: PerformanceGoal{Metric: "p99 延迟", Target: "< 200ms"},
+			wanted: PerformanceGoal{Metric: "p99 延迟", Target: "< 200ms", Op: "<", Value: floatPtr(200)},
 		},
 		{
 			name:   "a following section is not part of the goal",
@@ -571,16 +572,37 @@ func TestAIOps_PerformanceGoal_ReadsWhatIsThereAndNothingElse(t *testing.T) {
 			input:  "【性能目标】\n- 指标：p99\n\n把延迟降下来",
 			wanted: PerformanceGoal{Metric: "p99"},
 		},
+		{
+			name:   "a comparison in the target becomes a number to check",
+			input:  "【性能目标】\n- 指标：p99 延迟\n- 目标：< 200ms",
+			wanted: PerformanceGoal{Metric: "p99 延迟", Target: "< 200ms", Op: "<", Value: floatPtr(200)},
+		},
+		{
+			name:   "a worded bound is the same bound",
+			input:  "【性能目标】\n- 约束：重启次数 不超过 10 次",
+			wanted: PerformanceGoal{Constraint: "重启次数 不超过 10 次", Op: "<=", Value: floatPtr(10)},
+		},
+		{
+			name:  "the constraint supplies the number when the target has none",
+			input: "【性能目标】\n- 指标：错误率\n- 约束：高于 0 就算回归",
+			wanted: PerformanceGoal{
+				Metric: "错误率", Constraint: "高于 0 就算回归", Op: ">", Value: floatPtr(0),
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := ParsePerformanceGoal(tt.input)
-			if got != tt.wanted {
+			if !reflect.DeepEqual(got, tt.wanted) {
 				t.Fatalf("ParsePerformanceGoal() = %+v, want %+v", got, tt.wanted)
 			}
 		})
 	}
+}
+
+func floatPtr(value float64) *float64 {
+	return &value
 }
 
 func TestAIOps_PerformanceGoal_RefusesAConclusionThatIgnoresTheDeclaredGoal(t *testing.T) {
@@ -639,6 +661,101 @@ func TestAIOps_PerformanceGoal_RefusesAConclusionThatIgnoresTheDeclaredGoal(t *t
 
 			err := result.ValidateAgainst(goal)
 
+			if tt.wantErr == "" {
+				if err != nil {
+					t.Fatalf("ValidateAgainst() = %v, want nil", err)
+				}
+
+				return
+			}
+
+			if err == nil {
+				t.Fatalf("ValidateAgainst() = nil, want an error mentioning %q", tt.wantErr)
+			}
+			if !strings.Contains(err.Error(), tt.wantErr) {
+				t.Fatalf("ValidateAgainst() = %q, want it to mention %q", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestAIOps_PerformanceGoal_ChecksTheNumericTargetArithmetically(t *testing.T) {
+	goal := PerformanceGoal{Metric: "p99 延迟", Target: "< 200ms", Op: "<", Value: floatPtr(200)}
+	met := Bool(true)
+	notMet := Bool(false)
+	blank := Bool(false)
+
+	tests := []struct {
+		name    string
+		mutate  func(*OptimizationResult)
+		wantErr string
+	}{
+		{
+			name: "a measurement that clears the target",
+			mutate: func(o *OptimizationResult) {
+				o.MeasuredAgainst = "p99 延迟 < 200ms"
+				o.MeasuredValue = floatPtr(140)
+				o.TargetMet = &met
+			},
+		},
+		{
+			name: "a measurement that misses the target, reported honestly",
+			mutate: func(o *OptimizationResult) {
+				o.Verdict = "degraded"
+				o.MeasuredAgainst = "p99 延迟 < 200ms"
+				o.MeasuredValue = floatPtr(260)
+				o.TargetMet = &notMet
+			},
+		},
+		{
+			name: "the boundary belongs to the operator",
+			mutate: func(o *OptimizationResult) {
+				o.MeasuredAgainst = "p99 延迟 < 200ms"
+				o.MeasuredValue = floatPtr(200)
+				o.TargetMet = &blank
+			},
+		},
+		{
+			name: "a claim of meeting a target the number misses",
+			mutate: func(o *OptimizationResult) {
+				o.MeasuredAgainst = "p99 延迟 < 200ms"
+				o.MeasuredValue = floatPtr(260)
+				o.TargetMet = &met
+			},
+			wantErr: "与算术不一致",
+		},
+		{
+			name: "a claim of missing a target the number clears",
+			mutate: func(o *OptimizationResult) {
+				o.MeasuredAgainst = "p99 延迟 < 200ms"
+				o.MeasuredValue = floatPtr(90)
+				o.TargetMet = &notMet
+			},
+			wantErr: "与算术不一致",
+		},
+		{
+			name: "a numeric target answered without a number",
+			mutate: func(o *OptimizationResult) {
+				o.MeasuredAgainst = "p99 延迟 < 200ms"
+			},
+			wantErr: "必须填 measured_value",
+		},
+		{
+			name: "an honest refusal to measure still needs no number",
+			mutate: func(o *OptimizationResult) {
+				o.Verdict = "unverified"
+				o.ObservedGain = ""
+				o.MeasuredAgainst = ""
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := validOptimization()
+			tt.mutate(&result)
+
+			err := result.ValidateAgainst(goal)
 			if tt.wantErr == "" {
 				if err != nil {
 					t.Fatalf("ValidateAgainst() = %v, want nil", err)
