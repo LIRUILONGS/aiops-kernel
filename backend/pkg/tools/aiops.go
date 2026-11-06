@@ -49,16 +49,17 @@ type Diagnosis struct {
 // required fields, and "no measurable effect" is a legal verdict rather than a
 // failure the model has to talk its way out of.
 type OptimizationResult struct {
-	Bottleneck   string         `json:"bottleneck" jsonschema:"required" jsonschema_description:"瓶颈是什么，靠哪条证据定位：CPU 饱和、内存压力、磁盘 IO、网络、锁竞争、GC、慢查询、串行化，还是配置不当"`
-	Baseline     string         `json:"baseline" jsonschema:"required" jsonschema_description:"变更前的测量结果：ops_baseline 或监控给出的关键数值与采集时刻；没有基线就不要提出改动"`
-	Proposal     string         `json:"proposal" jsonschema:"required" jsonschema_description:"具体改动：改哪个文件、哪个参数、改成什么值。写清楚到别人能照着执行"`
-	ExpectedGain string         `json:"expected_gain" jsonschema:"required" jsonschema_description:"预期改善哪个指标、改善多少、依据是什么"`
-	ObservedGain string         `json:"observed_gain,omitempty" jsonschema_description:"变更后用 ops_diff 复测到的实际变化。verdict 不是 unverified 时必填（那三个判定都表示已经复测），verdict=unverified 时必须留空"`
-	Verdict      string         `json:"verdict" jsonschema:"required,type=string" jsonschema_description:"结论：improved=有可测量改善，no_measurable_effect=测过但没变化（这是合法结论），degraded=变差了，unverified=没有复测条件"`
-	Rollback     string         `json:"rollback" jsonschema:"required" jsonschema_description:"怎么把这次改动改回去；无需回滚也要写「无需回滚」"`
-	Evidence     []EvidenceItem `json:"evidence" jsonschema:"required,type=array" jsonschema_description:"至少两条能靠 query 复现的证据：基线一条、结论一条"`
-	Confidence   *float64       `json:"confidence" jsonschema:"type=number" jsonschema_description:"0 到 1 之间的置信度，按基线与复测的可信度给，不要按改动的自信程度给"`
-	Message      string         `json:"message,omitempty" jsonschema_description:"一句话交代这次优化的结论走向，写入性能记录"`
+	Bottleneck      string         `json:"bottleneck" jsonschema:"required" jsonschema_description:"瓶颈是什么，靠哪条证据定位：CPU 饱和、内存压力、磁盘 IO、网络、锁竞争、GC、慢查询、串行化，还是配置不当"`
+	Baseline        string         `json:"baseline" jsonschema:"required" jsonschema_description:"变更前的测量结果：ops_baseline 或监控给出的关键数值与采集时刻；没有基线就不要提出改动"`
+	Proposal        string         `json:"proposal" jsonschema:"required" jsonschema_description:"具体改动：改哪个文件、哪个参数、改成什么值。写清楚到别人能照着执行"`
+	ExpectedGain    string         `json:"expected_gain" jsonschema:"required" jsonschema_description:"预期改善哪个指标、改善多少、依据是什么"`
+	ObservedGain    string         `json:"observed_gain,omitempty" jsonschema_description:"变更后用 ops_diff 复测到的实际变化。verdict 不是 unverified 时必填（那三个判定都表示已经复测），verdict=unverified 时必须留空"`
+	MeasuredAgainst string         `json:"measured_against,omitempty" jsonschema_description:"这次复测对照的目标：把用户给的指标与目标值原样抄进来（例如「p99 延迟 < 200ms」）。flow 声明了【性能目标】且 verdict 不是 unverified 时必填"`
+	Verdict         string         `json:"verdict" jsonschema:"required,type=string" jsonschema_description:"结论：improved=有可测量改善，no_measurable_effect=测过但没变化（这是合法结论），degraded=变差了，unverified=没有复测条件"`
+	Rollback        string         `json:"rollback" jsonschema:"required" jsonschema_description:"怎么把这次改动改回去；无需回滚也要写「无需回滚」"`
+	Evidence        []EvidenceItem `json:"evidence" jsonschema:"required,type=array" jsonschema_description:"至少两条能靠 query 复现的证据：基线一条、结论一条"`
+	Confidence      *float64       `json:"confidence" jsonschema:"type=number" jsonschema_description:"0 到 1 之间的置信度，按基线与复测的可信度给，不要按改动的自信程度给"`
+	Message         string         `json:"message,omitempty" jsonschema_description:"一句话交代这次优化的结论走向，写入性能记录"`
 }
 
 type TriageResult struct {
@@ -301,6 +302,125 @@ func (o OptimizationResult) Validate() error {
 	return nil
 }
 
+// PerformanceGoal is the target a user declared when the flow was created, as it
+// appears in the 【性能目标】 block the web form appends to the input.
+type PerformanceGoal struct {
+	Constraint string
+	Metric     string
+	Target     string
+}
+
+// Empty reports whether the flow declared no goal at all, in which case every
+// goal check is skipped rather than guessed.
+func (g PerformanceGoal) Empty() bool {
+	return g.Metric == "" && g.Target == "" && g.Constraint == ""
+}
+
+func (g PerformanceGoal) String() string {
+	var parts []string
+
+	if g.Metric != "" {
+		parts = append(parts, "指标 "+g.Metric)
+	}
+	if g.Target != "" {
+		parts = append(parts, "目标 "+g.Target)
+	}
+	if g.Constraint != "" {
+		parts = append(parts, "约束 "+g.Constraint)
+	}
+
+	return strings.Join(parts, "，")
+}
+
+const performanceGoalMarker = "【性能目标】"
+
+// ParsePerformanceGoal reads the goal block out of a flow input. It accepts the
+// block wherever it sits in the message, because a user may type it by hand as
+// well as get it from the form.
+func ParsePerformanceGoal(input string) PerformanceGoal {
+	var goal PerformanceGoal
+
+	lines := strings.Split(input, "\n")
+	inBlock := false
+
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+
+		switch {
+		case strings.Contains(trimmed, performanceGoalMarker):
+			inBlock = true
+			continue
+		case inBlock && strings.HasPrefix(trimmed, "【"):
+			inBlock = false
+		case !inBlock:
+			continue
+		}
+
+		key, value := splitGoalLine(trimmed)
+		switch key {
+		case "指标":
+			goal.Metric = value
+		case "目标":
+			goal.Target = value
+		case "约束":
+			goal.Constraint = value
+		}
+	}
+
+	return goal
+}
+
+func splitGoalLine(line string) (string, string) {
+	trimmed := strings.TrimPrefix(strings.TrimPrefix(line, "-"), "*")
+	trimmed = strings.TrimSpace(trimmed)
+
+	for _, sep := range []string{"：", ":"} {
+		if key, value, found := strings.Cut(trimmed, sep); found {
+			return strings.TrimSpace(key), strings.TrimSpace(value)
+		}
+	}
+
+	return "", ""
+}
+
+// ValidateAgainst applies the goal the user declared to a conclusion. A goal is a
+// constraint, so it belongs in the exit schema rather than in the prompt: a
+// report cannot claim an improvement on a metric nobody asked about, and cannot
+// claim one at all without a before/after comparison behind it.
+func (o OptimizationResult) ValidateAgainst(goal PerformanceGoal) error {
+	if err := o.Validate(); err != nil {
+		return err
+	}
+	if goal.Empty() || o.Verdict == "unverified" {
+		return nil
+	}
+	if strings.TrimSpace(o.MeasuredAgainst) == "" {
+		return fmt.Errorf("这个 flow 声明了性能目标（%s），所以 verdict=%s 时必须填 measured_against：把目标原样抄进来，再让 observed_gain 说明是否达标；确实没有复测就把 verdict 改成 unverified", goal.String(), o.Verdict)
+	}
+	if goal.Metric != "" && !strings.Contains(normalizeText(o.MeasuredAgainst), normalizeText(goal.Metric)) {
+		return fmt.Errorf("measured_against=%q 没有提到这次 flow 要看的指标 %q：复测只能对着用户要的指标，换了指标就另开一个结论", o.MeasuredAgainst, goal.Metric)
+	}
+	if !o.citesDiff() {
+		return fmt.Errorf("声明了性能目标就必须有一次 before/after 对比，而 evidence 里没有任何一条来自 ops_diff：先采 before，做完改动再采 after，用 ops_diff 算出差值，并把那次调用写进 query")
+	}
+
+	return nil
+}
+
+func (o OptimizationResult) citesDiff() bool {
+	for _, item := range o.Evidence {
+		if strings.Contains(strings.ToLower(item.Query), "ops_diff") {
+			return true
+		}
+	}
+
+	return false
+}
+
+func normalizeText(value string) string {
+	return strings.ToLower(strings.Join(strings.Fields(value), ""))
+}
+
 // validateObservedGain keeps a claim of measurement and the measurement itself in
 // agreement. Every verdict except unverified asserts that the change was measured,
 // so each needs the numbers; unverified asserts the opposite, so it must not carry
@@ -350,6 +470,9 @@ func (o OptimizationResult) Render() (string, error) {
 		b.WriteString("**实测收益**：未复测\n\n")
 	}
 	fmt.Fprintf(&b, "**回滚**：%s\n\n", o.Rollback)
+	if o.MeasuredAgainst != "" {
+		fmt.Fprintf(&b, "**对照目标**：%s\n\n", o.MeasuredAgainst)
+	}
 
 	b.WriteString("### 证据\n\n")
 	for i, item := range o.Evidence {

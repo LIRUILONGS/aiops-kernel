@@ -842,7 +842,7 @@ func (fp *flowProvider) PerformAgentChain(ctx context.Context, taskID, subtaskID
 				loggerFunc.WithError(err).Error("failed to unmarshal optimization result")
 				return "", fmt.Errorf("failed to unmarshal optimization result: %w", err)
 			}
-			if err := result.Validate(); err != nil {
+			if err := result.ValidateAgainst(fp.performanceGoal(ctx, subtask.TaskID)); err != nil {
 				loggerFunc.WithError(err).Warn("optimization result is incomplete")
 				return "", fmt.Errorf("优化结论不完整: %w", err)
 			}
@@ -1036,4 +1036,22 @@ func (fp *flowProvider) subtaskMode(ctx context.Context, subtask database.Subtas
 	}
 
 	return flow.FlowType
+}
+
+// performanceGoal reads the goal the user declared when the flow was created.
+// The first task of a flow carries the user's own message, which is where the
+// 【性能目标】 block lives; a goal that cannot be read leaves every check skipped
+// rather than failing the chain on a database hiccup.
+func (fp *flowProvider) performanceGoal(ctx context.Context, taskID int64) tools.PerformanceGoal {
+	task, err := fp.db.GetTask(ctx, taskID)
+	if err != nil {
+		return tools.PerformanceGoal{}
+	}
+
+	tasks, err := fp.db.GetFlowTasks(ctx, task.FlowID)
+	if err != nil || len(tasks) == 0 {
+		return tools.PerformanceGoal{}
+	}
+
+	return tools.ParsePerformanceGoal(tasks[0].Input)
 }

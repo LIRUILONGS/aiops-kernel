@@ -521,3 +521,151 @@ func TestAIOps_Optimization_RenderLeadsWithTheVerdict(t *testing.T) {
 		t.Errorf("an unverified optimisation must say it was not re-measured:\n%s", report)
 	}
 }
+
+// The block a user can type by hand, and the one the web form appends, are the
+// same shape: a marker line and three labelled lines.
+func TestAIOps_PerformanceGoal_ParsesTheBlockTheFormAppends(t *testing.T) {
+	input := "把 caddy 容器的 p99 延迟降下来\n\n【性能目标】\n- 指标：p99 延迟\n- 目标：< 200ms\n- 约束：不要重启 caddy"
+
+	goal := ParsePerformanceGoal(input)
+
+	if goal.Metric != "p99 延迟" {
+		t.Fatalf("metric = %q, want %q", goal.Metric, "p99 延迟")
+	}
+	if goal.Target != "< 200ms" {
+		t.Fatalf("target = %q, want %q", goal.Target, "< 200ms")
+	}
+	if goal.Constraint != "不要重启 caddy" {
+		t.Fatalf("constraint = %q, want %q", goal.Constraint, "不要重启 caddy")
+	}
+}
+
+func TestAIOps_PerformanceGoal_ReadsWhatIsThereAndNothingElse(t *testing.T) {
+	tests := []struct {
+		name   string
+		input  string
+		wanted PerformanceGoal
+	}{
+		{
+			name:   "no block at all",
+			input:  "看看这台机器为什么慢",
+			wanted: PerformanceGoal{},
+		},
+		{
+			name:   "only a metric",
+			input:  "降延迟\n\n【性能目标】\n- 指标：p99",
+			wanted: PerformanceGoal{Metric: "p99"},
+		},
+		{
+			name:   "ascii colons and no bullets",
+			input:  "【性能目标】\n指标: p99 延迟\n目标: < 200ms",
+			wanted: PerformanceGoal{Metric: "p99 延迟", Target: "< 200ms"},
+		},
+		{
+			name:   "a following section is not part of the goal",
+			input:  "【性能目标】\n- 指标：p99\n\n【禁止事项】\n- 目标：不要动证书",
+			wanted: PerformanceGoal{Metric: "p99"},
+		},
+		{
+			name:   "the block sits above the message",
+			input:  "【性能目标】\n- 指标：p99\n\n把延迟降下来",
+			wanted: PerformanceGoal{Metric: "p99"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ParsePerformanceGoal(tt.input)
+			if got != tt.wanted {
+				t.Fatalf("ParsePerformanceGoal() = %+v, want %+v", got, tt.wanted)
+			}
+		})
+	}
+}
+
+func TestAIOps_PerformanceGoal_RefusesAConclusionThatIgnoresTheDeclaredGoal(t *testing.T) {
+	goal := PerformanceGoal{Metric: "p99 延迟", Target: "< 200ms"}
+
+	tests := []struct {
+		name    string
+		mutate  func(*OptimizationResult)
+		wantErr string
+	}{
+		{
+			name: "a measurement that answers the goal",
+			mutate: func(o *OptimizationResult) {
+				o.MeasuredAgainst = "p99 延迟 < 200ms"
+			},
+		},
+		{
+			name: "a measured verdict that never names the goal",
+			mutate: func(o *OptimizationResult) {
+				o.MeasuredAgainst = ""
+			},
+			wantErr: "声明了性能目标",
+		},
+		{
+			name: "a measurement of some other metric",
+			mutate: func(o *OptimizationResult) {
+				o.MeasuredAgainst = "磁盘 IO < 30%"
+			},
+			wantErr: "没有提到这次 flow 要看的指标",
+		},
+		{
+			name: "a goal answered without a before/after comparison",
+			mutate: func(o *OptimizationResult) {
+				o.MeasuredAgainst = "p99 延迟 < 200ms"
+				o.Evidence = []EvidenceItem{
+					{Source: "host", Query: "ops_baseline", Timestamp: "2026-11-06T18:20:00+08:00", Excerpt: "load 0.00"},
+					{Source: "host", Query: "ops_baseline after change", Timestamp: "2026-11-06T18:41:00+08:00", Excerpt: "load 0.09"},
+				}
+			},
+			wantErr: "ops_diff",
+		},
+		{
+			name: "an honest refusal to measure is allowed under a goal",
+			mutate: func(o *OptimizationResult) {
+				o.Verdict = "unverified"
+				o.ObservedGain = ""
+				o.MeasuredAgainst = ""
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := validOptimization()
+			tt.mutate(&result)
+
+			err := result.ValidateAgainst(goal)
+
+			if tt.wantErr == "" {
+				if err != nil {
+					t.Fatalf("ValidateAgainst() = %v, want nil", err)
+				}
+
+				return
+			}
+
+			if err == nil {
+				t.Fatalf("ValidateAgainst() = nil, want an error mentioning %q", tt.wantErr)
+			}
+			if !strings.Contains(err.Error(), tt.wantErr) {
+				t.Fatalf("ValidateAgainst() = %q, want it to mention %q", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestAIOps_PerformanceGoal_WithoutAGoalNothingIsChecked(t *testing.T) {
+	result := validOptimization()
+	result.MeasuredAgainst = ""
+	result.Evidence = []EvidenceItem{
+		{Source: "host", Query: "ops_baseline", Timestamp: "2026-11-06T18:20:00+08:00", Excerpt: "load 0.00"},
+		{Source: "metrics", Query: "ops_containers", Timestamp: "2026-11-06T18:41:00+08:00", Excerpt: "restarts 3"},
+	}
+
+	if err := result.ValidateAgainst(PerformanceGoal{}); err != nil {
+		t.Fatalf("ValidateAgainst() = %v, want nil for a flow without a goal", err)
+	}
+}
