@@ -509,9 +509,22 @@ func validateSubtaskInfo(info SubtaskInfo, where string, requireMode bool) error
 	return nil
 }
 
+// maxSubtasksPerPlan bounds a plan at the length a person would keep in their
+// head. Subtasks run one at a time, so the list length is wall-clock time rather
+// than thoroughness: four coarse steps answer the same question as eight narrow
+// ones and finish in half the time.
+const maxSubtasksPerPlan = 5
+
 // Validate refuses a plan whose entries cannot be executed: an empty hypothesis
-// is not a subtask, and an unknown owner has no agent behind it.
+// is not a subtask, an unknown owner has no agent behind it, and a plan too long
+// to run is a queue of work nobody asked for.
 func (sl SubtaskList) Validate() error {
+	if len(sl.Subtasks) > maxSubtasksPerPlan {
+		return fmt.Errorf(
+			"计划有 %d 条子任务，上限 %d：子任务是一条一条跑的，计划越长越慢。把同一台主机、同一类证据的合并成一条——一条子任务里可以做多次取证；先给能定位问题的 3–5 条，剩下的交给 refiner 在每条完成后按证据补",
+			len(sl.Subtasks), maxSubtasksPerPlan)
+	}
+
 	for i, info := range sl.Subtasks {
 		if err := validateSubtaskInfo(info, fmt.Sprintf("第 %d 条子任务", i+1), true); err != nil {
 			return err

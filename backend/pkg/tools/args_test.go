@@ -1371,6 +1371,17 @@ func TestArgs_SubtaskInfo_PlanDescriptionKeepsTheHypothesisAndAppendsTheSignal(t
 	}
 }
 
+func planOf(entries int) []SubtaskInfo {
+	plan := make([]SubtaskInfo, 0, entries)
+	for i := range entries {
+		plan = append(plan, SubtaskInfo{
+			Mode: PlanModeDiagnosis, Title: fmt.Sprintf("step %d", i), Description: "look",
+		})
+	}
+
+	return plan
+}
+
 func TestArgs_SubtaskList_ValidateRefusesAPlanWithoutAnExecutableHypothesis(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -1392,6 +1403,15 @@ func TestArgs_SubtaskList_ValidateRefusesAPlanWithoutAnExecutableHypothesis(t *t
 		{
 			name:     "no subtasks at all",
 			subtasks: []SubtaskInfo{},
+		},
+		{
+			name:     "a plan of five, which is the longest one that finishes in reasonable time",
+			subtasks: planOf(5),
+		},
+		{
+			name:     "a plan of six, which is one step of sequencing too many",
+			subtasks: planOf(6),
+			wantErr:  "上限 5",
 		},
 		{
 			name:     "a subtask without a title",
