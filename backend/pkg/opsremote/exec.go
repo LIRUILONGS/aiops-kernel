@@ -67,6 +67,8 @@ var (
 		"unit_activated_at",
 		"container_image",
 		"image_history",
+		"pg_stat_activity",
+		"pg_stat_statements",
 	}
 	catalog = map[string]Command{
 		"listen_ports": {
@@ -174,6 +176,25 @@ var (
 			Params: []Param{
 				{Template: "Image", Kind: ParamImage},
 				{Template: "Lines", Kind: ParamCount, Min: 1, Max: 50, Default: 15},
+			},
+		},
+		"pg_stat_activity": {
+			ID:          "pg_stat_activity",
+			Description: "Postgres 容器里此刻还在跑的查询：会话状态、已跑多久、等待事件与语句开头（需要库名）",
+			Template:    `docker exec %Container% psql -U postgres -d %Database% -Atc "select pid, state, round(extract(epoch from (now() - query_start))::numeric, 1) secs, coalesce(wait_event_type, '-') wait, left(translate(query, chr(10) || chr(13) || chr(9), '   '), 120) query from pg_stat_activity where state <> 'idle' order by query_start" 2>&1`,
+			Params: []Param{
+				{Template: "Container", Kind: ParamName},
+				{Template: "Database", Kind: ParamName},
+			},
+		},
+		"pg_stat_statements": {
+			ID:          "pg_stat_statements",
+			Description: "Postgres 容器里累计耗时最高的 N 条语句：调用次数、总耗时、平均耗时、返回行数与语句开头（需要库名与 pg_stat_statements 扩展）",
+			Template:    `docker exec %Container% psql -U postgres -d %Database% -Atc "select calls, round(total_exec_time::numeric, 1) total_ms, round(mean_exec_time::numeric, 2) mean_ms, rows, left(translate(query, chr(10) || chr(13) || chr(9), '   '), 160) query from pg_stat_statements order by total_exec_time desc limit %Lines%" 2>&1`,
+			Params: []Param{
+				{Template: "Container", Kind: ParamName},
+				{Template: "Database", Kind: ParamName},
+				{Template: "Lines", Kind: ParamCount, Min: 1, Max: 50, Default: 10},
 			},
 		},
 	}

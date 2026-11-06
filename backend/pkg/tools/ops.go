@@ -187,6 +187,7 @@ type OpsExecArgs struct {
 	Container string `json:"container,omitempty" jsonschema:"description=容器名，docker_inspect 必填,example=opslab-broken"`
 	Path      string `json:"path,omitempty" jsonschema:"description=绝对路径，file_stat 必填,example=/etc/nginx/nginx.conf"`
 	Image     string `json:"image,omitempty" jsonschema:"description=镜像引用，image_history 必填,example=nginx:1.27-alpine"`
+	Database  string `json:"database,omitempty" jsonschema:"description=数据库名，pg_stat_activity 与 pg_stat_statements 必填,example=shop"`
 	Lines     int    `json:"lines,omitempty" jsonschema:"description=行数，见各命令允许的范围,example=100"`
 }
 
@@ -450,6 +451,7 @@ func catalogueArgs(args OpsExecArgs) map[string]string {
 		"Container": args.Container,
 		"Path":      args.Path,
 		"Image":     args.Image,
+		"Database":  args.Database,
 	}
 	if args.Lines > 0 {
 		out["Lines"] = fmt.Sprintf("%d", args.Lines)

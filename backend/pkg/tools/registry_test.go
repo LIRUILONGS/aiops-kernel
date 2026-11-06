@@ -2,9 +2,11 @@ package tools
 
 import (
 	"slices"
+	"strings"
 	"testing"
 
 	"opsagi/pkg/database"
+	"opsagi/pkg/opsremote"
 )
 
 func TestRegistry_ToolType_StringNamesEveryType(t *testing.T) {
@@ -256,5 +258,19 @@ func TestRegistry_AllowedToolListsNameKnownToolsOnce(t *testing.T) {
 	}
 	if !slices.Contains(allowedStoringInMemoryTools, SearchToolName) {
 		t.Errorf("allowedStoringInMemoryTools must contain %q", SearchToolName)
+	}
+}
+
+// An agent can only choose a command it has been told about, so a catalogue entry
+// missing from the description is an entry that never runs.
+func TestRegistry_Definitions_AdvertiseEveryOpsExecCommand(t *testing.T) {
+	t.Parallel()
+
+	description := registryDefinitions[OpsExecToolName].Description
+
+	for _, command := range opsremote.Commands() {
+		if !strings.Contains(description, command.ID) {
+			t.Errorf("ops_exec does not mention %q, so the agent cannot ask for it", command.ID)
+		}
 	}
 }

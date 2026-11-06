@@ -103,3 +103,31 @@ func TestFormatExec_SaysWhenTheCommandProducedNothing(t *testing.T) {
 		t.Errorf("an empty result reads as evidence of absence:\n%s", out)
 	}
 }
+
+// A param the renderer knows but the tool has no field for reads to the model as
+// a missing argument it cannot supply, so the command is unusable however well it
+// is written.
+func TestOpsTools_HandleExec_GivesTheModelAFieldForEveryCatalogueParam(t *testing.T) {
+	t.Parallel()
+
+	filled := OpsExecArgs{
+		Target:    "lab",
+		Command:   "listen_ports",
+		Unit:      "nginx.service",
+		Container: "opslab-broken",
+		Path:      "/etc/nginx/nginx.conf",
+		Image:     "nginx:1.27-alpine",
+		Database:  "shop",
+		Lines:     10,
+	}
+
+	available := catalogueArgs(filled)
+
+	for _, command := range opsremote.Commands() {
+		for _, param := range command.Params {
+			if _, ok := available[param.Template]; !ok {
+				t.Errorf("command %q declares param %q, which the tool cannot supply", command.ID, param.Template)
+			}
+		}
+	}
+}
