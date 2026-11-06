@@ -224,6 +224,17 @@ jobs:
           DATABASE_URL: postgres://opsagi:opsagi@localhost:5432/opsagi?sslmode=disable
         run: python3 scripts/aiops_acceptance/run.py
 
+      # The batch path only exists above concurrency 1, and it is the one where a
+      # claim could hand one subtask to two chains. Two steps, answered slowly
+      # enough that they overlap, is what shows the batch starts together.
+      - name: Acceptance - Run a plan as one batch
+        env:
+          DATABASE_URL: postgres://opsagi:opsagi@localhost:5432/opsagi?sslmode=disable
+          MOCK_LLM_DELAY_MS: "300"
+          MOCK_LLM_PLAN_SIZE: "2"
+          OPSAGI_SUBTASK_CONCURRENCY: "2"
+        run: python3 scripts/aiops_acceptance/run.py
+
   docker-build:
     needs: lint-and-test
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
