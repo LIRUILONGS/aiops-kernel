@@ -37,6 +37,7 @@ const (
 	maxGeneralAgentChainIterations = 100
 	maxLimitedAgentChainIterations = 20
 	maxAgentShutdownIterations     = 3
+	exitToolAdviceIteration        = 15
 	maxSoftDetectionsBeforeAbort   = 4
 	delayBetweenRetries            = 5 * time.Second
 )
@@ -113,6 +114,8 @@ func (fp *flowProvider) performAgentChain(
 			maxCallsLimit = max(fp.maxLACallsLimit, maxAgentShutdownIterations*2)
 		}
 	}
+
+	adviceAfter := budgetAdviceIteration(maxCallsLimit, chainsToAnExit(executor))
 
 	for iteration := 0; ; iteration++ {
 		if iteration >= maxCallsLimit {
@@ -254,7 +257,7 @@ func (fp *flowProvider) performAgentChain(
 			return nil
 		}
 
-		if advice, ok := budgetNudge(iteration, maxCallsLimit); ok && !nudged {
+		if advice, ok := budgetNudge(iteration, adviceAfter, maxCallsLimit); ok && !nudged {
 			nudged = true
 
 			chain = append(chain, llms.TextParts(llms.ChatMessageTypeHuman, advice))
@@ -295,17 +298,43 @@ func (fp *flowProvider) performAgentChain(
 	}
 }
 
+// chainsToAnExit reports whether the agent's own tool list contains the tool that
+// ends its work. An agent that was handed an exit is on a bounded job, whatever
+// limit its role nominally carries.
+func chainsToAnExit(executor tools.ContextToolsExecutor) bool {
+	toolTypeMapping := tools.GetToolTypeMapping()
+
+	for _, tool := range executor.Tools() {
+		if tool.Function != nil && toolTypeMapping[tool.Function.Name] == tools.BarrierToolType {
+			return true
+		}
+	}
+
+	return false
+}
+
+// budgetAdviceIteration is the turn at which the budget message arrives. A general
+// agent without an exit tool is exploring and gets the whole three fifths; one
+// that already has its exit tool is spending turns it could have spent
+// concluding, so the advice comes early and the hard limit stays where it is.
+func budgetAdviceIteration(maxCallsLimit int, hasExit bool) int {
+	advice := maxCallsLimit * 3 / 5
+	if hasExit {
+		advice = min(advice, exitToolAdviceIteration)
+	}
+
+	return min(advice, maxCallsLimit-maxAgentShutdownIterations-1)
+}
+
 // budgetNudge asks for a conclusion while there are still turns left to write
 // one. A chain that only stops at the hard limit spends its final turns being
 // told to give up, which is the one thing an agent that already has its evidence
 // should not be doing.
-func budgetNudge(iteration, maxCallsLimit int) (string, bool) {
-	if maxCallsLimit < 2*maxAgentShutdownIterations+4 {
+func budgetNudge(iteration, adviceAfter, maxCallsLimit int) (string, bool) {
+	if maxCallsLimit < 2*maxAgentShutdownIterations+4 || adviceAfter < 1 {
 		return "", false
 	}
-
-	threshold := min(maxCallsLimit*3/5, maxCallsLimit-maxAgentShutdownIterations-1)
-	if iteration < threshold || iteration >= maxCallsLimit-maxAgentShutdownIterations {
+	if iteration < adviceAfter || iteration >= maxCallsLimit-maxAgentShutdownIterations {
 		return "", false
 	}
 

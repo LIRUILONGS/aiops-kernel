@@ -388,6 +388,61 @@ func TestPerformer_PerformReflector_ChargesTheAgentThatAnswered(t *testing.T) {
 	assert.InDelta(t, float64(usage.Output)*originOutput/1e6, db.updates[0].UsageCostOut, 1e-12)
 }
 
+type performerToolListExecutor struct {
+	tools.ContextToolsExecutor
+
+	toolset []string
+}
+
+func (e performerToolListExecutor) Tools() []llms.Tool {
+	tools := make([]llms.Tool, 0, len(e.toolset))
+	for _, name := range e.toolset {
+		tools = append(tools, llms.Tool{Function: &llms.FunctionDefinition{Name: name}})
+	}
+
+	return tools
+}
+
+func TestFlowProvider_chainsToAnExit_NoticesTheToolThatEndsTheWork(t *testing.T) {
+	tests := []struct {
+		name    string
+		toolset []string
+		want    bool
+	}{
+		{name: "an agent that was handed its exit", toolset: []string{tools.OpsExecToolName, tools.DiagnosisToolName}, want: true},
+		{name: "an agent that only gathers evidence", toolset: []string{tools.OpsExecToolName, tools.OpsBaselineToolName}},
+		{name: "an agent with no tools at all"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, chainsToAnExit(performerToolListExecutor{toolset: tt.toolset}))
+		})
+	}
+}
+
+func TestFlowProvider_budgetAdviceIteration_GivesAnAgentWithAnExitItsTurnsBack(t *testing.T) {
+	tests := []struct {
+		name    string
+		limit   int
+		hasExit bool
+		want    int
+	}{
+		{name: "a general agent exploring without an exit", limit: 100, want: 60},
+		{name: "the same agent once it holds the tool that ends its work", limit: 100, hasExit: true, want: 15},
+		{name: "a limited agent without an exit", limit: 20, want: 12},
+		{name: "a limited agent with an exit keeps its own threshold", limit: 20, hasExit: true, want: 12},
+		{name: "never inside the shutdown window", limit: 10, hasExit: true, want: 6},
+		{name: "a chain too short to advise", limit: 6, hasExit: true, want: 2},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, budgetAdviceIteration(tt.limit, tt.hasExit))
+		})
+	}
+}
+
 func TestFlowProvider_budgetNudge_LeavesRoomToConclude(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -408,7 +463,7 @@ func TestFlowProvider_budgetNudge_LeavesRoomToConclude(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			message, ok := budgetNudge(tt.iteration, tt.limit)
+			message, ok := budgetNudge(tt.iteration, budgetAdviceIteration(tt.limit, false), tt.limit)
 
 			assert.Equal(t, tt.wantMessage, ok)
 			if !tt.wantMessage {
