@@ -25,7 +25,7 @@ Add `PROMETHEUS_URL=http://prometheus:9090` to give the agents a time series. Wi
 
 Then open the UI on `http://localhost:8443`, create the first administrator with `go run ./cmd/opsagi-seed -mail ops@example.com -name "On Call" -password-stdin`, start a flow, and read the conclusion either in the UI card or with `python scripts/opsagi_run.py "<request>"`.
 
-To check an installation without a host or a model, run the acceptance flow: it starts a stub model, starts the server against your database, seeds an administrator and asserts that a flow reaches a validated conclusion. It takes about twenty seconds and exits non-zero if any of that breaks:
+To check an installation without a host or a model, run the acceptance flow: it starts a stub model, starts the server against your database, seeds an administrator, and asserts that one flow ends on a validated diagnosis and another on a measured optimization verdict. It takes about half a minute, needs Docker for the flow's terminal container, and exits non-zero if any of that breaks:
 
 ```bash
 python scripts/aiops_acceptance/run.py

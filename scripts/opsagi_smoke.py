@@ -224,8 +224,8 @@ def main(argv):
 DEFAULT_INTENT = {
     "diagnosis": "检查这台主机上 caddy 容器是否在运行、最近有没有重启过；只读，不要改动任何东西。"
     "最后必须用 diagnosis 收尾，evidence 至少两条。",
-    "optimization": "测量这台主机最近 10 分钟的 CPU 与内存变化，找出瓶颈；只读，不要改动任何东西。"
-    "最后必须用 optimization_result 收尾，evidence 至少两条，verdict 用 unverified。",
+    "optimization": "测量这台主机最近 10 分钟的 CPU 与内存变化，找出瓶颈（acceptance optimisation）；"
+    "只读，不要改动任何东西。最后必须用 optimization_result 收尾，evidence 至少两条。",
 }
 
 

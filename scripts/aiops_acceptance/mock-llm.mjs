@@ -55,6 +55,45 @@ const PLAN = {
     ],
 };
 
+// The mode of the planned subtask is what decides which exit tool the commander
+// is even offered, so the optimisation leg needs a plan of its own.
+const OPTIMIZATION_PLAN = {
+    message: 'Acceptance optimisation plan',
+    subtasks: [
+        {
+            description: 'Answer from the recorded measurement, without changing anything.',
+            mode: 'optimization',
+            title: 'Measure the acceptance host',
+        },
+    ],
+};
+
+const OPTIMIZATION = {
+    baseline: 'mock baseline: avg latency 2043ms at 2026-01-01T00:00:00Z',
+    confidence: 0.7,
+    bottleneck: 'The acceptance run does not measure anything: it proves the measured-verdict path.',
+    evidence: [
+        {
+            excerpt: 'avg_latency_ms=2043 before',
+            query: 'ops_baseline',
+            source: 'host',
+            timestamp: '2026-01-01T00:00:00Z',
+        },
+        {
+            excerpt: 'avg_latency_ms 2043 -> 2043',
+            query: 'ops_diff',
+            source: 'metrics',
+            timestamp: '2026-01-01T00:10:00Z',
+        },
+    ],
+    expected_gain: 'Nothing: the mock does not change anything.',
+    message: 'Acceptance optimisation',
+    observed_gain: 'ops_diff: avg_latency_ms 2043 -> 2043, no change',
+    proposal: 'Change nothing; this is the acceptance run.',
+    rollback: '无需回滚',
+    verdict: 'no_measurable_effect',
+};
+
 const REPORT = {
     message: 'Acceptance flow finished',
     result: 'The acceptance run reached its conclusion through the AIOps exit.',
@@ -78,9 +117,19 @@ const RULES = [
         toolCalls: [{ args: { operations: [] }, name: 'subtask_patch' }],
     },
     {
+        label: 'optimization-plan',
+        match: /acceptance optimisation[\s\S]*"subtask_list"|"subtask_list"[\s\S]*acceptance optimisation/,
+        toolCalls: [{ args: OPTIMIZATION_PLAN, name: 'subtask_list' }],
+    },
+    {
         label: 'subtask-plan',
         match: /"subtask_list"/,
         toolCalls: [{ args: PLAN, name: 'subtask_list' }],
+    },
+    {
+        label: 'optimization-exit',
+        match: /"optimization_result"/,
+        toolCalls: [{ args: OPTIMIZATION, name: 'optimization_result' }],
     },
     {
         label: 'diagnosis-exit',

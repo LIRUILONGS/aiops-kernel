@@ -134,36 +134,45 @@ def main() -> int:
             stdout=subprocess.DEVNULL,
         )
 
-        print("[acceptance] running the smoke check", flush=True)
         smoke_env = env | {"OPSAGI_MAIL": MAIL, "OPSAGI_PASSWORD": PASSWORD}
-        smoke = subprocess.run(
-            [
-                sys.executable,
-                str(SCRIPTS / "opsagi_smoke.py"),
-                "--base",
-                f"http://127.0.0.1:{server_port}",
-                "--target",
-                "diagnosis",
-                "--timeout",
-                str(SMOKE_TIMEOUT),
-                "--interval",
-                "5",
-                "The acceptance host is reported as unhealthy. Diagnose it.",
-            ],
-            cwd=ROOT,
-            env=smoke_env,
-        )
+        failures = []
 
-        if smoke.returncode != 0:
+        for target, intent in (
+            ("diagnosis", "The acceptance host is reported as unhealthy. Diagnose it."),
+            ("optimization", "The acceptance host feels slow; measure it (acceptance optimisation)."),
+        ):
+            print(f"[acceptance] smoke: {target}", flush=True)
+            smoke = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS / "opsagi_smoke.py"),
+                    "--base",
+                    f"http://127.0.0.1:{server_port}",
+                    "--target",
+                    target,
+                    "--timeout",
+                    str(SMOKE_TIMEOUT),
+                    "--interval",
+                    "5",
+                    intent,
+                ],
+                cwd=ROOT,
+                env=smoke_env,
+            )
+
+            if smoke.returncode != 0:
+                failures.append(target)
+
+        if failures:
             print(f"[acceptance] smoke failed; logs kept in {workdir}", flush=True)
             for name in ("server.log", "mock-llm.log"):
                 print(f"--- {name} (tail) ---", flush=True)
                 lines = (workdir / name).read_text(encoding="utf-8", errors="replace").splitlines()
                 print("\n".join(lines[-40:]), flush=True)
 
-            return smoke.returncode
+            return 1
 
-        print("[acceptance] PASS: flow, planner, exit validation and reporter", flush=True)
+        print("[acceptance] PASS: flow, planner, both exits, validation and reporter", flush=True)
 
         return 0
     finally:
