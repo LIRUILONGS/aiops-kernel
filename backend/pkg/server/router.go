@@ -69,14 +69,14 @@ var frontendRoutes = []string{
 	"/dashboard",
 }
 
-// @title PentAGI Swagger API
+// @title OpsAGI Swagger API
 // @version 1.0
-// @description Swagger API for Penetration Testing Advanced General Intelligence PentAGI.
+// @description Swagger API for Penetration Testing Advanced General Intelligence OpsAGI.
 // @termsOfService http://swagger.io/terms/
 
-// @contact.url https://pentagi.com
-// @contact.name PentAGI Development Team
-// @contact.email team@pentagi.com
+// @contact.url https://opsagi.com
+// @contact.name OpsAGI Development Team
+// @contact.email team@opsagi.com
 
 // @license.name MIT
 // @license.url https://opensource.org/license/mit
@@ -264,7 +264,7 @@ func NewRouter(
 	}
 
 	router.Use(gin.Recovery())
-	router.Use(logger.WithGinLogger("pentagi-api"))
+	router.Use(logger.WithGinLogger("opsagi-api"))
 	router.Use(compressionMiddleware())
 
 	// AuthSalt mixes TENANT_ID into the key derivation so a session minted by one

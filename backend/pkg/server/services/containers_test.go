@@ -47,8 +47,8 @@ func TestContainers_GetContainers_ServesTheRowsTheSchemaAllows(t *testing.T) {
 	db := setupContainerServiceTestDB(t)
 	require.NoError(t, db.Exec(`
 		INSERT INTO containers (id, type, name, image, status, local_id, local_dir, flow_id) VALUES
-			(1, 'primary', 'pentagi-terminal-1', 'debian:latest', 'running', 'abc123', NULL,        1),
-			(2, 'primary', 'pentagi-terminal-2', 'debian:latest', 'running', NULL,     '/tmp/work', 1)
+			(1, 'primary', 'opsagi-terminal-1', 'debian:latest', 'running', 'abc123', NULL,        1),
+			(2, 'primary', 'opsagi-terminal-2', 'debian:latest', 'running', NULL,     '/tmp/work', 1)
 	`).Error)
 
 	c, w := newFlowFileTestContext(

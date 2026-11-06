@@ -1,4 +1,4 @@
-// Package cloud is the installer's client for the PentAGI Cloud API: update checks and
+// Package cloud is the installer's client for the OpsAGI Cloud API: update checks and
 // package downloads.
 //
 // It is a thin layer over the published SDK. Wire types come from the SDK's models package
@@ -20,7 +20,7 @@ import (
 )
 
 // DefaultHost is the update server used when none is configured.
-const DefaultHost = "update.pentagi.com"
+const DefaultHost = "update.opsagi.com"
 
 // Route names and paths are part of the API contract: the server dispatches on the name,
 // and a name it does not know is refused outright rather than reported as a missing page.
@@ -36,7 +36,7 @@ const (
 
 const (
 	// clientName identifies the installer in the User-Agent, alongside its build version.
-	clientName = "PentAGI-Installer"
+	clientName = "OpsAGI-Installer"
 
 	// powTimeout is the budget for the proof-of-work challenge each call has to solve.
 	// It is raised well above the SDK default because the SDK does not retry a timed-out
@@ -54,7 +54,7 @@ type Config struct {
 	// ProxyURL is the installer's own proxy (PROXY_URL), used for every call. It takes
 	// precedence over the environment, which is what the user configured it for.
 	ProxyURL string
-	// LicenseKey is the PentAGI license key (LICENSE_KEY). An unusable key is dropped
+	// LicenseKey is the OpsAGI license key (LICENSE_KEY). An unusable key is dropped
 	// rather than sent, and reported through LicenseWarning.
 	LicenseKey string
 	// InstallerVersion is this build's version, as displayed. It is normalised for the

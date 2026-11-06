@@ -2,7 +2,7 @@
 
 ## Overview
 
-PentAGI stores application state in PostgreSQL and uses the `vector` extension for agent memory and knowledge search. The database layer combines:
+OpsAGI stores application state in PostgreSQL and uses the `vector` extension for agent memory and knowledge search. The database layer combines:
 
 - **sqlc v1.27.0** for the main type-safe query API (`backend/pkg/database`);
 - **GORM v1** (`github.com/jinzhu/gorm`) for HTTP server models and handlers (`backend/pkg/server/models`);
@@ -42,7 +42,7 @@ The process refuses to serve traffic after a tenant schema mismatch or a migrati
 
 ### Database clients and pools
 
-PentAGI opens two independent pools to the same PostgreSQL database:
+OpsAGI opens two independent pools to the same PostgreSQL database:
 
 | Pool | Configuration | Default | Consumers |
 |---|---|---:|---|
@@ -60,9 +60,9 @@ During normal startup the shared pgx pool is stored in `cfg.PgxPool` and passed 
 
 ### Connection budget
 
-With the defaults, one PentAGI process can use up to 35 PostgreSQL connections: 25 through `database/sql` and 10 through `pgxpool`. This is a hard application budget, not a prediction of steady-state usage.
+With the defaults, one OpsAGI process can use up to 35 PostgreSQL connections: 25 through `database/sql` and 10 through `pgxpool`. This is a hard application budget, not a prediction of steady-state usage.
 
-When several PentAGI instances share one database server, add both pool limits for every instance and leave capacity for PostgreSQL reserved connections, autovacuum, monitoring clients, platform services and administrative/migration sessions.
+When several OpsAGI instances share one database server, add both pool limits for every instance and leave capacity for PostgreSQL reserved connections, autovacuum, monitoring clients, platform services and administrative/migration sessions.
 
 ```sql
 SELECT name, setting
@@ -91,7 +91,7 @@ The stock Compose stack uses `vxcontrol/pgvector:latest`. Do not assume a specif
 | `backend/pkg/database/querier.go` | Generated `Querier` interface covering all sqlc operations |
 | `backend/pkg/database/*.sql.go` | Generated query implementations and result/parameter structs |
 | `backend/pkg/database/database.go` | Null helpers, UTF-8 sanitization and shared GORM initialization |
-| `backend/pkg/database/tenant.go` | Tenant schema bootstrap, DSN rewrite, search-path verification and advisory locks (shared by pentagi, ftester, etester, installer) |
+| `backend/pkg/database/tenant.go` | Tenant schema bootstrap, DSN rewrite, search-path verification and advisory locks (shared by opsagi, ftester, etester, installer) |
 | `backend/pkg/database/converter/` | Conversion from database rows to GraphQL models plus execution analytics calculations |
 | `backend/pkg/database/knowledge/` | Knowledge-store business logic over sqlc, pgvector embeddings and GraphQL subscriptions |
 | `backend/pkg/server/models/` | GORM v1 models used by REST/server services |
@@ -176,7 +176,7 @@ Several log/artifact tables carry nullable `task_id` and `subtask_id` in additio
 | `langchain_pg_collection` | Logical pgvector collections (`name`, `cmetadata`, `uuid`) |
 | `langchain_pg_embedding` | Document text, vector embedding and JSON `cmetadata` |
 
-PentAGI uses the collection named `langchain`. Ownership and association are represented in `cmetadata` fields such as `user_id`, `flow_id`, `task_id`, `subtask_id`, `doc_type`, `question`, `description`, `guide_type`, `answer_type`, `code_lang`, chunk sizing and a `manual` flag. See `backend/pkg/database/knowledge`.
+OpsAGI uses the collection named `langchain`. Ownership and association are represented in `cmetadata` fields such as `user_id`, `flow_id`, `task_id`, `subtask_id`, `doc_type`, `question`, `description`, `guide_type`, `answer_type`, `code_lang`, chunk sizing and a `manual` flag. See `backend/pkg/database/knowledge`.
 
 The knowledge query API excludes `doc_type = 'memory'` from user-managed knowledge listings/searches. GraphQL and REST flow-deletion paths issue an explicit best-effort deletion of memory rows (`DeleteFlowMemoryDocuments`); this is application behavior, not a database trigger or foreign-key cascade. The knowledge migration intentionally does not drop the LangChain tables on downgrade because they may contain production data managed by the vector store.
 
@@ -214,22 +214,22 @@ Important integrity constraints include unique user mail/hash values, one prompt
 
 ## Application Scoping and Deployment Tenancy
 
-PentAGI has two distinct isolation layers. They solve different problems and must not be confused.
+OpsAGI has two distinct isolation layers. They solve different problems and must not be confused.
 
-### User scoping inside one PentAGI instance
+### User scoping inside one OpsAGI instance
 
 Rows such as flows, providers, prompts, templates, resources and preferences carry `user_id` directly or are reached through a flow owned by a user. User-facing handlers select user-scoped sqlc methods such as `GetUserFlow` / `GetUserFlows`; admin paths may intentionally use unscoped variants such as `GetFlow` / `GetFlows`.
 
-This access control is implemented by application queries and privilege checks. PentAGI does not rely on PostgreSQL row-level security for its own tables.
+This access control is implemented by application queries and privilege checks. OpsAGI does not rely on PostgreSQL row-level security for its own tables.
 
 ### Instance scoping with `TENANT_ID`
 
-`TENANT_ID` isolates independent PentAGI installations that share a PostgreSQL database. It creates one PostgreSQL schema per instance (`public` when empty, otherwise the tenant name). For a tenant, the effective search path is `<tenant>,<DATABASE_EXTENSIONS_SCHEMA>`.
+`TENANT_ID` isolates independent OpsAGI installations that share a PostgreSQL database. It creates one PostgreSQL schema per instance (`public` when empty, otherwise the tenant name). For a tenant, the effective search path is `<tenant>,<DATABASE_EXTENSIONS_SCHEMA>`.
 
 Tenant bootstrap (`backend/pkg/database/tenant.go`):
 
 - validates `TENANT_ID`;
-- creates the tenant schema under the `pentagi-tenant-bootstrap` advisory lock;
+- creates the tenant schema under the `opsagi-tenant-bootstrap` advisory lock;
 - ensures `vector` and `pg_trgm` exist in the configured shared extension schema;
 - refuses to move provider-managed extensions automatically;
 - rewrites `DATABASE_URL` once, before sqlc, GORM, goose or pgxpool consume it;
@@ -250,10 +250,10 @@ var EmbedMigrations embed.FS
 
 At startup goose uses that filesystem and runs `goose.Up`. Migrations use goose `Up`/`Down` annotations and numeric filename prefixes. The current migration head is determined by the newest migration file; do not hard-code it in application logic.
 
-PentAGI serializes:
+OpsAGI serializes:
 
-1. tenant schema/extension bootstrap with the `pentagi-tenant-bootstrap` advisory lock;
-2. migrations with a schema-specific `pentagi-migrations-<schema>` advisory lock.
+1. tenant schema/extension bootstrap with the `opsagi-tenant-bootstrap` advisory lock;
+2. migrations with a schema-specific `opsagi-migrations-<schema>` advisory lock.
 
 The lock is held on a dedicated `*sql.Conn` because PostgreSQL session advisory locks belong to a physical connection, not to a `*sql.DB` pool.
 
@@ -312,14 +312,14 @@ The generated `Querier` interface in `backend/pkg/database/querier.go` currently
 
 ### Regeneration
 
-From `backend/`, with the PentAGI PostgreSQL network available:
+From `backend/`, with the OpsAGI PostgreSQL network available:
 
 ```bash
 docker run --rm \
   -v "$(pwd):/src" \
   -w /src \
-  --network pentagi-network \
-  -e DATABASE_URL='postgres://postgres:postgres@pgvector:5432/pentagidb?sslmode=disable' \
+  --network opsagi-network \
+  -e DATABASE_URL='postgres://postgres:postgres@pgvector:5432/opsagidb?sslmode=disable' \
   sqlc/sqlc:1.27.0 generate -f sqlc/sqlc.yml
 ```
 
@@ -415,7 +415,7 @@ Representative GORM model surfaces in `backend/pkg/server/models/` include users
 
 ## Vector Operations
 
-PentAGI requires:
+OpsAGI requires:
 
 - `vector` for embeddings and cosine-distance search;
 - `pg_trgm` for GIN trigram indexes on message/log text.
@@ -450,7 +450,7 @@ Aggregates in `toolcalls.sql`: per flow/task/subtask, all flows, by function (gl
 
 ## Indexing and Performance
 
-PostgreSQL automatically indexes primary keys and unique constraints. It does **not** automatically index foreign-key columns; PentAGI migrations create the needed foreign-key and query-pattern indexes explicitly.
+PostgreSQL automatically indexes primary keys and unique constraints. It does **not** automatically index foreign-key columns; OpsAGI migrations create the needed foreign-key and query-pattern indexes explicitly.
 
 Current migrations include:
 

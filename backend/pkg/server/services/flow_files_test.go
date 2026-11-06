@@ -97,7 +97,7 @@ func TestFlowFiles_ConvertContainerFiles_JoinsTheBasePathAndSortsByName(t *testi
 }
 
 func TestFlowFiles_PrimaryContainerName_NamesTheFlowsTerminal(t *testing.T) {
-	assert.Equal(t, "pentagi-terminal-42", primaryContainerName("", 42))
+	assert.Equal(t, "opsagi-terminal-42", primaryContainerName("", 42))
 }
 
 func TestFlowFiles_SortFlowFiles_PutsTheNewestFirstAndBreaksTiesByName(t *testing.T) {

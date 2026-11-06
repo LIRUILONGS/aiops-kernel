@@ -9,9 +9,9 @@ if (-not $latestTag) {
 $env:PACKAGE_VER = $latestTag.TrimStart('v')
 
 # The edition is the prerelease identifier every version string carries. Override it for
-# an Enterprise build: $env:PENTAGI_EDITION = "ee"
-if (-not $env:PENTAGI_EDITION) {
-    $env:PENTAGI_EDITION = "ce"
+# an Enterprise build: $env:OPSAGI_EDITION = "ee"
+if (-not $env:OPSAGI_EDITION) {
+    $env:OPSAGI_EDITION = "ce"
 }
 
 # A tag named after the edition, or the legacy "develop", is not a release — see
@@ -39,7 +39,7 @@ if ($currentCommit -and ($currentCommit -ne $tagCommit)) {
 # The string the binary will report, by the same rule as GetBinaryVersion in
 # backend/pkg/version and scripts/version.sh: the edition is a prerelease identifier and
 # the revision is a second identifier after a dot.
-$edition = $env:PENTAGI_EDITION
+$edition = $env:OPSAGI_EDITION
 if ($env:PACKAGE_VER) {
     $versionPart = "$env:PACKAGE_VER-$edition"
 } else {
@@ -55,7 +55,7 @@ $fullVersion = $env:PACKAGE_VERSION_FULL
 
 # Print version information
 Write-Host "======================================"
-Write-Host "PentAGI Build Version"
+Write-Host "OpsAGI Build Version"
 Write-Host "======================================"
 Write-Host "PACKAGE_VER: $env:PACKAGE_VER"
 if ($env:PACKAGE_REV) {

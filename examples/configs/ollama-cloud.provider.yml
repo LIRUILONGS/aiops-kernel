@@ -1,6 +1,6 @@
 # Ollama Cloud agent configuration.
 #
-# Ollama Cloud bills pay-as-you-go usage per token. PentAGI obtains the published
+# Ollama Cloud bills pay-as-you-go usage per token. OpsAGI obtains the published
 # prices from pkg/providers/ollama/cloud_pricing.go, so this file does not duplicate
 # price blocks.
 #

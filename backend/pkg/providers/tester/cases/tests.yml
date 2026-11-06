@@ -760,11 +760,11 @@
 
 # Reasoning capability tests - gated by capability so they only run against an
 # agent whose ACTUAL loaded config already triggers this wire behavior in a
-# real PentAGI flow (explicit reasoning:{mode: adaptive|off} in the provider
+# real OpsAGI flow (explicit reasoning:{mode: adaptive|off} in the provider
 # YAML, or - for adaptive_thinking - an adaptive-only model): see
 # tester.capabilitySupported. An agent whose config doesn't request it never
 # gets these requests at all: they are absent from the results rather than a
-# false pass/fail on a call PentAGI's runtime would never actually make.
+# false pass/fail on a call OpsAGI's runtime would never actually make.
 - id: "adaptive_thinking_reasoning_present"
   name: "Adaptive Thinking Produces Reasoning"
   type: "completion"

@@ -579,7 +579,7 @@ type lifecycleQuerier struct {
 }
 
 func (*lifecycleQuerier) GetUser(_ context.Context, id int64) (database.GetUserRow, error) {
-	return database.GetUserRow{ID: id, Mail: "user@pentagi.com", Name: "user"}, nil
+	return database.GetUserRow{ID: id, Mail: "user@opsagi.com", Name: "user"}, nil
 }
 
 func (*lifecycleQuerier) GetFlowPrimaryContainer(_ context.Context, flowID int64) (database.Container, error) {

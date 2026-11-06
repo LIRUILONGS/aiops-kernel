@@ -13,7 +13,7 @@ import (
 type ProductStack string
 
 const (
-	ProductStackPentagi       ProductStack = "pentagi"
+	ProductStackOpsagi       ProductStack = "opsagi"
 	ProductStackGraphiti      ProductStack = "graphiti"
 	ProductStackLangfuse      ProductStack = "langfuse"
 	ProductStackObservability ProductStack = "observability"
@@ -43,7 +43,7 @@ const (
 type ProductDockerNetwork string
 
 const (
-	ProductDockerNetworkPentagi       ProductDockerNetwork = "pentagi-network"
+	ProductDockerNetworkOpsagi       ProductDockerNetwork = "opsagi-network"
 	ProductDockerNetworkObservability ProductDockerNetwork = "observability-network"
 	ProductDockerNetworkLangfuse      ProductDockerNetwork = "langfuse-network"
 )

@@ -130,7 +130,7 @@ func (m *UpdateOverviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// not stay in the stack, or ESC from the operation form would
 				// bounce the user through it again instead of landing on
 				// Maintenance.
-				return NavigationMsg{GoBack: true, Target: UpdatePentagiScreen}
+				return NavigationMsg{GoBack: true, Target: UpdateOpsagiScreen}
 			}
 		}
 

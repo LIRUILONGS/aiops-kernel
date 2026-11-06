@@ -11,7 +11,7 @@
 # compatibility with pre-existing agent configs pinned to those names).
 #
 # Every gpt-5.4-mini / gpt-5.6-terra agent below sets `reasoning: {mode: off}`.
-# PentAGI calls OpenAI through /v1/chat/completions (never /v1/responses), and
+# OpsAGI calls OpenAI through /v1/chat/completions (never /v1/responses), and
 # for these two models that endpoint rejects ANY request that both attaches
 # function tools and leaves reasoning at its (default-on) level — even when no
 # `reasoning_effort` field is sent at all:

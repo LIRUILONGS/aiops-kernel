@@ -128,8 +128,8 @@ ok() {
 # group would notice. Unlike those probes these create real objects, so every
 # one is removed again, by a name only this run uses.
 group_positive() {
-    [ -n "${PENTAGI_TEST_IMAGE:-}" ] || return 0
-    _img=$PENTAGI_TEST_IMAGE
+    [ -n "${OPSAGI_TEST_IMAGE:-}" ] || return 0
+    _img=$OPSAGI_TEST_IMAGE
     case "${_img##*/}" in
         *:*) _repo=${_img%:*}; _tag=${_img##*:} ;;
         *)   _repo=$_img;      _tag=latest ;;
@@ -177,7 +177,7 @@ group_positive() {
 # remove_positive drops everything group_positive may have made. Runs from the
 # exit trap as well, so an interrupted probe leaves the sandbox as it found it.
 remove_positive() {
-    [ -n "${PENTAGI_TEST_IMAGE:-}" ] || return 0
+    [ -n "${OPSAGI_TEST_IMAGE:-}" ] || return 0
     for _p in "containers/sandbox-probe-$nonce-run?force=1&v=1" \
               "volumes/sandbox-probe-$nonce-okvol?force=1" \
               "networks/sandbox-probe-$nonce-oknet"; do

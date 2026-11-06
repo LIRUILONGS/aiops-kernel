@@ -214,13 +214,13 @@ func TestController_CompatDoorVariablesAreDescribedMaskedAndCritical(t *testing.
 // The form holds one path; compose needs the file on the host and the path it is mounted at.
 func TestController_UpdateLLMProviderConfig_SplitsAConfigPathIntoItsHostAndContainerVariables(t *testing.T) {
 	onHost := filepath.Join(t.TempDir(), "my.provider.yml")
-	shipped, typed := "/opt/pentagi/conf/bedrock-glm-flash.provider.yml", func(path string) *string { return &path }
+	shipped, typed := "/opt/opsagi/conf/bedrock-glm-flash.provider.yml", func(path string) *string { return &path }
 	for _, provider := range []struct {
 		id, containerVar, hostVar, mountedAt string
 	}{
-		{"bedrock", "BEDROCK_CONFIG_PATH", "PENTAGI_BEDROCK_CONFIG_PATH", "/opt/pentagi/conf/bedrock.provider.yml"},
-		{"ollama", "OLLAMA_SERVER_CONFIG_PATH", "PENTAGI_OLLAMA_SERVER_CONFIG_PATH", "/opt/pentagi/conf/ollama.provider.yml"},
-		{"custom", "LLM_SERVER_CONFIG_PATH", "PENTAGI_LLM_SERVER_CONFIG_PATH", "/opt/pentagi/conf/custom.provider.yml"},
+		{"bedrock", "BEDROCK_CONFIG_PATH", "OPSAGI_BEDROCK_CONFIG_PATH", "/opt/opsagi/conf/bedrock.provider.yml"},
+		{"ollama", "OLLAMA_SERVER_CONFIG_PATH", "OPSAGI_OLLAMA_SERVER_CONFIG_PATH", "/opt/opsagi/conf/ollama.provider.yml"},
+		{"custom", "LLM_SERVER_CONFIG_PATH", "OPSAGI_LLM_SERVER_CONFIG_PATH", "/opt/opsagi/conf/custom.provider.yml"},
 	} {
 		for _, tc := range []struct {
 			name                    string
@@ -285,9 +285,9 @@ func TestController_GetEmbeddedLLMConfigsPath_OffersExactlyTheConfigsTheImageShi
 	require.NoError(t, err)
 
 	var shipped []string
-	for _, match := range regexp.MustCompile(`(?m)^COPY examples/configs/(\S+\.provider\.yml) /opt/pentagi/conf/$`).
+	for _, match := range regexp.MustCompile(`(?m)^COPY examples/configs/(\S+\.provider\.yml) /opt/opsagi/conf/$`).
 		FindAllStringSubmatch(string(dockerfile), -1) {
-		shipped = append(shipped, "/opt/pentagi/conf/"+match[1])
+		shipped = append(shipped, "/opt/opsagi/conf/"+match[1])
 	}
 	require.Greater(t, len(shipped), 20, "the COPY lines of the Dockerfile stopped matching")
 
@@ -295,9 +295,9 @@ func TestController_GetEmbeddedLLMConfigsPath_OffersExactlyTheConfigsTheImageShi
 	assert.ElementsMatch(t, shipped, offered, "every examples/configs file needs its COPY line in the Dockerfile, "+
 		"and the embedded files may be stale: go generate ./cmd/installer/files/")
 	for _, mounted := range []string{
-		"/opt/pentagi/conf/custom.provider.yml",
-		"/opt/pentagi/conf/ollama.provider.yml",
-		"/opt/pentagi/conf/bedrock.provider.yml",
+		"/opt/opsagi/conf/custom.provider.yml",
+		"/opt/opsagi/conf/ollama.provider.yml",
+		"/opt/opsagi/conf/bedrock.provider.yml",
 	} {
 		assert.NotContains(t, offered, mounted)
 	}
@@ -305,15 +305,15 @@ func TestController_GetEmbeddedLLMConfigsPath_OffersExactlyTheConfigsTheImageShi
 
 func TestController_GetApplyChangesConfig_DescribesAConfigPathChangeAndCallsItCritical(t *testing.T) {
 	for _, name := range []string{
-		"BEDROCK_CONFIG_PATH", "PENTAGI_BEDROCK_CONFIG_PATH",
-		"OLLAMA_SERVER_CONFIG_PATH", "PENTAGI_OLLAMA_SERVER_CONFIG_PATH",
-		"LLM_SERVER_CONFIG_PATH", "PENTAGI_LLM_SERVER_CONFIG_PATH",
+		"BEDROCK_CONFIG_PATH", "OPSAGI_BEDROCK_CONFIG_PATH",
+		"OLLAMA_SERVER_CONFIG_PATH", "OPSAGI_OLLAMA_SERVER_CONFIG_PATH",
+		"LLM_SERVER_CONFIG_PATH", "OPSAGI_LLM_SERVER_CONFIG_PATH",
 	} {
 		t.Run("a change of "+name, func(t *testing.T) {
 			c, _ := controllerOverExampleEnv(t)
 			require.NoError(t, c.Commit())
 			require.False(t, c.GetApplyChangesConfig().HasCritical, "the example env is critical before anything changed")
-			require.NoError(t, c.SetVar(name, "/opt/pentagi/conf/bedrock-glm-flash.provider.yml"))
+			require.NoError(t, c.SetVar(name, "/opt/opsagi/conf/bedrock-glm-flash.provider.yml"))
 
 			changes := c.GetApplyChangesConfig()
 			require.Len(t, changes.Changes, 1)

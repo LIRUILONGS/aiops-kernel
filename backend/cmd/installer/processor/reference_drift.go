@@ -72,7 +72,7 @@ func composeReferenceDefaults(read func(string) ([]byte, error)) (map[string]str
 //
 // A variable the update path wrote is NOT drift: it is the server's answer, and
 // under `stable` it is deliberately a more specific tag than the file's default
-// (`vxcontrol/pentagi:2.3.4` against `vxcontrol/pentagi:latest`). Only a
+// (`local/opsagi:2.3.4` against `local/opsagi:latest`). Only a
 // different REPOSITORY is a configuration this installer cannot support —
 // a different tag of the same repository is the mechanism working.
 func referenceDrift(defaults, configured map[string]string) []ReferenceDrift {

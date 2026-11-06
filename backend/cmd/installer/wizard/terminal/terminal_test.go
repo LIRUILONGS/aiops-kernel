@@ -124,7 +124,7 @@ func TestTerminal_Execute_ShowsWhyACommandCouldNotStart(t *testing.T) {
 	for _, mode := range terminalModes {
 		t.Run(mode.name, func(t *testing.T) {
 			term := NewTerminal(80, 24, mode.opts...)
-			if err := term.Execute(exec.Command("/nonexistent/pentagi-installer-test")); err == nil {
+			if err := term.Execute(exec.Command("/nonexistent/opsagi-installer-test")); err == nil {
 				t.Fatal("Execute started a command that does not exist")
 			}
 

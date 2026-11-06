@@ -1,6 +1,6 @@
-# PentAGI Installer Architecture & Design Patterns
+# OpsAGI Installer Architecture & Design Patterns
 
-> Architecture patterns, design decisions, and implementation strategies specific to the PentAGI installer.
+> Architecture patterns, design decisions, and implementation strategies specific to the OpsAGI installer.
 
 ## 🏗️ **Unified App Architecture**
 
@@ -46,7 +46,7 @@ func (a *App) View() string {
 - **Controller Layer**: Business logic, environment variables, configuration
 - **Styles Layer**: Presentation, theming, responsive calculations
 - **Window Layer**: Terminal size management, dimension coordination
-- **Cloud Layer**: The only route out to the PentAGI Cloud API — request construction, envelope handling, error classification
+- **Cloud Layer**: The only route out to the OpsAGI Cloud API — request construction, envelope handling, error classification
 
 ## 🏗️ **Navigation Architecture**
 
@@ -148,7 +148,7 @@ Two screens were inserted into the maintenance branch of the navigation graph, a
 
 ```
 MaintenanceScreen (list)
-  ├── UpdateOverviewScreen ──enter──> UpdatePentagiScreen   ("processor_operation_form§compose§update")
+  ├── UpdateOverviewScreen ──enter──> UpdateOpsagiScreen   ("processor_operation_form§compose§update")
   └── InstallerUpdateScreen                                  (replaced "processor_operation_form§installer§update")
 ```
 
@@ -533,9 +533,9 @@ func (c *StateController) loadProviderConfig(providerID string) ProviderConfig {
 ## 🏗️ **Cloud Client Architecture**
 
 ### **Single Egress Pattern**
-Everything the installer asks of the PentAGI Cloud API goes through one package: `cmd/installer/cloud`.
+Everything the installer asks of the OpsAGI Cloud API goes through one package: `cmd/installer/cloud`.
 
-Both `checker` and `processor` build a `cloud.Config` from the installer state and call methods on the client. Neither constructs requests, parses responses, or opens connections to `update.pentagi.com` directly.
+Both `checker` and `processor` build a `cloud.Config` from the installer state and call methods on the client. Neither constructs requests, parses responses, or opens connections to `update.opsagi.com` directly.
 
 The `cloud` package is independent from the rest of the installer — it does not depend on `checker`, `processor`, or `wizard`. The dependency arrow points only one way. In tests, the client can be exercised by substituting the call functions, with no actual server involved.
 

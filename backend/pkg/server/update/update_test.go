@@ -75,7 +75,7 @@ func TestUpdate_UpdateStrategy_DropsAChannelTheContractWouldRefuse(t *testing.T)
 
 func TestUpdate_Send_ReadsTheAnswerThroughTheEnvelope(t *testing.T) {
 	const body = `{"status":"success","data":{
-		"update":{"stack":"pentagi","has_update":true,"resolution":"channel"},
+		"update":{"stack":"opsagi","has_update":true,"resolution":"channel"},
 		"version":"2.4.0","identified":true}}`
 
 	var direct models.ProductUpdateResponse

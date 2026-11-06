@@ -29,7 +29,7 @@ test.describe('themes', { tag: '@cross' }, () => {
 
         await expect(page.locator('html')).toHaveClass(/light/);
 
-        await page.getByRole('button', { name: /admin@pentagi\.com/ }).click();
+        await page.getByRole('button', { name: /admin@opsagi\.com/ }).click();
         await page.getByRole('tab', { name: 'Dark theme' }).click();
         await expect(page.locator('html')).toHaveClass(/dark/);
         expect(await storedTheme(page), 'the pick is written, not only applied to the live document').toBe('dark');
@@ -37,7 +37,7 @@ test.describe('themes', { tag: '@cross' }, () => {
         await page.reload();
         await expect(page.locator('html'), 'the reloaded page starts dark').toHaveClass(/dark/);
 
-        await page.getByRole('button', { name: /admin@pentagi\.com/ }).click();
+        await page.getByRole('button', { name: /admin@opsagi\.com/ }).click();
         await page.getByRole('tab', { name: 'Light theme' }).click();
         await expect(page.locator('html')).toHaveClass(/light/);
         expect(await storedTheme(page)).toBe('light');

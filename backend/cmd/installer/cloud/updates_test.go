@@ -25,7 +25,7 @@ func updatesValidRequest() models.CheckUpdatesRequest {
 			Status:     models.ComponentStatusRunning,
 			OS:         models.OSTypeLinux,
 			Arch:       models.ArchTypeAMD64,
-			Repository: "vxcontrol/pentagi",
+			Repository: "local/opsagi",
 			Tag:        "latest",
 		}},
 	}

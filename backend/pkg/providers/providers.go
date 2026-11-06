@@ -280,7 +280,7 @@ func NewProviderController(
 
 	// Seed configured system providers into the DB for all existing users so
 	// they are immediately available without any UI interaction. This runs on
-	// every startup, so editing a YAML config file and restarting PentAGI
+	// every startup, so editing a YAML config file and restarting OpsAGI
 	// automatically propagates new values.
 	ctx := context.Background()
 	if users, err := db.GetUsers(ctx); err != nil {

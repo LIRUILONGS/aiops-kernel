@@ -71,8 +71,8 @@ func TestProductInfo_GatherProductInfo_DemultiplexesTheExecStream(t *testing.T) 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			docker := checkerFakeDocker(t, map[string]http.HandlerFunc{
-				"GET /containers/pentagi/json":  checkerJSON(http.StatusOK, fmt.Sprintf(`{"State":{"Running":%t}}`, tt.running)),
-				"POST /containers/pentagi/exec": checkerJSON(http.StatusCreated, `{"Id":"info"}`),
+				"GET /containers/opsagi/json":  checkerJSON(http.StatusOK, fmt.Sprintf(`{"State":{"Running":%t}}`, tt.running)),
+				"POST /containers/opsagi/exec": checkerJSON(http.StatusCreated, `{"Id":"info"}`),
 				"POST /exec/info/start":         productInfoExecStream(t, stream.Bytes()),
 				"GET /exec/info/json":           checkerJSON(http.StatusOK, fmt.Sprintf(`{"ExitCode":%d}`, tt.exitCode)),
 			})
@@ -93,7 +93,7 @@ func TestProductInfo_ProductInfoFromOutput_CarriesOnlyADocumentTheContractAccept
 	}{
 		{"a document from a newer product, byte for byte", "  " + future + "\n", future},
 		{"a document exactly at the contract's bound", atTheBound, atTheBound},
-		{"an older build printing usage", "Usage of /opt/pentagi/bin/pentagi:\n  -info\n", ""},
+		{"an older build printing usage", "Usage of /opt/opsagi/bin/opsagi:\n  -info\n", ""},
 		{"nothing at all", "", ""},
 		{"whitespace only", "   \n\t ", ""},
 		{"a truncated document", `{"schema":1,"version":`, ""},

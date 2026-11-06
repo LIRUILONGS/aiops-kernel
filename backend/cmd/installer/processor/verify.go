@@ -27,7 +27,7 @@ import (
 // deliberately: its operation downloads a build and stops there, leaving the running binary
 // as it was, so a comparison would report the intended outcome as a mismatch.
 var verifiableUpdateStacks = map[ProductStack]bool{
-	ProductStackPentagi:       true,
+	ProductStackOpsagi:       true,
 	ProductStackGraphiti:      true,
 	ProductStackLangfuse:      true,
 	ProductStackObservability: true,

@@ -19,9 +19,9 @@ func TestInstallerUpdate_InstallerUpdateLines_DescribesTheOfferBeforeAnyDownload
 		{
 			name:    "an ordinary offer names the build and says the running installer is not replaced",
 			running: "2.0.0",
-			offered: &processor.InstallerPackage{Version: "2.1.0", OS: "linux", Arch: "amd64", Size: 25 << 20, Path: "/opt/pentagi/installer_2.1.0"},
+			offered: &processor.InstallerPackage{Version: "2.1.0", OS: "linux", Arch: "amd64", Size: 25 << 20, Path: "/opt/opsagi/installer_2.1.0"},
 			want: []string{"Running version: 2.0.0", "Offered version: 2.1.0", "linux/amd64", "25.0 MiB",
-				"/opt/pentagi/installer_2.1.0", "Press Enter to download", "The installer you are running is not replaced"},
+				"/opt/opsagi/installer_2.1.0", "Press Enter to download", "The installer you are running is not replaced"},
 			unwanted: []string{"will exit", "the one already running", "already here"},
 		},
 		{
@@ -71,21 +71,21 @@ func TestInstallerUpdate_InstallerMoveInstructions_HandsOverTheCommandThatInstal
 		{
 			name: "on linux both quoted paths are in the command and no windows warning is shown",
 			offered: &processor.InstallerPackage{Version: "2.1.0", OS: "linux", Arch: "amd64", Size: 1024,
-				Path: "/opt/pentagi/installer_2.1.0", CurrentPath: "/usr/local/bin/pentagi-installer"},
-			want:     []string{"/opt/pentagi/installer_2.1.0", `mv "/opt/pentagi/installer_2.1.0" "/usr/local/bin/pentagi-installer"`},
+				Path: "/opt/opsagi/installer_2.1.0", CurrentPath: "/usr/local/bin/opsagi-installer"},
+			want:     []string{"/opt/opsagi/installer_2.1.0", `mv "/opt/opsagi/installer_2.1.0" "/usr/local/bin/opsagi-installer"`},
 			unwanted: []string{"close this installer"},
 		},
 		{
 			name: "on windows the command is move and the installer must be closed first",
 			offered: &processor.InstallerPackage{Version: "2.1.0", OS: "windows", Arch: "amd64",
-				Path: `C:\pentagi\installer_2.1.0.exe`, CurrentPath: `C:\Program Files\PentAGI\installer.exe`},
-			want: []string{`move /Y "C:\pentagi\installer_2.1.0.exe" "C:\Program Files\PentAGI\installer.exe"`,
+				Path: `C:\opsagi\installer_2.1.0.exe`, CurrentPath: `C:\Program Files\OpsAGI\installer.exe`},
+			want: []string{`move /Y "C:\opsagi\installer_2.1.0.exe" "C:\Program Files\OpsAGI\installer.exe"`,
 				"close this installer before running the command"},
 		},
 		{
 			name:     "without the running path no command is invented",
-			offered:  &processor.InstallerPackage{Version: "2.1.0", OS: "linux", Path: "/opt/pentagi/installer_2.1.0"},
-			want:     []string{"/opt/pentagi/installer_2.1.0", "Move it over the installer you launched"},
+			offered:  &processor.InstallerPackage{Version: "2.1.0", OS: "linux", Path: "/opt/opsagi/installer_2.1.0"},
+			want:     []string{"/opt/opsagi/installer_2.1.0", "Move it over the installer you launched"},
 			unwanted: []string{`mv "`},
 		},
 	} {

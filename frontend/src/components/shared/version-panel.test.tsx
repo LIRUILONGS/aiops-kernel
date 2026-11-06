@@ -18,7 +18,7 @@ import {
     describeTiming,
     describeVersion,
     formatVersionLabel,
-    PENTAGI_RELEASES_URL,
+    OPSAGI_RELEASES_URL,
     releaseNotesUrl,
     splitVersion,
     UPDATE_INSTRUCTION,
@@ -296,8 +296,8 @@ describe('formatVersionLabel', () => {
 
 describe('releaseNotesUrl', () => {
     it('points at the tagged release, whether or not the version already carries the v', () => {
-        expect(releaseNotesUrl('2.4.0')).toBe(`${PENTAGI_RELEASES_URL}/tag/v2.4.0`);
-        expect(releaseNotesUrl('v2.4.0')).toBe(`${PENTAGI_RELEASES_URL}/tag/v2.4.0`);
+        expect(releaseNotesUrl('2.4.0')).toBe(`${OPSAGI_RELEASES_URL}/tag/v2.4.0`);
+        expect(releaseNotesUrl('v2.4.0')).toBe(`${OPSAGI_RELEASES_URL}/tag/v2.4.0`);
     });
 
     it('builds no link from a value that does not name a release', () => {
@@ -307,9 +307,9 @@ describe('releaseNotesUrl', () => {
     });
 
     it('drops the edition, because the tag is the release and not the build', () => {
-        expect(releaseNotesUrl('2.4.0-ce')).toBe(`${PENTAGI_RELEASES_URL}/tag/v2.4.0`);
-        expect(releaseNotesUrl('2.4.0-ee')).toBe(`${PENTAGI_RELEASES_URL}/tag/v2.4.0`);
-        expect(releaseNotesUrl('v2.4.0-ce')).toBe(`${PENTAGI_RELEASES_URL}/tag/v2.4.0`);
+        expect(releaseNotesUrl('2.4.0-ce')).toBe(`${OPSAGI_RELEASES_URL}/tag/v2.4.0`);
+        expect(releaseNotesUrl('2.4.0-ee')).toBe(`${OPSAGI_RELEASES_URL}/tag/v2.4.0`);
+        expect(releaseNotesUrl('v2.4.0-ce')).toBe(`${OPSAGI_RELEASES_URL}/tag/v2.4.0`);
     });
 });
 

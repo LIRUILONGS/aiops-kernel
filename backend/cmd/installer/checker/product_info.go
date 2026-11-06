@@ -15,7 +15,7 @@ import (
 )
 
 // productInfoCommand asks the running product to describe its own state.
-const productInfoBinary = "/opt/pentagi/bin/pentagi"
+const productInfoBinary = "/opt/opsagi/bin/opsagi"
 
 // productInfoTimeout bounds the whole exchange.
 //
@@ -58,7 +58,7 @@ func (h *defaultCheckHandler) gatherProductInfo(ctx context.Context) json.RawMes
 	ctx, cancel := context.WithTimeout(ctx, productInfoTimeout)
 	defer cancel()
 
-	container, err := h.dockerClient.ContainerInspect(ctx, PentagiContainerName, client.ContainerInspectOptions{})
+	container, err := h.dockerClient.ContainerInspect(ctx, OpsagiContainerName, client.ContainerInspectOptions{})
 	if err != nil {
 		return nil
 	}
@@ -68,7 +68,7 @@ func (h *defaultCheckHandler) gatherProductInfo(ctx context.Context) json.RawMes
 		return nil
 	}
 
-	exec, err := h.dockerClient.ExecCreate(ctx, PentagiContainerName, client.ExecCreateOptions{
+	exec, err := h.dockerClient.ExecCreate(ctx, OpsagiContainerName, client.ExecCreateOptions{
 		Cmd:          []string{productInfoBinary, "-info"},
 		AttachStdout: true,
 		AttachStderr: true,

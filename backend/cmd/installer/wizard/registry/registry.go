@@ -108,16 +108,16 @@ func (r *registry) initScreens() {
 
 	// Processor Operation Forms
 	processorOperationForms := []models.ScreenID{
-		models.InstallPentagiScreen,
-		models.StartPentagiScreen,
-		models.StopPentagiScreen,
-		models.RestartPentagiScreen,
+		models.InstallOpsagiScreen,
+		models.StartOpsagiScreen,
+		models.StopOpsagiScreen,
+		models.RestartOpsagiScreen,
 		models.DownloadWorkerImageScreen,
 		models.UpdateWorkerImageScreen,
-		models.UpdatePentagiScreen,
+		models.UpdateOpsagiScreen,
 		models.FactoryResetScreen,
-		models.RemovePentagiScreen,
-		models.PurgePentagiScreen,
+		models.RemoveOpsagiScreen,
+		models.PurgeOpsagiScreen,
 	}
 	for _, id := range processorOperationForms {
 		r.screens[id] = r.initProcessorOperationForm(id)

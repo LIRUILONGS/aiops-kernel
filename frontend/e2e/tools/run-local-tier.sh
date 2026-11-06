@@ -4,7 +4,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-export PENTAGI_IMAGE="${PENTAGI_IMAGE:-local/pentagi:e2e}"
+export OPSAGI_IMAGE="${OPSAGI_IMAGE:-local/opsagi:e2e}"
 port_is_taken() {
     (exec 3<>"/dev/tcp/127.0.0.1/$1") >/dev/null 2>&1
 }
@@ -28,14 +28,14 @@ port_for() {
     printf '%s' "$port"
 }
 
-PENTAGI_LISTEN_PORT="$(port_for PENTAGI_LISTEN_PORT 8444)"
+OPSAGI_LISTEN_PORT="$(port_for OPSAGI_LISTEN_PORT 8444)"
 PGVECTOR_LISTEN_PORT="$(port_for PGVECTOR_LISTEN_PORT 5433)"
-export PENTAGI_LISTEN_PORT PGVECTOR_LISTEN_PORT
+export OPSAGI_LISTEN_PORT PGVECTOR_LISTEN_PORT
 
 # --env-file /dev/null: without it compose auto-loads the developer's .env and
 # the stack inherits their live provider keys, DOCKER_HOST, and config paths.
 compose() {
-    docker compose -p pentagi-e2e --env-file /dev/null \
+    docker compose -p opsagi-e2e --env-file /dev/null \
         -f "$REPO_ROOT/docker-compose.yml" \
         -f "$REPO_ROOT/docker-compose.e2e.yml" "$@"
 }
@@ -49,11 +49,11 @@ compose() {
 # separately, the sandboxes a previous run of this script recorded as its own and never got to
 # remove, because the reseeded ids land straight on their names.
 sandbox_names() {
-    docker ps -a --format '{{.Names}}' --filter 'name=^/?pentagi-terminal-9[0-9]{4,}$' | sort
+    docker ps -a --format '{{.Names}}' --filter 'name=^/?opsagi-terminal-9[0-9]{4,}$' | sort
 }
 
 sandbox_volumes() {
-    docker volume ls -q --filter 'name=^pentagi-terminal-9[0-9]{4,}-data$' | sort
+    docker volume ls -q --filter 'name=^opsagi-terminal-9[0-9]{4,}-data$' | sort
 }
 
 # What a previous run created and never got to remove: an aborted run, a kept stack, a killed shell.
@@ -134,7 +134,7 @@ cleanup() {
     # them before `down -v` destroys the containers, so a red CI run has more
     # than a trace of a stuck UI.
     mkdir -p "$REPO_ROOT/frontend/e2e/test-results"
-    compose logs --no-color pentagi mock-llm \
+    compose logs --no-color opsagi mock-llm \
         > "$REPO_ROOT/frontend/e2e/test-results/compose.log" 2>&1 || true
     # The trap is the script's last statement, so an unguarded teardown failure
     # would become the exit status and turn a passing run red.
@@ -149,17 +149,17 @@ prepare_sandbox_baseline
 trap cleanup EXIT
 
 if [[ "${E2E_SKIP_BUILD:-}" != "1" ]]; then
-    docker build -t "$PENTAGI_IMAGE" "$REPO_ROOT"
+    docker build -t "$OPSAGI_IMAGE" "$REPO_ROOT"
 fi
 
 compose down -v --remove-orphans
-compose up -d --wait --wait-timeout 240 pentagi mock-llm
+compose up -d --wait --wait-timeout 240 opsagi mock-llm
 
-# Flow ids drive sandbox container names (pentagi-terminal-<id>); the 9xxxx
+# Flow ids drive sandbox container names (opsagi-terminal-<id>); the 9xxxx
 # offset keeps them clear of any developer stack sharing this docker daemon.
-docker exec pentagi-e2e-pgvector psql -U postgres -d pentagidb \
+docker exec opsagi-e2e-pgvector psql -U postgres -d opsagidb \
     -c "ALTER SEQUENCE flows_id_seq RESTART WITH 90001" > /dev/null
 
 cd "$REPO_ROOT/frontend"
 rm -f e2e/.auth/user.json
-E2E_TIER=local E2E_BASE_URL="https://localhost:${PENTAGI_LISTEN_PORT}" corepack pnpm e2e "$@"
+E2E_TIER=local E2E_BASE_URL="https://localhost:${OPSAGI_LISTEN_PORT}" corepack pnpm e2e "$@"

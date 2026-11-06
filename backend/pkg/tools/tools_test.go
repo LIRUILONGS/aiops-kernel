@@ -37,7 +37,7 @@ import (
 )
 
 // toolsUnreachableDB refuses every connection at once, so a store opened on it fails as on a database that is down.
-const toolsUnreachableDB = "postgres://pentagi@127.0.0.1:1/none?sslmode=disable&connect_timeout=2"
+const toolsUnreachableDB = "postgres://opsagi@127.0.0.1:1/none?sslmode=disable&connect_timeout=2"
 
 // toolsSharedPool stands in for the one pgxpool every flow's store shares; it never connects until used.
 func toolsSharedPool(t *testing.T) *pgxpool.Pool {
@@ -128,7 +128,7 @@ func TestTools_Prepare_KeepsOrReplacesTheSandbox(t *testing.T) {
 			row:         toolsSandboxRow(database.ContainerStatusRunning, "primary"),
 			probeErr:    errProbe,
 			wantErr:     errProbe,
-			wantErrText: "failed to inspect container 'pentagi-terminal-42'",
+			wantErrText: "failed to inspect container 'opsagi-terminal-42'",
 		},
 		{
 			name:        "a sandbox that cannot be marked running is not used",
@@ -136,7 +136,7 @@ func TestTools_Prepare_KeepsOrReplacesTheSandbox(t *testing.T) {
 			running:     true,
 			updateErr:   errUpdate,
 			wantErr:     errUpdate,
-			wantErrText: "failed to mark container 'pentagi-terminal-42' running",
+			wantErrText: "failed to mark container 'opsagi-terminal-42' running",
 			wantUpdates: []database.UpdateContainerStatusParams{{Status: database.ContainerStatusRunning, ID: 7}},
 		},
 		{
@@ -153,7 +153,7 @@ func TestTools_Prepare_KeepsOrReplacesTheSandbox(t *testing.T) {
 			name:        "a sandbox that cannot be launched fails the preparation",
 			launchErr:   errLaunch,
 			wantErr:     errLaunch,
-			wantErrText: "failed to launch container 'pentagi-terminal-42'",
+			wantErrText: "failed to launch container 'opsagi-terminal-42'",
 			wantLaunch:  true,
 		},
 	}
@@ -199,12 +199,12 @@ func TestTools_Prepare_LaunchesTheSandboxWithTheCapabilityAllowList(t *testing.T
 		wantName string
 		wantCaps []string
 	}{
-		{name: "the default allow-list", wantName: "pentagi-terminal-42", wantCaps: allowList},
+		{name: "the default allow-list", wantName: "opsagi-terminal-42", wantCaps: allowList},
 		{
 			name:     "a tenant that allows NET_ADMIN",
 			tenant:   "acme",
 			netAdmin: true,
-			wantName: "acme-pentagi-terminal-42",
+			wantName: "acme-opsagi-terminal-42",
 			wantCaps: append(slices.Clone(allowList), "NET_ADMIN"),
 		},
 	}
@@ -251,7 +251,7 @@ func toolsWriteFlowFiles(t *testing.T, dataDir string) {
 
 // One exec lists what is missing, one archive carries only that, and a symlink never leaves the host.
 func TestTools_Prepare_SyncsTheFilesTheSandboxLacks(t *testing.T) {
-	errCreate := errors.New("container pentagi-terminal-42 is not running")
+	errCreate := errors.New("container opsagi-terminal-42 is not running")
 	errAttach := errors.New("hijack: connection refused")
 	errInspect := errors.New("No such exec instance: file-check")
 	errCopy := errors.New("Error response from daemon: no space left on device")
@@ -305,14 +305,14 @@ func TestTools_Prepare_SyncsTheFilesTheSandboxLacks(t *testing.T) {
 			row:         kept,
 			output:      "sh: 1: printf: not found\n",
 			exitCode:    2,
-			wantErrText: []string{"failed to sync missing files to container 'pentagi-terminal-42'", "exit code 2", "printf: not found"},
+			wantErrText: []string{"failed to sync missing files to container 'opsagi-terminal-42'", "exit code 2", "printf: not found"},
 			wantChecked: true,
 		},
 		{
 			name:        "a replaced sandbox whose file check fails fails the preparation",
 			output:      "sh: 1: printf: not found\n",
 			exitCode:    2,
-			wantErrText: []string{"failed to sync files to container 'pentagi-terminal-42'", "exit code 2"},
+			wantErrText: []string{"failed to sync files to container 'opsagi-terminal-42'", "exit code 2"},
 			wantChecked: true,
 		},
 		{
@@ -392,7 +392,7 @@ func TestTools_Prepare_SyncsTheFilesTheSandboxLacks(t *testing.T) {
 			}
 
 			if tc.wantChecked {
-				assert.Equal(t, "pentagi-terminal-42", docker.execContainer)
+				assert.Equal(t, "opsagi-terminal-42", docker.execContainer)
 				check := docker.execCreated.Cmd
 				require.GreaterOrEqual(t, len(check), 4, "the check: %q", check)
 				assert.Equal(t, []string{"sh", "-c"}, check[:2])
@@ -405,7 +405,7 @@ func TestTools_Prepare_SyncsTheFilesTheSandboxLacks(t *testing.T) {
 			assert.Equal(t, tc.wantCopies, docker.copies)
 			assert.Equal(t, tc.wantCopied, docker.copied)
 			if tc.wantCopies > 0 {
-				assert.Equal(t, "pentagi-terminal-42", docker.copiedInto)
+				assert.Equal(t, "opsagi-terminal-42", docker.copiedInto)
 				assert.Equal(t, "/work", docker.copiedTo)
 			}
 		})
@@ -428,7 +428,7 @@ func TestTools_Release_RemovesTheSandboxAndClosesOnlyAStoreItOwns(t *testing.T) 
 			name:        "a sandbox it cannot remove is reported",
 			removeErr:   errRemove,
 			wantClosed:  1,
-			wantErrText: "failed to purge container 'pentagi-terminal-42'",
+			wantErrText: "failed to purge container 'opsagi-terminal-42'",
 		},
 	}
 
@@ -919,7 +919,7 @@ func TestTools_GetExecutors_BindTheTerminalToTheFlowSandbox(t *testing.T) {
 			assert.Contains(t, ran, "uid=0(root)")
 			assert.Equal(t, "10.0.0.7 target", read)
 			assert.Equal(t, []string{"primary", "primary"}, docker.probed, "each tool checks the flow's own container")
-			assert.Equal(t, "acme-pentagi-terminal-42", docker.execContainer)
+			assert.Equal(t, "acme-opsagi-terminal-42", docker.execContainer)
 			// 0: the write is not attributed to a task or subtask
 			type filedUnder struct{ container, task, subtask int64 }
 			entries := termLog.all()

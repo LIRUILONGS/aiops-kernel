@@ -141,15 +141,15 @@ const portBlock = () =>
     execFileSync('sed', ['-n', '/^port_is_taken()/,/PGVECTOR_LISTEN_PORT=/p', RUNNER], { encoding: 'utf8' });
 
 const runPortFor = (defaultPort: number, named?: number) =>
-    spawnSync('bash', ['-c', `${portFunctions()}\nport_for PENTAGI_LISTEN_PORT ${defaultPort}`], {
+    spawnSync('bash', ['-c', `${portFunctions()}\nport_for OPSAGI_LISTEN_PORT ${defaultPort}`], {
         encoding: 'utf8',
-        env: { ...process.env, ...(named === undefined ? {} : { PENTAGI_LISTEN_PORT: String(named) }) },
+        env: { ...process.env, ...(named === undefined ? {} : { OPSAGI_LISTEN_PORT: String(named) }) },
     });
 
 const runPortBlock = (named?: number) =>
-    spawnSync('bash', ['-c', `set -euo pipefail\n${portBlock()}\necho "$PENTAGI_LISTEN_PORT"`], {
+    spawnSync('bash', ['-c', `set -euo pipefail\n${portBlock()}\necho "$OPSAGI_LISTEN_PORT"`], {
         encoding: 'utf8',
-        env: { ...process.env, ...(named === undefined ? {} : { PENTAGI_LISTEN_PORT: String(named) }) },
+        env: { ...process.env, ...(named === undefined ? {} : { OPSAGI_LISTEN_PORT: String(named) }) },
     });
 
 const listenOn = async (): Promise<{ close: () => void; port: number }> => {
@@ -210,17 +210,17 @@ describe('tier-2 port choice', () => {
 });
 
 describe('tier-2 sandbox bookkeeping', { timeout: 30_000 }, () => {
-    const SANDBOXES = 'pentagi-terminal-90001\npentagi-terminal-95000\n';
-    const VOLUMES = 'pentagi-terminal-90001-data\npentagi-terminal-95000-data\n';
+    const SANDBOXES = 'opsagi-terminal-90001\nopsagi-terminal-95000\n';
+    const VOLUMES = 'opsagi-terminal-90001-data\nopsagi-terminal-95000-data\n';
 
     it('removes the leftovers a previous run recorded, and nothing else', () => {
-        writeFileSync(paths().state, 'pentagi-terminal-90001\n');
-        writeFileSync(paths().volumeState, 'pentagi-terminal-90001-data\n');
+        writeFileSync(paths().state, 'opsagi-terminal-90001\n');
+        writeFileSync(paths().volumeState, 'opsagi-terminal-90001-data\n');
 
         const { removed } = run('remove_owned_leftovers', { sandboxes: SANDBOXES, volumes: VOLUMES });
 
-        expect(removed()).toContain('removed pentagi-terminal-90001\n');
-        expect(removed()).toContain('removed pentagi-terminal-90001-data\n');
+        expect(removed()).toContain('removed opsagi-terminal-90001\n');
+        expect(removed()).toContain('removed opsagi-terminal-90001-data\n');
         // A developer stack that once ran a tier-2 seed keeps ids in the same range; removing those
         // takes their sandboxes and their data with them.
         expect(removed()).not.toContain('95000');
@@ -228,11 +228,11 @@ describe('tier-2 sandbox bookkeeping', { timeout: 30_000 }, () => {
 
     it('records what this run added, so the next one can clear it', () => {
         const { recorded } = run(
-            'prepare_sandbox_baseline\nprintf "pentagi-terminal-90001\\n" >> "$SANDBOX_FILE"\nrecord_owned_sandboxes',
-            { sandboxes: 'pentagi-terminal-95000\n', volumes: 'pentagi-terminal-95000-data\n' },
+            'prepare_sandbox_baseline\nprintf "opsagi-terminal-90001\\n" >> "$SANDBOX_FILE"\nrecord_owned_sandboxes',
+            { sandboxes: 'opsagi-terminal-95000\n', volumes: 'opsagi-terminal-95000-data\n' },
         );
 
-        expect(recorded()).toBe('pentagi-terminal-90001');
+        expect(recorded()).toBe('opsagi-terminal-90001');
     });
 
     // The container and the volume are removed by two separate commands, and only one of them may
@@ -241,37 +241,37 @@ describe('tier-2 sandbox bookkeeping', { timeout: 30_000 }, () => {
         const { recorded, recordedVolumes, removed } = run(
             [
                 'prepare_sandbox_baseline',
-                'printf "pentagi-terminal-90001\\n" >> "$SANDBOX_FILE"',
-                'printf "pentagi-terminal-90001-data\\n" >> "$VOLUME_FILE"',
+                'printf "opsagi-terminal-90001\\n" >> "$SANDBOX_FILE"',
+                'printf "opsagi-terminal-90001-data\\n" >> "$VOLUME_FILE"',
                 'REPO_ROOT="$(dirname "$OWNED_STATE")" cleanup',
             ].join('\n'),
             {
                 isVolumeRemovalFailing: true,
-                sandboxes: 'pentagi-terminal-95000\n',
-                volumes: 'pentagi-terminal-95000-data\n',
+                sandboxes: 'opsagi-terminal-95000\n',
+                volumes: 'opsagi-terminal-95000-data\n',
             },
         );
 
-        expect(removed()).toContain('removed pentagi-terminal-90001\n');
-        expect(removed()).toContain('FAILED pentagi-terminal-90001-data\n');
+        expect(removed()).toContain('removed opsagi-terminal-90001\n');
+        expect(removed()).toContain('FAILED opsagi-terminal-90001-data\n');
         // The container is gone, so nothing may hunt that name again; the volume is still there and
         // stays on the books until someone takes it.
         expect(recorded()).toBe('');
-        expect(recordedVolumes()).toBe('pentagi-terminal-90001-data');
+        expect(recordedVolumes()).toBe('opsagi-terminal-90001-data');
     });
 
     it('leaves nothing in the record once the teardown has taken it', () => {
         const { recorded, removed } = run(
             [
                 'prepare_sandbox_baseline',
-                'printf "pentagi-terminal-90001\\n" >> "$SANDBOX_FILE"',
-                'printf "pentagi-terminal-90001-data\\n" >> "$VOLUME_FILE"',
+                'printf "opsagi-terminal-90001\\n" >> "$SANDBOX_FILE"',
+                'printf "opsagi-terminal-90001-data\\n" >> "$VOLUME_FILE"',
                 'REPO_ROOT="$(dirname "$OWNED_STATE")" cleanup',
             ].join('\n'),
-            { sandboxes: 'pentagi-terminal-95000\n', volumes: 'pentagi-terminal-95000-data\n' },
+            { sandboxes: 'opsagi-terminal-95000\n', volumes: 'opsagi-terminal-95000-data\n' },
         );
 
-        expect(removed()).toContain('removed pentagi-terminal-90001\n');
+        expect(removed()).toContain('removed opsagi-terminal-90001\n');
         // A name the teardown already took is not this run's to hand to the next one: that file is
         // read as a kill list before anything is built.
         expect(recorded()).toBe('');
@@ -294,7 +294,7 @@ describe('tier-2 sandbox bookkeeping', { timeout: 30_000 }, () => {
         const { recorded } = run(
             [
                 'prepare_sandbox_baseline',
-                'printf "pentagi-terminal-42\\npentagi-db\\n" >> "$SANDBOX_FILE"',
+                'printf "opsagi-terminal-42\\nopsagi-db\\n" >> "$SANDBOX_FILE"',
                 'record_owned_sandboxes',
             ].join('\n'),
             { sandboxes: '', volumes: '' },
@@ -304,63 +304,63 @@ describe('tier-2 sandbox bookkeeping', { timeout: 30_000 }, () => {
     });
 
     it('keeps a leftover it could not remove on the books for the next run', () => {
-        writeFileSync(paths().state, 'pentagi-terminal-90001\n');
-        writeFileSync(paths().volumeState, 'pentagi-terminal-90001-data\n');
+        writeFileSync(paths().state, 'opsagi-terminal-90001\n');
+        writeFileSync(paths().volumeState, 'opsagi-terminal-90001-data\n');
 
         const { recorded, recordedVolumes } = run('prepare_sandbox_baseline\nrecord_owned_sandboxes', {
             isContainerRemovalFailing: true,
             isVolumeRemovalFailing: true,
-            sandboxes: 'pentagi-terminal-90001\n',
-            volumes: 'pentagi-terminal-90001-data\n',
+            sandboxes: 'opsagi-terminal-90001\n',
+            volumes: 'opsagi-terminal-90001-data\n',
         });
 
-        expect(recorded()).toBe('pentagi-terminal-90001');
-        expect(recordedVolumes()).toBe('pentagi-terminal-90001-data');
+        expect(recorded()).toBe('opsagi-terminal-90001');
+        expect(recordedVolumes()).toBe('opsagi-terminal-90001-data');
     });
 
     it('records the sandboxes of a stack it was told to keep', () => {
         const { recorded, removed } = run(
             [
                 'prepare_sandbox_baseline',
-                'printf "pentagi-terminal-90001\\n" >> "$SANDBOX_FILE"',
+                'printf "opsagi-terminal-90001\\n" >> "$SANDBOX_FILE"',
                 'REPO_ROOT="$(dirname "$OWNED_STATE")" cleanup',
             ].join('\n'),
-            { isStackKept: true, sandboxes: 'pentagi-terminal-95000\n', volumes: 'pentagi-terminal-95000-data\n' },
+            { isStackKept: true, sandboxes: 'opsagi-terminal-95000\n', volumes: 'opsagi-terminal-95000-data\n' },
         );
 
         expect(removed()).toBe('');
-        expect(recorded()).toBe('pentagi-terminal-90001');
+        expect(recorded()).toBe('opsagi-terminal-90001');
     });
 
     it('still owns the sandbox that took the name of the leftover it removed', () => {
-        writeFileSync(paths().state, 'pentagi-terminal-90001\n');
-        writeFileSync(paths().volumeState, 'pentagi-terminal-90001-data\n');
+        writeFileSync(paths().state, 'opsagi-terminal-90001\n');
+        writeFileSync(paths().volumeState, 'opsagi-terminal-90001-data\n');
 
         const { recorded, removed } = run(
             [
                 'prepare_sandbox_baseline',
-                'printf "pentagi-terminal-90001\\n" >> "$SANDBOX_FILE"',
-                'printf "pentagi-terminal-90001-data\\n" >> "$VOLUME_FILE"',
+                'printf "opsagi-terminal-90001\\n" >> "$SANDBOX_FILE"',
+                'printf "opsagi-terminal-90001-data\\n" >> "$VOLUME_FILE"',
                 'record_owned_sandboxes',
                 'remove_e2e_sandboxes',
             ].join('\n'),
             { sandboxes: SANDBOXES, volumes: VOLUMES },
         );
 
-        expect(recorded()).toBe('pentagi-terminal-90001');
-        expect(removed().match(/removed pentagi-terminal-90001\n/g)).toHaveLength(2);
-        expect(removed().match(/removed pentagi-terminal-90001-data\n/g)).toHaveLength(2);
+        expect(recorded()).toBe('opsagi-terminal-90001');
+        expect(removed().match(/removed opsagi-terminal-90001\n/g)).toHaveLength(2);
+        expect(removed().match(/removed opsagi-terminal-90001-data\n/g)).toHaveLength(2);
         expect(removed()).not.toContain('95000');
     });
     it('clears what it created when the run is cut short by a signal', async () => {
         const files = paths();
 
-        writeFileSync(files.sandboxes, 'pentagi-terminal-90001\n');
-        writeFileSync(files.volumes, 'pentagi-terminal-90001-data\n');
+        writeFileSync(files.sandboxes, 'opsagi-terminal-90001\n');
+        writeFileSync(files.volumes, 'opsagi-terminal-90001-data\n');
         writeFileSync(files.log, '');
         writeFileSync(
             join(work, 'bin', 'corepack'),
-            `#!/usr/bin/env bash\nprintf 'pentagi-terminal-90002\\n' >> "$SANDBOX_FILE"\nprintf 'e2e started\\n' >> "$DOCKER_LOG"\nsleep 5\n`,
+            `#!/usr/bin/env bash\nprintf 'opsagi-terminal-90002\\n' >> "$SANDBOX_FILE"\nprintf 'e2e started\\n' >> "$DOCKER_LOG"\nsleep 5\n`,
         );
         chmodSync(join(work, 'bin', 'corepack'), 0o755);
 
@@ -393,18 +393,18 @@ describe('tier-2 sandbox bookkeeping', { timeout: 30_000 }, () => {
 
         const log = readFileSync(files.log, 'utf8');
 
-        expect(log).toContain('removed pentagi-terminal-90002');
-        expect(log).not.toContain('removed pentagi-terminal-90001');
+        expect(log).toContain('removed opsagi-terminal-90002');
+        expect(log).not.toContain('removed opsagi-terminal-90001');
     });
 
     it('takes the baseline before a build that fails, so a foreign sandbox survives the run', () => {
         const files = paths();
 
-        writeFileSync(files.sandboxes, 'pentagi-terminal-90001\n');
-        writeFileSync(files.volumes, 'pentagi-terminal-90001-data\n');
+        writeFileSync(files.sandboxes, 'opsagi-terminal-90001\n');
+        writeFileSync(files.volumes, 'opsagi-terminal-90001-data\n');
         writeFileSync(files.log, '');
-        writeFileSync(files.state, 'pentagi-terminal-99999\n');
-        writeFileSync(files.volumeState, 'pentagi-terminal-99999-data\n');
+        writeFileSync(files.state, 'opsagi-terminal-99999\n');
+        writeFileSync(files.volumeState, 'opsagi-terminal-99999-data\n');
 
         const status = spawnSync(RUNNER, [], {
             encoding: 'utf8',
@@ -421,8 +421,8 @@ describe('tier-2 sandbox bookkeeping', { timeout: 30_000 }, () => {
         });
 
         expect(status.status).not.toBe(0);
-        expect(readFileSync(files.log, 'utf8')).not.toContain('removed pentagi-terminal-90001');
-        expect(readFileSync(files.sandboxes, 'utf8')).toContain('pentagi-terminal-90001');
+        expect(readFileSync(files.log, 'utf8')).not.toContain('removed opsagi-terminal-90001');
+        expect(readFileSync(files.sandboxes, 'utf8')).toContain('opsagi-terminal-90001');
         expect(readFileSync(files.state, 'utf8').trim()).toBe('');
     });
 });

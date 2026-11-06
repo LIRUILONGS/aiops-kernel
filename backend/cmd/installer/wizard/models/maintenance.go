@@ -37,22 +37,22 @@ func (h *MaintenanceHandler) LoadItems() []ListItem {
 
 	if showStart {
 		items = append(items, ListItem{
-			ID: StartPentagiScreen,
+			ID: StartOpsagiScreen,
 		})
 	}
 
-	// stop PentAGI - show if any stack is running
+	// stop OpsAGI - show if any stack is running
 	showStop := checker.CanStopAll()
 	if showStop {
 		items = append(items, ListItem{
-			ID: StopPentagiScreen,
+			ID: StopOpsagiScreen,
 		})
 	}
 
-	// restart PentAGI - show if any stack is running
+	// restart OpsAGI - show if any stack is running
 	if showStop {
 		items = append(items, ListItem{
-			ID: RestartPentagiScreen,
+			ID: RestartOpsagiScreen,
 		})
 	}
 
@@ -71,10 +71,10 @@ func (h *MaintenanceHandler) LoadItems() []ListItem {
 		})
 	}
 
-	// update PentAGI - show if updates are available for any stack
-	showUpdatePentagi := checker.CanUpdateAll()
+	// update OpsAGI - show if updates are available for any stack
+	showUpdateOpsagi := checker.CanUpdateAll()
 
-	if showUpdatePentagi {
+	if showUpdateOpsagi {
 		// The overview screen, not the operation form: the entry used to lead
 		// straight into "are you sure?", which asked for consent to something
 		// the interface had never described. The overview continues into the
@@ -100,21 +100,21 @@ func (h *MaintenanceHandler) LoadItems() []ListItem {
 		})
 	}
 
-	// remove PentAGI - show if any stack is installed
+	// remove OpsAGI - show if any stack is installed
 	if checker.CanRemoveAll() {
 		items = append(items, ListItem{
-			ID: RemovePentagiScreen,
+			ID: RemoveOpsagiScreen,
 		})
 	}
 
-	// purge PentAGI - show if any stack is installed
+	// purge OpsAGI - show if any stack is installed
 	if checker.CanPurgeAll() {
 		items = append(items, ListItem{
-			ID: PurgePentagiScreen,
+			ID: PurgeOpsagiScreen,
 		})
 	}
 
-	// reset admin password - show if PentAGI is running
+	// reset admin password - show if OpsAGI is running
 	if checker.CanResetPassword() {
 		items = append(items, ListItem{
 			ID: ResetPasswordScreen,

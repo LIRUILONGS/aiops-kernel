@@ -54,8 +54,8 @@ const (
 // Welcome Screen constants
 const (
 	// Form interface implementation
-	WelcomeFormTitle       = "Welcome to PentAGI"
-	WelcomeFormDescription = "PentAGI is an autonomous penetration testing platform that leverages AI technologies to perform comprehensive security assessments."
+	WelcomeFormTitle       = "Welcome to OpsAGI"
+	WelcomeFormDescription = "OpsAGI is an autonomous penetration testing platform that leverages AI technologies to perform comprehensive security assessments."
 	WelcomeFormName        = "Welcome"
 	WelcomeFormOverview    = `System checks verify:
 • Environment configuration file presence
@@ -78,7 +78,7 @@ The installer guides you through each component setup with recommendations for d
 	WelcomeWorkflowStep2 = "2. Configure LLM providers (OpenAI, Anthropic, etc.)"
 	WelcomeWorkflowStep3 = "3. Set up integrations (Langfuse, Observability)"
 	WelcomeWorkflowStep4 = "4. Configure security settings"
-	WelcomeWorkflowStep5 = "5. Deploy and start PentAGI services"
+	WelcomeWorkflowStep5 = "5. Deploy and start OpsAGI services"
 	WelcomeSystemReady   = "✓ System ready - Press Enter to continue"
 )
 
@@ -88,7 +88,7 @@ const (
 
 	// Environment file issues
 	TroubleshootEnvFileTitle = "Environment Configuration Missing"
-	TroubleshootEnvFileDesc  = "The .env file is required for PentAGI configuration but was not found or is not readable."
+	TroubleshootEnvFileDesc  = "The .env file is required for OpsAGI configuration but was not found or is not readable."
 	TroubleshootEnvFileFix   = `To fix:
 1. Copy .env.example to .env in your installation directory
 2. Edit .env and configure at least one LLM provider API key
@@ -108,7 +108,7 @@ cp .env.example .env && chmod 644 .env`
 
 	// Docker not installed
 	TroubleshootDockerNotInstalledTitle = "Docker Not Installed"
-	TroubleshootDockerNotInstalledDesc  = "Docker is not installed on this system. PentAGI requires Docker to run containers."
+	TroubleshootDockerNotInstalledDesc  = "Docker is not installed on this system. OpsAGI requires Docker to run containers."
 	TroubleshootDockerNotInstalledFix   = `To fix:
 1. Install Docker Desktop: https://docs.docker.com/get-docker/
 2. For Linux: Follow distribution-specific instructions
@@ -145,7 +145,7 @@ cp .env.example .env && chmod 644 .env`
 
 	// Docker version issues
 	TroubleshootDockerVersionTitle = "Docker Version Too Old"
-	TroubleshootDockerVersionDesc  = "Your Docker version is incompatible. PentAGI requires Docker 20.0.0 or newer."
+	TroubleshootDockerVersionDesc  = "Your Docker version is incompatible. OpsAGI requires Docker 20.0.0 or newer."
 	TroubleshootDockerVersionFix   = `To fix:
 1. Update Docker to version 20.0.0 or newer
 2. Visit https://docs.docker.com/engine/install/
@@ -161,12 +161,12 @@ Required: 20.0.0+`
 2. Verify the plugin is available: docker compose version
 3. If only legacy docker-compose is installed, install the Docker Compose v2 plugin as well
 
-PentAGI executes "docker compose", so legacy "docker-compose" alone is not sufficient.
+OpsAGI executes "docker compose", so legacy "docker-compose" alone is not sufficient.
 Documentation: https://docs.docker.com/compose/install/`
 
 	// Docker Compose version issues
 	TroubleshootComposeVersionTitle = "Docker Compose Version Too Old"
-	TroubleshootComposeVersionDesc  = "Your `docker compose` version is incompatible. PentAGI requires Docker Compose 1.25.0 or newer."
+	TroubleshootComposeVersionDesc  = "Your `docker compose` version is incompatible. OpsAGI requires Docker Compose 1.25.0 or newer."
 	TroubleshootComposeVersionFix   = `Current version: %s
 Required: 1.25.0+
 
@@ -191,7 +191,7 @@ Documentation: https://docs.docker.com/compose/install/`
 
 	// CPU issues
 	TroubleshootCPUTitle = "Insufficient CPU Cores"
-	TroubleshootCPUDesc  = "PentAGI requires at least 2 CPU cores for proper operation."
+	TroubleshootCPUDesc  = "OpsAGI requires at least 2 CPU cores for proper operation."
 	TroubleshootCPUFix   = `Your system has %d CPU core(s), but 2+ are required.
 
 For virtual machines:
@@ -206,7 +206,7 @@ Settings → Resources → CPUs: Set to 2 or more`
 	TroubleshootMemoryDesc  = "Not enough free memory for selected components."
 	TroubleshootMemoryFix   = `Memory requirements:
 • Base system: 0.5 GB
-• PentAGI core: +0.5 GB
+• OpsAGI core: +0.5 GB
 • Langfuse (if enabled): +1.5 GB
 • Observability (if enabled): +1.5 GB
 
@@ -279,9 +279,9 @@ const (
 // EULA Screen constants
 const (
 	// Form interface implementation
-	EULAFormDescription = "Legal terms and conditions for PentAGI usage"
+	EULAFormDescription = "Legal terms and conditions for OpsAGI usage"
 	EULAFormName        = "EULA"
-	EULAFormOverview    = `Review and accept the End User License Agreement to proceed with PentAGI installation.
+	EULAFormOverview    = `Review and accept the End User License Agreement to proceed with OpsAGI installation.
 
 The EULA contains:
 • Software license terms and usage rights
@@ -307,7 +307,7 @@ Use arrow keys, page up/down, or home/end keys to navigate through the document.
 
 // Update Overview Screen constants
 const (
-	UpdateOverviewFormName        = "Update PentAGI"
+	UpdateOverviewFormName        = "Update OpsAGI"
 	UpdateOverviewFormDescription = "What this update changes, and the release notes behind it"
 	UpdateOverviewFormOverview    = `Review what the update will change before applying it.
 
@@ -398,10 +398,10 @@ Replacing the installer you use is your decision to make afterwards — run the 
 
 // Main Menu Screen constants
 const (
-	MainMenuTitle       = "PentAGI Configuration"
-	MainMenuDescription = "Configure all PentAGI components and settings"
+	MainMenuTitle       = "OpsAGI Configuration"
+	MainMenuDescription = "Configure all OpsAGI components and settings"
 	MainMenuName        = "Main Menu"
-	MainMenuOverview    = `Welcome to PentAGI Configuration Center.
+	MainMenuOverview    = `Welcome to OpsAGI Configuration Center.
 
 Configure essential components:
 • LLM Providers - AI language models for autonomous testing
@@ -409,7 +409,7 @@ Configure essential components:
 • Tools - Additional capabilities for enhanced testing
 • System Settings - Environment and deployment options
 
-Navigate through each section to complete your PentAGI setup.`
+Navigate through each section to complete your OpsAGI setup.`
 
 	MenuTitle        = "Configuration Menu"
 	MenuSystemStatus = "System Status"
@@ -417,9 +417,9 @@ Navigate through each section to complete your PentAGI setup.`
 
 // Main Menu Status Labels (not used)
 const (
-	MainMenuStatusPentagiRunning     = "PentAGI is already running"
-	MainMenuStatusPentagiNotRunning  = "Ready to start PentAGI services"
-	MainMenuStatusUpToDate           = "PentAGI is up to date"
+	MainMenuStatusOpsagiRunning     = "OpsAGI is already running"
+	MainMenuStatusOpsagiNotRunning  = "Ready to start OpsAGI services"
+	MainMenuStatusUpToDate           = "OpsAGI is up to date"
 	MainMenuStatusUpdatesAvailable   = "Updates are available"
 	MainMenuStatusReadyToStart       = "Ready to start"
 	MainMenuStatusAllServicesRunning = "All services are running"
@@ -431,7 +431,7 @@ const (
 	LLMProvidersTitle       = "LLM Providers Configuration"
 	LLMProvidersDescription = "Configure Large Language Model providers for AI agents"
 	LLMProvidersName        = "LLM Providers"
-	LLMProvidersOverview    = `PentAGI uses specialized AI agents (researcher, developer, executor, pentester) that require different LLM capabilities for optimal penetration testing results.
+	LLMProvidersOverview    = `OpsAGI uses specialized AI agents (researcher, developer, executor, pentester) that require different LLM capabilities for optimal penetration testing results.
 
 Why multiple providers matter:
 • Agent Specialization: Different agents benefit from models optimized for reasoning, coding, or analysis
@@ -443,7 +443,7 @@ Provider Selection Guide:
 • Enterprise/Compliance: AWS Bedrock for SOC2, HIPAA, and access to multiple model families
 • Privacy/On-premises: Ollama or vLLM with Llama 3.1, Qwen3, or other open models for complete data control
 
-Ready-to-use configurations for OpenRouter, DeepInfra, vLLM, Ollama, and other providers are available in the /opt/pentagi/conf/ directory inside the container`
+Ready-to-use configurations for OpenRouter, DeepInfra, vLLM, Ollama, and other providers are available in the /opt/opsagi/conf/ directory inside the container`
 )
 
 // LLM Provider titles and descriptions
@@ -480,7 +480,7 @@ const (
 const (
 	LLMFormOpenAIHelp = `OpenAI delivers industry-leading models with cutting-edge reasoning capabilities perfect for sophisticated penetration testing.
 
-Default PentAGI Models:
+Default OpsAGI Models:
 • o1, o4-mini: Advanced reasoning models for complex vulnerability analysis and strategic planning
 • GPT-4.1, GPT-4.1-mini: Flagship models optimized for exploit development and code generation
 • Automatic model selection based on agent type and task complexity
@@ -498,7 +498,7 @@ Setup: Get your API key from https://platform.openai.com/api-keys`
 
 	LLMFormAnthropicHelp = `Anthropic Claude models excel in safety-conscious penetration testing with superior reasoning and analytical capabilities.
 
-Default PentAGI Models:
+Default OpsAGI Models:
 • Claude Sonnet-4: Premium reasoning model for complex security analysis and strategic vulnerability assessment
 • Claude 3.5 Haiku: High-speed model optimized for rapid information gathering and simple parsing tasks
 • Balanced cost-performance ratio across all security testing scenarios
@@ -516,7 +516,7 @@ Setup: Get your API key from https://console.anthropic.com/`
 
 	LLMFormAnthropicFederatedHelp = `Federated (Enterprise) authentication uses a workload identity token instead of a static API key.
 
-PentAGI presents a short-lived identity token (inline via the Identity Token field, or read at runtime from the Identity Token File) together with the Organization, Workspace, Service Account and Federation Rule that map it to Anthropic access.
+OpsAGI presents a short-lived identity token (inline via the Identity Token field, or read at runtime from the Identity Token File) together with the Organization, Workspace, Service Account and Federation Rule that map it to Anthropic access.
 
 Use this when your organization issues federated credentials (for example from a cloud workload identity provider) rather than a long-lived API key. All four IDs plus one of the two token fields are required for federated auth to be considered configured.
 
@@ -524,7 +524,7 @@ Switch back to "API Key" for the standard console API key.`
 
 	LLMFormGeminiHelp = `Google Gemini combines multimodal capabilities with advanced reasoning, perfect for comprehensive security assessments.
 
-Default PentAGI Models:
+Default OpsAGI Models:
 • gemini-3.5-flash-lite: planning, the primary agent loop, code, and other tool-using agents
 • gemini-3.1-flash-lite: simple output, JSON, reflection, search and enrichment
 
@@ -541,7 +541,7 @@ Setup: Get your API key from https://aistudio.google.com/app/apikey`
 
 	LLMFormBedrockHelp = `AWS Bedrock provides enterprise-grade access to 20+ foundation models with multiple authentication methods and enhanced security.
 
-Default PentAGI Models:
+Default OpsAGI Models:
 • Claude Sonnet-4.5 (via Bedrock): Premium reasoning model with AWS enterprise security and extended thinking capabilities
 • OpenAI GPT OSS 120B: Strong reasoning model for scientific analysis and complex security tasks
 • Claude Haiku-4.5, DeepSeek V3.2, Qwen3-32B: Efficient models for specific agent roles and cost optimization
@@ -581,7 +581,7 @@ Scenario 2: Ollama Cloud (Managed Service)
 • API key required - generate at https://ollama.com/settings/keys
 • Setup: Register at https://ollama.com, configure OLLAMA_SERVER_URL=https://ollama.com + OLLAMA_SERVER_API_KEY=your_key
 
-Default PentAGI Models:
+Default OpsAGI Models:
 • Llama 3.1:8b, Qwen3:32b, and other open models
 • Customizable - switch between 100+ available models
 • Model auto-download and loading options for convenience
@@ -597,7 +597,7 @@ Setup options: Local installation from https://10.10.10.10:11434 or cloud regist
 
 	LLMFormDeepSeekHelp = `DeepSeek provides advanced AI models with strong reasoning capabilities and multilingual support.
 
-Default PentAGI Models:
+Default OpsAGI Models:
 • deepseek-flash: Cost-efficient general-purpose model for dialogue, code generation, and tool calling
 • deepseek-v4-pro: Higher-tier reasoning model for complex logic, mathematical reasoning, and security analysis
 • Cost-effective pricing with competitive performance compared to leading models
@@ -620,7 +620,7 @@ Setup: Get your API key from https://platform.deepseek.com/`
 
 	LLMFormGLMHelp = `GLM from Zhipu AI provides advanced language models with strong NLP and reasoning capabilities developed by Tsinghua University.
 
-Default PentAGI Models:
+Default OpsAGI Models:
 • GLM-4-Air: High performance general dialogue model optimized for regular tasks and tool calling
 • GLM-4-Plus: Flagship model with strong reasoning and code generation capabilities
 • GLM-Z1-Plus: Advanced reasoning model with deep analysis capabilities for security research
@@ -648,7 +648,7 @@ Setup: Get your API key from https://open.bigmodel.cn/`
 
 	LLMFormKimiHelp = `Kimi from Moonshot AI provides ultra-long context models perfect for analyzing extensive codebases and documentation.
 
-Default PentAGI Models:
+Default OpsAGI Models:
 • Moonshot-v1-8k: Long-context model supporting up to 8K tokens for general dialogue
 • Kimi-k2.5: Advanced model with strong reasoning and document understanding
 • Optimized for processing large volumes of text and code
@@ -675,7 +675,7 @@ Setup: Get your API key from https://platform.moonshot.ai/`
 
 	LLMFormQwenHelp = `Qwen from Alibaba Cloud Model Studio (DashScope) provides powerful multilingual models with multimodal capabilities.
 
-Default PentAGI Models:
+Default OpsAGI Models:
 • Qwen-Turbo: Fastest lightweight model for high-frequency tasks and real-time response scenarios
 • Qwen-Plus: Balanced performance model for general dialogue, code generation, and tool calling
 • Qwen-Max: Flagship reasoning model with strong instruction following and complex task handling
@@ -705,7 +705,7 @@ Setup: Get your API key from https://dashscope.console.aliyun.com/`
 
 	LLMFormMiniMaxHelp = `MiniMax provides the M-series of agentic models with very large context windows, accessible through an OpenAI-compatible API.
 
-Default PentAGI Models:
+Default OpsAGI Models:
 • MiniMax-M3: Latest flagship model (~1M token context) for agentic reasoning, tool use, coding, and long-context tasks
 • MiniMax-M2.7: Previous-generation model with strong reasoning and coding capabilities
 • MiniMax-M2.7-highspeed: Low-latency variant of M2.7 for fast response scenarios
@@ -730,7 +730,7 @@ Setup: Get your API key from https://platform.minimax.io/`
 
 	LLMFormMistralHelp = `Mistral AI serves its models through an OpenAI-compatible chat API.
 
-Default PentAGI Models:
+Default OpsAGI Models:
 • mistral-medium-latest: planning and advice
 • mistral-large-latest: primary and execution agents
 • mistral-small-latest: utility and read-heavy agents
@@ -747,7 +747,7 @@ Setup: Get your API key from https://console.mistral.ai/`
 
 	LLMFormXAIHelp = `xAI serves its Grok models through an OpenAI-compatible chat API.
 
-Default PentAGI Models:
+Default OpsAGI Models:
 • grok-4.3: planning, the primary agent loop, code, and other tool-using agents
 • grok-4.20-0309-non-reasoning: simple output, JSON, reflection, and enrichment
 
@@ -785,7 +785,7 @@ Key Advantages:
 
 Best for: Teams with specific model requirements, cost optimization needs, or existing LLM infrastructure
 LiteLLM Integration: Set LLM_SERVER_PROVIDER to match your provider name (e.g., "openrouter", "moonshot") to use the same config files with both direct API access and LiteLLM proxy
-Examples available: Pre-configured setups for major providers in /opt/pentagi/conf/ directory inside the container`
+Examples available: Pre-configured setups for major providers in /opt/opsagi/conf/ directory inside the container`
 )
 
 // LLM Provider Form field labels and descriptions
@@ -828,7 +828,7 @@ const (
 
 	// Anthropic authentication mode (API key vs federated / enterprise)
 	LLMAnthropicAuthModeTitle       = "Authentication"
-	LLMAnthropicAuthModeDesc        = "Choose how PentAGI authenticates to Anthropic"
+	LLMAnthropicAuthModeDesc        = "Choose how OpsAGI authenticates to Anthropic"
 	LLMAnthropicAuthModeAPIKey      = "API Key"
 	LLMAnthropicAuthModeFederated   = "Federated (Enterprise)"
 	LLMFormFieldAnthropicOrgID      = "Organization ID"
@@ -951,7 +951,7 @@ Best for: Teams wanting data privacy, custom configurations, or no external depe
 
 Default admin access:
 • Web UI: http://localhost:4000
-• Login: admin@pentagi.com
+• Login: admin@opsagi.com
 • Password: password (change required)`
 	MonitoringLangfuseExternalHelp = `External connects to cloud.langfuse.com or your existing Langfuse server:
 
@@ -1100,7 +1100,7 @@ Best for: Teams using existing Graphiti deployments or cloud services.`
 • Flow-scoped graph recall
 • Advanced contextual search
 
-PentAGI continues using its primary vector memory when Graphiti is disabled.`
+OpsAGI continues using its primary vector memory when Graphiti is disabled.`
 )
 
 // Observability Integration constants
@@ -1115,7 +1115,7 @@ const (
 • Loki for log aggregation
 • OpenTelemetry for data collection
 
-Monitor PentAGI performance and system health.`
+Monitor OpsAGI performance and system health.`
 
 	// Deployment types
 	MonitoringObservabilityEmbedded = "Embedded Stack"
@@ -1381,9 +1381,9 @@ Available settings:
 // Server Settings screen strings
 const (
 	ServerSettingsFormTitle       = "Server Settings"
-	ServerSettingsFormDescription = "Configure PentAGI server network access and public routing"
+	ServerSettingsFormDescription = "Configure OpsAGI server network access and public routing"
 	ServerSettingsFormName        = "Server Settings"
-	ServerSettingsFormOverview    = `• Network binding - control which interface and port PentAGI listens on
+	ServerSettingsFormOverview    = `• Network binding - control which interface and port OpsAGI listens on
 • Public URL - external address and optional base path used in redirects
 • CORS - allowed origins for browser access
 • Proxy - HTTP/HTTPS proxy for outbound traffic to LLM/search providers
@@ -1392,7 +1392,7 @@ const (
 
 	// Field labels and descriptions
 	ServerSettingsLicenseKey     = "License Key"
-	ServerSettingsLicenseKeyDesc = "PentAGI License Key in format of XXXX-XXXX-XXXX-XXXX"
+	ServerSettingsLicenseKeyDesc = "OpsAGI License Key in format of XXXX-XXXX-XXXX-XXXX"
 
 	ServerSettingsUpdateStrategy = "Update Strategy"
 	// The three values are spelled out because the field is free text: the
@@ -1403,10 +1403,10 @@ const (
 		"released or not)"
 
 	ServerSettingsUpdateServerHost     = "Update Server Host"
-	ServerSettingsUpdateServerHostDesc = "PentAGI Cloud API endpoint as host[:port]; leave empty for update.pentagi.com"
+	ServerSettingsUpdateServerHostDesc = "OpsAGI Cloud API endpoint as host[:port]; leave empty for update.opsagi.com"
 
 	ServerSettingsSupportServerHost     = "Support Server Host"
-	ServerSettingsSupportServerHostDesc = "PentAGI Support API endpoint as host[:port]; leave empty for support.pentagi.com"
+	ServerSettingsSupportServerHostDesc = "OpsAGI Support API endpoint as host[:port]; leave empty for support.opsagi.com"
 
 	ToolsDockerInsideHost     = "Worker Docker Daemon Host"
 	ToolsDockerInsideHostDesc = "Daemon endpoint given to worker containers (e.g., tcp://dind:2376); empty keeps socket mounting"
@@ -1421,7 +1421,7 @@ const (
 
 It is injected into each sandbox as DOCKER_HOST, so the Docker CLI inside the container talks to this daemon.
 
-Setting it also STOPS the host socket from being auto-detected and bind-mounted into sandboxes: an agent then reaches only the daemon you designated, not the one running PentAGI itself. An explicitly configured Docker Socket still takes precedence and is mounted as before.
+Setting it also STOPS the host socket from being auto-detected and bind-mounted into sandboxes: an agent then reaches only the daemon you designated, not the one running OpsAGI itself. An explicitly configured Docker Socket still takes precedence and is mounted as before.
 
 Leave empty to keep the historical behaviour (auto-detected socket mount).
 
@@ -1444,7 +1444,7 @@ IMPORTANT: this path is resolved on the WORKER NODE — the machine whose Docker
 
 Examples:
 • /etc/docker/certs
-• /opt/pentagi/docker/ssl`
+• /opt/opsagi/docker/ssl`
 
 	ServerSettingsTenantID     = "Tenant ID"
 	ServerSettingsTenantIDDesc = "Optional namespace for multi-instance deployment on one host (e.g., acme, team_alpha)"
@@ -1456,10 +1456,10 @@ Examples:
 	ServerSettingsHostDesc = "Bind address used by Docker port mapping (e.g., 0.0.0.0 to expose on all interfaces)"
 
 	ServerSettingsPort     = "Server Port (Listen Port)"
-	ServerSettingsPortDesc = "External TCP port exposed by Docker for PentAGI web UI"
+	ServerSettingsPortDesc = "External TCP port exposed by Docker for OpsAGI web UI"
 
 	ServerSettingsPublicURL     = "Public URL"
-	ServerSettingsPublicURLDesc = "Base public URL for redirects and links (supports base path, e.g., https://example.com/pentagi/)"
+	ServerSettingsPublicURLDesc = "Base public URL for redirects and links (supports base path, e.g., https://example.com/opsagi/)"
 
 	ServerSettingsCORSOrigins     = "CORS Origins"
 	ServerSettingsCORSOriginsDesc = "Comma-separated list of allowed origins (e.g., https://localhost:8443,https://localhost)"
@@ -1481,7 +1481,7 @@ Examples:
 	ServerSettingsTerminalToolTimeoutDesc = "Default timeout in seconds for terminal commands (0 or negative = use 3-hour maximum)"
 
 	ServerSettingsExternalSSLCAPath     = "Custom CA Certificate Path"
-	ServerSettingsExternalSSLCAPathDesc = "Path inside container to custom root CA cert (e.g., /opt/pentagi/ssl/ca-bundle.pem)"
+	ServerSettingsExternalSSLCAPathDesc = "Path inside container to custom root CA cert (e.g., /opt/opsagi/ssl/ca-bundle.pem)"
 
 	ServerSettingsExternalSSLInsecure     = "Skip SSL Verification"
 	ServerSettingsExternalSSLInsecureDesc = "Disable SSL/TLS certificate validation (use only for testing with self-signed certs)"
@@ -1522,15 +1522,15 @@ Examples:
 	ServerSettingsDatabaseSearchPathViaOptionsHint = "Search Path via Options"
 
 	// Help texts per-field
-	ServerSettingsGeneralHelp = `PentAGI exposes its web UI via Docker with configurable host and port.
+	ServerSettingsGeneralHelp = `OpsAGI exposes its web UI via Docker with configurable host and port.
 
-Public URL must reflect how users reach the server. If using a subpath (e.g., /pentagi/), include it here. CORS controls browser access from specified origins. Proxy affects outbound traffic to LLM/search providers and other external services used by Tools.
+Public URL must reflect how users reach the server. If using a subpath (e.g., /opsagi/), include it here. CORS controls browser access from specified origins. Proxy affects outbound traffic to LLM/search providers and other external services used by Tools.
 
 SSL directory allows providing custom certificates. When set, server will use server.crt and server.key from that directory. Data directory stores artifacts and working files for flows.`
 
-	ServerSettingsLicenseKeyHelp = `PentAGI License Key in format of XXXX-XXXX-XXXX-XXXX. It's used to communicate with PentAGI Cloud API.`
+	ServerSettingsLicenseKeyHelp = `OpsAGI License Key in format of XXXX-XXXX-XXXX-XXXX. It's used to communicate with OpsAGI Cloud API.`
 
-	ServerSettingsTenantIDHelp = `Optional identifier that namespaces PostgreSQL schema, data directory, Docker objects, Graphiti group ids, auth cookies and telemetry when several PentAGI instances share one host and the same backing services.
+	ServerSettingsTenantIDHelp = `Optional identifier that namespaces PostgreSQL schema, data directory, Docker objects, Graphiti group ids, auth cookies and telemetry when several OpsAGI instances share one host and the same backing services.
 
 Leave empty for a single-instance deployment (default). When set, the value must match ^[a-z][a-z0-9_]{0,31}$ — lowercase letter first, then lowercase letters, digits or underscores, max 32 characters. Hyphens are not allowed.
 
@@ -1556,20 +1556,20 @@ Examples:
 • 127.0.0.1 — local-only access
 • 0.0.0.0 — expose on all interfaces`
 
-	ServerSettingsPortHelp = `External port for PentAGI UI. Must be available on the host. Example: 8443.`
+	ServerSettingsPortHelp = `External port for OpsAGI UI. Must be available on the host. Example: 8443.`
 
 	ServerSettingsPublicURLHelp = `Set the public base URL used in redirects and links.
 
 Examples:
 • http://localhost:8443
 • https://example.com/
-• https://example.com/pentagi/ (with base path)`
+• https://example.com/opsagi/ (with base path)`
 
 	ServerSettingsCORSOriginsHelp = `Comma-separated allowed origins for browser access.`
 
-	ServerSettingsTrustedProxiesHelp = `Comma-separated list of proxy IP addresses or CIDR ranges whose X-Forwarded-For / X-Real-IP headers PentAGI will trust when determining a client's real IP.
+	ServerSettingsTrustedProxiesHelp = `Comma-separated list of proxy IP addresses or CIDR ranges whose X-Forwarded-For / X-Real-IP headers OpsAGI will trust when determining a client's real IP.
 
-Set this only when PentAGI sits behind a reverse proxy or load balancer you control. Leave empty to trust none. Example: 10.0.0.0/8,172.16.0.0/12`
+Set this only when OpsAGI sits behind a reverse proxy or load balancer you control. Leave empty to trust none. Example: 10.0.0.0/8,172.16.0.0/12`
 
 	ServerSettingsProxyURLHelp = `HTTP or HTTPS proxy for every backend request to LLM, embedding and search providers, local endpoints included, and for update checks; the installer's own update and download calls use it too. Sandbox containers, the scraper, Graphiti and Docker API communication do not use it.`
 
@@ -1594,11 +1594,11 @@ Explicit timeout values provided by the tool call override this default when the
 
 	ServerSettingsExternalSSLCAPathHelp = `Path to custom CA certificate file (PEM format) inside the container.
 
-Must point to /opt/pentagi/ssl/ directory, which is mounted from pentagi-ssl volume on the host.
+Must point to /opt/opsagi/ssl/ directory, which is mounted from opsagi-ssl volume on the host.
 
 Examples:
-• /opt/pentagi/ssl/ca-bundle.pem
-• /opt/pentagi/ssl/corporate-ca.pem
+• /opt/opsagi/ssl/ca-bundle.pem
+• /opt/opsagi/ssl/corporate-ca.pem
 
 File can contain multiple root and intermediate certificates.`
 
@@ -1610,7 +1610,7 @@ When enabled, all certificate validation is bypassed, making connections vulnera
 
 	ServerSettingsSSLDirHelp = `Path to directory with server.crt and server.key in PEM format. server.crt may include fullchain. Overrides default generated certificate behavior.`
 
-	ServerSettingsDataDirHelp = `Host directory for persistent data. PentAGI stores agent artifacts under flow-N subdirectories, which map to /work inside worker containers.`
+	ServerSettingsDataDirHelp = `Host directory for persistent data. OpsAGI stores agent artifacts under flow-N subdirectories, which map to /work inside worker containers.`
 
 	ServerSettingsCookieSigningSaltHelp = `Secret salt used to sign cookies. Keep it private.`
 
@@ -1635,7 +1635,7 @@ const (
 	ToolsAIAgentsSettingsFormTitle       = "AI Agents Settings"
 	ToolsAIAgentsSettingsFormDescription = "Configure global behavior for AI agents"
 	ToolsAIAgentsSettingsFormName        = "AI Agents Settings"
-	ToolsAIAgentsSettingsFormOverview    = `This section configures global behavior of AI agents across PentAGI.
+	ToolsAIAgentsSettingsFormOverview    = `This section configures global behavior of AI agents across OpsAGI.
 
 Basic Settings:
 • Enable User Interaction: allow agents to request user input when needed
@@ -1927,7 +1927,7 @@ Host Mode (value: 'host'):
 • Lower isolation - use with caution
 
 Examples:
-• 'pentagi-network' - creates isolated bridge network
+• 'opsagi-network' - creates isolated bridge network
 • 'host' - enables direct host network access
 
 Security Note: Host network mode reduces container isolation. Only use when necessary for advanced penetration testing tasks requiring direct network stack access.`
@@ -1973,7 +1973,7 @@ Use 'fixed' to pin every worker to one vetted image.`
 
 Leave empty to allow any image. Example: debian:latest,vxcontrol/kali-linux`
 
-	ToolsDockerInsidePolicyTestsHelp = `Sandbox Isolation Self-Test checks at startup that the sandbox Docker daemon is separate from PentAGI's own and refuses host-escape requests, before any agent is given Docker access.
+	ToolsDockerInsidePolicyTestsHelp = `Sandbox Isolation Self-Test checks at startup that the sandbox Docker daemon is separate from OpsAGI's own and refuses host-escape requests, before any agent is given Docker access.
 
 Only meaningful when Docker Access is enabled. Recommended on any deployment where agents reach a Docker daemon.`
 
@@ -2087,7 +2087,7 @@ Choose carefully as changing providers requires reindexing all stored data.`
 	EmbedderProviderIDVoyageAI    = "voyageai"
 	EmbedderProviderIDDisabled    = "none"
 
-	EmbedderHelpGeneral = `Embeddings convert text into vectors for semantic search and knowledge storage. This enables PentAGI to understand meaning rather than just keywords, making search results more relevant and intelligent.
+	EmbedderHelpGeneral = `Embeddings convert text into vectors for semantic search and knowledge storage. This enables OpsAGI to understand meaning rather than just keywords, making search results more relevant and intelligent.
 
 Key benefits:
 • Find documents by meaning, not exact words
@@ -2213,7 +2213,7 @@ const (
 	ApplyChangesFormDescription = "Review and apply your configuration changes"
 
 	// Apply Changes overview and help
-	ApplyChangesFormOverview = `This screen allows you to review all pending configuration changes and apply them to your PentAGI installation.
+	ApplyChangesFormOverview = `This screen allows you to review all pending configuration changes and apply them to your OpsAGI installation.
 
 When you apply changes, the system will:
 • Save all modified environment variables to the .env file
@@ -2235,17 +2235,17 @@ When you apply changes, the system will:
 	ApplyChangesNoChanges = "No configuration changes are pending"
 
 	// Apply Changes installation status
-	ApplyChangesInstallNotFound = `PentAGI is not currently installed on this system.
+	ApplyChangesInstallNotFound = `OpsAGI is not currently installed on this system.
 
 The following actions will be performed:
 • Docker environment setup and validation
 • Creation of docker-compose.yml file
-• Installation and startup of PentAGI core services`
+• Installation and startup of OpsAGI core services`
 
 	ApplyChangesInstallFoundLangfuse      = `• Installation of Langfuse observability stack (docker-compose-langfuse.yml)`
 	ApplyChangesInstallFoundObservability = `• Installation of comprehensive observability stack with Grafana, VictoriaMetrics, and Jaeger (docker-compose-observability.yml)`
 
-	ApplyChangesUpdateFound = `PentAGI is currently installed on this system.
+	ApplyChangesUpdateFound = `OpsAGI is currently installed on this system.
 
 The following actions will be performed:
 • Update environment variables in .env file
@@ -2290,9 +2290,9 @@ const (
 // Maintenance Screen constants
 const (
 	MaintenanceTitle       = "System Maintenance"
-	MaintenanceDescription = "Manage PentAGI services and perform maintenance operations"
+	MaintenanceDescription = "Manage OpsAGI services and perform maintenance operations"
 	MaintenanceName        = "Maintenance"
-	MaintenanceOverview    = `Perform system maintenance operations for PentAGI.
+	MaintenanceOverview    = `Perform system maintenance operations for OpsAGI.
 
 Available operations depend on the current system state and will only be shown when applicable.
 
@@ -2305,38 +2305,38 @@ Operations include:
 Each operation will provide real-time status updates and confirmation when required.`
 
 	// Maintenance menu items
-	MaintenanceStartPentagi            = "Start PentAGI"
-	MaintenanceStartPentagiDesc        = "Start all configured PentAGI services"
-	MaintenanceStopPentagi             = "Stop PentAGI"
-	MaintenanceStopPentagiDesc         = "Stop all running PentAGI services"
-	MaintenanceRestartPentagi          = "Restart PentAGI"
-	MaintenanceRestartPentagiDesc      = "Restart all PentAGI services"
+	MaintenanceStartOpsagi            = "Start OpsAGI"
+	MaintenanceStartOpsagiDesc        = "Start all configured OpsAGI services"
+	MaintenanceStopOpsagi             = "Stop OpsAGI"
+	MaintenanceStopOpsagiDesc         = "Stop all running OpsAGI services"
+	MaintenanceRestartOpsagi          = "Restart OpsAGI"
+	MaintenanceRestartOpsagiDesc      = "Restart all OpsAGI services"
 	MaintenanceDownloadWorkerImage     = "Download Worker Image"
 	MaintenanceDownloadWorkerImageDesc = "Download pentesting container image for worker tasks"
 	MaintenanceUpdateWorkerImage       = "Update Worker Image"
 	MaintenanceUpdateWorkerImageDesc   = "Update pentesting container image to latest version"
-	MaintenanceUpdatePentagi           = "Update PentAGI"
-	MaintenanceUpdatePentagiDesc       = "Update PentAGI to the latest version"
+	MaintenanceUpdateOpsagi           = "Update OpsAGI"
+	MaintenanceUpdateOpsagiDesc       = "Update OpsAGI to the latest version"
 	MaintenanceUpdateInstaller         = "Update Installer"
 	MaintenanceUpdateInstallerDesc     = "Download and verify the latest installer build"
 	MaintenanceFactoryReset            = "Factory Reset"
-	MaintenanceFactoryResetDesc        = "Reset PentAGI to factory defaults"
-	MaintenanceRemovePentagi           = "Remove PentAGI"
-	MaintenanceRemovePentagiDesc       = "Remove PentAGI containers but keep data"
-	MaintenancePurgePentagi            = "Purge PentAGI"
-	MaintenancePurgePentagiDesc        = "Completely remove PentAGI including all data"
+	MaintenanceFactoryResetDesc        = "Reset OpsAGI to factory defaults"
+	MaintenanceRemoveOpsagi           = "Remove OpsAGI"
+	MaintenanceRemoveOpsagiDesc       = "Remove OpsAGI containers but keep data"
+	MaintenancePurgeOpsagi            = "Purge OpsAGI"
+	MaintenancePurgeOpsagiDesc        = "Completely remove OpsAGI including all data"
 	MaintenanceResetPassword           = "Reset Admin Password"
-	MaintenanceResetPasswordDesc       = "Reset the administrator password for PentAGI"
+	MaintenanceResetPasswordDesc       = "Reset the administrator password for OpsAGI"
 )
 
 // Reset Password Screen constants
 const (
 	ResetPasswordFormTitle       = "Reset Admin Password"
-	ResetPasswordFormDescription = "Reset the administrator password for PentAGI"
+	ResetPasswordFormDescription = "Reset the administrator password for OpsAGI"
 	ResetPasswordFormName        = "Reset Password"
-	ResetPasswordFormOverview    = `Reset the password for the default administrator account (admin@pentagi.com).
+	ResetPasswordFormOverview    = `Reset the password for the default administrator account (admin@opsagi.com).
 
-This operation requires PentAGI to be running and will update the password in the PostgreSQL database.
+This operation requires OpsAGI to be running and will update the password in the PostgreSQL database.
 
 Enter your new password twice to confirm and press Enter to apply the change.
 
@@ -2351,7 +2351,7 @@ Password requirements:
 	ResetPasswordConfirmPasswordDesc = "Re-enter the new password to confirm"
 
 	// Status messages
-	ResetPasswordNotAvailable = "PentAGI must be running to reset password"
+	ResetPasswordNotAvailable = "OpsAGI must be running to reset password"
 	ResetPasswordAvailable    = "Password reset is available"
 	ResetPasswordInProgress   = "Resetting password..."
 	ResetPasswordSuccess      = "Password has been successfully reset"
@@ -2364,12 +2364,12 @@ Password requirements:
 	ResetPasswordErrorMismatch      = "Passwords do not match"
 
 	// Help content
-	ResetPasswordHelpContent = `Reset the administrator password for accessing PentAGI.
+	ResetPasswordHelpContent = `Reset the administrator password for accessing OpsAGI.
 
 This operation:
-• Updates the password for admin@pentagi.com account
+• Updates the password for admin@opsagi.com account
 • Sets the user status to 'active'
-• Requires PentAGI database to be accessible
+• Requires OpsAGI database to be accessible
 • Does not affect other user accounts
 
 The password change takes effect immediately after successful completion.
@@ -2409,7 +2409,7 @@ const (
 	ProcessorOperationResetting   = "Resetting to factory defaults..."
 	ProcessorOperationRemoving    = "Removing containers..."
 	ProcessorOperationPurging     = "Purging all data..."
-	ProcessorOperationInstalling  = "Installing PentAGI services..."
+	ProcessorOperationInstalling  = "Installing OpsAGI services..."
 
 	// Help text templates
 	ProcessorOperationHelpTitle           = "%s Operation"
@@ -2417,8 +2417,8 @@ const (
 	ProcessorOperationHelpContentDownload = "This operation will download %s components."
 	ProcessorOperationHelpContentUpdate   = "This operation will update %s components."
 	// Generic title/description/builders for dynamic operations
-	OperationTitleInstallPentagi    = "Install PentAGI"
-	OperationDescInstallPentagi     = "Install and configure PentAGI services"
+	OperationTitleInstallOpsagi    = "Install OpsAGI"
+	OperationDescInstallOpsagi     = "Install and configure OpsAGI services"
 	OperationTitleDownload          = "Download %s"
 	OperationDescDownloadComponents = "Download %s components"
 	OperationTitleUpdate            = "Update %s"
@@ -2433,7 +2433,7 @@ const (
 
 // Operation-specific help texts
 const (
-	ProcessorHelpInstallPentagi = `This will:
+	ProcessorHelpInstallOpsagi = `This will:
 • Deploy Docker containers for selected services
 • Configure networking and volumes
 • Start all enabled services
@@ -2441,21 +2441,21 @@ const (
 
 Installation will use your current configuration settings.`
 
-	ProcessorHelpStartPentagi = `This will:
-• Core PentAGI API and web interface
+	ProcessorHelpStartOpsagi = `This will:
+• Core OpsAGI API and web interface
 • Configured Langfuse analytics (if enabled)
 • Observability stack (if enabled)
 
 Services will be started in the correct dependency order.`
 
-	ProcessorHelpStopPentagi = `This will:
+	ProcessorHelpStopOpsagi = `This will:
 • Gracefully shutdown containers
 • Preserve all data and configurations
 • Network connections will be closed
 
 You can restart services later without losing any data.`
 
-	ProcessorHelpRestartPentagi = `This will:
+	ProcessorHelpRestartOpsagi = `This will:
 • Stop running containers
 • Apply any configuration changes
 • Start services with fresh state
@@ -2476,7 +2476,7 @@ Required for pentesting operations.`
 
 Note: This is a large download (6GB+).`
 
-	ProcessorHelpUpdatePentagi = `This will:
+	ProcessorHelpUpdateOpsagi = `This will:
 • Download latest container images
 • Perform rolling update of services
 • Preserve all data and configurations
@@ -2491,7 +2491,7 @@ Services will be briefly unavailable during update.`
 
 This action cannot be undone!`
 
-	ProcessorHelpRemovePentagi = `This will:
+	ProcessorHelpRemoveOpsagi = `This will:
 • Stop and remove all containers
 • Remove Docker networks
 • Preserve volumes and data
@@ -2499,7 +2499,7 @@ This action cannot be undone!`
 
 You can reinstall later without losing data.`
 
-	ProcessorHelpPurgePentagi = `⚠️  WARNING: This will permanently delete:
+	ProcessorHelpPurgeOpsagi = `⚠️  WARNING: This will permanently delete:
 • All containers and images
 • All data volumes
 • All configuration files
@@ -2667,15 +2667,15 @@ const (
 	EnvDesc_DOCKER_INSIDE_TLS_VERIFY         = "Worker Docker TLS Verify"
 	EnvDesc_DOCKER_INSIDE_CERT_PATH          = "Worker Docker Certificate Path"
 
-	EnvDesc_TENANT_ID                         = "PentAGI Tenant ID"
-	EnvDesc_LICENSE_KEY                       = "PentAGI License Key"
-	EnvDesc_PPROF_ADDR                        = "PentAGI pprof Listen Address"
-	EnvDesc_PENTAGI_LISTEN_IP                 = "PentAGI Server Host"
-	EnvDesc_PENTAGI_LISTEN_PORT               = "PentAGI Server Port"
-	EnvDesc_PUBLIC_URL                        = "PentAGI Public URL"
-	EnvDesc_CORS_ORIGINS                      = "PentAGI CORS Origins"
-	EnvDesc_TRUSTED_PROXIES                   = "PentAGI Trusted Proxies"
-	EnvDesc_COOKIE_SIGNING_SALT               = "PentAGI Cookie Signing Salt"
+	EnvDesc_TENANT_ID                         = "OpsAGI Tenant ID"
+	EnvDesc_LICENSE_KEY                       = "OpsAGI License Key"
+	EnvDesc_PPROF_ADDR                        = "OpsAGI pprof Listen Address"
+	EnvDesc_OPSAGI_LISTEN_IP                 = "OpsAGI Server Host"
+	EnvDesc_OPSAGI_LISTEN_PORT               = "OpsAGI Server Port"
+	EnvDesc_PUBLIC_URL                        = "OpsAGI Public URL"
+	EnvDesc_CORS_ORIGINS                      = "OpsAGI CORS Origins"
+	EnvDesc_TRUSTED_PROXIES                   = "OpsAGI Trusted Proxies"
+	EnvDesc_COOKIE_SIGNING_SALT               = "OpsAGI Cookie Signing Salt"
 	EnvDesc_DATABASE_EXTENSIONS_SCHEMA        = "PostgreSQL Extensions Schema"
 	EnvDesc_DATABASE_SEARCH_PATH_VIA_OPTIONS  = "PostgreSQL Search Path via Options"
 	EnvDesc_PROXY_URL                         = "HTTP/HTTPS Proxy URL"
@@ -2683,13 +2683,13 @@ const (
 	EnvDesc_TERMINAL_TOOL_TIMEOUT             = "Terminal Tool Timeout (seconds)"
 	EnvDesc_EXTERNAL_SSL_CA_PATH              = "Custom CA Certificate Path"
 	EnvDesc_EXTERNAL_SSL_INSECURE             = "Skip SSL Verification"
-	EnvDesc_PENTAGI_SSL_DIR                   = "PentAGI SSL Directory"
-	EnvDesc_PENTAGI_DATA_DIR                  = "PentAGI Data Directory"
-	EnvDesc_PENTAGI_DOCKER_SOCKET             = "Mount Docker Socket Path"
-	EnvDesc_PENTAGI_DOCKER_CERT_PATH          = "Mount Docker Certificate Path"
-	EnvDesc_PENTAGI_BEDROCK_CONFIG_PATH       = "AWS Bedrock Host Config Path"
-	EnvDesc_PENTAGI_LLM_SERVER_CONFIG_PATH    = "Custom LLM Host Config Path"
-	EnvDesc_PENTAGI_OLLAMA_SERVER_CONFIG_PATH = "Ollama Host Config Path"
+	EnvDesc_OPSAGI_SSL_DIR                   = "OpsAGI SSL Directory"
+	EnvDesc_OPSAGI_DATA_DIR                  = "OpsAGI Data Directory"
+	EnvDesc_OPSAGI_DOCKER_SOCKET             = "Mount Docker Socket Path"
+	EnvDesc_OPSAGI_DOCKER_CERT_PATH          = "Mount Docker Certificate Path"
+	EnvDesc_OPSAGI_BEDROCK_CONFIG_PATH       = "AWS Bedrock Host Config Path"
+	EnvDesc_OPSAGI_LLM_SERVER_CONFIG_PATH    = "Custom LLM Host Config Path"
+	EnvDesc_OPSAGI_OLLAMA_SERVER_CONFIG_PATH = "Ollama Host Config Path"
 
 	EnvDesc_STATIC_DIR     = "Frontend Static Directory"
 	EnvDesc_STATIC_URL     = "Frontend Static URL"
@@ -2716,7 +2716,7 @@ const (
 	EnvDesc_OAUTH_GITHUB_CLIENT_SECRET = "OAuth GitHub Client Secret"
 
 	EnvDesc_LANGFUSE_EE_LICENSE_KEY   = "Langfuse Enterprise License Key"
-	EnvDesc_PENTAGI_POSTGRES_PASSWORD = "PentAGI PostgreSQL Password"
+	EnvDesc_OPSAGI_POSTGRES_PASSWORD = "OpsAGI PostgreSQL Password"
 
 	EnvDesc_GRAPHITI_ENABLED                      = "Enable Graphiti Integration"
 	EnvDesc_GRAPHITI_URL                          = "Graphiti Server URL"
@@ -2750,7 +2750,7 @@ const (
 	ProcessorSectionEffects      = "Effects"
 
 	// component labels
-	ProcessorComponentPentagi       = "PentAGI"
+	ProcessorComponentOpsagi       = "OpsAGI"
 	ProcessorComponentLangfuse      = "Langfuse"
 	ProcessorComponentObservability = "Observability"
 
@@ -2783,8 +2783,8 @@ const (
 	PlannedWillRestore  = "will restore:"
 
 	// effect notes per operation (concise and practical)
-	EffectsStart          = "PentAGI web UI becomes available. Background services are brought online in the required order."
-	EffectsStop           = "Web UI becomes unavailable. In-progress flows pause safely. When you start PentAGI again, flows resume automatically. A small portion of the current agent step may be lost."
+	EffectsStart          = "OpsAGI web UI becomes available. Background services are brought online in the required order."
+	EffectsStop           = "Web UI becomes unavailable. In-progress flows pause safely. When you start OpsAGI again, flows resume automatically. A small portion of the current agent step may be lost."
 	EffectsRestart        = "Services stop and start again with a clean state. Brief downtime is expected. Flows resume automatically afterwards."
 	EffectsUpdateAll      = "Images are pulled and services are recreated where needed. External or disabled components are skipped. Temporary downtime is expected."
 	EffectsDownloadWorker = "Running worker containers are not touched. New flows will use the downloaded image. To switch an existing flow to the new image, finish the flow and start a new task or create a new assistant."

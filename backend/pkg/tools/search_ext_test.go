@@ -1,4 +1,4 @@
-// External: it drives the GraphQL resolver, and pentagi/pkg/graph depends on this package.
+// External: it drives the GraphQL resolver, and opsagi/pkg/graph depends on this package.
 package tools_test
 
 import (

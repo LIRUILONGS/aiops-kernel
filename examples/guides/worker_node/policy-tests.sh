@@ -3,7 +3,7 @@
 # DinD policy test-suite (OPA authz + hardened seccomp).
 #
 # WHERE TO RUN:
-#   Inside a PentAGI worker container (a child of the *host* Docker daemon) whose
+#   Inside a OpsAGI worker container (a child of the *host* Docker daemon) whose
 #   `docker` CLI is wired to the hardened *DinD* daemon. Every `docker run` below
 #   therefore creates a NESTED container subject to:
 #     - the OPA authorization plugin (authz.rego)  — gates containers/create + exec
@@ -52,7 +52,7 @@ SSH_PORT="${SSH_PORT:-22}"
 # Nested containers on the DinD *bridge* network are NAT'd and frequently CANNOT
 # reach the host's own service IP (interface binding / hairpin), whereas the
 # host network namespace can — and the OPA policy intentionally ALLOWS
-# --network=host. This is also how PentAGI agents reach host-local targets.
+# --network=host. This is also how OpsAGI agents reach host-local targets.
 # Override with TARGET_NET="" to force the default bridge.
 TARGET_NET="${TARGET_NET:---network host}"
 
@@ -65,7 +65,7 @@ IMG_NMAP="${IMG_NMAP:-instrumentisto/nmap:7.95}"
 IMG_JAVA="${IMG_JAVA:-eclipse-temurin:21-jdk}"
 IMG_PY="${IMG_PY:-python:3.12-alpine}"
 
-LABEL="pentagi-dind-test"
+LABEL="opsagi-dind-test"
 NETPREFIX="pgdtnet"
 VOLPREFIX="pgdtvol"
 
@@ -124,7 +124,7 @@ expect_cmd_deny(){ local name="$1"; shift
 # Direct HTTP call to the DinD API for endpoints not exposed by the Docker CLI.
 # Transport resolution order:
 #   1. DOCKER=(docker -H tcp://… --tlscacert …) CLI flags
-#   2. DOCKER_HOST / DOCKER_CERT_PATH env (PentAGI worker / guide layout)
+#   2. DOCKER_HOST / DOCKER_CERT_PATH env (OpsAGI worker / guide layout)
 #   3. unix socket /var/run/docker.sock
 # Always prefixes the Docker API version (required by Engine 29+).
 dind_api_post(){ # path json
@@ -790,7 +790,7 @@ fi
 "${DOCKER[@]}" network rm "$SAFE_NET" >/dev/null 2>&1 || true
 
 # =============================================================================
-# POSITIVE — Compose-style multi-container workflow (PentAGI agent simulation)
+# POSITIVE — Compose-style multi-container workflow (OpsAGI agent simulation)
 # 1. Create isolated bridge network + shared volume
 # 2. Start a "target" service container on the network
 # 3. "Agent" queries the target, writes findings to the shared volume
@@ -798,7 +798,7 @@ fi
 # 5. Tear everything down
 # All operations use only bridge networking + named volumes (no bind mounts).
 # =============================================================================
-section "POSITIVE — Compose-style multi-container workflow (PentAGI agent)"
+section "POSITIVE — Compose-style multi-container workflow (OpsAGI agent)"
 
 COMP_NET="${NETPREFIX}_comp_$RANDOM"
 COMP_VOL="${VOLPREFIX}_comp_$RANDOM"
@@ -1249,11 +1249,11 @@ else
 fi
 
 # /proc/1/root: must point to container root, not host root.
-if [ -d /proc/1/root/opt/pentagi ] 2>/dev/null; then
-  record FAIL "/proc/1/root/opt/pentagi accessible — container may see host filesystem" \
+if [ -d /proc/1/root/opt/opsagi ] 2>/dev/null; then
+  record FAIL "/proc/1/root/opt/opsagi accessible — container may see host filesystem" \
     "Symlinks in /work pointing to /proc/1/root/... can exfiltrate host files"
 else
-  record PASS "/proc/1/root/opt/pentagi not visible — /proc/1/root is container root (not host)"
+  record PASS "/proc/1/root/opt/opsagi not visible — /proc/1/root is container root (not host)"
 fi
 
 # Capability limits in the worker container itself.

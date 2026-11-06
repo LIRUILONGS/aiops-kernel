@@ -48,7 +48,7 @@ func TestCompose_PerformStackOperation_SkipsATearDownWithNoComposeFile(t *testin
 
 // Subtests are keyed by unit: the two that fetch write the server's references, the two that tear down none.
 func TestCompose_OnlyTheFetchingOperationsWriteThePullReferences(t *testing.T) {
-	chosen := map[string]string{"PENTAGI_IMAGE": "vxcontrol/pentagi:2.3.4"}
+	chosen := map[string]string{"OPSAGI_IMAGE": "local/opsagi:2.3.4"}
 	for _, tc := range []struct {
 		name string
 		run  func(composeOperations, context.Context, ProductStack, *operationState) error
@@ -62,7 +62,7 @@ func TestCompose_OnlyTheFetchingOperationsWriteThePullReferences(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			p, state := processorWithPullReference(t)
 			// No compose file exists, so `.env` is asserted as it stood when compose was reached.
-			_ = tc.run(p.composeOps, t.Context(), ProductStackPentagi, testOperationState(t))
+			_ = tc.run(p.composeOps, t.Context(), ProductStackOpsagi, testOperationState(t))
 			assert.Equal(t, tc.want, state.written)
 		})
 	}

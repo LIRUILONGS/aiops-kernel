@@ -25,7 +25,7 @@ import (
 // than as a failed CREATE EXTENSION on first boot.
 var schemaNameRegex = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]{0,62}$`)
 
-// ServerSettingsFormModel represents the PentAGI server settings configuration form
+// ServerSettingsFormModel represents the OpsAGI server settings configuration form
 type ServerSettingsFormModel struct {
 	*BaseScreen
 }
@@ -45,7 +45,7 @@ func (m *ServerSettingsFormModel) BuildForm() tea.Cmd {
 	config := m.GetController().GetServerSettingsConfig()
 	fields := []FormField{}
 
-	fields = append(fields, m.createTextField("pentagi_license_key",
+	fields = append(fields, m.createTextField("opsagi_license_key",
 		locale.ServerSettingsLicenseKey,
 		locale.ServerSettingsLicenseKeyDesc,
 		config.LicenseKey,
@@ -73,14 +73,14 @@ func (m *ServerSettingsFormModel) BuildForm() tea.Cmd {
 		false,
 	))
 
-	fields = append(fields, m.createTextField("pentagi_tenant_id",
+	fields = append(fields, m.createTextField("opsagi_tenant_id",
 		locale.ServerSettingsTenantID,
 		locale.ServerSettingsTenantIDDesc,
 		config.TenantID,
 		false,
 	))
 
-	fields = append(fields, m.createTextField("pentagi_pprof_addr",
+	fields = append(fields, m.createTextField("opsagi_pprof_addr",
 		locale.ServerSettingsPprofAddr,
 		locale.ServerSettingsPprofAddrDesc,
 		config.PprofAddr,
@@ -88,14 +88,14 @@ func (m *ServerSettingsFormModel) BuildForm() tea.Cmd {
 	))
 
 	// host and port
-	fields = append(fields, m.createTextField("pentagi_server_host",
+	fields = append(fields, m.createTextField("opsagi_server_host",
 		locale.ServerSettingsHost,
 		locale.ServerSettingsHostDesc,
 		config.ListenIP,
 		false,
 	))
 
-	fields = append(fields, m.createTextField("pentagi_server_port",
+	fields = append(fields, m.createTextField("opsagi_server_port",
 		locale.ServerSettingsPort,
 		locale.ServerSettingsPortDesc,
 		config.ListenPort,
@@ -103,7 +103,7 @@ func (m *ServerSettingsFormModel) BuildForm() tea.Cmd {
 	))
 
 	// public url
-	fields = append(fields, m.createTextField("pentagi_public_url",
+	fields = append(fields, m.createTextField("opsagi_public_url",
 		locale.ServerSettingsPublicURL,
 		locale.ServerSettingsPublicURLDesc,
 		config.PublicURL,
@@ -111,7 +111,7 @@ func (m *ServerSettingsFormModel) BuildForm() tea.Cmd {
 	))
 
 	// cors origins
-	fields = append(fields, m.createTextField("pentagi_cors_origins",
+	fields = append(fields, m.createTextField("opsagi_cors_origins",
 		locale.ServerSettingsCORSOrigins,
 		locale.ServerSettingsCORSOriginsDesc,
 		config.CorsOrigins,
@@ -119,7 +119,7 @@ func (m *ServerSettingsFormModel) BuildForm() tea.Cmd {
 	))
 
 	// trusted proxies
-	fields = append(fields, m.createTextField("pentagi_trusted_proxies",
+	fields = append(fields, m.createTextField("opsagi_trusted_proxies",
 		locale.ServerSettingsTrustedProxies,
 		locale.ServerSettingsTrustedProxiesDesc,
 		config.TrustedProxies,
@@ -175,7 +175,7 @@ func (m *ServerSettingsFormModel) BuildForm() tea.Cmd {
 	))
 
 	// ssl dir
-	fields = append(fields, m.createTextField("pentagi_ssl_dir",
+	fields = append(fields, m.createTextField("opsagi_ssl_dir",
 		locale.ServerSettingsSSLDir,
 		locale.ServerSettingsSSLDirDesc,
 		config.SSLDir,
@@ -183,7 +183,7 @@ func (m *ServerSettingsFormModel) BuildForm() tea.Cmd {
 	))
 
 	// data dir
-	fields = append(fields, m.createTextField("pentagi_data_dir",
+	fields = append(fields, m.createTextField("opsagi_data_dir",
 		locale.ServerSettingsDataDir,
 		locale.ServerSettingsDataDirDesc,
 		config.DataDir,
@@ -191,7 +191,7 @@ func (m *ServerSettingsFormModel) BuildForm() tea.Cmd {
 	))
 
 	// cookie signing salt (masked)
-	fields = append(fields, m.createTextField("pentagi_cookie_signing_salt",
+	fields = append(fields, m.createTextField("opsagi_cookie_signing_salt",
 		locale.ServerSettingsCookieSigningSalt,
 		locale.ServerSettingsCookieSigningSaltDesc,
 		config.CookieSigningSalt,
@@ -456,21 +456,21 @@ func (m *ServerSettingsFormModel) GetHelpContent() string {
 	if fieldIndex >= 0 && fieldIndex < len(fields) {
 		field := fields[fieldIndex]
 		switch field.Key {
-		case "pentagi_license_key":
+		case "opsagi_license_key":
 			sections = append(sections, locale.ServerSettingsLicenseKeyHelp)
-		case "pentagi_tenant_id":
+		case "opsagi_tenant_id":
 			sections = append(sections, locale.ServerSettingsTenantIDHelp)
-		case "pentagi_pprof_addr":
+		case "opsagi_pprof_addr":
 			sections = append(sections, locale.ServerSettingsPprofAddrHelp)
-		case "pentagi_server_host":
+		case "opsagi_server_host":
 			sections = append(sections, locale.ServerSettingsHostHelp)
-		case "pentagi_server_port":
+		case "opsagi_server_port":
 			sections = append(sections, locale.ServerSettingsPortHelp)
-		case "pentagi_public_url":
+		case "opsagi_public_url":
 			sections = append(sections, locale.ServerSettingsPublicURLHelp)
-		case "pentagi_cors_origins":
+		case "opsagi_cors_origins":
 			sections = append(sections, locale.ServerSettingsCORSOriginsHelp)
-		case "pentagi_trusted_proxies":
+		case "opsagi_trusted_proxies":
 			sections = append(sections, locale.ServerSettingsTrustedProxiesHelp)
 		case "proxy_url":
 			sections = append(sections, locale.ServerSettingsProxyURLHelp)
@@ -482,11 +482,11 @@ func (m *ServerSettingsFormModel) GetHelpContent() string {
 			sections = append(sections, locale.ServerSettingsExternalSSLCAPathHelp)
 		case "external_ssl_insecure":
 			sections = append(sections, locale.ServerSettingsExternalSSLInsecureHelp)
-		case "pentagi_ssl_dir":
+		case "opsagi_ssl_dir":
 			sections = append(sections, locale.ServerSettingsSSLDirHelp)
-		case "pentagi_data_dir":
+		case "opsagi_data_dir":
 			sections = append(sections, locale.ServerSettingsDataDirHelp)
-		case "pentagi_cookie_signing_salt":
+		case "opsagi_cookie_signing_salt":
 			sections = append(sections, locale.ServerSettingsCookieSigningSaltHelp)
 		case "database_extensions_schema":
 			sections = append(sections, locale.ServerSettingsDatabaseExtensionsSchemaHelp)
@@ -532,7 +532,7 @@ func (m *ServerSettingsFormModel) HandleSave() error {
 		value := strings.TrimSpace(field.Input.Value())
 
 		switch field.Key {
-		case "pentagi_license_key":
+		case "opsagi_license_key":
 			if value != "" {
 				if info, err := sdk.IntrospectLicenseKey(value); err != nil {
 					return fmt.Errorf("invalid license key: %v", err)
@@ -558,32 +558,32 @@ func (m *ServerSettingsFormModel) HandleSave() error {
 			newCfg.UpdateServerHost.Value = value
 		case "support_server_host":
 			newCfg.SupportServerHost.Value = value
-		case "pentagi_tenant_id":
+		case "opsagi_tenant_id":
 			if err := (&config.Config{TenantID: value}).ValidateTenantID(); err != nil {
 				return err
 			}
 			newCfg.TenantID.Value = value
-		case "pentagi_pprof_addr":
+		case "opsagi_pprof_addr":
 			if value != "" {
 				if _, _, err := net.SplitHostPort(value); err != nil {
 					return fmt.Errorf("invalid pprof address: must be host:port (e.g., :7777 or 127.0.0.1:7778)")
 				}
 			}
 			newCfg.PprofAddr.Value = value
-		case "pentagi_server_host":
+		case "opsagi_server_host":
 			newCfg.ListenIP.Value = value
-		case "pentagi_server_port":
+		case "opsagi_server_port":
 			if value != "" {
 				if _, err := strconv.Atoi(value); err != nil {
 					return fmt.Errorf("invalid port: %s", value)
 				}
 			}
 			newCfg.ListenPort.Value = value
-		case "pentagi_public_url":
+		case "opsagi_public_url":
 			newCfg.PublicURL.Value = value
-		case "pentagi_cors_origins":
+		case "opsagi_cors_origins":
 			newCfg.CorsOrigins.Value = value
-		case "pentagi_trusted_proxies":
+		case "opsagi_trusted_proxies":
 			newCfg.TrustedProxies.Value = value
 		case "proxy_url":
 			newCfg.ProxyURL.Value = value
@@ -616,11 +616,11 @@ func (m *ServerSettingsFormModel) HandleSave() error {
 				return fmt.Errorf("invalid value for skip SSL verification: must be 'true' or 'false'")
 			}
 			newCfg.ExternalSSLInsecure.Value = value
-		case "pentagi_ssl_dir":
+		case "opsagi_ssl_dir":
 			newCfg.SSLDir.Value = value
-		case "pentagi_data_dir":
+		case "opsagi_data_dir":
 			newCfg.DataDir.Value = value
-		case "pentagi_cookie_signing_salt":
+		case "opsagi_cookie_signing_salt":
 			newCfg.CookieSigningSalt.Value = value
 		case "database_extensions_schema":
 			if value != "" && !schemaNameRegex.MatchString(value) {

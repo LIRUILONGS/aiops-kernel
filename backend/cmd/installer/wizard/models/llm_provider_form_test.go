@@ -78,13 +78,13 @@ func TestLLMProviderForm_GivesEveryOfferedDoorItsOwnNameDescriptionAndURL(t *tes
 	}
 }
 
-// The env file has no PENTAGI_BEDROCK_CONFIG_PATH line, as on a host whose .env predates the variable.
+// The env file has no OPSAGI_BEDROCK_CONFIG_PATH line, as on a host whose .env predates the variable.
 func TestLLMProviderForm_HandleSave_MountsABedrockConfigTypedAsAFileOnTheHost(t *testing.T) {
 	onHost := filepath.Join(t.TempDir(), "my-bedrock.provider.yml")
 	if err := os.WriteFile(onHost, []byte("simple:\n  model: zai.glm-4.7-flash\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	mountedAt, shipped := "/opt/pentagi/conf/bedrock.provider.yml", "/opt/pentagi/conf/bedrock-glm-flash.provider.yml"
+	mountedAt, shipped := "/opt/opsagi/conf/bedrock.provider.yml", "/opt/opsagi/conf/bedrock-glm-flash.provider.yml"
 	typed := func(path string) *string { return &path }
 	for _, tc := range []struct {
 		name                    string
@@ -97,8 +97,8 @@ func TestLLMProviderForm_HandleSave_MountsABedrockConfigTypedAsAFileOnTheHost(t 
 		{name: "a file on the host", typed: typed(onHost), wantContainer: mountedAt, wantHost: onHost},
 		{name: "a config the image ships", typed: typed(shipped), wantContainer: shipped},
 		{name: "the path the default example is mounted at", typed: typed(mountedAt), wantContainer: mountedAt},
-		{name: "a path that is on neither", typed: typed("/opt/pentagi/conf/bedrock.yml"),
-			wantErr: "config file does not exist: /opt/pentagi/conf/bedrock.yml"},
+		{name: "a path that is on neither", typed: typed("/opt/opsagi/conf/bedrock.yml"),
+			wantErr: "config file does not exist: /opt/opsagi/conf/bedrock.yml"},
 		{name: "the default example in use is shown and kept by an untouched save",
 			container: mountedAt, wantShown: mountedAt, wantContainer: mountedAt},
 		{name: "a config the image ships in use is shown and kept by an untouched save",
@@ -109,9 +109,9 @@ func TestLLMProviderForm_HandleSave_MountsABedrockConfigTypedAsAFileOnTheHost(t 
 			if err != nil {
 				t.Fatal(err)
 			}
-			env := strings.Replace(string(example), "\nPENTAGI_BEDROCK_CONFIG_PATH=\n", "\n", 1)
+			env := strings.Replace(string(example), "\nOPSAGI_BEDROCK_CONFIG_PATH=\n", "\n", 1)
 			env = strings.Replace(env, "\nBEDROCK_CONFIG_PATH=\n", "\nBEDROCK_CONFIG_PATH="+tc.container+"\n", 1)
-			if env == string(example) || strings.Contains(env, "PENTAGI_BEDROCK_CONFIG_PATH") {
+			if env == string(example) || strings.Contains(env, "OPSAGI_BEDROCK_CONFIG_PATH") {
 				t.Fatal("the example env no longer holds the two bedrock config lines as empty assignments")
 			}
 			envPath := filepath.Join(t.TempDir(), ".env")
@@ -150,8 +150,8 @@ func TestLLMProviderForm_HandleSave_MountsABedrockConfigTypedAsAFileOnTheHost(t 
 			if got, _ := c.GetVar("BEDROCK_CONFIG_PATH"); got.Value != tc.wantContainer {
 				t.Errorf("BEDROCK_CONFIG_PATH = %q, want %q", got.Value, tc.wantContainer)
 			}
-			if got, _ := c.GetVar("PENTAGI_BEDROCK_CONFIG_PATH"); got.Value != tc.wantHost {
-				t.Errorf("PENTAGI_BEDROCK_CONFIG_PATH = %q, want %q", got.Value, tc.wantHost)
+			if got, _ := c.GetVar("OPSAGI_BEDROCK_CONFIG_PATH"); got.Value != tc.wantHost {
+				t.Errorf("OPSAGI_BEDROCK_CONFIG_PATH = %q, want %q", got.Value, tc.wantHost)
 			}
 		})
 	}

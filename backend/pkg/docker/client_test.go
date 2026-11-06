@@ -312,7 +312,7 @@ func newRunContainerClient(t *testing.T) (*dockerClient, *containerRecorder) {
 	dc.db = recorder
 	dc.dataDir = t.TempDir()
 	dc.defImage = probeImage
-	dc.labels = map[string]string{"pentagi.test": t.Name()}
+	dc.labels = map[string]string{"opsagi.test": t.Name()}
 
 	if err := dc.pullImage(t.Context(), probeImage); err != nil {
 		t.Skipf("probe image %s unavailable: %v", probeImage, err)
@@ -324,7 +324,7 @@ func newRunContainerClient(t *testing.T) (*dockerClient, *containerRecorder) {
 // probeName is daemon-unique: RunContainer derives the volume name and the hostname from it.
 func probeName(t *testing.T) string {
 	t.Helper()
-	return fmt.Sprintf("pentagi-probe-%d", rand.Uint64())
+	return fmt.Sprintf("opsagi-probe-%d", rand.Uint64())
 }
 
 // probeConfig is fresh on every call because RunContainer mutates the config it is handed.
@@ -458,7 +458,7 @@ func TestClient_RunContainer_AppliesSandboxDefaults(t *testing.T) {
 
 	require.Equal(t, fmt.Sprintf("%08x", crc32.ChecksumIEEE([]byte(name))), inspect.Config.Hostname)
 	require.Equal(t, "/work", inspect.Config.WorkingDir)
-	require.Equal(t, t.Name(), inspect.Config.Labels["pentagi.test"])
+	require.Equal(t, t.Name(), inspect.Config.Labels["opsagi.test"])
 
 	require.Equal(t, container.RestartPolicyOnFailure, inspect.HostConfig.RestartPolicy.Name)
 	require.Equal(t, 5, inspect.HostConfig.RestartPolicy.MaximumRetryCount)
@@ -514,7 +514,7 @@ func TestClient_RunContainer_BacksWorkDirWithAVolume(t *testing.T) {
 	volume, err := dc.client.VolumeInspect(t.Context(), name+"-data", client.VolumeInspectOptions{})
 	require.NoError(t, err)
 	require.Equal(t, "local", volume.Volume.Driver)
-	require.Equal(t, t.Name(), volume.Volume.Labels["pentagi.test"])
+	require.Equal(t, t.Name(), volume.Volume.Labels["opsagi.test"])
 
 	listing, err := dc.ListContainerDir(t.Context(), inspect.ID, "/work")
 	require.NoError(t, err)

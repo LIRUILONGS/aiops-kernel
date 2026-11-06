@@ -593,7 +593,7 @@ All four are required. Skipping any of them fails *quietly*: nothing panics and 
 const (
     ExampleFormScreen ScreenID = "example_form"
     // parameterised screens join their arguments with "§"
-    UpdatePentagiScreen ScreenID = "processor_operation_form§compose§update"
+    UpdateOpsagiScreen ScreenID = "processor_operation_form§compose§update"
 )
 ```
 

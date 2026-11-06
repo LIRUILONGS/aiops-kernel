@@ -11,7 +11,7 @@ import (
 	"github.com/vxcontrol/langchaingo/llms"
 )
 
-func TestFileEdit_NewFileEditTestCase_DeclaresPentAGIsOwnFileTool(t *testing.T) {
+func TestFileEdit_NewFileEditTestCase_DeclaresOpsAGIsOwnFileTool(t *testing.T) {
 	t.Parallel()
 
 	tc, err := newFileEditTestCase()

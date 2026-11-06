@@ -21,9 +21,9 @@ import (
 func openTenant(t *testing.T) (*sql.DB, string) {
 	t.Helper()
 
-	dsn := os.Getenv("PENTAGI_TEST_DSN")
+	dsn := os.Getenv("OPSAGI_TEST_DSN")
 	if dsn == "" {
-		t.Fatal("PENTAGI_TEST_DSN is unset; this tier needs a postgres to prove anything")
+		t.Fatal("OPSAGI_TEST_DSN is unset; this tier needs a postgres to prove anything")
 	}
 
 	admin, err := sql.Open("postgres", dsn)

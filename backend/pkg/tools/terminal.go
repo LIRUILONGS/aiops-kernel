@@ -24,7 +24,7 @@ import (
 )
 
 // PrimaryTerminalNamePrefix is the prefix used for all primary terminal container names.
-const PrimaryTerminalNamePrefix = "pentagi-terminal-"
+const PrimaryTerminalNamePrefix = "opsagi-terminal-"
 
 var errContainerNotOperational = errors.New("container runtime is not operational")
 
@@ -33,7 +33,7 @@ const (
 	defaultExtraExecTimeout       = 5 * time.Second
 	defaultQuickCheckTimeout      = 500 * time.Millisecond
 
-	// ANSI terminal color codes (aligned with PentAGI UI palette)
+	// ANSI terminal color codes (aligned with OpsAGI UI palette)
 	ansiColorInputCmd  = "\033[96m" // Bright Cyan - matches UI blue accents
 	ansiColorSystemMsg = "\033[92m" // Bright Green - universal success/info
 	ansiColorReset     = "\033[0m"  // Reset to default
@@ -597,12 +597,12 @@ func (t *terminal) EditFile(ctx context.Context, flowID int64, path, diffText st
 // PrimaryTerminalName returns the docker container name for a flow's primary
 // terminal, namespaced by the configured tenant.
 //
-//	"pentagi-terminal-1"       (single instance)
-//	"acme-pentagi-terminal-1"  (TENANT_ID=acme)
+//	"opsagi-terminal-1"       (single instance)
+//	"acme-opsagi-terminal-1"  (TENANT_ID=acme)
 //
 // The tenant goes in FRONT of the well-known prefix on purpose: the installer's
 // volume garbage collector force-removes anything matching
-// HasPrefix("pentagi-terminal-") && HasSuffix("-data"), so a leading tenant
+// HasPrefix("opsagi-terminal-") && HasSuffix("-data"), so a leading tenant
 // segment keeps one tenant's objects outside another tenant's sweep. A tenant
 // segment placed after the prefix would stay inside it and be destroyed.
 func PrimaryTerminalName(tenantPrefix string, flowID int64) string {

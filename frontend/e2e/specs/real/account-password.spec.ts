@@ -18,7 +18,7 @@ const changePassword = (
 const login = (api: APIRequestContext, mail: string, password: string) =>
     api.post('/api/v1/auth/login', { data: { mail, password } });
 
-const ADMIN_USER = process.env.E2E_USER ?? 'admin@pentagi.com';
+const ADMIN_USER = process.env.E2E_USER ?? 'admin@opsagi.com';
 const ADMIN_PASSWORD = process.env.E2E_PASSWORD ?? 'admin';
 
 test.describe('account password at the trust boundary', { tag: '@real' }, () => {
@@ -32,7 +32,7 @@ test.describe('account password at the trust boundary', { tag: '@real' }, () => 
 
         expect(adminLogin.status(), 'seeded admin credentials').toBe(200);
 
-        const mail = `e2e-pwd-${Date.now()}@pentagi.com`;
+        const mail = `e2e-pwd-${Date.now()}@opsagi.com`;
         const created = await admin.post('/api/v1/users/', {
             data: {
                 mail,
@@ -51,7 +51,7 @@ test.describe('account password at the trust boundary', { tag: '@real' }, () => 
         try {
             const tooLongAtCreate = await admin.post('/api/v1/users/', {
                 data: {
-                    mail: `e2e-long-${Date.now()}@pentagi.com`,
+                    mail: `e2e-long-${Date.now()}@opsagi.com`,
                     name: `e2elong${Date.now()}`,
                     password: OVER_LIMIT,
                     role_id: 2,
@@ -142,7 +142,7 @@ test.describe('account password at the trust boundary', { tag: '@real' }, () => 
 
         expect((await login(admin, ADMIN_USER, ADMIN_PASSWORD)).status(), 'seeded admin credentials').toBe(200);
 
-        const mail = `e2e-revoke-${Date.now()}@pentagi.com`;
+        const mail = `e2e-revoke-${Date.now()}@opsagi.com`;
         const created = await admin.post('/api/v1/users/', {
             data: {
                 mail,

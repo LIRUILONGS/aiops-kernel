@@ -407,7 +407,7 @@ func TestAPITokens_UpdateToken_ChangesNameAndStatusForTheOwnerOrAnAdmin(t *testi
 				assert.Equal(t, models.TokenStatusRevoked, stored(t, "updatetest1").Status)
 				status, privileges := cachedStatus(t, "updatetest1")
 				assert.Equal(t, models.TokenStatusRevoked, status, "a revoked token must not stay active in the cache")
-				assert.Contains(t, privileges, "pentagi.automation", "the reloaded entry keeps what every token is granted")
+				assert.Contains(t, privileges, "opsagi.automation", "the reloaded entry keeps what every token is granted")
 			},
 		},
 		{

@@ -519,13 +519,13 @@ func TestHelpers_WrapToolCallIDTemplateError_TellsTheOperatorTheModelCannotCallT
 			wantContains: []string{
 				"failed to determine tool call ID template",
 				"does not support tool/function calling",
-				"PentAGI requires",
+				"OpsAGI requires",
 				"flows and assistant sessions",
 				"metadata advertises tool/function calling",
 				"does not support tools",
 			},
 			wantNotContain: []string{
-				// PentAGI does not verify Ollama capabilities, so no model tag is named as tool-capable.
+				// OpsAGI does not verify Ollama capabilities, so no model tag is named as tool-capable.
 				"llama3.1",
 				"qwen2.5",
 				"mistral-nemo",

@@ -28,7 +28,7 @@ type Config struct {
 	// (PostgreSQL schema, docker object names, Graphiti group ids, telemetry identity)
 	TenantID string `env:"TENANT_ID" envDefault:""`
 
-	// === PentAGI Cloud Service Integration ===
+	// === OpsAGI Cloud Service Integration ===
 	InstallationID string `env:"INSTALLATION_ID"`
 	LicenseKey     string `env:"LICENSE_KEY"`
 
@@ -40,13 +40,13 @@ type Config struct {
 	// DOCKER_INSIDE_* describe how a worker container reaches a Docker daemon when
 	// DOCKER_INSIDE is enabled. They mirror the DOCKER_HOST / DOCKER_TLS_VERIFY /
 	// DOCKER_CERT_PATH trio that this process itself uses, but apply to the
-	// sandbox rather than to PentAGI, and are injected into it with the _INSIDE
+	// sandbox rather than to OpsAGI, and are injected into it with the _INSIDE
 	// segment stripped from the name.
 	//
 	// Setting DockerInsideHost points sandboxes at a dedicated daemon endpoint
 	// instead of a bind-mounted host socket, which is the safer arrangement: an
 	// agent then talks to whichever daemon the operator designated rather than the
-	// one running PentAGI itself. All three are ignored when DOCKER_INSIDE is off.
+	// one running OpsAGI itself. All three are ignored when DOCKER_INSIDE is off.
 	DockerInsideHost      string `env:"DOCKER_INSIDE_HOST"`
 	DockerInsideTLSVerify string `env:"DOCKER_INSIDE_TLS_VERIFY"`
 	DockerInsideCertPath  string `env:"DOCKER_INSIDE_CERT_PATH"`
@@ -275,15 +275,15 @@ type Config struct {
 	// === Network Proxy Settings ===
 	ProxyURL string `env:"PROXY_URL"`
 
-	// === PentAGI Cloud API ===
+	// === OpsAGI Cloud API ===
 	// UpdateStrategy is the strategy to use for updates. It can be "preview", "stable" or "nightly".
 	UpdateStrategy string `env:"UPDATE_STRATEGY" envDefault:"preview"`
 	// UpdateCheckInterval is how often this server reports its own state. Zero disables it.
 	UpdateCheckInterval time.Duration `env:"UPDATE_CHECK_INTERVAL" envDefault:"3h"`
 	// UpdateServerHost is the endpoint as host[:port]; empty means the default.
-	UpdateServerHost string `env:"UPDATE_SERVER_HOST" envDefault:"update.pentagi.com"`
+	UpdateServerHost string `env:"UPDATE_SERVER_HOST" envDefault:"update.opsagi.com"`
 	// SupportServerHost is the endpoint as host[:port]; empty means the default.
-	SupportServerHost string `env:"SUPPORT_SERVER_HOST" envDefault:"support.pentagi.com"`
+	SupportServerHost string `env:"SUPPORT_SERVER_HOST" envDefault:"support.opsagi.com"`
 
 	// SSL Trusted CA Certificate Path (for external communication with LLM backends)
 	ExternalSSLCAPath   string `env:"EXTERNAL_SSL_CA_PATH" envDefault:""`
@@ -323,7 +323,7 @@ type Config struct {
 	AgentPlanningStepEnabled bool `env:"AGENT_PLANNING_STEP_ENABLED" envDefault:"false"`
 
 	// === Database Configuration ===
-	DatabaseURL string `env:"DATABASE_URL" envDefault:"postgres://pentagiuser:pentagipass@pgvector:5432/pentagidb?sslmode=disable"`
+	DatabaseURL string `env:"DATABASE_URL" envDefault:"postgres://opsagiuser:opsagipass@pgvector:5432/opsagidb?sslmode=disable"`
 
 	// === Database Connection Pool Sizing ===
 	DBMaxOpenConns   int `env:"DATABASE_MAX_OPEN_CONNS" envDefault:"25"`
@@ -466,7 +466,7 @@ func (c *Config) WorkerDockerCertPath() string {
 //   - An explicit DOCKER_SOCKET always wins and is mounted as before.
 //   - Otherwise, if DOCKER_INSIDE_HOST is set, nothing is mounted: the sandbox
 //     reaches Docker over that endpoint, and exposing the host socket as well
-//     would hand it control of the daemon running PentAGI itself.
+//     would hand it control of the daemon running OpsAGI itself.
 //   - Otherwise the caller falls back to autodetecting the host socket, which is
 //     the historical behaviour; this is signalled by returning autodetect=true.
 func (c *Config) WorkerDockerSocket() (socket string, autodetect bool) {

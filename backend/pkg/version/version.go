@@ -21,7 +21,7 @@ var PackageRev string
 // Edition names the distribution this binary belongs to and is the prerelease
 // identifier every version string carries. Change it in one place: the
 // Enterprise pipeline stamps EditionEnterprise over it with
-// -X pentagi/pkg/version.Edition=ee, which is why it is a var.
+// -X opsagi/pkg/version.Edition=ee, which is why it is a var.
 var Edition = EditionCommunity
 
 const (
@@ -123,7 +123,7 @@ func GetBinaryName() string {
 	if PackageName != "" {
 		return PackageName
 	}
-	return "pentagi"
+	return "opsagi"
 }
 
 // BinaryHash is the sha256 of the executable this process was started from.

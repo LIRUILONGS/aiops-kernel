@@ -41,7 +41,7 @@ var (
 	clock           = time.Now
 	exchangeTimeout = 30 * time.Second
 
-	// One source per identity for the process: pentagi builds many doors over one identity, and a
+	// One source per identity for the process: opsagi builds many doors over one identity, and a
 	// single-use identity token is refused on its second exchange.
 	sourcesMu sync.Mutex
 	sources   = map[federationIdentity]*tokenSource{}

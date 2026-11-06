@@ -12,14 +12,14 @@ import (
 // A sharper tag of the shipped repository is what a working update pins, not drift.
 func TestReferenceDrift_ReferenceDrift_ReportsOnlyADifferentRepository(t *testing.T) {
 	defaults := map[string]string{
-		"PENTAGI_IMAGE":  "vxcontrol/pentagi:latest",
+		"OPSAGI_IMAGE":  "local/opsagi:latest",
 		"POSTGRES_IMAGE": "postgres:16",
 		"NEO4J_IMAGE":    "neo4j:5.26.2",
 		"REDIS_IMAGE":    "redis:7",
 	}
 
 	drift := referenceDrift(defaults, map[string]string{
-		"PENTAGI_IMAGE": "vxcontrol/pentagi:2.3.4",
+		"OPSAGI_IMAGE": "local/opsagi:2.3.4",
 		// Another major of the same repository is a data migration, not drift.
 		"POSTGRES_IMAGE": "postgres:15",
 		"NEO4J_IMAGE":    "acme/neo4j-fork:5.26.2",
@@ -40,7 +40,7 @@ func TestReferenceDrift_ComposeReferenceDefaults_ReadsTheShippedComposeFiles(t *
 	require.NoError(t, err)
 
 	assert.GreaterOrEqual(t, len(defaults), 20, "every image is parameterised, so every one has a default")
-	assert.Equal(t, "vxcontrol/pentagi:latest", defaults["PENTAGI_IMAGE"])
+	assert.Equal(t, "local/opsagi:latest", defaults["OPSAGI_IMAGE"])
 	assert.Equal(t, "postgres:16", defaults["POSTGRES_IMAGE"])
 	// Two services ship the same image under different variables, so the variable is the key.
 	assert.Equal(t, "clickhouse/clickhouse-server:24", defaults["CLICKHOUSE_IMAGE"])

@@ -36,7 +36,7 @@ const (
 
 func main() {
 	var (
-		mail        = flag.String("mail", "admin@pentagi.com", "mail address to sign in with")
+		mail        = flag.String("mail", "admin@opsagi.com", "mail address to sign in with")
 		name        = flag.String("name", "Administrator", "display name")
 		role        = flag.String("role", roleAdmin, "role to grant: admin or user")
 		passFlag    = flag.String("password", "", "password (or set OPSAGI_SEED_PASSWORD, or use -password-stdin)")

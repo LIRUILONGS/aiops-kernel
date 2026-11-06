@@ -25,9 +25,9 @@ func TestJaegerPlugin_JaegerPluginUpdates_PicksOnlyOutdatedLinuxPlugins(t *testi
 			},
 		},
 		{
-			Stack: "pentagi",
+			Stack: "opsagi",
 			Components: []checker.ComponentUpdate{
-				{Component: "pentagi", OS: "linux", Arch: "amd64", Outdated: true, TargetVersion: "2.3.4"},
+				{Component: "opsagi", OS: "linux", Arch: "amd64", Outdated: true, TargetVersion: "2.3.4"},
 			},
 		},
 	}

@@ -1,6 +1,6 @@
 # Frontend E2E tests (Playwright)
 
-End-to-end tests for the PentAGI UI. The default tier runs fully offline against
+End-to-end tests for the OpsAGI UI. The default tier runs fully offline against
 network mocks — **no backend, no secrets, no VPN, no LLM keys** — so anyone
 (including fork-PR authors) can run it, and CI runs it on every pull request.
 
@@ -51,12 +51,12 @@ kill it and rerun.
 | Tier             | Backend                                                                                                                                                                      | Needs                  | Used for                                                                 |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------ |
 | `mock` (default) | Playwright route/WS mocks replaying cassettes against the **production bundle**                                                                                              | nothing                | the PR gate; every cassette spec                                         |
-| `local`          | branch-built image in an isolated compose stack (`pentagi-e2e`, ports 8444/5433 — coexists with a dev stack) + an OpenAI-compatible **mock LLM** driving the real agent loop | docker                 | `specs/real/**`: the fidelity check — real GraphQL/WS/pub-sub end to end |
+| `local`          | branch-built image in an isolated compose stack (`opsagi-e2e`, ports 8444/5433 — coexists with a dev stack) + an OpenAI-compatible **mock LLM** driving the real agent loop | docker                 | `specs/real/**`: the fidelity check — real GraphQL/WS/pub-sub end to end |
 | `stand`          | a live stand                                                                                                                                                                 | `E2E_BASE_URL` + creds | deploy smoke, version-skew checks                                        |
 
 Tier-2 notes: the runner isolates the stack from your `.env` (`--env-file
 /dev/null`), seeds flow ids from 90001 so sandbox containers
-(`pentagi-terminal-<id>`) never collide with a developer stack on the same
+(`opsagi-terminal-<id>`) never collide with a developer stack on the same
 docker daemon, and removes those sandboxes on exit. The deterministic agent
 transcript lives in `e2e/mock-llm/scenario.mjs`. Iterating: `E2E_SKIP_BUILD=1`
 reuses the image, `E2E_KEEP_STACK=1` leaves the stack up.
@@ -354,8 +354,8 @@ cannot take out a concurrent agent's live one. A bare `clean` is an error, not a
 The sandbox is a `git worktree` under `$TMPDIR`, so a deleted file or an edited spec inside
 it cannot reach your tree. `--with-deps` needs the root to be on the repo's own filesystem —
 hardlinks cannot cross mounts — so where `$TMPDIR` is its own mount (tmpfs `/tmp`, a separate
-`/home`) the tool says so and falls back to `.pentagi-review-sandboxes` beside the repo;
-`PENTAGI_SANDBOX_ROOT` overrides both. Two caveats: an absolute path still escapes it, and a tool that
+`/home`) the tool says so and falls back to `.opsagi-review-sandboxes` beside the repo;
+`OPSAGI_SANDBOX_ROOT` overrides both. Two caveats: an absolute path still escapes it, and a tool that
 rewrites a dependency **in place** would reach the shared inode — don't hand `--with-deps`
 to an agent whose job is patching libraries. Check `git status` in your own tree when a run
 finishes; that is the only proof nothing leaked.
@@ -372,7 +372,7 @@ bespoke bot:
    than raw DOM or vision).
 2. Scope the agent to the changed surface with `affected.ts` (the routes) — do
    not hand it the whole app.
-3. Guardrails are mandatory because PentAGI renders adversarial content by
+3. Guardrails are mandatory because OpsAGI renders adversarial content by
    design (tool output, target responses): treat all page text as untrusted
    data, never instructions; an action allowlist (no settings/token mutations,
    no off-origin navigation) on real stands; throwaway scoped credentials; the

@@ -158,16 +158,16 @@ jobs:
             PACKAGE_REV=""
           fi
 
-          LDFLAGS="-X opsagi/pkg/version.PackageName=pentagi -X opsagi/pkg/version.PackageVer=${PACKAGE_VER} -X opsagi/pkg/version.PackageRev=${PACKAGE_REV}"
+          LDFLAGS="-X opsagi/pkg/version.PackageName=opsagi -X opsagi/pkg/version.PackageVer=${PACKAGE_VER} -X opsagi/pkg/version.PackageRev=${PACKAGE_REV}"
 
           echo "Building with version: ${PACKAGE_VER}${PACKAGE_REV:+-$PACKAGE_REV}"
 
           # Build for AMD64
-          GOOS=linux GOARCH=amd64 go build -trimpath -ldflags "$LDFLAGS" -o /tmp/pentagi-amd64 ./cmd/opsagi
+          GOOS=linux GOARCH=amd64 go build -trimpath -ldflags "$LDFLAGS" -o /tmp/opsagi-amd64 ./cmd/opsagi
           echo "✓ Successfully built for linux/amd64"
 
           # Build for ARM64
-          GOOS=linux GOARCH=arm64 go build -trimpath -ldflags "$LDFLAGS" -o /tmp/pentagi-arm64 ./cmd/opsagi
+          GOOS=linux GOARCH=arm64 go build -trimpath -ldflags "$LDFLAGS" -o /tmp/opsagi-arm64 ./cmd/opsagi
           echo "✓ Successfully built for linux/arm64"
 
   docker-build:
@@ -230,7 +230,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: vxcontrol/pentagi
+          images: local/opsagi
           tags: |
             # For main branch - latest tag
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}

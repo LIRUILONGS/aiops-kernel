@@ -30,9 +30,9 @@ func (zeroEmbedder) EmbedDocuments(_ context.Context, texts []string) ([][]float
 func (zeroEmbedder) EmbedQuery(context.Context, string) ([]float32, error) { return nil, nil }
 
 func TestVectorstore_Options_LeaveTheEmbeddingIndexesToTheMigrations(t *testing.T) {
-	dsn := os.Getenv("PENTAGI_TEST_DSN")
+	dsn := os.Getenv("OPSAGI_TEST_DSN")
 	if dsn == "" {
-		t.Fatal("PENTAGI_TEST_DSN is unset; this tier needs a postgres to prove anything")
+		t.Fatal("OPSAGI_TEST_DSN is unset; this tier needs a postgres to prove anything")
 	}
 	ctx := context.Background()
 

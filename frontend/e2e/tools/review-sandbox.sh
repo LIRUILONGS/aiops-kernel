@@ -21,15 +21,15 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-SANDBOX_ROOT="${PENTAGI_SANDBOX_ROOT:-${TMPDIR:-/tmp}}/pentagi-review-sandboxes"
+SANDBOX_ROOT="${OPSAGI_SANDBOX_ROOT:-${TMPDIR:-/tmp}}/opsagi-review-sandboxes"
 # A hardlink cannot cross filesystems, so --with-deps is unusable when $TMPDIR is its own mount
 # (tmpfs /tmp, a separate /home, a container volume): `cp -al` fails outright and no sandbox is
 # built. This sibling of the repo is on the repo's filesystem by construction.
 # Under the escape hatch BOTH roots move: `clean --all` sweeps this one too, so a caller that cannot
 # afford a sweep of the repo's parent (the unit test, which otherwise rm -rf's real directories on the
 # developer's machine) needs a single variable that contains every path this script may delete.
-FALLBACK_ROOT="${PENTAGI_SANDBOX_ROOT:+${PENTAGI_SANDBOX_ROOT}/.pentagi-review-sandboxes}"
-FALLBACK_ROOT="${FALLBACK_ROOT:-$(dirname "$REPO_ROOT")/.pentagi-review-sandboxes}"
+FALLBACK_ROOT="${OPSAGI_SANDBOX_ROOT:+${OPSAGI_SANDBOX_ROOT}/.opsagi-review-sandboxes}"
+FALLBACK_ROOT="${FALLBACK_ROOT:-$(dirname "$REPO_ROOT")/.opsagi-review-sandboxes}"
 
 # Pick a root node_modules can actually be hardlinked into: probe with a real link, fall back to
 # the repo's own filesystem when the probe hits EXDEV.
@@ -47,7 +47,7 @@ linkable_root() {
 
     if ! mkdir -p "$FALLBACK_ROOT" 2>/dev/null; then
         echo "review-sandbox: $SANDBOX_ROOT is on another filesystem than the repo and" \
-            "$FALLBACK_ROOT is not writable — set PENTAGI_SANDBOX_ROOT to a same-filesystem path" >&2
+            "$FALLBACK_ROOT is not writable — set OPSAGI_SANDBOX_ROOT to a same-filesystem path" >&2
         exit 2
     fi
 

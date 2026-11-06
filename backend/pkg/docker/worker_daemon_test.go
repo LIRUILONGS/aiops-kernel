@@ -125,7 +125,7 @@ func dockerRequireLogLines(t *testing.T, entries []*logrus.Entry, want []dockerL
 	}
 }
 
-func TestWorkerDaemon_RunsPentagi_FindsOurContainerOrSaysWhyItCannot(t *testing.T) {
+func TestWorkerDaemon_RunsOpsagi_FindsOurContainerOrSaysWhyItCannot(t *testing.T) {
 	self, err := os.Hostname()
 	if err != nil {
 		t.Skip("no hostname")
@@ -149,7 +149,7 @@ func TestWorkerDaemon_RunsPentagi_FindsOurContainerOrSaysWhyItCannot(t *testing.
 			want:   true,
 		},
 		"a daemon running only other containers": {
-			daemon: func(t *testing.T) *client.Client { return mockDaemon(t, "pentagi-terminal-1", "pentagi-terminal-2") },
+			daemon: func(t *testing.T) *client.Client { return mockDaemon(t, "opsagi-terminal-1", "opsagi-terminal-2") },
 		},
 		"a container that exited before its inspect does not hide ours": {
 			daemon: func(t *testing.T) *client.Client {
@@ -201,7 +201,7 @@ func TestWorkerDaemon_RunsPentagi_FindsOurContainerOrSaysWhyItCannot(t *testing.
 				defer cancel()
 			}
 
-			got, err := runsPentagi(ctx, tc.daemon(t))
+			got, err := runsOpsagi(ctx, tc.daemon(t))
 
 			if tc.wantErr != "" {
 				require.ErrorContains(t, err, tc.wantErr, "an unanswered daemon says nothing about what it runs")
@@ -269,7 +269,7 @@ func TestWorkerDaemon_LogWorkerDaemonIsolation_ReportsWhatAgentsReach(t *testing
 		},
 		"a separate daemon that cannot be listed is not claimed as isolated": {
 			cfg:    &config.Config{DockerInside: true, DockerInsideHost: "tcp://127.0.0.1:1"},
-			daemon: func(t *testing.T) *client.Client { return mockDaemon(t, "pentagi-terminal-1") },
+			daemon: func(t *testing.T) *client.Client { return mockDaemon(t, "opsagi-terminal-1") },
 			want:   []dockerLogLine{{level: logrus.WarnLevel, text: "a separate daemon that could not be listed"}},
 			absent: []string{"sandbox tier"},
 		},
@@ -303,7 +303,7 @@ func TestWorkerDaemon_LogSeparateDaemon_ClaimsIsolationOnlyWhenItHolds(t *testin
 			case strings.HasSuffix(r.URL.Path, "/containers/json"):
 				return statusResponse(http.StatusOK, `[{"Id":"c0"}]`), nil
 			case strings.HasSuffix(r.URL.Path, "/c0/json"):
-				return statusResponse(http.StatusOK, `{"Id":"c0","Config":{"Hostname":"pentagi-terminal-1"}}`), nil
+				return statusResponse(http.StatusOK, `{"Id":"c0","Config":{"Hostname":"opsagi-terminal-1"}}`), nil
 			}
 			return nil, fmt.Errorf("unexpected request: %s", r.URL.Path)
 		})
@@ -319,7 +319,7 @@ func TestWorkerDaemon_LogSeparateDaemon_ClaimsIsolationOnlyWhenItHolds(t *testin
 	}{
 		"an orchestration daemon that could not be listed is not reported as clear": {
 			orchestrator: dockerDownDaemon,
-			worker:       running("pentagi-terminal-1"),
+			worker:       running("opsagi-terminal-1"),
 			want:         []dockerLogLine{{level: logrus.InfoLevel, text: "could not be determined"}},
 			absent:       []string{"on neither"},
 		},
@@ -327,20 +327,20 @@ func TestWorkerDaemon_LogSeparateDaemon_ClaimsIsolationOnlyWhenItHolds(t *testin
 			orchestrator: nodeDaemon,
 			worker:       nodeDaemon,
 			want: []dockerLogLine{
-				{level: logrus.WarnLevel, text: "names the daemon PentAGI orchestrates on"},
+				{level: logrus.WarnLevel, text: "names the daemon OpsAGI orchestrates on"},
 				{level: logrus.WarnLevel, text: "if it runs directly on this host"},
 			},
 			absent: []string{"sandbox tier", "on neither"},
 		},
-		"a worker daemon that runs PentAGI is not claimed as isolated": {
-			orchestrator: running("pentagi-terminal-1"),
+		"a worker daemon that runs OpsAGI is not claimed as isolated": {
+			orchestrator: running("opsagi-terminal-1"),
 			worker:       running(self),
-			want:         []dockerLogLine{{level: logrus.WarnLevel, text: "the daemon designated for sandboxes is the one running PentAGI"}},
+			want:         []dockerLogLine{{level: logrus.WarnLevel, text: "the daemon designated for sandboxes is the one running OpsAGI"}},
 			absent:       []string{"sandbox tier"},
 		},
-		"a worker daemon apart from the one running PentAGI keeps an escape in the sandbox tier": {
+		"a worker daemon apart from the one running OpsAGI keeps an escape in the sandbox tier": {
 			orchestrator: running(self),
-			worker:       running("pentagi-terminal-1"),
+			worker:       running("opsagi-terminal-1"),
 			want:         []dockerLogLine{{level: logrus.InfoLevel, text: "an escape stays inside the sandbox tier"}},
 			absent:       []string{"could not be determined"},
 		},

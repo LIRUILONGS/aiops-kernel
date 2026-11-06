@@ -36,10 +36,10 @@ const (
 
 // TestCapability names a wire capability a test case exercises. A test with a
 // non-empty Capability only runs against an agent whose ACTUAL loaded config
-// would make this exact call in a real PentAGI flow (see
+// would make this exact call in a real OpsAGI flow (see
 // tester.capabilitySupported, which mirrors pconfig.AgentConfig.BuildOptions /
 // ProviderConfig.UsesAdaptiveThinking exactly) — ctester answers "will this
-// configuration work inside PentAGI", so testing a CallOption combination the
+// configuration work inside OpsAGI", so testing a CallOption combination the
 // app's runtime would never actually send for this config would produce a
 // pass or fail that says nothing about a flow that will ever really happen.
 type TestCapability string

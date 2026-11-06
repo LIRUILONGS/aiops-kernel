@@ -65,7 +65,7 @@ func TestChecker_NeverClaimsExternalForAStackThatIsNotConnected(t *testing.T) {
 	}
 }
 
-func TestChecker_GatherPentagiInfo_LooksForTheExtractedStackBesideTheEnvFile(t *testing.T) {
+func TestChecker_GatherOpsagiInfo_LooksForTheExtractedStackBesideTheEnvFile(t *testing.T) {
 	tests := []struct {
 		name              string
 		beside, elsewhere []string // files beside the env file, and in the working directory
@@ -99,12 +99,12 @@ func TestChecker_GatherPentagiInfo_LooksForTheExtractedStackBesideTheEnvFile(t *
 
 			handler := &defaultCheckHandler{mx: &sync.Mutex{}, appState: &mockState{envPath: filepath.Join(envDir, ".env")}}
 			got := &CheckResult{}
-			if err := handler.GatherPentagiInfo(t.Context(), got); err != nil {
+			if err := handler.GatherOpsagiInfo(t.Context(), got); err != nil {
 				t.Fatalf("gather: %v", err)
 			}
 
-			if got.PentagiExtracted != tt.want {
-				t.Errorf("PentagiExtracted = %t, want %t", got.PentagiExtracted, tt.want)
+			if got.OpsagiExtracted != tt.want {
+				t.Errorf("OpsagiExtracted = %t, want %t", got.OpsagiExtracted, tt.want)
 			}
 		})
 	}

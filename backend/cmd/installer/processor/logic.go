@@ -38,8 +38,8 @@ func (p *processor) validateOperation(stack ProductStack, operation ProcessorOpe
 		}
 
 	case ProcessorOperationResetPassword:
-		if stack != ProductStackPentagi {
-			return fmt.Errorf("operation %s only applicable for PentAGI stack", operation)
+		if stack != ProductStackOpsagi {
+			return fmt.Errorf("operation %s only applicable for OpsAGI stack", operation)
 		}
 	}
 
@@ -81,7 +81,7 @@ func (p *processor) isEmbeddedDeployment(stack ProductStack) bool {
 
 		return false
 
-	case ProductStackPentagi, ProductStackWorker, ProductStackInstaller:
+	case ProductStackOpsagi, ProductStackWorker, ProductStackInstaller:
 		return true
 
 	default:
@@ -193,9 +193,9 @@ func (p *processor) applyChanges(ctx context.Context, state *operationState) (er
 		return fmt.Errorf("failed to apply graphiti changes: %w", err)
 	}
 
-	// phase 4: PentAGI Stack Management (always embedded, always required)
-	if err := p.applyPentagiChanges(ctx, state); err != nil {
-		return fmt.Errorf("failed to apply pentagi changes: %w", err)
+	// phase 4: OpsAGI Stack Management (always embedded, always required)
+	if err := p.applyOpsagiChanges(ctx, state); err != nil {
+		return fmt.Errorf("failed to apply opsagi changes: %w", err)
 	}
 
 	return nil
@@ -312,28 +312,28 @@ func (p *processor) applyGraphitiChanges(ctx context.Context, state *operationSt
 	return nil
 }
 
-func (p *processor) applyPentagiChanges(ctx context.Context, state *operationState) error {
-	// PentAGI is always embedded, always required
-	if !p.checker.PentagiExtracted {
+func (p *processor) applyOpsagiChanges(ctx context.Context, state *operationState) error {
+	// OpsAGI is always embedded, always required
+	if !p.checker.OpsagiExtracted {
 		// fresh installation - extract compose file
-		if err := p.fsOps.ensureStackIntegrity(ctx, ProductStackPentagi, state); err != nil {
-			return fmt.Errorf("failed to ensure pentagi integrity: %w", err)
+		if err := p.fsOps.ensureStackIntegrity(ctx, ProductStackOpsagi, state); err != nil {
+			return fmt.Errorf("failed to ensure opsagi integrity: %w", err)
 		}
 	} else {
 		// file exists - verify integrity, update if force=true
-		if err := p.fsOps.verifyStackIntegrity(ctx, ProductStackPentagi, state); err != nil {
-			return fmt.Errorf("failed to verify pentagi integrity: %w", err)
+		if err := p.fsOps.verifyStackIntegrity(ctx, ProductStackOpsagi, state); err != nil {
+			return fmt.Errorf("failed to verify opsagi integrity: %w", err)
 		}
 	}
 
 	// update/start containers
-	if err := p.composeOps.updateStack(ctx, ProductStackPentagi, state); err != nil {
-		return fmt.Errorf("failed to update pentagi stack: %w", err)
+	if err := p.composeOps.updateStack(ctx, ProductStackOpsagi, state); err != nil {
+		return fmt.Errorf("failed to update opsagi stack: %w", err)
 	}
 
 	// refresh state to verify operation success
-	if err := p.checker.GatherPentagiInfo(ctx); err != nil {
-		return fmt.Errorf("failed to gather pentagi info: %w", err)
+	if err := p.checker.GatherOpsagiInfo(ctx); err != nil {
+		return fmt.Errorf("failed to gather opsagi info: %w", err)
 	}
 
 	return nil
@@ -342,7 +342,7 @@ func (p *processor) applyPentagiChanges(ctx context.Context, state *operationSta
 // checkFiles computes file statuses for a given stack under the rules the apply
 // path follows: embedded stacks only, and the excluded files policy of
 // verifyStackIntegrity. It writes nothing; the provider examples
-// verifyStackIntegrity restores for pentagi are not reported.
+// verifyStackIntegrity restores for opsagi are not reported.
 func (p *processor) checkFiles(
 	ctx context.Context, stack ProductStack, state *operationState,
 ) (result map[string]files.FileStatus, err error) {
@@ -357,7 +357,7 @@ func (p *processor) checkFiles(
 	}
 
 	switch stack {
-	case ProductStackPentagi, ProductStackGraphiti, ProductStackLangfuse, ProductStackObservability:
+	case ProductStackOpsagi, ProductStackGraphiti, ProductStackLangfuse, ProductStackObservability:
 		if !p.isEmbeddedDeployment(stack) {
 			return map[string]files.FileStatus{}, nil
 		}
@@ -408,7 +408,7 @@ func (p *processor) factoryReset(ctx context.Context, state *operationState) (er
 	}
 
 	// step 3: remove main networks
-	_ = p.dockerOps.removeMainDockerNetwork(ctx, state, string(ProductDockerNetworkPentagi))
+	_ = p.dockerOps.removeMainDockerNetwork(ctx, state, string(ProductDockerNetworkOpsagi))
 	_ = p.dockerOps.removeMainDockerNetwork(ctx, state, string(ProductDockerNetworkObservability))
 	_ = p.dockerOps.removeMainDockerNetwork(ctx, state, string(ProductDockerNetworkLangfuse))
 
@@ -484,10 +484,10 @@ func (p *processor) install(ctx context.Context, state *operationState) (err err
 		}
 	}
 
-	// phase 4: PentAGI Stack Management (always embedded, always required)
-	if !p.checker.PentagiInstalled {
-		if err := p.applyPentagiChanges(ctx, state); err != nil {
-			return fmt.Errorf("failed to apply pentagi changes: %w", err)
+	// phase 4: OpsAGI Stack Management (always embedded, always required)
+	if !p.checker.OpsagiInstalled {
+		if err := p.applyOpsagiChanges(ctx, state); err != nil {
+			return fmt.Errorf("failed to apply opsagi changes: %w", err)
 		}
 	}
 
@@ -500,7 +500,7 @@ func (p *processor) install(ctx context.Context, state *operationState) (err err
 // That single question used to be five. The fresh check lived in a deferred call inside
 // the recursive worker, so `compose` — four stacks — spent four nested checks plus this
 // one, and a stack with nothing to do paid for a check too, because the defer was
-// registered before the early return. One press of "Update PentAGI" cost five requests
+// registered before the early return. One press of "Update OpsAGI" cost five requests
 // out of a daily budget, and told the cloud nothing it had not been told four times
 // already: GatherUpdatesInfo reports the WHOLE installation, not one stack.
 func (p *processor) update(ctx context.Context, stack ProductStack, state *operationState) (err error) {
@@ -566,13 +566,13 @@ func (p *processor) updateStacks(ctx context.Context, stack ProductStack, state 
 	)
 
 	composeStacksUpToDate := map[ProductStack]bool{
-		ProductStackPentagi:       p.checker.PentagiIsUpToDate,
+		ProductStackOpsagi:       p.checker.OpsagiIsUpToDate,
 		ProductStackGraphiti:      p.checker.GraphitiIsUpToDate,
 		ProductStackLangfuse:      p.checker.LangfuseIsUpToDate,
 		ProductStackObservability: p.checker.ObservabilityIsUpToDate,
 	}
 	composeStacksGatherInfo := map[ProductStack]func(ctx context.Context) error{
-		ProductStackPentagi:       p.checker.GatherPentagiInfo,
+		ProductStackOpsagi:       p.checker.GatherOpsagiInfo,
 		ProductStackGraphiti:      p.checker.GatherGraphitiInfo,
 		ProductStackLangfuse:      p.checker.GatherLangfuseInfo,
 		ProductStackObservability: p.checker.GatherObservabilityInfo,
@@ -583,7 +583,7 @@ func (p *processor) updateStacks(ctx context.Context, stack ProductStack, state 
 	}
 
 	switch stack {
-	case ProductStackPentagi, ProductStackGraphiti, ProductStackLangfuse, ProductStackObservability:
+	case ProductStackOpsagi, ProductStackGraphiti, ProductStackLangfuse, ProductStackObservability:
 		if composeStacksUpToDate[stack] {
 			return nil
 		}
@@ -690,7 +690,7 @@ func (p *processor) download(ctx context.Context, stack ProductStack, state *ope
 	}
 
 	switch stack {
-	case ProductStackPentagi, ProductStackGraphiti, ProductStackLangfuse, ProductStackObservability:
+	case ProductStackOpsagi, ProductStackGraphiti, ProductStackLangfuse, ProductStackObservability:
 		// docker compose pull equivalent for all images
 		if err := p.composeOps.downloadStack(ctx, stack, state); err != nil {
 			return fmt.Errorf("failed to download stack: %w", err)
@@ -752,7 +752,7 @@ func (p *processor) remove(ctx context.Context, stack ProductStack, state *opera
 	)
 
 	composeStacksGatherInfo := map[ProductStack]func(ctx context.Context) error{
-		ProductStackPentagi:       p.checker.GatherPentagiInfo,
+		ProductStackOpsagi:       p.checker.GatherOpsagiInfo,
 		ProductStackGraphiti:      p.checker.GatherGraphitiInfo,
 		ProductStackLangfuse:      p.checker.GatherLangfuseInfo,
 		ProductStackObservability: p.checker.GatherObservabilityInfo,
@@ -763,7 +763,7 @@ func (p *processor) remove(ctx context.Context, stack ProductStack, state *opera
 	}
 
 	switch stack {
-	case ProductStackPentagi, ProductStackGraphiti, ProductStackLangfuse, ProductStackObservability:
+	case ProductStackOpsagi, ProductStackGraphiti, ProductStackLangfuse, ProductStackObservability:
 		if err := p.composeOps.removeStack(ctx, stack, state); err != nil {
 			return fmt.Errorf("failed to remove stack: %w", err)
 		}
@@ -838,7 +838,7 @@ func (p *processor) purge(ctx context.Context, stack ProductStack, state *operat
 	)
 
 	composeStacksGatherInfo := map[ProductStack]func(ctx context.Context) error{
-		ProductStackPentagi:       p.checker.GatherPentagiInfo,
+		ProductStackOpsagi:       p.checker.GatherOpsagiInfo,
 		ProductStackGraphiti:      p.checker.GatherGraphitiInfo,
 		ProductStackLangfuse:      p.checker.GatherLangfuseInfo,
 		ProductStackObservability: p.checker.GatherObservabilityInfo,
@@ -849,7 +849,7 @@ func (p *processor) purge(ctx context.Context, stack ProductStack, state *operat
 	}
 
 	switch stack {
-	case ProductStackPentagi, ProductStackGraphiti, ProductStackLangfuse, ProductStackObservability:
+	case ProductStackOpsagi, ProductStackGraphiti, ProductStackLangfuse, ProductStackObservability:
 		if err := p.composeOps.purgeImagesStack(ctx, stack, state); err != nil {
 			return fmt.Errorf("failed to purge with images stack: %w", err)
 		}
@@ -900,7 +900,7 @@ func (p *processor) purge(ctx context.Context, stack ProductStack, state *operat
 		}
 
 		// remove custom networks
-		_ = p.dockerOps.removeMainDockerNetwork(ctx, state, string(ProductDockerNetworkPentagi))
+		_ = p.dockerOps.removeMainDockerNetwork(ctx, state, string(ProductDockerNetworkOpsagi))
 		_ = p.dockerOps.removeMainDockerNetwork(ctx, state, string(ProductDockerNetworkObservability))
 		_ = p.dockerOps.removeMainDockerNetwork(ctx, state, string(ProductDockerNetworkLangfuse))
 
@@ -980,12 +980,12 @@ func (p *processor) resetPassword(ctx context.Context, stack ProductStack, state
 		return err
 	}
 
-	if stack != ProductStackPentagi {
-		return fmt.Errorf("reset password operation only supported for PentAGI stack")
+	if stack != ProductStackOpsagi {
+		return fmt.Errorf("reset password operation only supported for OpsAGI stack")
 	}
 
-	if !p.checker.PentagiRunning {
-		return fmt.Errorf("PentAGI must be running to reset password")
+	if !p.checker.OpsagiRunning {
+		return fmt.Errorf("OpsAGI must be running to reset password")
 	}
 
 	if state.passwordValue == "" {

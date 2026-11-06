@@ -61,7 +61,7 @@ func (d *dockerOperationsImpl) removeWorkerContainers(ctx context.Context, state
 		return fmt.Errorf("failed to list worker containers: %w", err)
 	}
 
-	// NOTE: docker returns names with a leading slash ("/pentagi-terminal-1"), so
+	// NOTE: docker returns names with a leading slash ("/opsagi-terminal-1"), so
 	// this predicate has never matched anything and the sweep is effectively a
 	// no-op today. It is left that way deliberately — "fixing" the slash would
 	// silently turn a dormant no-op into force-removal of running containers,
@@ -69,7 +69,7 @@ func (d *dockerOperationsImpl) removeWorkerContainers(ctx context.Context, state
 	//
 	// The prefix is anchored on the tenant regardless, so that if the slash is
 	// ever handled the sweep can only ever reach this instance's own containers.
-	workerPrefix := d.tenantPrefix() + "pentagi-"
+	workerPrefix := d.tenantPrefix() + "opsagi-"
 	var containers []container.Summary
 	for _, c := range allContainers.Items {
 		for _, name := range c.Names {
@@ -248,7 +248,7 @@ func (d *dockerOperationsImpl) ensureMainDockerNetworks(ctx context.Context, sta
 	defer cli.Close()
 
 	required := []string{
-		string(ProductDockerNetworkPentagi),
+		string(ProductDockerNetworkOpsagi),
 		string(ProductDockerNetworkObservability),
 		string(ProductDockerNetworkLangfuse),
 	}
@@ -322,7 +322,7 @@ func (d *dockerOperationsImpl) removeMainImages(ctx context.Context, state *oper
 	return nil
 }
 
-// removeWorkerVolumes removes worker volumes (pentagi-terminal-*-data) in worker environment
+// removeWorkerVolumes removes worker volumes (opsagi-terminal-*-data) in worker environment
 func (d *dockerOperationsImpl) removeWorkerVolumes(ctx context.Context, state *operationState) error {
 	cli, err := d.createWorkerDockerClient()
 	if err != nil {
@@ -335,7 +335,7 @@ func (d *dockerOperationsImpl) removeWorkerVolumes(ctx context.Context, state *o
 		return err
 	}
 	// Anchor on this instance's own prefix. Because the tenant segment leads the
-	// name ("acme-pentagi-terminal-1-data"), a default installation's sweep does
+	// name ("acme-opsagi-terminal-1-data"), a default installation's sweep does
 	// not match a tenant's volumes and vice versa — each purge reaches exactly
 	// its own resources. With TENANT_ID unset this is the original predicate.
 	workerPrefix := d.tenantPrefix() + tools.PrimaryTerminalNamePrefix
@@ -375,7 +375,7 @@ func (d *dockerOperationsImpl) createWorkerDockerClient() (*client.Client, error
 		}
 	}
 
-	envVar, exists = d.processor.state.GetVar("PENTAGI_" + client.EnvOverrideCertPath)
+	envVar, exists = d.processor.state.GetVar("OPSAGI_" + client.EnvOverrideCertPath)
 	if exists && (envVar.Value != "" || envVar.IsChanged) {
 		cfg := getTLSConfig(envVar.Value)
 		opts = append(opts, client.WithTLSClientConfig(cfg.caPath, cfg.certPath, cfg.keyPath))
@@ -401,7 +401,7 @@ func (d *dockerOperationsImpl) getWorkerDockerEnv() []string {
 		env = append(env, fmt.Sprintf("%s=%s", client.EnvOverrideHost, envVar))
 	}
 
-	envVar, exists = d.processor.state.GetVar("PENTAGI_" + client.EnvOverrideCertPath)
+	envVar, exists = d.processor.state.GetVar("OPSAGI_" + client.EnvOverrideCertPath)
 	if exists && (envVar.Value != "" || envVar.IsChanged) {
 		env = append(env, fmt.Sprintf("%s=%s", client.EnvOverrideCertPath, envVar.Value))
 	} else if envVar.Default != "" {

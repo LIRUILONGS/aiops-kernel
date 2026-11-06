@@ -7,16 +7,16 @@ import (
 	"opsagi/cmd/installer/loader"
 )
 
-func TestMigrations_DoMigrateSettings_MovesAHostPathToItsPentagiVar(t *testing.T) {
+func TestMigrations_DoMigrateSettings_MovesAHostPathToItsOpsagiVar(t *testing.T) {
 	dir, file := hardeningHostPaths(t)
 	host := map[string]string{
 		"DOCKER_CERT_PATH": dir, "LLM_SERVER_CONFIG_PATH": file, "OLLAMA_SERVER_CONFIG_PATH": file, "BEDROCK_CONFIG_PATH": file,
 	}
 	container := map[string]string{
-		"DOCKER_CERT_PATH":          "/opt/pentagi/docker/ssl",
-		"LLM_SERVER_CONFIG_PATH":    "/opt/pentagi/conf/custom.provider.yml",
-		"OLLAMA_SERVER_CONFIG_PATH": "/opt/pentagi/conf/ollama.provider.yml",
-		"BEDROCK_CONFIG_PATH":       "/opt/pentagi/conf/bedrock.provider.yml",
+		"DOCKER_CERT_PATH":          "/opt/opsagi/docker/ssl",
+		"LLM_SERVER_CONFIG_PATH":    "/opt/opsagi/conf/custom.provider.yml",
+		"OLLAMA_SERVER_CONFIG_PATH": "/opt/opsagi/conf/ollama.provider.yml",
+		"BEDROCK_CONFIG_PATH":       "/opt/opsagi/conf/bedrock.provider.yml",
 	}
 	tests := []struct {
 		name string
@@ -43,8 +43,8 @@ func TestMigrations_DoMigrateSettings_MovesAHostPathToItsPentagiVar(t *testing.T
 			}
 
 			for _, name := range tt.vars {
-				if got := st.vars["PENTAGI_"+name].Value; got != host[name] {
-					t.Errorf("PENTAGI_%s = %q, want the host path %q", name, got, host[name])
+				if got := st.vars["OPSAGI_"+name].Value; got != host[name] {
+					t.Errorf("OPSAGI_%s = %q, want the host path %q", name, got, host[name])
 				}
 				if got := st.vars[name].Value; got != container[name] {
 					t.Errorf("%s = %q, want the container path %q", name, got, container[name])
@@ -70,7 +70,7 @@ func TestMigrations_DoMigrateSettings_LeavesAPathItCannotMigrate(t *testing.T) {
 		{"a docker certificates directory that does not exist", "DOCKER_CERT_PATH", "/nonexistent/docker/certs"},
 		{"an llm config file that does not exist", "LLM_SERVER_CONFIG_PATH", "/nonexistent/custom.provider.yml"},
 		{"an ollama config file that does not exist", "OLLAMA_SERVER_CONFIG_PATH", "/nonexistent/ollama.provider.yml"},
-		{"a bedrock config file that does not exist", "BEDROCK_CONFIG_PATH", "/opt/pentagi/conf/bedrock.yml"},
+		{"a bedrock config file that does not exist", "BEDROCK_CONFIG_PATH", "/opt/opsagi/conf/bedrock.yml"},
 		{"a file where the docker certificates directory belongs", "DOCKER_CERT_PATH", file},
 		{"a directory where the llm config file belongs", "LLM_SERVER_CONFIG_PATH", dir},
 		{"a directory where the ollama config file belongs", "OLLAMA_SERVER_CONFIG_PATH", dir},
@@ -91,8 +91,8 @@ func TestMigrations_DoMigrateSettings_LeavesAPathItCannotMigrate(t *testing.T) {
 			for _, name := range []string{
 				"DOCKER_CERT_PATH", "LLM_SERVER_CONFIG_PATH", "OLLAMA_SERVER_CONFIG_PATH", "BEDROCK_CONFIG_PATH",
 			} {
-				if got, set := st.vars["PENTAGI_"+name]; set {
-					t.Errorf("PENTAGI_%s = %q, want it unset", name, got.Value)
+				if got, set := st.vars["OPSAGI_"+name]; set {
+					t.Errorf("OPSAGI_%s = %q, want it unset", name, got.Value)
 				}
 			}
 			if got := st.vars[tt.variable]; tt.variable != "" && (got.Value != tt.value || got.IsChanged) {
@@ -107,13 +107,13 @@ func TestMigrations_DoMigrateSettings_ReturnsTheStateError(t *testing.T) {
 	tests := []struct {
 		variable, path, failing string
 	}{
-		{"DOCKER_CERT_PATH", dir, "PENTAGI_DOCKER_CERT_PATH"},
+		{"DOCKER_CERT_PATH", dir, "OPSAGI_DOCKER_CERT_PATH"},
 		{"DOCKER_CERT_PATH", dir, "DOCKER_CERT_PATH"},
-		{"LLM_SERVER_CONFIG_PATH", file, "PENTAGI_LLM_SERVER_CONFIG_PATH"},
+		{"LLM_SERVER_CONFIG_PATH", file, "OPSAGI_LLM_SERVER_CONFIG_PATH"},
 		{"LLM_SERVER_CONFIG_PATH", file, "LLM_SERVER_CONFIG_PATH"},
-		{"OLLAMA_SERVER_CONFIG_PATH", file, "PENTAGI_OLLAMA_SERVER_CONFIG_PATH"},
+		{"OLLAMA_SERVER_CONFIG_PATH", file, "OPSAGI_OLLAMA_SERVER_CONFIG_PATH"},
 		{"OLLAMA_SERVER_CONFIG_PATH", file, "OLLAMA_SERVER_CONFIG_PATH"},
-		{"BEDROCK_CONFIG_PATH", file, "PENTAGI_BEDROCK_CONFIG_PATH"},
+		{"BEDROCK_CONFIG_PATH", file, "OPSAGI_BEDROCK_CONFIG_PATH"},
 		{"BEDROCK_CONFIG_PATH", file, "BEDROCK_CONFIG_PATH"},
 	}
 

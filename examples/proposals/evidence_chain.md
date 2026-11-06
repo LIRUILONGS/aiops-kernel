@@ -1,13 +1,13 @@
-# RFC: Cryptographic Evidence Chain for PentAGI Operations
+# RFC: Cryptographic Evidence Chain for OpsAGI Operations
 
-Issue [#235](https://github.com/vxcontrol/pentagi/issues/235) proposes signed evidence receipts for PentAGI pentest operations. This RFC captures a possible design direction without committing the project to an implementation.
+Issue [#235](https://github.com/vxcontrol/pentagi/issues/235) proposes signed evidence receipts for OpsAGI pentest operations. This RFC captures a possible design direction without committing the project to an implementation.
 
 ## Goals
 
 - Make reports verifiable against the tool actions, artifacts, and agent decisions that produced them.
 - Detect deleted, modified, reordered, or fabricated evidence after a flow completes.
 - Preserve the existing flow, task, subtask, and toolcall model instead of adding a separate audit workflow.
-- Keep verification possible outside a running PentAGI instance.
+- Keep verification possible outside a running OpsAGI instance.
 
 ## Non-Goals
 
@@ -57,7 +57,7 @@ Example shape:
   "created_at": "2026-04-22T00:00:00Z",
   "parent_hash": "sha256:...",
   "signature": "ed25519:...",
-  "public_key_id": "pentagi-instance-2026-04"
+  "public_key_id": "opsagi-instance-2026-04"
 }
 ```
 

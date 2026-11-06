@@ -588,7 +588,7 @@ func TestFlow_Stop_EndsTheCommandsLeftRunningInTheSandbox(t *testing.T) {
 			}
 
 			require.NoError(t, newStoppableWorker(dkr).Stop(ctx), "a sandbox that cannot be swept does not keep the flow running")
-			assert.Equal(t, []string{"pentagi-terminal-42", "pentagi-terminal-42"}, dkr.sweeps(),
+			assert.Equal(t, []string{"opsagi-terminal-42", "opsagi-terminal-42"}, dkr.sweeps(),
 				"cancelling only detaches this side of a container exec: the command inside keeps running")
 		})
 	}

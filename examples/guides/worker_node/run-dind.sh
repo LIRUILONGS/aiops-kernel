@@ -23,7 +23,7 @@
 #      This closes the "chroot bypass": even if a nested container could mount
 #      DinD's root and chroot into it, the OPA policy denies the mount.
 #
-#   2. The PentAGI backend HTTP service MUST run on HTTPS (SERVER_USE_SSL=true)
+#   2. The OpsAGI backend HTTP service MUST run on HTTPS (SERVER_USE_SSL=true)
 #      and MUST NOT be accessible from worker containers. Worker containers have
 #      --network host; any plaintext HTTP port on the host will be reachable.
 #      Exposing TLS certificates or sensitive files via an unauthenticated HTTP

@@ -81,8 +81,8 @@ func TestSearxng_Handle_SendsTheConfiguredQueryAndReturnsItsOutcome(t *testing.T
 			if up.method != http.MethodGet || up.path != "/search" {
 				t.Errorf("request = %s %s, want GET /search", up.method, up.path)
 			}
-			if ua := up.header.Get("User-Agent"); ua != "PentAGI/1.0" {
-				t.Errorf("User-Agent = %q, want PentAGI/1.0", ua)
+			if ua := up.header.Get("User-Agent"); ua != "OpsAGI/1.0" {
+				t.Errorf("User-Agent = %q, want OpsAGI/1.0", ua)
 			}
 			if !reflect.DeepEqual(up.query, tt.wantQuery) {
 				t.Errorf("query = %v, want %v", up.query, tt.wantQuery)

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `processor` package serves as the core orchestrator for PentAGI installer operations, managing system interactions, Docker environments, and file system operations across different product stacks. It acts as the operational engine that executes user configuration changes determined through the TUI wizard interface.
+The `processor` package serves as the core orchestrator for OpsAGI installer operations, managing system interactions, Docker environments, and file system operations across different product stacks. It acts as the operational engine that executes user configuration changes determined through the TUI wizard interface.
 
 ## Installer Integration Architecture
 
@@ -20,7 +20,7 @@ graph TB
     subgraph "External Systems"
         Docker[Docker Engine<br/>Container Management]
         FS[File System<br/>Host OS]
-        UpdateServer[PentAGI Cloud API<br/>update.pentagi.com]
+        UpdateServer[OpsAGI Cloud API<br/>update.opsagi.com]
         Compose[Docker Compose<br/>Stack Orchestration]
     end
 
@@ -47,7 +47,7 @@ graph TB
 
 ## Terms and Definitions
 
-- **ProductStack**: Logical grouping of services that can be managed as a unit (pentagi, graphiti, langfuse, observability, compose, worker, installer, all)
+- **ProductStack**: Logical grouping of services that can be managed as a unit (opsagi, graphiti, langfuse, observability, compose, worker, installer, all)
 - **Deployment Modes**: embedded (full local stack), external (existing service), disabled (no functionality)
 - **State**: Persistent configuration storage including .env variables and wizard navigation stack
 - **Checker**: System environment assessment providing current installation status and capabilities
@@ -82,7 +82,7 @@ graph TB
 type ProductStack string
 
 const (
-    ProductStackPentagi       ProductStack = "pentagi"       // Main stack (docker-compose.yml)
+    ProductStackOpsagi       ProductStack = "opsagi"       // Main stack (docker-compose.yml)
     ProductStackGraphiti      ProductStack = "graphiti"      // Knowledge graph (docker-compose-graphiti.yml)
     ProductStackLangfuse      ProductStack = "langfuse"      // LLM observability (docker-compose-langfuse.yml)
     ProductStackObservability ProductStack = "observability" // System monitoring (docker-compose-observability.yml)
@@ -97,13 +97,13 @@ const (
 
 ### Lifecycle Management
 - **Start(stack)**:
-  - pentagi/langfuse/observability: `docker compose ... up -d` (honors embedded mode for non-destructive ops)
-  - all: sequential start in order observability → langfuse → pentagi
+  - opsagi/langfuse/observability: `docker compose ... up -d` (honors embedded mode for non-destructive ops)
+  - all: sequential start in order observability → langfuse → opsagi
   - worker/installer: not applicable
 
 - **Stop(stack)**:
-  - pentagi/langfuse/observability: `docker compose ... stop`
-  - all: sequential stop in reverse order (pentagi → langfuse → observability)
+  - opsagi/langfuse/observability: `docker compose ... stop`
+  - all: sequential stop in reverse order (opsagi → langfuse → observability)
   - worker/installer: not applicable
 
 - **Restart(stack)**:
@@ -112,14 +112,14 @@ const (
 
 ### Installation & Content Management
 - **Download(stack)**:
-  - pentagi: `docker compose pull`; graphiti/langfuse/observability: the same, but only in embedded mode (external/disabled stacks are skipped)
+  - opsagi: `docker compose pull`; graphiti/langfuse/observability: the same, but only in embedded mode (external/disabled stacks are skipped)
   - worker: `docker pull ${DOCKER_DEFAULT_IMAGE_FOR_PENTEST}` (default 6GB+), then refresh worker and update facts
   - installer: download and verify the offered installer build (no-op when already current, error when the update server is unreachable) — see *Installer self-update* below
   - compose: the four compose stacks in order
   - all: compose stacks, then worker, then installer
 
 - **Install(stack)**:
-  - pentagi: extract compose file and example provider config
+  - opsagi: extract compose file and example provider config
   - langfuse: extract compose file (embedded mode only)
   - observability: extract compose file and directory tree (embedded mode only)
   - graphiti: extract compose file plus the `graphiti/` and `neo4j/` directory trees (embedded mode only)
@@ -128,10 +128,10 @@ const (
   - all: install all configured stacks (only the ones not yet installed)
 
 - **Update(stack)**:
-  - pentagi/graphiti/langfuse/observability: no-op when the checker already says the stack is up to date; otherwise (observability only) update the Jaeger storage plugin → `docker compose pull` → `docker compose up -d` → restart the `jaeger` service if that plugin was actually replaced → re-gather that stack's facts. Writing the image references is not a separate first step: the pull and the `up -d` each write them into `.env` themselves (see *Image references are written before the pull*)
+  - opsagi/graphiti/langfuse/observability: no-op when the checker already says the stack is up to date; otherwise (observability only) update the Jaeger storage plugin → `docker compose pull` → `docker compose up -d` → restart the `jaeger` service if that plugin was actually replaced → re-gather that stack's facts. Writing the image references is not a separate first step: the pull and the `up -d` each write them into `.env` themselves (see *Image references are written before the pull*)
   - worker: pull worker images only (no forced restart)
   - installer: same download-and-verify as `Download`; the running binary is never replaced
-  - compose: the four compose stacks in order observability → langfuse → graphiti → pentagi
+  - compose: the four compose stacks in order observability → langfuse → graphiti → opsagi
   - all: the compose stacks in that order, then worker, then installer
   - every update ends with a fresh update check followed by a verification report (see *Post-update verification*)
 
@@ -139,7 +139,7 @@ const (
 
 Every `image:` in the shipped compose files is `${<COMPONENT>_IMAGE:-<default>}`, so the variable — not the file — decides what `docker compose pull` fetches. `applyPullReferences(stack)` reads `PullReference` from the components of that stack in the last check answer and writes them into `.env` via `state.WriteVars`, logging every `NAME=reference` it wrote.
 
-`WriteVars` and **not** `SetVars`. Everything else in the state package stages: `SetVar`/`SetVars` record an intention that reaches `.env` only when the user applies their changes. The pull that follows is `docker compose --env-file <.env>`, so a staged variable is one compose has never heard of — `${PENTAGI_IMAGE:-vxcontrol/pentagi:latest}` falls back to the default, the pull fetches something the server never offered, and the update reports success. `WriteVars` re-reads the file from disk, sets these values on it and saves, so the user's pending edits are neither applied nor lost, and the installation is not left dirty by a value the installer wrote for itself.
+`WriteVars` and **not** `SetVars`. Everything else in the state package stages: `SetVar`/`SetVars` record an intention that reaches `.env` only when the user applies their changes. The pull that follows is `docker compose --env-file <.env>`, so a staged variable is one compose has never heard of — `${OPSAGI_IMAGE:-local/opsagi:latest}` falls back to the default, the pull fetches something the server never offered, and the update reports success. `WriteVars` re-reads the file from disk, sets these values on it and saves, so the user's pending edits are neither applied nor lost, and the installation is not left dirty by a value the installer wrote for itself.
 
 - The variable name is derived from the component name (upper case, `-` → `_`, suffix `_IMAGE`) rather than kept in a table, so a new component needs no second registration; a mismatch degrades to "the compose default was used", which `docker compose config` shows.
 - It runs **before** the pull. Writing afterwards would pull the old reference and then record the new intention — an update that reports success and changes nothing.
@@ -187,13 +187,13 @@ Every successful update answers one question in two steps: did the artefacts tha
 
 ### Removal Operations
 - **Remove(stack)**:
-  - pentagi/langfuse/observability: `docker compose down` (keep volumes/images)
+  - opsagi/langfuse/observability: `docker compose down` (keep volumes/images)
   - worker: remove images via Docker API and related containers
   - installer: remove flow stubbed
   - all: remove all stacks
 
 - **Purge(stack)**:
-  - pentagi/langfuse/observability: `down --rmi all -v` for strict purge; standard purge `down -v` is also available
+  - opsagi/langfuse/observability: `down --rmi all -v` for strict purge; standard purge `down -v` is also available
   - worker: remove all containers, images, and volumes in worker environment
   - installer: complete removal flow stubbed
   - all: purge all stacks and remove custom networks
@@ -204,7 +204,7 @@ Every successful update answers one question in two steps: did the artefacts tha
   - phase 1: observability (ensure/verify files → update stack or remove if external/disabled)
   - phase 2: langfuse (same logic; local start requires `LangfuseConnected`)
   - phase 3: graphiti (same logic; local start requires `GraphitiConnected`)
-  - phase 4: pentagi (always embedded; ensure/verify → update)
+  - phase 4: opsagi (always embedded; ensure/verify → update)
   - refresh checker state after each phase
   - `Install` reuses the same four phases, each guarded by "not installed yet"
 
@@ -235,7 +235,7 @@ Each specialized file should contain business-logic level methods that directly 
   - File integrity validation with YAML syntax checking
   - Embedded directory tree handling for observability stack
 - **update.go**:
-  - `checkUpdates()` - refresh what the PentAGI Cloud API says about this installation; the answer lands on the shared `checker.CheckResult` instead of being returned, so there is only one copy of it
+  - `checkUpdates()` - refresh what the OpsAGI Cloud API says about this installation; the answer lands on the shared `checker.CheckResult` instead of being returned, so there is only one copy of it
   - `installerPackage()` - describe the offered build (version, platform, size, target path) without downloading it
   - `downloadInstaller()` / `updateInstaller()` - the same operation under two names: fetch `installer_<version>` and verify it; the running binary is left alone
   - `updateJaegerPlugin()` - bring the Jaeger storage plugin files up to the offered version (in `jaeger_plugin.go`)
@@ -248,7 +248,7 @@ Each specialized file should contain business-logic level methods that directly 
 
 ### Critical Implementation Details
 - **Two-Track Command Execution**:
-  - Worker stack: Docker API SDK (uses DOCKER_HOST, PENTAGI_DOCKER_CERT_PATH, DOCKER_TLS_VERIFY from config)
+  - Worker stack: Docker API SDK (uses DOCKER_HOST, OPSAGI_DOCKER_CERT_PATH, DOCKER_TLS_VERIFY from config)
   - Compose stacks: Console commands with live output streaming to TUI
 - **TUI Integration Modes**:
   - **Embedded Terminal**: Real-time pseudoterminal integration (`ProcessorTerminalModel`) via `github.com/creack/pty`
@@ -260,7 +260,7 @@ Each specialized file should contain business-logic level methods that directly 
 - **Environment Variable Handling**: Compose files use --env-file parameter for environment variables, only special cases require file patching. Image references are part of this: every `image:` is `${<COMPONENT>_IMAGE:-<default>}`, and every operation that fetches writes those variables from the cloud answer into `.env` before pulling — bypassing the staging area, since compose reads the file
 - **Progress Tracking**: Worker downloads (vxcontrol/kali-linux 6GB+ → 13GB disk) with real-time progress via terminal; file downloads (installer build, Jaeger plugin) report every 10% against the size the package description gave
 - **Docker Configuration**: Support NET_ADMIN capability for network scanning, Docker socket access for container management
-- **Dependency Ordering**: PentAGI must start before Langfuse/Observability for network creation
+- **Dependency Ordering**: OpsAGI must start before Langfuse/Observability for network creation
 - **State Persistence**: All operations update checker.CheckResult and state.State for consistency
 - **Atomicity**: Only file downloads are atomic (staged sibling + rename for the Jaeger plugin, delete-on-failure for the installer build). Compose operations are not reversible — a failed update leaves whatever compose managed to do
 
@@ -268,16 +268,16 @@ Each specialized file should contain business-logic level methods that directly 
 - **Wizard → Processor**: Called via `wizard.controllers.StateController` on user action
 - **State Coordination**: Processor updates both `state.State` (configuration) and internal state tracking
 - **File System Layout**: Working directory contains .env + extracted compose files + .state/ subdirectory
-- **Container Naming**: Follows patterns in checker constants (PentagiContainerName, etc.)
+- **Container Naming**: Follows patterns in checker constants (OpsagiContainerName, etc.)
 
 ### Key Environment Variables
 - **LLM providers**: OPEN_AI_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY, BEDROCK_*, DEEPSEEK_*, GLM_*, KIMI_*, QWEN_*, OLLAMA_SERVER_URL
-- **Provider configs**: PENTAGI_LLM_SERVER_CONFIG_PATH (host path), PENTAGI_OLLAMA_SERVER_CONFIG_PATH (host path), PENTAGI_BEDROCK_CONFIG_PATH (host path)
+- **Provider configs**: OPSAGI_LLM_SERVER_CONFIG_PATH (host path), OPSAGI_OLLAMA_SERVER_CONFIG_PATH (host path), OPSAGI_BEDROCK_CONFIG_PATH (host path)
 - **Monitoring**: LANGFUSE_BASE_URL, LANGFUSE_PROJECT_ID, OTEL_HOST
-- **Docker config**: DOCKER_HOST, PENTAGI_DOCKER_CERT_PATH (host path), DOCKER_TLS_VERIFY, DOCKER_CERT_PATH (container path, managed)
+- **Docker config**: DOCKER_HOST, OPSAGI_DOCKER_CERT_PATH (host path), DOCKER_TLS_VERIFY, DOCKER_CERT_PATH (container path, managed)
 - **Deployment modes**: envs determine embedded vs external vs disabled
 - **Worker images**: DOCKER_DEFAULT_IMAGE (debian:latest), DOCKER_DEFAULT_IMAGE_FOR_PENTEST (vxcontrol/kali-linux)
-- **Path migration**: DoMigrateSettings() migrates old DOCKER_CERT_PATH/LLM_SERVER_CONFIG_PATH/OLLAMA_SERVER_CONFIG_PATH/BEDROCK_CONFIG_PATH to PENTAGI_* variants on startup
+- **Path migration**: DoMigrateSettings() migrates old DOCKER_CERT_PATH/LLM_SERVER_CONFIG_PATH/OLLAMA_SERVER_CONFIG_PATH/BEDROCK_CONFIG_PATH to OPSAGI_* variants on startup
 
 ### Error Handling Strategy
 - **Validation errors**: validate stack applicability before operation
@@ -296,7 +296,7 @@ Each specialized file should contain business-logic level methods that directly 
 ### External Systems
 - Docker Compose CLI for stack orchestration
 - Docker API for container/image management
-- HTTP client (`cloud` package) for update checks and file downloads from the PentAGI Cloud API
+- HTTP client (`cloud` package) for update checks and file downloads from the OpsAGI Cloud API
 - File system for content extraction and cleanup
 
 ## ApplyChanges State Machine
@@ -460,7 +460,7 @@ func WithTerminalModel(terminal ProcessorTerminalModel) CommandOption {
 ```
 
 ### Update Server Protocol
-- Every call goes through the `cloud` package to the PentAGI Cloud API at `UPDATE_SERVER_HOST` (default `update.pentagi.com`), always honoring `PROXY_URL` — the installer's own proxy setting, which the process environment may not carry. `SUPPORT_SERVER_HOST` (default `support.pentagi.com`) is written by the same settings form and belongs to the Support API; no call here targets it yet
+- Every call goes through the `cloud` package to the OpsAGI Cloud API at `UPDATE_SERVER_HOST` (default `update.opsagi.com`), always honoring `PROXY_URL` — the installer's own proxy setting, which the process environment may not carry. `SUPPORT_SERVER_HOST` (default `support.opsagi.com`) is written by the same settings form and belongs to the Support API; no call here targets it yet
 - `/api/v1/proxy/updates/check` reports the installed components and answers per stack: whether an update exists, the version transition, and per component the action, the pull reference and the target digest
 - `/api/v1/proxy/packages/info` then `/api/v1/proxy/packages/download` fetch a file (installer build, Jaeger storage plugin). The description carries the size, sha256 and signature the stream is checked against; that size is also the only length the client ever learns, since the encrypted body carries no `Content-Length`, so download progress is computed from it
 - No atomic self-replacement and no post-update exit: the downloaded installer is left on disk with the command to move it into place

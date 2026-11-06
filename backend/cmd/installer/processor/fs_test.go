@@ -21,7 +21,7 @@ import (
 
 // fsStackFiles are what each stack extracts into the working directory.
 var fsStackFiles = map[ProductStack][]string{
-	ProductStackPentagi: {
+	ProductStackOpsagi: {
 		"docker-compose.yml",
 		"example.custom.provider.yml", "example.ollama.provider.yml", "example.bedrock.provider.yml",
 	},
@@ -32,7 +32,7 @@ var fsStackFiles = map[ProductStack][]string{
 
 // fsEveryStackFile is every stack's files, in the order the stacks are processed.
 var fsEveryStackFile = slices.Concat(
-	fsStackFiles[ProductStackPentagi], fsStackFiles[ProductStackGraphiti],
+	fsStackFiles[ProductStackOpsagi], fsStackFiles[ProductStackGraphiti],
 	fsStackFiles[ProductStackLangfuse], fsStackFiles[ProductStackObservability],
 )
 
@@ -63,7 +63,7 @@ func TestFs_EnsureStackIntegrity_ExtractsEveryFileOfTheStack(t *testing.T) {
 		want    []string
 		wantErr string
 	}{
-		{"pentagi with its provider examples", ProductStackPentagi, fsStackFiles[ProductStackPentagi], ""},
+		{"opsagi with its provider examples", ProductStackOpsagi, fsStackFiles[ProductStackOpsagi], ""},
 		{"langfuse has its compose file only", ProductStackLangfuse, fsStackFiles[ProductStackLangfuse], ""},
 		{"observability with its directory", ProductStackObservability, fsStackFiles[ProductStackObservability], ""},
 		{"compose covers every stack", ProductStackCompose, fsEveryStackFile, ""},
@@ -90,7 +90,7 @@ func TestFs_VerifyStackIntegrity_RestoresEveryMissingFileItVerifies(t *testing.T
 		want    []string
 		wantErr string
 	}{
-		{"pentagi with its provider examples", ProductStackPentagi, fsStackFiles[ProductStackPentagi], ""},
+		{"opsagi with its provider examples", ProductStackOpsagi, fsStackFiles[ProductStackOpsagi], ""},
 		{"langfuse has its compose file only", ProductStackLangfuse, []string{"docker-compose-langfuse.yml"}, ""},
 		{"observability with its directory", ProductStackObservability, fsStackFiles[ProductStackObservability], ""},
 		{"compose covers every stack", ProductStackCompose, fsEveryStackFile, ""},
@@ -134,7 +134,7 @@ func TestFs_VerifyStackIntegrity_RestoresAProviderExampleThatIsNotAFile(t *testi
 		t.Run(tc.name, func(t *testing.T) {
 			ops, embedded, dir := fsOperations(t)
 			embedded.copyErr = tc.copyErr
-			for _, name := range fsStackFiles[ProductStackPentagi] {
+			for _, name := range fsStackFiles[ProductStackOpsagi] {
 				switch {
 				case slices.Contains(tc.missing, name):
 				case slices.Contains(tc.directories, name):
@@ -146,7 +146,7 @@ func TestFs_VerifyStackIntegrity_RestoresAProviderExampleThatIsNotAFile(t *testi
 			state := testOperationState(t)
 			state.force = tc.force
 
-			require.NoError(t, ops.verifyStackIntegrity(t.Context(), ProductStackPentagi, state))
+			require.NoError(t, ops.verifyStackIntegrity(t.Context(), ProductStackOpsagi, state))
 			assert.Equal(t, tc.want, fsCopied(t, embedded, dir))
 			if tc.wantLog != "" {
 				assert.Contains(t, state.output.String(), tc.wantLog)
@@ -163,7 +163,7 @@ func TestFs_EnsureStackIntegrity_ExtractsEveryFileItsComposeFileMounts(t *testin
 		composeFile string
 		want        []string // every source beside the compose file, files and directories alike
 	}{
-		{ProductStackPentagi, "docker-compose.yml", []string{
+		{ProductStackOpsagi, "docker-compose.yml", []string{
 			"./docker-ssl",
 			"./example.bedrock.provider.yml", "./example.custom.provider.yml", "./example.ollama.provider.yml",
 		}},
@@ -247,7 +247,7 @@ func TestFs_ADirectoryInPlaceOfAProviderExampleBecomesTheExample(t *testing.T) {
 			forced := testOperationState(t)
 			forced.force = true
 
-			require.NoError(t, tc.run(ops, t.Context(), ProductStackPentagi, forced))
+			require.NoError(t, tc.run(ops, t.Context(), ProductStackOpsagi, forced))
 
 			for _, name := range []string{"example.bedrock.provider.yml", "example.ollama.provider.yml"} {
 				written, err := os.ReadFile(filepath.Join(dir, name))
@@ -271,7 +271,7 @@ func TestFs_CleanupStackFiles_RemovesEveryFileOfTheStackAndNothingElse(t *testin
 		removed []string
 		wantErr string
 	}{
-		{"pentagi with its provider examples", ProductStackPentagi, fsStackFiles[ProductStackPentagi], ""},
+		{"opsagi with its provider examples", ProductStackOpsagi, fsStackFiles[ProductStackOpsagi], ""},
 		{"graphiti with its config directories", ProductStackGraphiti, fsStackFiles[ProductStackGraphiti], ""},
 		{"langfuse has its compose file only", ProductStackLangfuse, fsStackFiles[ProductStackLangfuse], ""},
 		{"observability with its directory", ProductStackObservability, fsStackFiles[ProductStackObservability], ""},
@@ -483,7 +483,7 @@ func TestFs_CheckStackIntegrity_ReportsEveryFileOfTheStack(t *testing.T) {
 		want    FilesCheckResult
 		wantErr string
 	}{
-		{"pentagi reports its compose file", ProductStackPentagi, FilesCheckResult{"docker-compose.yml": files.FileStatusOK}, ""},
+		{"opsagi reports its compose file", ProductStackOpsagi, FilesCheckResult{"docker-compose.yml": files.FileStatusOK}, ""},
 		{"langfuse reports its compose file", ProductStackLangfuse, FilesCheckResult{"docker-compose-langfuse.yml": files.FileStatusModified}, ""},
 		{"observability with its directory", ProductStackObservability, FilesCheckResult{
 			"docker-compose-observability.yml": files.FileStatusMissing,

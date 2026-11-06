@@ -30,7 +30,7 @@ const (
 	fileEditTestName = "Read a file, then edit it via unified diff"
 )
 
-// newFileEditTestCase builds a two-turn scenario exercising PentAGI's real
+// newFileEditTestCase builds a two-turn scenario exercising OpsAGI's real
 // file tool end to end: read a file, then change one line in it. Unlike
 // every YAML-driven TestCase, this one is hand-built in Go (not tests.yml)
 // because its whole point is a genuinely dynamic exchange - the harness
@@ -38,7 +38,7 @@ const (
 // expressed as a fixed list of messages the way cases.TestDefinition is.
 //
 // The tool declaration is not hand-copied JSON: it comes straight from
-// tools.GetRegistryDefinitions(), the exact schema real PentAGI agents get,
+// tools.GetRegistryDefinitions(), the exact schema real OpsAGI agents get,
 // so this test also catches accidental schema regressions in pkg/tools. The
 // read/edit "handler" below is this package's own in-memory simulation (no
 // Docker container is involved), deliberately separate from - but for the
@@ -219,7 +219,7 @@ func (f *fileEditTestCase) Execute(response any, latency time.Duration) cases.Te
 	return result
 }
 
-// firstFileToolCall returns the first tool call in resp targeting PentAGI's
+// firstFileToolCall returns the first tool call in resp targeting OpsAGI's
 // file tool (tools.FileToolName) along with its decoded arguments.
 func firstFileToolCall(resp *llms.ContentResponse) (llms.ToolCall, map[string]any, bool) {
 	for _, choice := range resp.Choices {

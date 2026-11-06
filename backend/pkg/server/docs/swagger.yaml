@@ -2052,15 +2052,15 @@ definitions:
     type: object
 info:
   contact:
-    email: team@pentagi.com
-    name: PentAGI Development Team
-    url: https://pentagi.com
-  description: Swagger API for Penetration Testing Advanced General Intelligence PentAGI.
+    email: team@opsagi.com
+    name: OpsAGI Development Team
+    url: https://opsagi.com
+  description: Swagger API for Penetration Testing Advanced General Intelligence OpsAGI.
   license:
     name: MIT
     url: https://opensource.org/license/mit
   termsOfService: http://swagger.io/terms/
-  title: PentAGI Swagger API
+  title: OpsAGI Swagger API
   version: "1.0"
 paths:
   /agentlogs/:

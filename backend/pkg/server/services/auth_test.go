@@ -218,7 +218,7 @@ func TestAuth_Info_DoesNotReMintARevokedSession(t *testing.T) {
 		auth.NewUserCache(db))
 
 	engine := gin.New()
-	engine.Use(sessions.Sessions("pentagi", cookie.NewStore([]byte("test-secret"))))
+	engine.Use(sessions.Sessions("opsagi", cookie.NewStore([]byte("test-secret"))))
 	mintedBeforeTheRefreshWindow := time.Now().Add(-10 * time.Minute).Unix()
 	engine.GET("/info", func(c *gin.Context) {
 		c.Set("uid", user.ID)
@@ -235,7 +235,7 @@ func TestAuth_Info_DoesNotReMintARevokedSession(t *testing.T) {
 
 	assert.Equal(t, "guest", infoOf(t, rec).Type, "a revoked session is a guest, as the middleware would have said")
 	for _, c := range rec.Result().Cookies() {
-		assert.NotEqual(t, "pentagi", c.Name, "a revoked session must not be re-minted at the new generation")
+		assert.NotEqual(t, "opsagi", c.Name, "a revoked session must not be re-minted at the new generation")
 	}
 }
 
@@ -302,7 +302,7 @@ func newLoginService(t *testing.T, db *gorm.DB, cfg AuthServiceConfig) (*AuthSer
 
 	engine := gin.New()
 	require.NoError(t, engine.SetTrustedProxies(nil))
-	engine.Use(sessions.Sessions("pentagi", cookie.NewStore([]byte("test-secret"))))
+	engine.Use(sessions.Sessions("opsagi", cookie.NewStore([]byte("test-secret"))))
 	engine.POST("/auth/login", svc.AuthLogin)
 
 	return svc, func(addr string) *loginCaller {
@@ -559,7 +559,7 @@ var authLogoutDoors = []struct {
 
 func clearsTheSession(rec *httptest.ResponseRecorder) bool {
 	for _, c := range rec.Result().Cookies() {
-		if c.Name == "pentagi" && c.MaxAge < 0 {
+		if c.Name == "opsagi" && c.MaxAge < 0 {
 			return true
 		}
 	}
@@ -666,7 +666,7 @@ func newSessionHarness(t *testing.T) *sessionHarness {
 	middleware := auth.NewAuthMiddleware("/", "test", auth.NewTokenCache(db), userCache)
 	engine := gin.New()
 	require.NoError(t, engine.SetTrustedProxies(nil))
-	engine.Use(sessions.Sessions("pentagi", cookie.NewStore([]byte("test-secret"))))
+	engine.Use(sessions.Sessions("opsagi", cookie.NewStore([]byte("test-secret"))))
 	engine.Use(middleware.TryAuth)
 	engine.POST("/auth/login", svc.AuthLogin)
 	engine.POST("/auth/logout", svc.AuthLogout)

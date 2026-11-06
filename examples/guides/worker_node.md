@@ -1,13 +1,13 @@
-# PentAGI Worker Node Setup
+# OpsAGI Worker Node Setup
 
-This guide configures a distributed PentAGI deployment where worker node operations are isolated on a separate server for enhanced security. The worker node runs both host Docker and a hardened Docker-in-Docker (dind) daemon, which gives agents a sandboxed Docker environment of their own.
+This guide configures a distributed OpsAGI deployment where worker node operations are isolated on a separate server for enhanced security. The worker node runs both host Docker and a hardened Docker-in-Docker (dind) daemon, which gives agents a sandboxed Docker environment of their own.
 
 ## Architecture Overview
 
 ```mermaid
 graph TB
     subgraph "Main Node"
-        PA[PentAGI Container]
+        PA[OpsAGI Container]
     end
 
     subgraph "Worker Node"
@@ -15,8 +15,8 @@ graph TB
         DIND[Docker-in-Docker<br/>:3376 TLS<br/>OPA authz + seccomp]
 
         subgraph "Worker Containers"
-            WC1[pentagi-terminal-1]
-            WC2[pentagi-terminal-N]
+            WC1[opsagi-terminal-1]
+            WC2[opsagi-terminal-N]
         end
 
         NC[Nested Containers<br/>agent 'docker run']
@@ -41,8 +41,8 @@ graph TB
 ```
 
 **Connection Modes:**
-- **Standard** (recommended): PentAGI → Host Docker (creates workers) → Workers reach dind over its **TLS endpoint**, configured through `DOCKER_INSIDE_HOST` / `DOCKER_INSIDE_TLS_VERIFY` / `DOCKER_INSIDE_CERT_PATH`. Agents keep full Docker access, and every container they create is policed by the dind authorization policy.
-- **Direct**: PentAGI → dind (creates workers directly). Worker containers become nested containers, so the policy applies to them too: host bind-mounts are denied, which means **Docker Access must be disabled** and the work directory must be left empty (PentAGI then uses a Docker volume). Agents get no nested Docker in this mode.
+- **Standard** (recommended): OpsAGI → Host Docker (creates workers) → Workers reach dind over its **TLS endpoint**, configured through `DOCKER_INSIDE_HOST` / `DOCKER_INSIDE_TLS_VERIFY` / `DOCKER_INSIDE_CERT_PATH`. Agents keep full Docker access, and every container they create is policed by the dind authorization policy.
+- **Direct**: OpsAGI → dind (creates workers directly). Worker containers become nested containers, so the policy applies to them too: host bind-mounts are denied, which means **Docker Access must be disabled** and the work directory must be left empty (OpsAGI then uses a Docker volume). Agents get no nested Docker in this mode.
 
 ### Why workers reach dind over TLS instead of a mounted socket
 
@@ -50,7 +50,7 @@ Earlier revisions of this guide mounted `/var/run/docker-dind/docker.sock` into 
 
 **Boot-order race.** A bind-mount whose source does not exist is created by Docker as a **directory**. Worker containers carry a `on-failure` restart policy, so after a worker-node reboot one of them can start before dind has recreated its socket. Docker then materialises a *directory* at `/var/run/docker-dind/docker.sock`, and dind cannot bind its socket at that path any more — the daemon fails to start until someone removes the directory by hand, and every agent in the meantime has a useless mount.
 
-**Blast radius.** The race is only reliably avoided when the mounted socket belongs to the **host** daemon, because that one exists before anything else starts. But that hands an autonomous agent the host daemon: it can launch a privileged container, mount `/`, and take over the node — PentAGI, the other flows' containers, and the certificates on it included. That is precisely the risk this two-node architecture exists to remove.
+**Blast radius.** The race is only reliably avoided when the mounted socket belongs to the **host** daemon, because that one exists before anything else starts. But that hands an autonomous agent the host daemon: it can launch a privileged container, mount `/`, and take over the node — OpsAGI, the other flows' containers, and the certificates on it included. That is precisely the risk this two-node architecture exists to remove.
 
 Pointing workers at `tcp://${PRIVATE_IP}:3376` avoids both: there is no mount to race on, and every request the agent makes passes through the dind authorization policy. Client certificates are mounted read-only, so an agent can use them but not rewrite them.
 
@@ -63,7 +63,7 @@ Set the private IP address that will be used throughout this setup, the metrics 
 ```bash
 export PRIVATE_IP=192.168.10.10  # Replace with your worker node IP
 export METRICS_IP=127.0.0.1     # Bind address for metrics ports 8080 / 9100 / 9323 / 9324
-export GUIDE_URL=https://raw.githubusercontent.com/vxcontrol/pentagi/main/examples/guides/worker_node
+export GUIDE_URL=https://raw.githubusercontent.com/vxcontrol/opsagi/main/examples/guides/worker_node
 ```
 
 `METRICS_IP` defaults to `127.0.0.1` so Prometheus metrics (Docker daemon, dind, cAdvisor, node-exporter) stay local to the worker node. Set it to `${PRIVATE_IP}` only if a remote scraper must reach ports `8080`, `9100`, `9323` / `9324`.
@@ -387,19 +387,19 @@ sudo env MAX_AGE_HOURS=1 /usr/local/bin/dind-cleanup  # run manually with an ove
 
 There are two ways to check the isolation, and you want both.
 
-**PentAGI's own sandbox test — you must turn it on.** It ships inside the `pentagi` binary and needs no file from this directory. It is **off by default**, because it needs the separate-daemon arrangement this guide describes and most deployments do not run one. On a worker node set up as below:
+**OpsAGI's own sandbox test — you must turn it on.** It ships inside the `opsagi` binary and needs no file from this directory. It is **off by default**, because it needs the separate-daemon arrangement this guide describes and most deployments do not run one. On a worker node set up as below:
 
 ```
 DOCKER_INSIDE_POLICY_TESTS=true
 ```
 
-The test runs **once, at startup, and nowhere else** — never when a flow starts, so it costs a running deployment nothing. PentAGI launches one worker exactly the way a flow launches one (same capabilities, same network, same injected `DOCKER_*`, same read-only certificate mount; only the image differs), runs the checks inside it, and removes it. It takes a few seconds, and the image is cached after the first run.
+The test runs **once, at startup, and nowhere else** — never when a flow starts, so it costs a running deployment nothing. OpsAGI launches one worker exactly the way a flow launches one (same capabilities, same network, same injected `DOCKER_*`, same read-only certificate mount; only the image differs), runs the checks inside it, and removes it. It takes a few seconds, and the image is cached after the first run.
 
 The image is `DOCKER_DEFAULT_IMAGE_FOR_TEST`, which defaults to `vxcontrol/kali-linux:test` — a ~170 MB image carrying a Docker client and curl, kept small because the check pays for it on every start. Pulling that image **into the sandbox** is itself one of the checks: it is what every agent depends on.
 
 The checks are the negative half of `policy-tests.sh` — 27 host-escape requests that must be refused — plus 7 positive ones that must succeed (pull, create, start, run, exec, volume, network) and one ordinary create that must pass authorization, so a plugin that simply denies everything fails too. None of the negative requests can do anything even if the policy lets them through: each names an object that does not exist.
 
-**Its only effect is whether agents get Docker at all.** PentAGI never refuses to start over this. There are four outcomes:
+**Its only effect is whether agents get Docker at all.** OpsAGI never refuses to start over this. There are four outcomes:
 
 | configuration | sandbox | log |
 |---|---|---|
@@ -408,9 +408,9 @@ The checks are the negative half of `policy-tests.sh` — 27 host-escape request
 | `DOCKER_INSIDE=true`, host set, tests off | on | `warning` — enabled but never measured |
 | `DOCKER_INSIDE=true`, host set, tests on | on if it passes, **off if it does not** | `info` with the daemon id, or `error` naming the failed checks |
 
-When the sandbox is turned off, the log says which check decided it and links this guide, so the arrangement can be fixed and the deployment restarted. Until then PentAGI keeps running and agents work without Docker access.
+When the sandbox is turned off, the log says which check decided it and links this guide, so the arrangement can be fixed and the deployment restarted. Until then OpsAGI keeps running and agents work without Docker access.
 
-**The standalone suite below is wider and manual.** `dind-policy-tests` also exercises the seccomp profile, the capability bounding set and realistic agent workloads from inside a container wired exactly like a real PentAGI worker — including the positive cases that prove the policy is not so tight that agents stop working. Run it once after setup and after every policy change. It is not needed for the built-in tests above.
+**The standalone suite below is wider and manual.** `dind-policy-tests` also exercises the seccomp profile, the capability bounding set and realistic agent workloads from inside a container wired exactly like a real OpsAGI worker — including the positive cases that prove the policy is not so tight that agents stop working. Run it once after setup and after every policy change. It is not needed for the built-in tests above.
 
 The suite probes a plaintext HTTP service on the node. Install Python on the host first if it is not already present, then start a throwaway server bound to `${PRIVATE_IP}:8080`:
 
@@ -421,7 +421,7 @@ python3 -m http.server 8080 --bind "${PRIVATE_IP}" >/tmp/dind-test-http.log 2>&1
 HTTP_PID=$!
 
 docker run --rm -it \
-    --name pentagi-terminal-test \
+    --name opsagi-terminal-test \
     --network host \
     --cap-add NET_ADMIN --cap-add NET_RAW \
     -e TARGET_IP=${PRIVATE_IP} \
@@ -440,7 +440,7 @@ docker run --rm -it \
 kill "${HTTP_PID}" 2>/dev/null || true
 ```
 
-This invocation mirrors exactly what PentAGI does for a real worker container: the dind endpoint and its client certificates are supplied through the environment, and no Docker socket is mounted. (If you still run the socket-mapping layout, replace the three `DOCKER_*` variables and the certificate mount with `-v /var/run/docker-dind/docker.sock:/var/run/docker.sock`.)
+This invocation mirrors exactly what OpsAGI does for a real worker container: the dind endpoint and its client certificates are supplied through the environment, and no Docker socket is mounted. (If you still run the socket-mapping layout, replace the three `DOCKER_*` variables and the certificate mount with `-v /var/run/docker-dind/docker.sock:/var/run/docker.sock`.)
 
 Positive tests cover legitimate workloads (nmap, masscan, curl, sqlmap, nginx, volumes, tmpfs, container lifecycle); negative tests cover escape primitives (privileged containers, dangerous capabilities, host namespaces, bind-mounts, block-device `mknod`, `nsenter`). Every test should report `[ PASS ]` or `[ SKIP ]`, and the exit code is `0` when nothing failed. **A failed negative test is an isolation gap; a failed positive test is a false positive that will break agent workloads.**
 
@@ -461,7 +461,7 @@ If `run-dind` fails with a missing `/dev/fuse`, load the module first: `sudo mod
 
 ## Deploy Scraper on Worker Node (Host Docker)
 
-Run the browser scraper on the **worker node's host Docker** (outside dind), bound to `${PRIVATE_IP}:9443`. PentAGI on the main node will call it the same way as the local compose `scraper` service: HTTPS with Basic Auth embedded in the URL, TLS verification skipped for the scraper's self-signed certificate (`backend/pkg/tools/browser.go`).
+Run the browser scraper on the **worker node's host Docker** (outside dind), bound to `${PRIVATE_IP}:9443`. OpsAGI on the main node will call it the same way as the local compose `scraper` service: HTTPS with Basic Auth embedded in the URL, TLS verification skipped for the scraper's self-signed certificate (`backend/pkg/tools/browser.go`).
 
 Under the hood this is Browserless + Chrome, so the container needs a large `/dev/shm` (`--shm-size 2g`). Keep it off `--network host`, do not mount the Docker socket, and apply light hardening — enough to raise the escape bar without breaking Chrome.
 
@@ -470,7 +470,7 @@ Under the hood this is Browserless + Chrome, so the container needs a large `/de
 Pick a strong username/password and export them before creating the launcher (they are baked into the script at create time). Avoid shell-special characters (`'`, `"`, `$`, `` ` ``, `\`, `@`, `:`) so the URL form stays unambiguous:
 
 ```bash
-export SCRAPER_USERNAME=pentagi
+export SCRAPER_USERNAME=opsagi
 export SCRAPER_PASSWORD="$(openssl rand -base64 24 | tr -dc 'A-Za-z0-9' | head -c 32)"
 echo "SCRAPER_USERNAME=${SCRAPER_USERNAME}"
 echo "SCRAPER_PASSWORD=${SCRAPER_PASSWORD}"   # save this; needed on the main node later
@@ -551,7 +551,7 @@ sudo chmod +x /usr/local/bin/run-scraper
 ```bash
 sudo run-scraper
 
-# Same request shape PentAGI uses (browser.go): GET /markdown?url=…
+# Same request shape OpsAGI uses (browser.go): GET /markdown?url=…
 # Auth is HTTP Basic (-u); TLS cert is self-signed → -k
 # First pull + cold start can take a minute — retry until HTTP 200
 for i in $(seq 1 60); do
@@ -569,7 +569,7 @@ done
 [ "${code:-}" = "200" ] && echo "scraper is ready" || echo "scraper failed to become ready"
 ```
 
-A HTTP 200 with markdown body means the scraper is ready. On the main node, point PentAGI at this endpoint (see [Equivalent `.env` Configuration](#equivalent-env-configuration)):
+A HTTP 200 with markdown body means the scraper is ready. On the main node, point OpsAGI at this endpoint (see [Equivalent `.env` Configuration](#equivalent-env-configuration)):
 
 ```bash
 # On the main node — credentials must match what you baked into run-scraper
@@ -577,13 +577,13 @@ SCRAPER_PUBLIC_URL=https://${SCRAPER_USERNAME}:${SCRAPER_PASSWORD}@${PRIVATE_IP}
 SCRAPER_PRIVATE_URL=https://${SCRAPER_USERNAME}:${SCRAPER_PASSWORD}@${PRIVATE_IP}:9443
 ```
 
-> Nested containers may use `--network host` and can therefore reach `${PRIVATE_IP}:9443`. Basic Auth is the gate — keep the password strong and do not expose 9443 beyond the main PentAGI node.
+> Nested containers may use `--network host` and can therefore reach `${PRIVATE_IP}:9443`. Basic Auth is the gate — keep the password strong and do not expose 9443 beyond the main OpsAGI node.
 
 ## Deploy Monitoring Exporters on Worker Node (Host Docker)
 
-Run cAdvisor (per-container metrics) and node-exporter (host-level metrics) on the **worker node's host Docker** (outside dind), bound to `${METRICS_IP}` — the same bind address already used for the Docker daemon and dind metrics endpoints (`9323`/`9324`). PentAGI's bundled [observability stack](mdc:observability/otel/config.yml) scrapes both under the `docker-container-collector` and `otel-collector` job names; on a distributed setup point those Prometheus targets at `${METRICS_IP}:8080` and `${METRICS_IP}:9100` instead of the in-network container names.
+Run cAdvisor (per-container metrics) and node-exporter (host-level metrics) on the **worker node's host Docker** (outside dind), bound to `${METRICS_IP}` — the same bind address already used for the Docker daemon and dind metrics endpoints (`9323`/`9324`). OpsAGI's bundled [observability stack](mdc:observability/otel/config.yml) scrapes both under the `docker-container-collector` and `otel-collector` job names; on a distributed setup point those Prometheus targets at `${METRICS_IP}:8080` and `${METRICS_IP}:9100` instead of the in-network container names.
 
-Both exporters are read-only introspection tools with no PentAGI-specific credentials, so — unlike the scraper — they need no secrets step.
+Both exporters are read-only introspection tools with no OpsAGI-specific credentials, so — unlike the scraper — they need no secrets step.
 
 ### Create and Install `run-cadvisor`
 
@@ -714,7 +714,7 @@ The worker node exposes the following services:
 |------|--------------|---------|-------------|
 | 2376 | `${PRIVATE_IP}` | Host Docker API | TLS-secured Docker daemon for worker container management |
 | 3376 | `${PRIVATE_IP}` | dind API | TLS-secured Docker-in-Docker daemon |
-| 9443 | `${PRIVATE_IP}` | Scraper (Browserless) | HTTPS browser scraper for PentAGI browser tool |
+| 9443 | `${PRIVATE_IP}` | Scraper (Browserless) | HTTPS browser scraper for OpsAGI browser tool |
 | 9323 | `${METRICS_IP}` | Host Docker Metrics | Prometheus metrics endpoint for host Docker |
 | 9324 | `${METRICS_IP}` | dind Metrics | Prometheus metrics endpoint for dind |
 | 8080 | `${METRICS_IP}` | cAdvisor Metrics | Prometheus per-container metrics (`run-cadvisor`) |
@@ -722,14 +722,14 @@ The worker node exposes the following services:
 
 With the default `METRICS_IP=127.0.0.1`, metrics are reachable only from the worker node itself. Set `METRICS_IP=${PRIVATE_IP}` if a remote metrics scraper must reach them.
 
-**Metrics Integration:** The metrics ports (9323, 9324, 8080, 9100) can be configured in PentAGI's `observability/otel/config.yml` under the `docker-engine-collector`, `docker-container-collector` and `otel-collector` job names for monitoring integration — point their `targets` at `${METRICS_IP}:<port>` instead of the in-network container names when the worker node is remote.
+**Metrics Integration:** The metrics ports (9323, 9324, 8080, 9100) can be configured in OpsAGI's `observability/otel/config.yml` under the `docker-engine-collector`, `docker-container-collector` and `otel-collector` job names for monitoring integration — point their `targets` at `${METRICS_IP}:<port>` instead of the in-network container names when the worker node is remote.
 
 ### OOB Attack Port Range
 
-Each worker container (`pentagi-terminal-N`) dynamically allocates **2 ports** from the range `28000-30000` on all network interfaces to facilitate Out-of-Band (OOB) attack techniques during penetration testing.
+Each worker container (`opsagi-terminal-N`) dynamically allocates **2 ports** from the range `28000-30000` on all network interfaces to facilitate Out-of-Band (OOB) attack techniques during penetration testing.
 
 **Firewall Requirements:**
-- **Inbound**: Allow access to ports 2376, 3376, 9443 on `${PRIVATE_IP}` from the main PentAGI node
+- **Inbound**: Allow access to ports 2376, 3376, 9443 on `${PRIVATE_IP}` from the main OpsAGI node
 - **Inbound**: If `METRICS_IP=${PRIVATE_IP}`, also allow 9323, 9324, 8080, 9100 on `${PRIVATE_IP}` from the metrics scraper host; with the default `127.0.0.1` no remote metrics access is needed
 - **Inbound**: Allow access to port range 28000-30000 from target networks being tested
 - Configure perimeter firewall to permit OOB traffic from target networks to worker node
@@ -738,7 +738,7 @@ Both Docker APIs and the scraper must be reachable **only** from the main node �
 
 ## Transfer Certificates to Main Node
 
-Copy the client certificates from the worker node to the main PentAGI node for secure Docker API access. The certificates need to be transferred to specific directories that the PentAGI installer will recognize.
+Copy the client certificates from the worker node to the main OpsAGI node for secure Docker API access. The certificates need to be transferred to specific directories that the OpsAGI installer will recognize.
 
 ### Copy Host Docker Client Certificates
 
@@ -749,10 +749,10 @@ Transfer the host Docker client certificates to the main node:
 sudo tar czf docker-host-ssl.tar.gz -C /etc/docker/certs client/
 
 # Transfer to main node (replace <MAIN_NODE_IP> with actual IP)
-scp docker-host-ssl.tar.gz root@<MAIN_NODE_IP>:/opt/pentagi/
+scp docker-host-ssl.tar.gz root@<MAIN_NODE_IP>:/opt/opsagi/
 
 # On the main node - extract certificates
-cd /opt/pentagi
+cd /opt/opsagi
 tar xzf docker-host-ssl.tar.gz
 mv client docker-host-ssl
 rm docker-host-ssl.tar.gz
@@ -767,10 +767,10 @@ Transfer the dind client certificates to the main node:
 sudo tar czf docker-dind-ssl.tar.gz -C /etc/docker/dind/certs client/
 
 # Transfer to main node (replace <MAIN_NODE_IP> with actual IP)
-scp docker-dind-ssl.tar.gz root@<MAIN_NODE_IP>:/opt/pentagi/
+scp docker-dind-ssl.tar.gz root@<MAIN_NODE_IP>:/opt/opsagi/
 
 # On the main node - extract certificates
-cd /opt/pentagi
+cd /opt/opsagi
 tar xzf docker-dind-ssl.tar.gz
 mv client docker-dind-ssl
 rm docker-dind-ssl.tar.gz
@@ -782,8 +782,8 @@ After transfer, verify the certificate directory structure on the main node:
 
 ```bash
 # Check certificate directories
-ls -la /opt/pentagi/docker-host-ssl/
-ls -la /opt/pentagi/docker-dind-ssl/
+ls -la /opt/opsagi/docker-host-ssl/
+ls -la /opt/opsagi/docker-dind-ssl/
 
 # Expected files in each directory:
 # ca.pem (Certificate Authority)
@@ -791,22 +791,22 @@ ls -la /opt/pentagi/docker-dind-ssl/
 # key.pem (Client private key)
 ```
 
-These certificate directories will be used by the PentAGI installer to configure secure connections to the worker node Docker services. Keep them readable by root only, and outside any directory served over HTTP.
+These certificate directories will be used by the OpsAGI installer to configure secure connections to the worker node Docker services. Keep them readable by root only, and outside any directory served over HTTP.
 
-## Install PentAGI on Main Node
+## Install OpsAGI on Main Node
 
-After completing the worker node setup and transferring certificates, install PentAGI on the main node using the official installer.
+After completing the worker node setup and transferring certificates, install OpsAGI on the main node using the official installer.
 
 ### Download and Run Installer
 
-Execute the following commands on the main node to download and run the PentAGI installer:
+Execute the following commands on the main node to download and run the OpsAGI installer:
 
 ```bash
 # Create installation directory and navigate to it
-mkdir -p /opt/pentagi && cd /opt/pentagi
+mkdir -p /opt/opsagi && cd /opt/opsagi
 
 # Download the latest installer
-wget -O installer.zip https://pentagi.com/downloads/linux/amd64/installer-latest.zip
+wget -O installer.zip https://opsagi.com/downloads/linux/amd64/installer-latest.zip
 
 # Extract the installer
 unzip installer.zip
@@ -840,18 +840,18 @@ The installer requires appropriate privileges to interact with the Docker API fo
 
 ### Configure Docker Environment
 
-After the installer completes and PentAGI is running, manually configure the Docker environment through the web interface:
+After the installer completes and OpsAGI is running, manually configure the Docker environment through the web interface:
 
-1. **Access PentAGI Installer** via `./installer`
+1. **Access OpsAGI Installer** via `./installer`
 2. **Navigate to Tools → Docker Environment**
 3. **Fill in the Docker Environment Configuration fields:**
 
 **For Standard Mode (Host Docker) — recommended:**
 
-*How PentAGI reaches the worker node:*
+*How OpsAGI reaches the worker node:*
 - **Docker Host**: `tcp://${PRIVATE_IP}:2376` (TLS connection to host Docker)
 - **TLS Verification**: `1` (enable TLS verification)
-- **TLS Certificates**: `/opt/pentagi/docker-host-ssl` (path on the **main node**)
+- **TLS Certificates**: `/opt/opsagi/docker-host-ssl` (path on the **main node**)
 
 *How worker containers reach dind:*
 - **Docker Access**: `true` (agents get Docker)
@@ -862,7 +862,7 @@ After the installer completes and PentAGI is running, manually configure the Doc
 
 *Everything else:*
 - **Network Admin**: `true` (enable network scanning capabilities)
-- **Docker Network**: `pentagi-network` (custom network name)
+- **Docker Network**: `opsagi-network` (custom network name)
 - **Public IP Address**: `${PRIVATE_IP}` (worker node IP in front of the tested network, for OOB attacks)
 - **Work Directory**: Leave empty (use default Docker volumes)
 - **Default Image**: `debian:latest` (or leave empty)
@@ -872,31 +872,31 @@ Note the two different certificate locations, and that they are **not** intercha
 
 | Setting | Certificates for | Path resolved on |
 |---|---|---|
-| TLS Certificates | host Docker `:2376` | main node — mounted into the PentAGI container |
+| TLS Certificates | host Docker `:2376` | main node — mounted into the OpsAGI container |
 | Worker Docker Certificate Path | dind `:3376` | worker node — mounted read-only into each worker container |
 
-The dind client certificates are already in place at `/etc/docker/dind/certs/client` from the dind setup above, so nothing needs to be copied for this. PentAGI bind-mounts that directory read-only at the identical path inside every worker container and injects `DOCKER_HOST`, `DOCKER_TLS_VERIFY` and `DOCKER_CERT_PATH` accordingly, so `docker` just works inside the sandbox.
+The dind client certificates are already in place at `/etc/docker/dind/certs/client` from the dind setup above, so nothing needs to be copied for this. OpsAGI bind-mounts that directory read-only at the identical path inside every worker container and injects `DOCKER_HOST`, `DOCKER_TLS_VERIFY` and `DOCKER_CERT_PATH` accordingly, so `docker` just works inside the sandbox.
 
 > **Never point Worker Docker Certificate Path at `/etc/docker/certs/client`.** Those are the *host* daemon's client certificates. Handing them to an agent grants it the host Docker API on `:2376`, which defeats the entire isolation model — nested containers may use `--network host` and can already reach that port. Only the dind certificates belong in a worker container.
 
 **For Direct Mode (dind only):**
 - Use the same configuration but change:
 - **Docker Host**: `tcp://${PRIVATE_IP}:3376` (TLS connection to dind)
-- **TLS Certificates**: `/opt/pentagi/docker-dind-ssl` (path to dind client certificates on the main node)
+- **TLS Certificates**: `/opt/opsagi/docker-dind-ssl` (path to dind client certificates on the main node)
 - **Docker Access**: `false`, **Docker Socket** and all **Worker Docker \*** fields: leave empty — worker containers are nested containers here, and the authorization policy denies both the socket bind-mount and the certificate bind-mount
-- **Work Directory**: must stay empty, so PentAGI uses a Docker volume instead of a denied host bind-mount
+- **Work Directory**: must stay empty, so OpsAGI uses a Docker volume instead of a denied host bind-mount
 
-The certificate directories `/opt/pentagi/docker-host-ssl/` and `/opt/pentagi/docker-dind-ssl/` will be automatically mounted into the PentAGI container for secure TLS authentication.
+The certificate directories `/opt/opsagi/docker-host-ssl/` and `/opt/opsagi/docker-dind-ssl/` will be automatically mounted into the OpsAGI container for secure TLS authentication.
 
 ### Equivalent `.env` Configuration
 
 If you configure the main node by hand instead of through the installer:
 
 ```bash
-## How PentAGI reaches the worker node's host Docker
+## How OpsAGI reaches the worker node's host Docker
 DOCKER_HOST=tcp://${PRIVATE_IP}:2376
 DOCKER_TLS_VERIFY=1
-PENTAGI_DOCKER_CERT_PATH=/opt/pentagi/docker-host-ssl   # path on the MAIN node
+OPSAGI_DOCKER_CERT_PATH=/opt/opsagi/docker-host-ssl   # path on the MAIN node
 
 ## How worker containers reach dind
 DOCKER_INSIDE=true
@@ -911,15 +911,15 @@ SCRAPER_PUBLIC_URL=https://${SCRAPER_USERNAME}:${SCRAPER_PASSWORD}@${PRIVATE_IP}
 SCRAPER_PRIVATE_URL=https://${SCRAPER_USERNAME}:${SCRAPER_PASSWORD}@${PRIVATE_IP}:9443/
 
 DOCKER_NET_ADMIN=true
-DOCKER_NETWORK=pentagi-network
+DOCKER_NETWORK=opsagi-network
 DOCKER_PUBLIC_IP=${PRIVATE_IP}
 ```
 
 Verify from inside a running worker container:
 
 ```bash
-docker-host-tls exec -it pentagi-terminal-1 docker version   # talks to dind, not the host
-docker-host-tls exec -it pentagi-terminal-1 env | grep DOCKER_
+docker-host-tls exec -it opsagi-terminal-1 docker version   # talks to dind, not the host
+docker-host-tls exec -it opsagi-terminal-1 env | grep DOCKER_
 ```
 
 The second command should show `DOCKER_HOST`, `DOCKER_TLS_VERIFY` and `DOCKER_CERT_PATH` — with no `_INSIDE_` in the names — and there must be **no** `/var/run/docker.sock` inside the container.

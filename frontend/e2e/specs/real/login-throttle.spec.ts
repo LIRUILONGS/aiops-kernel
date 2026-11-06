@@ -4,7 +4,7 @@ const INITIAL_PASSWORD = 'InitPass1!e2e';
 const WRONG_PASSWORD = 'NotTheOne1!e2e';
 const PAIR_ATTEMPT_LIMIT = 10;
 
-const ADMIN_USER = process.env.E2E_USER ?? 'admin@pentagi.com';
+const ADMIN_USER = process.env.E2E_USER ?? 'admin@opsagi.com';
 const ADMIN_PASSWORD = process.env.E2E_PASSWORD ?? 'admin';
 
 test.describe('login throttling at the trust boundary', { tag: '@real' }, () => {
@@ -21,8 +21,8 @@ test.describe('login throttling at the trust boundary', { tag: '@real' }, () => 
         ).toBe(200);
 
         const stamp = Date.now();
-        const victim = `e2e-throttle-${stamp}@pentagi.com`;
-        const bystander = `e2e-bystander-${stamp}@pentagi.com`;
+        const victim = `e2e-throttle-${stamp}@opsagi.com`;
+        const bystander = `e2e-bystander-${stamp}@opsagi.com`;
         const hashes: string[] = [];
 
         for (const mail of [victim, bystander]) {
@@ -100,10 +100,10 @@ test.describe('login throttling at the trust boundary', { tag: '@real' }, () => 
 
         const stamp = Date.now();
 
-        await timeLogin(`e2e-warmup-${stamp}@pentagi.com`);
+        await timeLogin(`e2e-warmup-${stamp}@opsagi.com`);
 
         const known = await timeLogin(ADMIN_USER);
-        const unknown = await timeLogin(`e2e-absent-${stamp}@pentagi.com`);
+        const unknown = await timeLogin(`e2e-absent-${stamp}@opsagi.com`);
 
         expect(unknown * 4, `known ${known} ms, unknown ${unknown} ms`).toBeGreaterThanOrEqual(known);
 

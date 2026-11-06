@@ -22,13 +22,13 @@ import (
 // few seconds at most and never block it.
 const daemonProbeTimeout = 5 * time.Second
 
-// runsPentagi reports whether the daemon behind cli is the one running PentAGI
+// runsOpsagi reports whether the daemon behind cli is the one running OpsAGI
 // itself, found the way the rest of this package finds its own container: a
 // running container whose configured hostname matches this process's.
 //
 // A false answer is only trustworthy when err is nil. A daemon that cannot be
 // listed says nothing about what it runs.
-func runsPentagi(ctx context.Context, cli *client.Client) (bool, error) {
+func runsOpsagi(ctx context.Context, cli *client.Client) (bool, error) {
 	hostname, err := os.Hostname()
 	if err != nil {
 		return false, fmt.Errorf("failed to read hostname: %w", err)
@@ -71,9 +71,9 @@ func workerDaemonClient(cfg *config.Config) (*client.Client, error) {
 // logWorkerDaemonIsolation reports, once at startup, how much of the host an
 // agent reaches through the Docker access it is given.
 //
-// The question that decides it is whether PentAGI's own container is visible on
+// The question that decides it is whether OpsAGI's own container is visible on
 // a daemon: if it is, that daemon is the host daemon, and an agent holding it
-// can start a privileged container and take the node -- PentAGI, the other
+// can start a privileged container and take the node -- OpsAGI, the other
 // flows and the certificates on it included. Separate orchestration and sandbox
 // daemons are the shape examples/guides/worker_node.md describes, and the only
 // one where an escape stays inside the sandbox tier.
@@ -124,26 +124,26 @@ func workerCertsLiveElsewhere(cfg *config.Config) bool {
 }
 
 // logSharedDaemon covers DOCKER_SOCKET and the autodetected socket: agents are
-// given the same daemon PentAGI orchestrates on.
+// given the same daemon OpsAGI orchestrates on.
 func logSharedDaemon(ctx context.Context, cfg *config.Config, cli *client.Client) {
 	logger := logrus.WithField("worker_docker", workerDockerDescription(cfg))
 
-	isHost, err := runsPentagi(ctx, cli)
+	isHost, err := runsOpsagi(ctx, cli)
 	switch {
 	case err != nil:
-		logger.WithError(err).Warn("DOCKER_INSIDE=true: agents share the daemon PentAGI " +
-			"orchestrates on, and whether that daemon also runs PentAGI could not be determined; " +
+		logger.WithError(err).Warn("DOCKER_INSIDE=true: agents share the daemon OpsAGI " +
+			"orchestrates on, and whether that daemon also runs OpsAGI could not be determined; " +
 			"check the daemon's hardening and whether an authorization plugin is installed")
 	case isHost:
 		logger.Warn("DOCKER_INSIDE=true: agents are given the host daemon, the one running " +
-			"PentAGI itself. An agent that escapes its sandbox can start a privileged container " +
-			"and take the node, PentAGI and the other flows' containers with it. Check the " +
+			"OpsAGI itself. An agent that escapes its sandbox can start a privileged container " +
+			"and take the node, OpsAGI and the other flows' containers with it. Check the " +
 			"daemon's hardening and whether an authorization plugin is installed, or move " +
 			"sandboxes onto their own daemon with DOCKER_INSIDE_HOST " +
 			"(see examples/guides/worker_node.md)")
 	default:
-		logger.Warn("DOCKER_INSIDE=true: agents and the orchestrator share one daemon, and PentAGI's " +
-			"own container is not among the containers it runs. If PentAGI runs in a container " +
+		logger.Warn("DOCKER_INSIDE=true: agents and the orchestrator share one daemon, and OpsAGI's " +
+			"own container is not among the containers it runs. If OpsAGI runs in a container " +
 			"elsewhere, an escape does not reach this process; if it runs directly on this host, it " +
 			"does. Check the daemon's hardening and whether an authorization plugin is installed")
 	}
@@ -155,40 +155,40 @@ func logSeparateDaemon(ctx context.Context, cfg *config.Config, cli, workerCli *
 	logger := logrus.WithField("docker_inside_host", cfg.DockerInsideHost)
 
 	if sameDaemon(ctx, cli, workerCli) {
-		logger.Warn("DOCKER_INSIDE=true: DOCKER_INSIDE_HOST names the daemon PentAGI orchestrates on, " +
+		logger.Warn("DOCKER_INSIDE=true: DOCKER_INSIDE_HOST names the daemon OpsAGI orchestrates on, " +
 			"so sandboxes do not get a daemon of their own")
 		logSharedDaemon(ctx, cfg, cli)
 		return
 	}
 
-	workerRunsPentagi, workerErr := runsPentagi(ctx, workerCli)
+	workerRunsOpsagi, workerErr := runsOpsagi(ctx, workerCli)
 	if workerErr != nil {
 		logger.WithError(workerErr).Warn("DOCKER_INSIDE=true: agents are pointed at a separate " +
-			"daemon that could not be listed, so whether it also runs PentAGI is unknown; " +
+			"daemon that could not be listed, so whether it also runs OpsAGI is unknown; " +
 			"verify it by hand")
 		return
 	}
 
-	if workerRunsPentagi {
+	if workerRunsOpsagi {
 		logger.Warn("DOCKER_INSIDE=true: the daemon designated for sandboxes is the one running " +
-			"PentAGI itself, so pointing agents at it grants what a separate daemon exists to " +
-			"withhold. Point DOCKER_INSIDE_HOST at a daemon that does not run PentAGI " +
+			"OpsAGI itself, so pointing agents at it grants what a separate daemon exists to " +
+			"withhold. Point DOCKER_INSIDE_HOST at a daemon that does not run OpsAGI " +
 			"(see examples/guides/worker_node.md)")
 		return
 	}
 
-	orchestratorIsHost, err := runsPentagi(ctx, cli)
+	orchestratorIsHost, err := runsOpsagi(ctx, cli)
 	switch {
 	case err != nil:
 		logger.WithError(err).Info("DOCKER_INSIDE=true: sandboxes use a daemon of their own and " +
-			"PentAGI does not run on it, so an escape stays inside the sandbox tier; whether PentAGI " +
+			"OpsAGI does not run on it, so an escape stays inside the sandbox tier; whether OpsAGI " +
 			"runs on the daemon it orchestrates on could not be determined")
 	case orchestratorIsHost:
-		logger.Info("DOCKER_INSIDE=true: sandboxes use a daemon of their own and PentAGI does " +
+		logger.Info("DOCKER_INSIDE=true: sandboxes use a daemon of their own and OpsAGI does " +
 			"not run on it, so an escape stays inside the sandbox tier")
 	default:
 		logger.Info("DOCKER_INSIDE=true: sandboxes use a daemon of their own, separate from the one " +
-			"PentAGI orchestrates on, and PentAGI's own container is on neither")
+			"OpsAGI orchestrates on, and OpsAGI's own container is on neither")
 	}
 }
 

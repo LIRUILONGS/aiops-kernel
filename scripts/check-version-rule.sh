@@ -32,7 +32,7 @@ while IFS= read -r row; do
     rest="${row#*$'\t'}"
     rev="${rest%%$'\t'*}"
     want="${rest#*$'\t'}"
-    got="$(pentagi_version_string "$ver" "$rev")"
+    got="$(opsagi_version_string "$ver" "$rev")"
     if [ "$got" != "$want" ]; then
         printf 'FAIL  version.sh PACKAGE_VER=%s PACKAGE_REV=%s -> %s, the table says %s\n' \
             "'$ver'" "'$rev'" "$got" "$want"
@@ -45,7 +45,7 @@ builder_end="$(awk -v s="$builder_start" 'NR > s && /^FROM / { print NR - 1; exi
 builder="$(sed -n "${builder_start},${builder_end}p" Dockerfile)"
 
 stamp_expression() {
-    printf '%s\n' "$builder" | sed -n "s/.*-X pentagi\/pkg\/version\.$1=\([^ \"]*\).*/\1/p" | sort -u
+    printf '%s\n' "$builder" | sed -n "s/.*-X opsagi\/pkg\/version\.$1=\([^ \"]*\).*/\1/p" | sort -u
 }
 ver_expr="$(stamp_expression PackageVer)"
 rev_expr="$(stamp_expression PackageRev)"
@@ -66,12 +66,12 @@ RUN printf '%s\\t%s' "$ver_expr" "$rev_expr" > /stamped
 STAMP
     echo "FROM alpine:3.20"
     tail -n "+$last_from" Dockerfile |
-        grep -E '^ARG (PACKAGE_VER|PACKAGE_REV|PACKAGE_EDITION|VER_PART|PACKAGE_VERSION_FULL)|^LABEL com\.pentagi\.version='
+        grep -E '^ARG (PACKAGE_VER|PACKAGE_REV|PACKAGE_EDITION|VER_PART|PACKAGE_VERSION_FULL)|^LABEL com\.opsagi\.version='
     echo "COPY --from=stamp /stamped /stamped"
 } > "$SCRATCH/Dockerfile"
 
 if [ "$(grep -c '^LABEL' "$SCRATCH/Dockerfile")" -ne 1 ]; then
-    echo "check-version-rule: expected exactly one com.pentagi.version LABEL in the Dockerfile" >&2
+    echo "check-version-rule: expected exactly one com.opsagi.version LABEL in the Dockerfile" >&2
     exit 1
 fi
 
@@ -84,21 +84,21 @@ check() {
     how="${3:-pass-args}"
 
     case "$how" in
-        no-args) set -- --tag pentagi-version-rule:check ;;
-        rev-only) set -- --build-arg PACKAGE_REV="$rev" --tag pentagi-version-rule:check ;;
+        no-args) set -- --tag opsagi-version-rule:check ;;
+        rev-only) set -- --build-arg PACKAGE_REV="$rev" --tag opsagi-version-rule:check ;;
         *)
             set -- --build-arg PACKAGE_VER="$ver" --build-arg PACKAGE_REV="$rev" \
-                --tag pentagi-version-rule:check
+                --tag opsagi-version-rule:check
             ;;
     esac
 
     docker build --quiet "$@" "$SCRATCH" > /dev/null
 
-    label="$(docker inspect pentagi-version-rule:check --format '{{index .Config.Labels "com.pentagi.version"}}')"
-    stamped="$(docker run --rm pentagi-version-rule:check cat /stamped)"
+    label="$(docker inspect opsagi-version-rule:check --format '{{index .Config.Labels "com.opsagi.version"}}')"
+    stamped="$(docker run --rm opsagi-version-rule:check cat /stamped)"
     stamped_ver="${stamped%%$'\t'*}"
     stamped_rev="${stamped#*$'\t'}"
-    shell="$(pentagi_version_string "$ver" "$rev")"
+    shell="$(opsagi_version_string "$ver" "$rev")"
 
     # An empty stamped PackageVer used to be a failure on its own, because the binary
     # then said "develop" while the label said whatever the expression produced. Both
@@ -130,7 +130,7 @@ check "" "abc1234"
 check "2.1.0" ""
 check "2.1.0" "abc1234"
 
-docker image rm pentagi-version-rule:check > /dev/null 2>&1 || true
+docker image rm opsagi-version-rule:check > /dev/null 2>&1 || true
 
 if [ "$failures" -ne 0 ]; then
     echo "check-version-rule: $failures check(s) disagree — the label and the binary would not match" >&2

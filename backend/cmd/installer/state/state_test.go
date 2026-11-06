@@ -369,15 +369,15 @@ func TestState_WriteVars_SavesToTheEnvFileWithoutStagedEdits(t *testing.T) {
 		t.Fatalf("SetVar: %v", err)
 	}
 
-	if err := s.WriteVars(map[string]string{"PENTAGI_IMAGE": "vxcontrol/pentagi:2.3.4"}); err != nil {
+	if err := s.WriteVars(map[string]string{"OPSAGI_IMAGE": "local/opsagi:2.3.4"}); err != nil {
 		t.Fatalf("WriteVars: %v", err)
 	}
 
-	if content, err := os.ReadFile(envPath); err != nil || string(content) != "VAR1=value1\nPENTAGI_IMAGE=vxcontrol/pentagi:2.3.4\n" {
+	if content, err := os.ReadFile(envPath); err != nil || string(content) != "VAR1=value1\nOPSAGI_IMAGE=local/opsagi:2.3.4\n" {
 		t.Errorf("env file = %q, %v; want the written variable and not the staged edit", content, err)
 	}
-	if envVar, _ := s.GetVar("PENTAGI_IMAGE"); envVar.Value != "vxcontrol/pentagi:2.3.4" {
-		t.Errorf("GetVar(PENTAGI_IMAGE) = %q; a later Commit would write the old value back", envVar.Value)
+	if envVar, _ := s.GetVar("OPSAGI_IMAGE"); envVar.Value != "local/opsagi:2.3.4" {
+		t.Errorf("GetVar(OPSAGI_IMAGE) = %q; a later Commit would write the old value back", envVar.Value)
 	}
 	if envVar, _ := s.GetVar("VAR1"); envVar.Value != "typed_in_a_form" || !envVar.IsChanged {
 		t.Errorf("GetVar(VAR1) = %+v; want the staged edit kept for the user to apply", envVar)

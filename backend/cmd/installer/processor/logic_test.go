@@ -102,8 +102,8 @@ func logicOutdated(stacks ...ProductStack) func(*mockCheckConfig) {
 	return func(c *mockCheckConfig) {
 		for _, stack := range stacks {
 			switch stack {
-			case ProductStackPentagi:
-				c.PentagiIsUpToDate = false
+			case ProductStackOpsagi:
+				c.OpsagiIsUpToDate = false
 			case ProductStackGraphiti:
 				c.GraphitiIsUpToDate = false
 			case ProductStackLangfuse:
@@ -135,16 +135,16 @@ func countCalls(calls []string, name string) int {
 func TestLogic_StartStopAndRestartDelegateToComposeOrRefuseTheStack(t *testing.T) {
 	start, stop, restart := (*processor).start, (*processor).stop, (*processor).restart
 	for _, tc := range []logicCase{
-		{name: "start hands pentagi to compose", run: start, stack: ProductStackPentagi,
-			compose: []string{"startStack pentagi"}},
+		{name: "start hands opsagi to compose", run: start, stack: ProductStackOpsagi,
+			compose: []string{"startStack opsagi"}},
 		{name: "start refuses the worker", run: start, stack: ProductStackWorker,
 			wantErr: "operation start not applicable for stack worker"},
-		{name: "stop hands pentagi to compose", run: stop, stack: ProductStackPentagi,
-			compose: []string{"stopStack pentagi"}},
+		{name: "stop hands opsagi to compose", run: stop, stack: ProductStackOpsagi,
+			compose: []string{"stopStack opsagi"}},
 		{name: "stop refuses the worker", run: stop, stack: ProductStackWorker,
 			wantErr: "operation stop not applicable for stack worker"},
-		{name: "restart hands pentagi to compose", run: restart, stack: ProductStackPentagi,
-			compose: []string{"restartStack pentagi"}},
+		{name: "restart hands opsagi to compose", run: restart, stack: ProductStackOpsagi,
+			compose: []string{"restartStack opsagi"}},
 		{name: "restart refuses the worker", run: restart, stack: ProductStackWorker,
 			wantErr: "operation restart not applicable for stack worker"},
 		{name: "restart refuses the installer", run: restart, stack: ProductStackInstaller,
@@ -156,10 +156,10 @@ func TestLogic_StartStopAndRestartDelegateToComposeOrRefuseTheStack(t *testing.T
 
 func TestLogic_UpdateStacks_UpdatesOnlyTheOutdatedStacks(t *testing.T) {
 	for _, tc := range []logicCase{
-		{name: "an outdated pentagi is pulled then brought up", stack: ProductStackPentagi,
-			configure: logicOutdated(ProductStackPentagi),
-			compose:   []string{"downloadStack pentagi", "updateStack pentagi"}},
-		{name: "a current pentagi is left alone", stack: ProductStackPentagi},
+		{name: "an outdated opsagi is pulled then brought up", stack: ProductStackOpsagi,
+			configure: logicOutdated(ProductStackOpsagi),
+			compose:   []string{"downloadStack opsagi", "updateStack opsagi"}},
+		{name: "a current opsagi is left alone", stack: ProductStackOpsagi},
 		{name: "an outdated langfuse is pulled then brought up", stack: ProductStackLangfuse,
 			configure: logicOutdated(ProductStackLangfuse),
 			compose:   []string{"downloadStack langfuse", "updateStack langfuse"}},
@@ -178,10 +178,10 @@ func TestLogic_UpdateStacks_UpdatesOnlyTheOutdatedStacks(t *testing.T) {
 			},
 			update: []string{"updateJaegerPlugin"}},
 		{name: "all adds the worker and skips a current stack", stack: ProductStackAll,
-			configure: logicOutdated(ProductStackPentagi, ProductStackObservability),
+			configure: logicOutdated(ProductStackOpsagi, ProductStackObservability),
 			compose: []string{
 				"downloadStack observability", "updateStack observability",
-				"downloadStack pentagi", "updateStack pentagi",
+				"downloadStack opsagi", "updateStack opsagi",
 			},
 			docker: []string{"pullWorkerImage"}, update: []string{"updateJaegerPlugin"}},
 	} {
@@ -207,16 +207,16 @@ func TestLogic_UpdateStacks_RestartsJaegerOnlyWhenThePluginWasReplaced(t *testin
 }
 
 func TestLogic_Update_AsksTheCloudOnceWhateverItFansOutTo(t *testing.T) {
-	everything := logicOutdated(ProductStackPentagi, ProductStackLangfuse, ProductStackGraphiti, ProductStackObservability)
+	everything := logicOutdated(ProductStackOpsagi, ProductStackLangfuse, ProductStackGraphiti, ProductStackObservability)
 	for _, tc := range []struct {
 		name      string
 		stack     ProductStack
 		configure func(*mockCheckConfig)
 	}{
 		{"an update of every compose stack", ProductStackCompose, everything},
-		{"an update of a single stack", ProductStackPentagi, everything},
+		{"an update of a single stack", ProductStackOpsagi, everything},
 		{"an update of everything", ProductStackAll, everything},
-		{"an update of compose where three stacks have nothing to do", ProductStackCompose, logicOutdated(ProductStackPentagi)},
+		{"an update of compose where three stacks have nothing to do", ProductStackCompose, logicOutdated(ProductStackOpsagi)},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			h := processorHarnessWith(t, tc.configure)
@@ -230,11 +230,11 @@ func TestLogic_Update_AsksTheCloudOnceWhateverItFansOutTo(t *testing.T) {
 
 func TestLogic_StacksTouchedByUpdate_ExpandsComposeAndAll(t *testing.T) {
 	assert.Equal(t, []ProductStack{
-		ProductStackObservability, ProductStackLangfuse, ProductStackGraphiti, ProductStackPentagi,
+		ProductStackObservability, ProductStackLangfuse, ProductStackGraphiti, ProductStackOpsagi,
 	}, stacksTouchedByUpdate(ProductStackCompose))
-	assert.Equal(t, []ProductStack{ProductStackPentagi}, stacksTouchedByUpdate(ProductStackPentagi))
+	assert.Equal(t, []ProductStack{ProductStackOpsagi}, stacksTouchedByUpdate(ProductStackOpsagi))
 	assert.Equal(t, []ProductStack{
-		ProductStackObservability, ProductStackLangfuse, ProductStackGraphiti, ProductStackPentagi,
+		ProductStackObservability, ProductStackLangfuse, ProductStackGraphiti, ProductStackOpsagi,
 		ProductStackWorker, ProductStackInstaller,
 	}, stacksTouchedByUpdate(ProductStackAll))
 }
@@ -251,10 +251,10 @@ func TestLogic_ApplyChanges_BringsEachStackToItsConfiguredMode(t *testing.T) {
 			configure: logicConnected, vars: logicEmbedded,
 			fs: []string{
 				"ensureStackIntegrity observability", "ensureStackIntegrity langfuse",
-				"ensureStackIntegrity graphiti", "ensureStackIntegrity pentagi",
+				"ensureStackIntegrity graphiti", "ensureStackIntegrity opsagi",
 			},
 			compose: []string{
-				"updateStack observability", "updateStack langfuse", "updateStack graphiti", "updateStack pentagi",
+				"updateStack observability", "updateStack langfuse", "updateStack graphiti", "updateStack opsagi",
 			},
 			docker: networks},
 		{name: "an external observability that is installed is taken down",
@@ -266,28 +266,28 @@ func TestLogic_ApplyChanges_BringsEachStackToItsConfiguredMode(t *testing.T) {
 				"OTEL_HOST":         "http://external:4318",
 				"LANGFUSE_BASE_URL": checker.DefaultLangfuseEndpoint,
 			},
-			fs:      []string{"verifyStackIntegrity langfuse", "ensureStackIntegrity pentagi"},
-			compose: []string{"removeStack observability", "updateStack langfuse", "updateStack pentagi"},
+			fs:      []string{"verifyStackIntegrity langfuse", "ensureStackIntegrity opsagi"},
+			compose: []string{"removeStack observability", "updateStack langfuse", "updateStack opsagi"},
 			docker:  networks},
 		{name: "an external graphiti that is installed is taken down",
 			configure: func(c *mockCheckConfig) {
 				c.GraphitiConnected, c.GraphitiExternal, c.GraphitiInstalled = true, true, true
 			},
 			vars:    map[string]string{"GRAPHITI_URL": "http://external:8000"},
-			fs:      []string{"ensureStackIntegrity pentagi"},
-			compose: []string{"removeStack graphiti", "updateStack pentagi"},
+			fs:      []string{"ensureStackIntegrity opsagi"},
+			compose: []string{"removeStack graphiti", "updateStack opsagi"},
 			docker:  networks},
 		{name: "an embedded graphiti already extracted is verified instead",
 			configure: func(c *mockCheckConfig) { c.GraphitiConnected, c.GraphitiExtracted = true, true },
 			vars:      map[string]string{"GRAPHITI_URL": checker.DefaultGraphitiEndpoint},
-			fs:        []string{"verifyStackIntegrity graphiti", "ensureStackIntegrity pentagi"},
-			compose:   []string{"updateStack graphiti", "updateStack pentagi"},
+			fs:        []string{"verifyStackIntegrity graphiti", "ensureStackIntegrity opsagi"},
+			compose:   []string{"updateStack graphiti", "updateStack opsagi"},
 			docker:    networks},
-		{name: "a pentagi already extracted is verified instead",
-			configure: func(c *mockCheckConfig) { c.PentagiExtracted = true },
-			vars:      map[string]string{"PENTAGI_VERSION": "1.0.1"},
-			fs:        []string{"verifyStackIntegrity pentagi"},
-			compose:   []string{"updateStack pentagi"},
+		{name: "a opsagi already extracted is verified instead",
+			configure: func(c *mockCheckConfig) { c.OpsagiExtracted = true },
+			vars:      map[string]string{"OPSAGI_VERSION": "1.0.1"},
+			fs:        []string{"verifyStackIntegrity opsagi"},
+			compose:   []string{"updateStack opsagi"},
 			docker:    networks},
 		{name: "an observability failure names its phase",
 			vars:    map[string]string{"OTEL_HOST": checker.DefaultObservabilityEndpoint},
@@ -310,11 +310,11 @@ func TestLogic_ApplyChanges_BringsEachStackToItsConfiguredMode(t *testing.T) {
 			fail:      map[string]error{"ensureStackIntegrity": errors.New("graphiti error")},
 			wantErr:   "failed to apply graphiti changes: failed to ensure graphiti integrity: graphiti error",
 			fs:        []string{"ensureStackIntegrity graphiti"}, docker: networks},
-		{name: "a pentagi failure names its phase",
-			vars:    map[string]string{"PENTAGI_VERSION": "1.0.1"},
-			fail:    map[string]error{"ensureStackIntegrity_pentagi": errors.New("pentagi error")},
-			wantErr: "failed to apply pentagi changes: failed to ensure pentagi integrity: pentagi error",
-			fs:      []string{"ensureStackIntegrity pentagi"}, docker: networks},
+		{name: "a opsagi failure names its phase",
+			vars:    map[string]string{"OPSAGI_VERSION": "1.0.1"},
+			fail:    map[string]error{"ensureStackIntegrity_opsagi": errors.New("opsagi error")},
+			wantErr: "failed to apply opsagi changes: failed to ensure opsagi integrity: opsagi error",
+			fs:      []string{"ensureStackIntegrity opsagi"}, docker: networks},
 	} {
 		tc.run = logicApplyChanges
 		t.Run(tc.name, func(t *testing.T) { logicRun(t, tc) })
@@ -328,14 +328,14 @@ func TestLogic_Install_InstallsOnlyWhatIsNotInstalled(t *testing.T) {
 			configure: logicConnected, vars: logicEmbedded,
 			fs: []string{
 				"ensureStackIntegrity observability", "ensureStackIntegrity langfuse",
-				"ensureStackIntegrity graphiti", "ensureStackIntegrity pentagi",
+				"ensureStackIntegrity graphiti", "ensureStackIntegrity opsagi",
 			},
 			compose: []string{
-				"updateStack observability", "updateStack langfuse", "updateStack graphiti", "updateStack pentagi",
+				"updateStack observability", "updateStack langfuse", "updateStack graphiti", "updateStack opsagi",
 			},
 			docker: networks},
 		{name: "an installed stack is skipped while the others are installed",
-			configure: func(c *mockCheckConfig) { c.PentagiInstalled = true },
+			configure: func(c *mockCheckConfig) { c.OpsagiInstalled = true },
 			vars:      map[string]string{"OTEL_HOST": checker.DefaultObservabilityEndpoint},
 			fs:        []string{"ensureStackIntegrity observability"},
 			compose:   []string{"updateStack observability"},
@@ -350,7 +350,7 @@ func TestLogic_FactoryReset_PurgesEverythingAndRestoresTheEmbeddedFiles(t *testi
 	var copiesAtReset []int
 	h := logicRun(t, logicCase{
 		run:  logicFactoryReset,
-		vars: map[string]string{"PENTAGI_VERSION": "1.0.1"},
+		vars: map[string]string{"OPSAGI_VERSION": "1.0.1"},
 		prepare: func(h *processorHarness) {
 			h.p.state.(*mockState).onReset = func() {
 				copiesAtReset = append(copiesAtReset, len(h.p.files.(*mockFiles).copies))
@@ -359,7 +359,7 @@ func TestLogic_FactoryReset_PurgesEverythingAndRestoresTheEmbeddedFiles(t *testi
 		compose: []string{"purgeStack all"},
 		docker: []string{
 			"removeWorkerContainers", "removeWorkerVolumes",
-			"removeMainDockerNetwork pentagi-network",
+			"removeMainDockerNetwork opsagi-network",
 			"removeMainDockerNetwork observability-network",
 			"removeMainDockerNetwork langfuse-network",
 		},
@@ -376,7 +376,7 @@ func TestLogic_FactoryReset_PurgesEverythingAndRestoresTheEmbeddedFiles(t *testi
 
 func TestLogic_Download_FetchesEveryStackItCovers(t *testing.T) {
 	everyComposeStack := []string{
-		"downloadStack observability", "downloadStack langfuse", "downloadStack graphiti", "downloadStack pentagi",
+		"downloadStack observability", "downloadStack langfuse", "downloadStack graphiti", "downloadStack opsagi",
 	}
 	for _, tc := range []logicCase{
 		{name: "compose fetches every compose stack and not the worker", stack: ProductStackCompose,
@@ -398,8 +398,8 @@ func TestLogic_Download_FetchesEveryStackItCovers(t *testing.T) {
 
 func TestLogic_Remove_KeepsDataAndAttemptsEveryStack(t *testing.T) {
 	for _, tc := range []logicCase{
-		{name: "pentagi is taken down and keeps its volumes", stack: ProductStackPentagi,
-			compose: []string{"removeStack pentagi"}},
+		{name: "opsagi is taken down and keeps its volumes", stack: ProductStackOpsagi,
+			compose: []string{"removeStack opsagi"}},
 		{name: "langfuse is taken down and keeps its volumes", stack: ProductStackLangfuse,
 			compose: []string{"removeStack langfuse"}},
 		{name: "observability is taken down and keeps its volumes", stack: ProductStackObservability,
@@ -412,7 +412,7 @@ func TestLogic_Remove_KeepsDataAndAttemptsEveryStack(t *testing.T) {
 			fail:    map[string]error{"removeStack": errors.New("compose exploded")},
 			wantErr: "failed to remove stack: compose exploded",
 			compose: []string{
-				"removeStack observability", "removeStack langfuse", "removeStack graphiti", "removeStack pentagi",
+				"removeStack observability", "removeStack langfuse", "removeStack graphiti", "removeStack opsagi",
 			},
 			docker: []string{"removeWorkerImages"}, update: []string{"removeInstaller"}},
 	} {
@@ -424,17 +424,17 @@ func TestLogic_Remove_KeepsDataAndAttemptsEveryStack(t *testing.T) {
 func TestLogic_Purge_RemovesImagesAndNetworksEvenWhenAStackFails(t *testing.T) {
 	everyComposeStack := []string{
 		"purgeImagesStack observability", "purgeImagesStack langfuse",
-		"purgeImagesStack graphiti", "purgeImagesStack pentagi",
+		"purgeImagesStack graphiti", "purgeImagesStack opsagi",
 	}
 	workerAndNetworks := []string{
 		"purgeWorkerImages",
-		"removeMainDockerNetwork pentagi-network",
+		"removeMainDockerNetwork opsagi-network",
 		"removeMainDockerNetwork observability-network",
 		"removeMainDockerNetwork langfuse-network",
 	}
 	for _, tc := range []logicCase{
-		{name: "pentagi is purged with its images and nothing else", stack: ProductStackPentagi,
-			compose: []string{"purgeImagesStack pentagi"}},
+		{name: "opsagi is purged with its images and nothing else", stack: ProductStackOpsagi,
+			compose: []string{"purgeImagesStack opsagi"}},
 		{name: "the worker is purged", stack: ProductStackWorker, docker: []string{"purgeWorkerImages"}},
 		{name: "everything is purged and the networks removed", stack: ProductStackAll,
 			compose: everyComposeStack, docker: workerAndNetworks, update: []string{"removeInstaller"}},
@@ -465,7 +465,7 @@ func TestLogic_IsEmbeddedDeployment_FollowsTheConfiguredEndpoint(t *testing.T) {
 		{"graphiti at its embedded endpoint", ProductStackGraphiti, "GRAPHITI_URL", checker.DefaultGraphitiEndpoint, false, true, true},
 		{"graphiti at an external endpoint", ProductStackGraphiti, "GRAPHITI_URL", "http://external:8000", false, true, false},
 		{"graphiti at its embedded endpoint but not connected", ProductStackGraphiti, "GRAPHITI_URL", checker.DefaultGraphitiEndpoint, false, false, false},
-		{"pentagi is always embedded", ProductStackPentagi, "", "", false, false, true},
+		{"opsagi is always embedded", ProductStackOpsagi, "", "", false, false, true},
 		{"the worker is always embedded", ProductStackWorker, "", "", false, false, true},
 		{"the installer is always embedded", ProductStackInstaller, "", "", false, false, true},
 	} {

@@ -7,8 +7,8 @@ LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null) || LATEST_TAG="v0.0.0"
 PACKAGE_VER="${LATEST_TAG#v}"
 
 # The edition is the prerelease identifier every version string carries. Override it for
-# an Enterprise build: PENTAGI_EDITION=ee source ./scripts/version.sh
-PENTAGI_EDITION="${PENTAGI_EDITION:-ce}"
+# an Enterprise build: OPSAGI_EDITION=ee source ./scripts/version.sh
+OPSAGI_EDITION="${OPSAGI_EDITION:-ce}"
 
 # A tag named after the edition, or the legacy "develop", is not a release. GetBinaryVersion
 # reports the same string whether PackageVer is empty or one of those words, but the
@@ -38,10 +38,10 @@ fi
 # with an independent expression; build-image.sh compares the two, and
 # check-version-rule.sh compares them over a matrix, so the rule cannot drift in one
 # place unnoticed.
-pentagi_version_string() {
+opsagi_version_string() {
     _ver="${1:-}"
     _rev="${2:-}"
-    _ed="${PENTAGI_EDITION:-ce}"
+    _ed="${OPSAGI_EDITION:-ce}"
     # The "h" keeps the revision an alphanumeric semver identifier: an all-digit
     # hex revision with a leading zero is not a legal numeric one.
     _rp="h"
@@ -66,17 +66,17 @@ pentagi_version_string() {
     fi
 }
 
-PACKAGE_VERSION_FULL="$(pentagi_version_string "$PACKAGE_VER" "$PACKAGE_REV")"
+PACKAGE_VERSION_FULL="$(opsagi_version_string "$PACKAGE_VER" "$PACKAGE_REV")"
 
 # Export variables for use in docker build
 export PACKAGE_VER
-export PENTAGI_EDITION
+export OPSAGI_EDITION
 export PACKAGE_REV
 export PACKAGE_VERSION_FULL
 
 # Print version information
 echo "======================================"
-echo "PentAGI Build Version"
+echo "OpsAGI Build Version"
 echo "======================================"
 echo "PACKAGE_VER: $PACKAGE_VER"
 if [ -n "$PACKAGE_REV" ]; then

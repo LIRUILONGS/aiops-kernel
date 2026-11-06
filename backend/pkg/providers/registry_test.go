@@ -137,7 +137,7 @@ func TestRegistry_ProviderRegistry_CustomEntryHandsTheDoorAnEnrichedCatalogue(t 
 }
 
 func TestRegistry_ProviderRegistry_CustomEntryKeepsSharedSettingsOnTheWireForAReasoningOnlyBlock(t *testing.T) {
-	const name = "pentagi-shared-settings-model"
+	const name = "opsagi-shared-settings-model"
 
 	entry, ok := entryForType(provider.ProviderCustom)
 	require.True(t, ok, "no custom entry in the provider registry")

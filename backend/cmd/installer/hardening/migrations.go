@@ -17,14 +17,14 @@ const (
 )
 
 func DoMigrateSettings(s state.State) error {
-	// migration from DOCKER_CERT_PATH to PENTAGI_DOCKER_CERT_PATH
+	// migration from DOCKER_CERT_PATH to OPSAGI_DOCKER_CERT_PATH
 	dockerCertPathVar, exists := s.GetVar("DOCKER_CERT_PATH")
 	dockerCertPath := dockerCertPathVar.Value
 	if exists && dockerCertPath != "" {
 		exists = checkPathInHostFS(dockerCertPath, directory)
 	}
 	if exists && dockerCertPath != "" && dockerCertPath != controller.DefaultDockerCertPath {
-		if err := s.SetVar("PENTAGI_DOCKER_CERT_PATH", dockerCertPath); err != nil {
+		if err := s.SetVar("OPSAGI_DOCKER_CERT_PATH", dockerCertPath); err != nil {
 			return err
 		}
 		if err := s.SetVar("DOCKER_CERT_PATH", controller.DefaultDockerCertPath); err != nil {
@@ -47,7 +47,7 @@ func DoMigrateSettings(s state.State) error {
 		if !exists || isInContainer || configPath == "" || !checkPathInHostFS(configPath, file) {
 			continue
 		}
-		if err := s.SetVar("PENTAGI_"+config.variable, configPath); err != nil {
+		if err := s.SetVar("OPSAGI_"+config.variable, configPath); err != nil {
 			return err
 		}
 		if err := s.SetVar(config.variable, config.mountedPath); err != nil {

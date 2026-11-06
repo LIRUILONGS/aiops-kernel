@@ -32,7 +32,7 @@ type mockState struct {
 func newMockState(t *testing.T) *mockState {
 	t.Helper()
 	envPath := filepath.Join(t.TempDir(), ".env")
-	require.NoError(t, os.WriteFile(envPath, []byte("PENTAGI_VERSION=1.0.0\n"), 0o644))
+	require.NoError(t, os.WriteFile(envPath, []byte("OPSAGI_VERSION=1.0.0\n"), 0o644))
 	return &mockState{vars: make(map[string]loader.EnvVar), envPath: envPath}
 }
 
@@ -401,10 +401,10 @@ type mockCheckConfig struct {
 	DockerVersion          string
 	DockerComposeVersion   string
 
-	PentagiScriptInstalled bool
-	PentagiExtracted       bool
-	PentagiInstalled       bool
-	PentagiRunning         bool
+	OpsagiScriptInstalled bool
+	OpsagiExtracted       bool
+	OpsagiInstalled       bool
+	OpsagiRunning         bool
 
 	GraphitiConnected bool
 	GraphitiExternal  bool
@@ -431,7 +431,7 @@ type mockCheckConfig struct {
 
 	UpdateServerAccessible  bool
 	InstallerIsUpToDate     bool
-	PentagiIsUpToDate       bool
+	OpsagiIsUpToDate       bool
 	GraphitiIsUpToDate      bool
 	LangfuseIsUpToDate      bool
 	ObservabilityIsUpToDate bool
@@ -455,7 +455,7 @@ func newMockCheckHandler() *mockCheckHandler {
 			SysDiskFreeSpaceOK:      true,
 			UpdateServerAccessible:  true,
 			InstallerIsUpToDate:     true,
-			PentagiIsUpToDate:       true,
+			OpsagiIsUpToDate:       true,
 			GraphitiIsUpToDate:      true,
 			LangfuseIsUpToDate:      true,
 			ObservabilityIsUpToDate: true,
@@ -481,7 +481,7 @@ func (m *mockCheckHandler) apply(method string, copyTo func(mockCheckConfig)) er
 func (m *mockCheckHandler) GatherAllInfo(ctx context.Context, c *checker.CheckResult) error {
 	_ = m.apply("GatherAllInfo", func(config mockCheckConfig) { c.EnvFileExists = config.EnvFileExists })
 	for _, gather := range []func(context.Context, *checker.CheckResult) error{
-		m.GatherDockerInfo, m.GatherWorkerInfo, m.GatherPentagiInfo, m.GatherGraphitiInfo,
+		m.GatherDockerInfo, m.GatherWorkerInfo, m.GatherOpsagiInfo, m.GatherGraphitiInfo,
 		m.GatherLangfuseInfo, m.GatherObservabilityInfo, m.GatherSystemInfo, m.GatherUpdatesInfo,
 	} {
 		if err := gather(ctx, c); err != nil {
@@ -510,12 +510,12 @@ func (m *mockCheckHandler) GatherWorkerInfo(_ context.Context, c *checker.CheckR
 	})
 }
 
-func (m *mockCheckHandler) GatherPentagiInfo(_ context.Context, c *checker.CheckResult) error {
-	return m.apply("GatherPentagiInfo", func(config mockCheckConfig) {
-		c.PentagiScriptInstalled = config.PentagiScriptInstalled
-		c.PentagiExtracted = config.PentagiExtracted
-		c.PentagiInstalled = config.PentagiInstalled
-		c.PentagiRunning = config.PentagiRunning
+func (m *mockCheckHandler) GatherOpsagiInfo(_ context.Context, c *checker.CheckResult) error {
+	return m.apply("GatherOpsagiInfo", func(config mockCheckConfig) {
+		c.OpsagiScriptInstalled = config.OpsagiScriptInstalled
+		c.OpsagiExtracted = config.OpsagiExtracted
+		c.OpsagiInstalled = config.OpsagiInstalled
+		c.OpsagiRunning = config.OpsagiRunning
 	})
 }
 
@@ -562,7 +562,7 @@ func (m *mockCheckHandler) GatherUpdatesInfo(_ context.Context, c *checker.Check
 	return m.apply("GatherUpdatesInfo", func(config mockCheckConfig) {
 		c.UpdateServerAccessible = config.UpdateServerAccessible
 		c.InstallerIsUpToDate = config.InstallerIsUpToDate
-		c.PentagiIsUpToDate = config.PentagiIsUpToDate
+		c.OpsagiIsUpToDate = config.OpsagiIsUpToDate
 		c.GraphitiIsUpToDate = config.GraphitiIsUpToDate
 		c.LangfuseIsUpToDate = config.LangfuseIsUpToDate
 		c.ObservabilityIsUpToDate = config.ObservabilityIsUpToDate
@@ -614,7 +614,7 @@ func testOperationState(t *testing.T) *operationState {
 }
 
 // processorWithPullReference is a processor whose update answer names
-// vxcontrol/pentagi:2.3.4 for the pentagi stack, with real compose operations.
+// local/opsagi:2.3.4 for the opsagi stack, with real compose operations.
 func processorWithPullReference(t *testing.T) (*processor, *mockState) {
 	t.Helper()
 	state := newMockState(t)
@@ -622,9 +622,9 @@ func processorWithPullReference(t *testing.T) (*processor, *mockState) {
 		state: state,
 		checker: &checker.CheckResult{
 			StackUpdates: []checker.StackUpdate{{
-				Stack: "pentagi",
+				Stack: "opsagi",
 				Components: []checker.ComponentUpdate{
-					{Component: "pentagi", Action: "upgrade", PullReference: "vxcontrol/pentagi:2.3.4"},
+					{Component: "opsagi", Action: "upgrade", PullReference: "local/opsagi:2.3.4"},
 				},
 			}},
 		},

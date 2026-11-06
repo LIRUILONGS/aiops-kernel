@@ -106,7 +106,7 @@ def main(argv):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("intent", nargs="*", help="the alert or optimisation goal, in one sentence")
     parser.add_argument("--base", default=os.environ.get("OPSAGI_URL", "http://127.0.0.1:8080"))
-    parser.add_argument("--mail", default=os.environ.get("OPSAGI_MAIL", "admin@pentagi.com"))
+    parser.add_argument("--mail", default=os.environ.get("OPSAGI_MAIL", "admin@opsagi.com"))
     parser.add_argument("--password", default=os.environ.get("OPSAGI_PASSWORD", ""))
     parser.add_argument("--token", default=os.environ.get("OPSAGI_TOKEN", ""))
     parser.add_argument("--provider", default=os.environ.get("OPSAGI_PROVIDER", "custom"))

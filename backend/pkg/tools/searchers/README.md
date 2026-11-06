@@ -29,7 +29,7 @@ Two rules make the orchestrator possible:
 
 ## Import boundary
 
-`searchers` must **not** import `pentagi/pkg/tools` (the orchestrator imports this package). It depends only on neutral packages: `config`, `database` (for the `SearchengineType` attribution enum), `system` (HTTP client), and `observability`.
+`searchers` must **not** import `opsagi/pkg/tools` (the orchestrator imports this package). It depends only on neutral packages: `config`, `database` (for the `SearchengineType` attribution enum), `system` (HTTP client), and `observability`.
 
 ## Adding a new engine
 

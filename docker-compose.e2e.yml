@@ -1,11 +1,11 @@
 # Tier-2 e2e stack. Runs beside a developer stack: use its own project name,
 # container names, network, and host ports —
 #
-#   docker build -t local/pentagi:e2e .
-#   PENTAGI_IMAGE=local/pentagi:e2e PENTAGI_LISTEN_PORT=8444 PGVECTOR_LISTEN_PORT=5433 \
-#     docker compose -p pentagi-e2e --env-file /dev/null \
+#   docker build -t local/opsagi:e2e .
+#   OPSAGI_IMAGE=local/opsagi:e2e OPSAGI_LISTEN_PORT=8444 PGVECTOR_LISTEN_PORT=5433 \
+#     docker compose -p opsagi-e2e --env-file /dev/null \
 #     -f docker-compose.yml -f docker-compose.e2e.yml \
-#     up -d --wait --wait-timeout 240 pentagi mock-llm
+#     up -d --wait --wait-timeout 240 opsagi mock-llm
 #
 # --env-file /dev/null is load-bearing: without it compose auto-loads the
 # developer's .env and the stack inherits live provider keys and DOCKER_HOST.
@@ -15,17 +15,17 @@
 # `name:`s, so leaving any un-overridden would join this stack to the
 # developer's live observability/langfuse networks.
 networks:
-  pentagi-network:
-    name: pentagi-e2e-network
+  opsagi-network:
+    name: opsagi-e2e-network
   observability-network:
-    name: pentagi-e2e-observability-network
+    name: opsagi-e2e-observability-network
   langfuse-network:
-    name: pentagi-e2e-langfuse-network
+    name: opsagi-e2e-langfuse-network
 
 services:
   mock-llm:
     image: node:24-alpine
-    container_name: pentagi-e2e-mock-llm
+    container_name: opsagi-e2e-mock-llm
     restart: unless-stopped
     command: ["node", "/app/server.mjs"]
     environment:
@@ -33,7 +33,7 @@ services:
     volumes:
       - ./frontend/e2e/mock-llm:/app:ro
     networks:
-      - pentagi-network
+      - opsagi-network
     # Keeps a crash-looping mock (restart would silently mask it) from ever
     # reading as a started dependency.
     healthcheck:
@@ -42,8 +42,8 @@ services:
       timeout: 5s
       retries: 20
 
-  pentagi:
-    container_name: pentagi-e2e
+  opsagi:
+    container_name: opsagi-e2e
     depends_on:
       pgvector:
         condition: service_healthy
@@ -68,9 +68,9 @@ services:
     # beside its compose file and a checkout does not: Docker would create each of
     # them as a directory in the repository root.
     volumes:
-      - ./examples/configs/custom-openai.provider.yml:/opt/pentagi/conf/custom.provider.yml
-      - ./examples/configs/ollama-llama318b-instruct.provider.yml:/opt/pentagi/conf/ollama.provider.yml
-      - ./examples/configs/bedrock.provider.yml:/opt/pentagi/conf/bedrock.provider.yml
+      - ./examples/configs/custom-openai.provider.yml:/opt/opsagi/conf/custom.provider.yml
+      - ./examples/configs/ollama-llama318b-instruct.provider.yml:/opt/opsagi/conf/ollama.provider.yml
+      - ./examples/configs/bedrock.provider.yml:/opt/opsagi/conf/bedrock.provider.yml
     # The base service has no healthcheck, so `up --wait` would return before
     # goose migrations finish and the API serves. The runtime image is alpine —
     # probe with busybox wget, not curl.
@@ -86,4 +86,4 @@ services:
       start_period: 10s
 
   pgvector:
-    container_name: pentagi-e2e-pgvector
+    container_name: opsagi-e2e-pgvector

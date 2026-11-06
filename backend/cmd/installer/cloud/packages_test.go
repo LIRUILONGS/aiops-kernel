@@ -150,7 +150,7 @@ func TestPackages_DownloadPackage_RefusesAMalformedRequestBeforeSending(t *testi
 		return nil
 	}}
 
-	// neo4j has no package under any circumstances; pentagi would be valid, it ships an executable.
+	// neo4j has no package under any circumstances; opsagi would be valid, it ships an executable.
 	request := models.DownloadPackageRequest{
 		Component: models.ComponentTypeNeo4j,
 		Version:   "2.0.0",

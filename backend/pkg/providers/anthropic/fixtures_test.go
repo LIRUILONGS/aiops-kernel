@@ -266,7 +266,7 @@ func stubClock(t *testing.T) *fakeClock {
 
 // identityJWT is an unsigned identity token with an exp claim, and a jti claim unless jti is empty.
 func identityJWT(exp time.Time, jti string) string {
-	claims := map[string]any{"sub": "system:serviceaccount:pentagi:agent", "exp": exp.Unix()}
+	claims := map[string]any{"sub": "system:serviceaccount:opsagi:agent", "exp": exp.Unix()}
 	if jti != "" {
 		claims["jti"] = jti
 	}

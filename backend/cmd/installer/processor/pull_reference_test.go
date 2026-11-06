@@ -14,7 +14,7 @@ import (
 
 func TestPullReference_ComposeImageVar_UppercasesTheComponentAndTurnsDashesIntoUnderscores(t *testing.T) {
 	for component, want := range map[string]string{
-		"pentagi":         "PENTAGI_IMAGE",
+		"opsagi":         "OPSAGI_IMAGE",
 		"langfuse-worker": "LANGFUSE_WORKER_IMAGE",
 		"node-exporter":   "NODE_EXPORTER_IMAGE",
 		"clickstore":      "CLICKSTORE_IMAGE",
@@ -28,9 +28,9 @@ func TestPullReference_ComposeImageVar_UppercasesTheComponentAndTurnsDashesIntoU
 func TestPullReference_PullReferencesForStack_KeepsOnlyResolvedComponentsOfThatStack(t *testing.T) {
 	updates := []checker.StackUpdate{
 		{
-			Stack: "pentagi",
+			Stack: "opsagi",
 			Components: []checker.ComponentUpdate{
-				{Component: "pentagi", Action: "upgrade", PullReference: "vxcontrol/pentagi:2.3.4"},
+				{Component: "opsagi", Action: "upgrade", PullReference: "local/opsagi:2.3.4"},
 				// Written too, or the next `compose up` falls back to the file's default.
 				{Component: "pgvector", Action: "current", PullReference: "vxcontrol/pgvector:latest"},
 				{Component: "scraper", Action: "unknown", Reason: "tag_not_published"},
@@ -45,9 +45,9 @@ func TestPullReference_PullReferencesForStack_KeepsOnlyResolvedComponentsOfThatS
 	}
 
 	assert.Equal(t, map[string]string{
-		"PENTAGI_IMAGE":  "vxcontrol/pentagi:2.3.4",
+		"OPSAGI_IMAGE":  "local/opsagi:2.3.4",
 		"PGVECTOR_IMAGE": "vxcontrol/pgvector:latest",
-	}, pullReferencesForStack(updates, "pentagi"),
+	}, pullReferencesForStack(updates, "opsagi"),
 		"an unresolved component must not be written, and another stack must not leak in")
 	assert.Equal(t, map[string]string{"LANGFUSE_WEB_IMAGE": "langfuse/langfuse:3"},
 		pullReferencesForStack(updates, "langfuse"))
@@ -58,9 +58,9 @@ func TestPullReference_PullReferencesForStack_KeepsOnlyResolvedComponentsOfThatS
 func TestPullReference_ApplyPullReferences_WritesTheEnvFileWithoutMakingTheStateDirty(t *testing.T) {
 	p, state := processorWithPullReference(t)
 
-	require.NoError(t, p.applyPullReferences(ProductStackPentagi))
+	require.NoError(t, p.applyPullReferences(ProductStackOpsagi))
 
-	assert.Equal(t, map[string]string{"PENTAGI_IMAGE": "vxcontrol/pentagi:2.3.4"}, state.written,
+	assert.Equal(t, map[string]string{"OPSAGI_IMAGE": "local/opsagi:2.3.4"}, state.written,
 		"the reference was staged instead of written")
 	assert.False(t, state.IsDirty())
 }

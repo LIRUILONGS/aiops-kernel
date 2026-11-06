@@ -123,23 +123,23 @@ const (
 	// Management screens
 	ApplyChangesScreen ScreenID = "apply_changes"
 	// UpdateOverviewScreen shows what the update changes before it is applied.
-	// It stands between the menu entry and UpdatePentagiScreen below, which the
+	// It stands between the menu entry and UpdateOpsagiScreen below, which the
 	// entry used to point at directly.
 	UpdateOverviewScreen      ScreenID = "update_overview"
-	InstallPentagiScreen      ScreenID = "processor_operation_form§all§install"
-	StartPentagiScreen        ScreenID = "processor_operation_form§all§start"
-	StopPentagiScreen         ScreenID = "processor_operation_form§all§stop"
-	RestartPentagiScreen      ScreenID = "processor_operation_form§all§restart"
+	InstallOpsagiScreen      ScreenID = "processor_operation_form§all§install"
+	StartOpsagiScreen        ScreenID = "processor_operation_form§all§start"
+	StopOpsagiScreen         ScreenID = "processor_operation_form§all§stop"
+	RestartOpsagiScreen      ScreenID = "processor_operation_form§all§restart"
 	DownloadWorkerImageScreen ScreenID = "processor_operation_form§worker§download"
 	UpdateWorkerImageScreen   ScreenID = "processor_operation_form§worker§update"
-	UpdatePentagiScreen       ScreenID = "processor_operation_form§compose§update"
+	UpdateOpsagiScreen       ScreenID = "processor_operation_form§compose§update"
 	// InstallerUpdateScreen is its own screen and not an operation form: what it does is
 	// download one verified file, which the generic form described as replacing the
 	// running binary and exiting.
 	InstallerUpdateScreen ScreenID = "installer_update"
 	FactoryResetScreen    ScreenID = "processor_operation_form§all§factory_reset"
-	RemovePentagiScreen   ScreenID = "processor_operation_form§all§remove"
-	PurgePentagiScreen    ScreenID = "processor_operation_form§all§purge"
+	RemoveOpsagiScreen   ScreenID = "processor_operation_form§all§remove"
+	PurgeOpsagiScreen    ScreenID = "processor_operation_form§all§purge"
 	ResetPasswordScreen   ScreenID = "reset_password"
 	MaintenanceScreen     ScreenID = "maintenance"
 )

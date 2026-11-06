@@ -53,7 +53,7 @@ func main() {
 		os.Exit(runInfo(ctx))
 	}
 
-	logrus.Infof("Starting PentAGI %s", version.GetBinaryVersion())
+	logrus.Infof("Starting OpsAGI %s", version.GetBinaryVersion())
 
 	cfg, err := config.NewConfig()
 	if err != nil {

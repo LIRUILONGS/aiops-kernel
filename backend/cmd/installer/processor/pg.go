@@ -25,15 +25,15 @@ const (
 	// Default values for PostgreSQL configuration
 	DefaultPostgreSQLUser     = "postgres"
 	DefaultPostgreSQLPassword = "postgres"
-	DefaultPostgreSQLDatabase = "pentagidb"
+	DefaultPostgreSQLDatabase = "opsagidb"
 
 	// Admin user email
-	AdminEmail = "admin@pentagi.com"
+	AdminEmail = "admin@opsagi.com"
 
 	// Environment variable names
-	EnvPostgreSQLUser     = "PENTAGI_POSTGRES_USER"
-	EnvPostgreSQLPassword = "PENTAGI_POSTGRES_PASSWORD"
-	EnvPostgreSQLDatabase = "PENTAGI_POSTGRES_DB"
+	EnvPostgreSQLUser     = "OPSAGI_POSTGRES_USER"
+	EnvPostgreSQLPassword = "OPSAGI_POSTGRES_PASSWORD"
+	EnvPostgreSQLDatabase = "OPSAGI_POSTGRES_DB"
 )
 
 var (
@@ -124,7 +124,7 @@ func (p *processor) performPasswordReset(ctx context.Context, newPassword string
 	p.appendLog(fmt.Sprintf(
 		"Connected to PostgreSQL at %s:%s (database: %s, schema: %s)",
 		PostgreSQLHost, PostgreSQLPort, dbName, cfg.SchemaName(),
-	), ProductStackPentagi, state)
+	), ProductStackOpsagi, state)
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
 	if err != nil {
@@ -140,7 +140,7 @@ func (p *processor) performPasswordReset(ctx context.Context, newPassword string
 		return fmt.Errorf("no admin user found with email %s", AdminEmail)
 	}
 
-	p.appendLog(fmt.Sprintf("Password updated for %s", AdminEmail), ProductStackPentagi, state)
+	p.appendLog(fmt.Sprintf("Password updated for %s", AdminEmail), ProductStackOpsagi, state)
 
 	return nil
 }

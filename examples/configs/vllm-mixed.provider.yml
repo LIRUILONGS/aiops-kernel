@@ -9,10 +9,10 @@
 #
 # DeepSeek-V4-Flash on vLLM (0731 tokenizer; confirmed on vLLM 0.28.0):
 # - Default is Non-think. Cloud extra_body.thinking.type is ignored.
-# - The nested "reasoning":{"effort":...} object is ignored; PentAGI sends reasoning.effort
+# - The nested "reasoning":{"effort":...} object is ignored; OpsAGI sends reasoning.effort
 #   as the top-level reasoning_effort this server reads.
 # - Enable Think High via extra_body.chat_template_kwargs plus reasoning.effort for
-#   PentAGI/ctester.
+#   OpsAGI/ctester.
 # - Sampling: temperature=1.0, top_p=1.0 (0731 agentic: top_p=0.95 also fine)
 # - Think Max (reasoning_effort=max) needs --max-model-len >= 384K; do not use it
 #   on a 160K context server.

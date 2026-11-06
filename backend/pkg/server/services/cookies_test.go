@@ -28,7 +28,7 @@ func TestCookies_SessionOptions_MarksEverySessionCookieSecureBehindATLSTerminato
 
 	engine := gin.New()
 	require.NoError(t, engine.SetTrustedProxies(nil))
-	engine.Use(sessions.Sessions("pentagi", cookie.NewStore([]byte("test-secret"))))
+	engine.Use(sessions.Sessions("opsagi", cookie.NewStore([]byte("test-secret"))))
 	engine.POST("/auth/login", authSvc.AuthLogin)
 	engine.POST("/auth/logout", authSvc.AuthLogout)
 	engine.PUT("/user/password", func(c *gin.Context) { c.Set("uid", sessions.Default(c).Get("uid")) },
@@ -58,7 +58,7 @@ func TestCookies_SessionOptions_MarksEverySessionCookieSecureBehindATLSTerminato
 		require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
 
 		for _, c := range rec.Result().Cookies() {
-			if c.Name == "pentagi" {
+			if c.Name == "opsagi" {
 				current = c
 				return c
 			}
@@ -91,7 +91,7 @@ func TestCookies_SessionOptions_MarksTheOAuthSessionCookieSecureBehindATLSTermin
 	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
 
 	for _, cookie := range w.Result().Cookies() {
-		if cookie.Name == "pentagi" {
+		if cookie.Name == "opsagi" {
 			assert.True(t, cookie.Secure)
 			return
 		}

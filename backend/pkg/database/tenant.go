@@ -51,7 +51,7 @@ func EnsureTenantSchema(ctx context.Context, cfg *config.Config) error {
 
 	// Serialize concurrent first boots so two instances cannot race on schema and
 	// extension creation in the shared catalog.
-	if err := WithAdvisoryLock(ctx, db, "pentagi-tenant-bootstrap", func(conn *sql.Conn) error {
+	if err := WithAdvisoryLock(ctx, db, "opsagi-tenant-bootstrap", func(conn *sql.Conn) error {
 		// QuoteIdentifier is belt-and-braces: ValidateTenantID already restricts
 		// the character set, but this keeps the statement safe if that ever relaxes.
 		if _, err := conn.ExecContext(ctx,
@@ -187,7 +187,7 @@ func VerifySearchPath(ctx context.Context, db *sql.DB, cfg *config.Config) error
 // the pre-existing race between two single-instance deployments sharing a
 // database.
 func RunMigrations(ctx context.Context, db *sql.DB, cfg *config.Config, up func(*sql.DB) error) error {
-	return WithAdvisoryLock(ctx, db, "pentagi-migrations-"+cfg.SchemaName(), func(*sql.Conn) error {
+	return WithAdvisoryLock(ctx, db, "opsagi-migrations-"+cfg.SchemaName(), func(*sql.Conn) error {
 		if err := renumberMigrations(ctx, db, cfg.SchemaName()); err != nil {
 			return err
 		}

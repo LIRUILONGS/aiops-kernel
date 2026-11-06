@@ -80,7 +80,7 @@ func validateDefinition(def TestDefinition) error {
 	case pconfig.ReasoningModeAdaptive:
 		return fmt.Errorf("params cannot request adaptive reasoning: use capability %q", CapabilityAdaptiveThinking)
 	case pconfig.ReasoningModeOff:
-		return fmt.Errorf("params cannot disable reasoning: use capability %q, which gates the case on an agent PentAGI would send the signal for",
+		return fmt.Errorf("params cannot disable reasoning: use capability %q, which gates the case on an agent OpsAGI would send the signal for",
 			CapabilityReasoningOff)
 	}
 

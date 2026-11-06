@@ -33,14 +33,14 @@ func TestVerify_CaptureStackTargets_RecordsWhatEachComponentShouldBecome(t *test
 		}, ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.component.Component, tc.component.OS, tc.component.Arch = "pentagi", "linux", "amd64"
+			tc.component.Component, tc.component.OS, tc.component.Arch = "opsagi", "linux", "amd64"
 			before := &checker.CheckResult{StackUpdates: []checker.StackUpdate{
 				{Stack: "langfuse", Components: []checker.ComponentUpdate{{Component: "langfuse-web"}}},
-				{Stack: "pentagi", HasUpdate: true, Components: []checker.ComponentUpdate{tc.component}},
+				{Stack: "opsagi", HasUpdate: true, Components: []checker.ComponentUpdate{tc.component}},
 			}}
 
 			assert.Equal(t, []componentTarget{{name: "opsagi/linux/amd64", digest: tc.want}},
-				captureStackTargets(before, "pentagi"))
+				captureStackTargets(before, "opsagi"))
 		})
 	}
 }
@@ -52,20 +52,20 @@ func TestVerify_StackHasNoUpdate_TrustsOnlyASuccessfulFreshAnswer(t *testing.T) 
 		want   bool
 	}{
 		{"the answer says nothing is pending",
-			&checker.CheckResult{StackUpdates: []checker.StackUpdate{{Stack: "pentagi", HasUpdate: false}}}, true},
+			&checker.CheckResult{StackUpdates: []checker.StackUpdate{{Stack: "opsagi", HasUpdate: false}}}, true},
 		{"the answer still offers an update",
-			&checker.CheckResult{StackUpdates: []checker.StackUpdate{{Stack: "pentagi", HasUpdate: true}}}, false},
+			&checker.CheckResult{StackUpdates: []checker.StackUpdate{{Stack: "opsagi", HasUpdate: true}}}, false},
 		// Silence about a stack is not evidence that something is pending for it.
 		{"the stack is not mentioned",
 			&checker.CheckResult{StackUpdates: []checker.StackUpdate{{Stack: "langfuse"}}}, true},
 		// Without a fresh answer a difference cannot be excused as the registry moving ahead.
 		{"the refreshed check failed", &checker.CheckResult{
 			UpdateFailure: &checker.UpdateCheckFailure{Reason: "unreachable"},
-			StackUpdates:  []checker.StackUpdate{{Stack: "pentagi", HasUpdate: false}},
+			StackUpdates:  []checker.StackUpdate{{Stack: "opsagi", HasUpdate: false}},
 		}, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			assert.Equal(t, tc.want, stackHasNoUpdate(tc.result, "pentagi"))
+			assert.Equal(t, tc.want, stackHasNoUpdate(tc.result, "opsagi"))
 		})
 	}
 }
@@ -100,15 +100,15 @@ func TestVerify_VerifyStackUpdate_TellsAMatchANewerBuildAMismatchAndTheUnverifia
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			p := &processor{checker: &checker.CheckResult{
-				StackUpdates: []checker.StackUpdate{{Stack: "pentagi", HasUpdate: tc.stillOffered}},
+				StackUpdates: []checker.StackUpdate{{Stack: "opsagi", HasUpdate: tc.stillOffered}},
 				InstalledComponents: []checker.InstalledComponent{
-					{Component: "pentagi", OS: "linux", Arch: "amd64", Digest: tc.installed},
+					{Component: "opsagi", OS: "linux", Arch: "amd64", Digest: tc.installed},
 					{Component: "scraper", OS: "linux", Arch: "amd64", Digest: componentDigest("c")},
 				},
 			}}
 			state := testOperationState(t)
 
-			p.verifyStackUpdate(ProductStackPentagi, tc.targets, state)
+			p.verifyStackUpdate(ProductStackOpsagi, tc.targets, state)
 
 			reported := state.output.String()
 			for _, want := range tc.want {
@@ -125,7 +125,7 @@ func TestVerify_VerifyStackUpdate_TellsAMatchANewerBuildAMismatchAndTheUnverifia
 func TestVerify_VerifiableUpdateStacks_LeaveOutOnlyTheInstaller(t *testing.T) {
 	require.False(t, verifiableUpdateStacks[ProductStackInstaller])
 	for _, stack := range []ProductStack{
-		ProductStackPentagi, ProductStackGraphiti, ProductStackLangfuse, ProductStackObservability, ProductStackWorker,
+		ProductStackOpsagi, ProductStackGraphiti, ProductStackLangfuse, ProductStackObservability, ProductStackWorker,
 	} {
 		assert.True(t, verifiableUpdateStacks[stack], "stack %s replaces what is installed but is never verified", stack)
 	}

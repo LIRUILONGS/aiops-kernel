@@ -60,9 +60,9 @@ func (stubConn) Begin() (driver.Tx, error) { return nil, errStubDriver }
 func answersNothing(t *testing.T) (*Queries, func() []string) {
 	t.Helper()
 
-	registerStubOnce.Do(func() { sql.Register("pentagi-summary-stub", stubDriver{}) })
+	registerStubOnce.Do(func() { sql.Register("opsagi-summary-stub", stubDriver{}) })
 
-	db, err := sql.Open("pentagi-summary-stub", "")
+	db, err := sql.Open("opsagi-summary-stub", "")
 	if err != nil {
 		t.Fatalf("open stub database: %v", err)
 	}

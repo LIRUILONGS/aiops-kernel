@@ -8,7 +8,7 @@
 // one. Searchers never mask an error as a "failed to search…" string and never write
 // to the database search-log; both concerns belong to the orchestrator.
 //
-// This package must not import pentagi/pkg/tools (the orchestrator imports this
+// This package must not import opsagi/pkg/tools (the orchestrator imports this
 // package). It depends only on neutral packages: config, database (for the
 // SearchengineType attribution enum), system (HTTP client), and observability.
 package searchers

@@ -5,7 +5,7 @@
 # is the check that the label the Dockerfile composed matches version.sh's rule.
 # scripts/check-version-rule.sh ties both to what the binary reports.
 #
-# Usage: ./scripts/build-image.sh [TAG]      (default tag: local/pentagi:<revision-or-version>)
+# Usage: ./scripts/build-image.sh [TAG]      (default tag: local/opsagi:<revision-or-version>)
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -14,7 +14,7 @@ cd "$REPO_ROOT"
 # shellcheck source=./version.sh
 source ./scripts/version.sh > /dev/null
 
-TAG="${1:-local/pentagi:${PACKAGE_REV:-$PACKAGE_VERSION_FULL}}"
+TAG="${1:-local/opsagi:${PACKAGE_REV:-$PACKAGE_VERSION_FULL}}"
 
 echo "building $TAG with PACKAGE_VER=$PACKAGE_VER PACKAGE_REV=${PACKAGE_REV:-<none, this is a tag commit>}"
 
@@ -28,7 +28,7 @@ docker build \
 
 # The Dockerfile composes the label from the pair; version.sh composes the same string in
 # shell. A difference here means one of the two rules moved.
-stamped="$(docker inspect "$TAG" --format '{{index .Config.Labels "com.pentagi.version"}}')"
+stamped="$(docker inspect "$TAG" --format '{{index .Config.Labels "com.opsagi.version"}}')"
 
 if [ "$stamped" != "$PACKAGE_VERSION_FULL" ]; then
     echo "build-image: $TAG is stamped '$stamped', expected '$PACKAGE_VERSION_FULL'" >&2

@@ -68,8 +68,8 @@ type imageComponent struct {
 // The four groups below are also the order components are reported in, which is the order
 // the ceiling above cuts from: the stacks whose updates matter most come first.
 var (
-	pentagiImageComponents = []imageComponent{
-		{models.ComponentTypePentagi, PentagiContainerName},
+	opsagiImageComponents = []imageComponent{
+		{models.ComponentTypePentagi, OpsagiContainerName},
 		{models.ComponentTypeScraper, ScraperContainerName},
 		{models.ComponentTypePgvector, PgvectorContainerName},
 		// Last in its group on purpose: the ceiling cuts from the tail, and an
@@ -137,10 +137,10 @@ func (r reportedComponents) total() int { return len(r.images) + len(r.files) }
 func (h *defaultCheckHandler) gatherComponents(ctx context.Context, c *CheckResult) reportedComponents {
 	var reported reportedComponents
 
-	// The pentagi stack is always reported: it is the product itself, with no external
+	// The opsagi stack is always reported: it is the product itself, with no external
 	// alternative to point at.
 	reported.images = append(reported.images,
-		h.imageComponents(ctx, pentagiImageComponents, stackGate{connected: true})...)
+		h.imageComponents(ctx, opsagiImageComponents, stackGate{connected: true})...)
 
 	if worker := h.workerComponent(ctx, c); worker != nil {
 		reported.images = append(reported.images, *worker)

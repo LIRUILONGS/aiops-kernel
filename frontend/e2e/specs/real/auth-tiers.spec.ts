@@ -2,7 +2,7 @@ import type { APIRequestContext } from '@playwright/test';
 
 import { request as apiRequest, expect, test } from '@playwright/test';
 
-const ADMIN_USER = process.env.E2E_USER ?? 'admin@pentagi.com';
+const ADMIN_USER = process.env.E2E_USER ?? 'admin@opsagi.com';
 const ADMIN_PASSWORD = process.env.E2E_PASSWORD ?? 'admin';
 
 const TABLE_QUERY = 'page=1&pageSize=5&type=init';
@@ -44,7 +44,7 @@ test.describe('account and credential routes are session-only', { tag: '@real' }
                 expect([path, (await bearer.get(path)).status()], 'refused for a bearer token').toEqual([path, 403]);
             }
 
-            const mail = `e2e-tier-${Date.now()}@pentagi.com`;
+            const mail = `e2e-tier-${Date.now()}@opsagi.com`;
             const escalation = await bearer.post('/api/v1/users/', {
                 data: {
                     mail,

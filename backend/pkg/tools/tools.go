@@ -523,7 +523,7 @@ func (fte *flowToolsExecutor) SetGraphitiClient(client *graphiti.Client) {
 func (fte *flowToolsExecutor) Prepare(ctx context.Context) error {
 	if cnt, err := fte.db.GetFlowPrimaryContainer(ctx, fte.flowID); err == nil {
 		containerName := PrimaryTerminalName(fte.cfg.TenantPrefix(), fte.flowID)
-		// the stored status goes stale when the container is removed outside pentagi
+		// the stored status goes stale when the container is removed outside opsagi
 		isProbed := cnt.Status == database.ContainerStatusRunning ||
 			cnt.Status == database.ContainerStatusFailed && cnt.LocalID.String != ""
 		if isProbed {

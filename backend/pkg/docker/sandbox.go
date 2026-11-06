@@ -31,7 +31,7 @@ const (
 	// a few kilobytes; anything near this is not a report.
 	maxSandboxReportBytes = 256 * 1024
 
-	sandboxGuideURL = "https://raw.githubusercontent.com/vxcontrol/pentagi/refs/heads/main/examples/guides/worker_node.md"
+	sandboxGuideURL = "https://raw.githubusercontent.com/vxcontrol/opsagi/refs/heads/main/examples/guides/worker_node.md"
 )
 
 // sandboxLine is one line of the probe's report. The probe emits JSON so this
@@ -127,7 +127,7 @@ func (dc *dockerClient) probeSandbox(ctx context.Context, cfg *config.Config) (s
 	// The work volume is the one thing a flow's worker has and this does not:
 	// it holds that flow's files and has no bearing on what the daemon allows.
 	containerConfig, hostConfig := WorkerSpec(cfg, image)
-	containerConfig.Env = append(containerConfig.Env, "PENTAGI_TEST_IMAGE="+image)
+	containerConfig.Env = append(containerConfig.Env, "OPSAGI_TEST_IMAGE="+image)
 	dc.applyWorkerDockerAccess(containerConfig, hostConfig)
 	if hostConfig.PidsLimit == nil {
 		pidsLimit := int64(2048)
@@ -147,7 +147,7 @@ func (dc *dockerClient) probeSandbox(ctx context.Context, cfg *config.Config) (s
 		}
 	}
 
-	name := fmt.Sprintf("pentagi-sandbox-check-%d", time.Now().UnixNano())
+	name := fmt.Sprintf("opsagi-sandbox-check-%d", time.Now().UnixNano())
 	created, err := dc.client.ContainerCreate(ctx, client.ContainerCreateOptions{
 		Config: containerConfig, HostConfig: hostConfig, NetworkingConfig: networkingConfig, Name: name,
 	})
@@ -233,14 +233,14 @@ func (dc *dockerClient) decideSandbox(ctx context.Context, cfg *config.Config) {
 	if cfg.DockerInsideHost == "" {
 		dc.disableSandbox(cfg, logger,
 			"DOCKER_INSIDE_HOST is empty, so a worker would be given whichever daemon this process "+
-				"could autodetect -- possibly the one running PentAGI itself")
+				"could autodetect -- possibly the one running OpsAGI itself")
 
 		return
 	}
 
 	if !cfg.DockerInsidePolicyTests {
 		logger.Warn("sandbox is ENABLED but its isolation was NOT tested: agents get Docker access " +
-			"nobody has measured. Set DOCKER_INSIDE_POLICY_TESTS=true to have PentAGI check at " +
+			"nobody has measured. Set DOCKER_INSIDE_POLICY_TESTS=true to have OpsAGI check at " +
 			"startup that the sandbox daemon is separate from its own and refuses host-escape " +
 			"requests. Setup guide: " + sandboxGuideURL)
 
@@ -261,8 +261,8 @@ func (dc *dockerClient) decideSandbox(ctx context.Context, cfg *config.Config) {
 
 	if report.daemonID == dc.orchestratorDaemonID {
 		dc.disableSandbox(cfg, logger.WithField("daemon", report.daemonID),
-			"DOCKER_INSIDE_HOST is the same daemon PentAGI orchestrates on, so an agent that escapes "+
-				"its container reaches PentAGI, the other flows and their credentials")
+			"DOCKER_INSIDE_HOST is the same daemon OpsAGI orchestrates on, so an agent that escapes "+
+				"its container reaches OpsAGI, the other flows and their credentials")
 
 		return
 	}
@@ -291,6 +291,6 @@ func (dc *dockerClient) disableSandbox(cfg *config.Config, logger *logrus.Entry,
 	dc.inside = false
 
 	logger.Error("sandbox DISABLED for this deployment: " + reason +
-		". Agents will run without Docker access until this is fixed; PentAGI keeps running. " +
+		". Agents will run without Docker access until this is fixed; OpsAGI keeps running. " +
 		"Setup guide: " + sandboxGuideURL)
 }

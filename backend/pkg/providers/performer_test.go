@@ -976,7 +976,7 @@ func TestPerformer_PerformAgentChain_WritesAMissingScopeToGraphitiAsADash(t *tes
 			agent: pconfig.OptionsTypeAssistant,
 			want: []performerGraphitiEpisode{{
 				name:    "agent_response",
-				source:  "PentAGI assistant agent execution in flow 42",
+				source:  "OpsAGI assistant agent execution in flow 42",
 				content: "Agent: assistant\nResponse: hello\nContext: Task -, Subtask -\n\n",
 			}},
 		},
@@ -987,12 +987,12 @@ func TestPerformer_PerformAgentChain_WritesAMissingScopeToGraphitiAsADash(t *tes
 			want: []performerGraphitiEpisode{
 				{
 					name:    "agent_response",
-					source:  "PentAGI searcher agent execution in flow 42",
+					source:  "OpsAGI searcher agent execution in flow 42",
 					content: "Agent: searcher\nResponse: hello\nContext: Task -, Subtask -\n\n",
 				},
 				{
 					name:   "tool_execution_search_result",
-					source: "PentAGI tool execution in flow 42",
+					source: "OpsAGI tool execution in flow 42",
 					content: "Tool: search_result\n" +
 						"Description: Send the complex search result as a answer for the user question to the user\n" +
 						"Barrier Function: true\nArguments: {}\nInvoked by: searcher Agent\nStatus: success\nResult: ok\n" +
@@ -1008,12 +1008,12 @@ func TestPerformer_PerformAgentChain_WritesAMissingScopeToGraphitiAsADash(t *tes
 			want: []performerGraphitiEpisode{
 				{
 					name:    "agent_response",
-					source:  "PentAGI generator agent execution in flow 42, task 7",
+					source:  "OpsAGI generator agent execution in flow 42, task 7",
 					content: "Agent: generator\nResponse: hello\nContext: Task 7, Subtask -\n\n",
 				},
 				{
 					name:   "tool_execution_subtask_list",
-					source: "PentAGI tool execution in flow 42, task 7",
+					source: "OpsAGI tool execution in flow 42, task 7",
 					content: "Tool: subtask_list\nDescription: Send new generated subtask list to the user\n" +
 						"Barrier Function: true\nArguments: {}\nInvoked by: generator Agent\nStatus: success\nResult: ok\n" +
 						"Context: Task 7, Subtask -\n\n",
@@ -1029,12 +1029,12 @@ func TestPerformer_PerformAgentChain_WritesAMissingScopeToGraphitiAsADash(t *tes
 			want: []performerGraphitiEpisode{
 				{
 					name:    "agent_response",
-					source:  "PentAGI pentester agent execution in flow 42, task 7, subtask 11",
+					source:  "OpsAGI pentester agent execution in flow 42, task 7, subtask 11",
 					content: "Agent: pentester\nResponse: hello\nContext: Task 7, Subtask 11\n\n",
 				},
 				{
 					name:   "tool_execution_hack_result",
-					source: "PentAGI tool execution in flow 42, task 7, subtask 11",
+					source: "OpsAGI tool execution in flow 42, task 7, subtask 11",
 					content: "Tool: hack_result\nDescription: Send the penetration test result to the user with detailed report\n" +
 						"Barrier Function: true\nArguments: {}\nInvoked by: pentester Agent\nStatus: success\nResult: ok\n" +
 						"Context: Task 7, Subtask 11\n\n",

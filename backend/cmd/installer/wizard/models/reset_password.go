@@ -182,7 +182,7 @@ func (m *ResetPasswordModel) GetFormOverview() string {
 // GetCurrentConfiguration returns current configuration status
 func (m *ResetPasswordModel) GetCurrentConfiguration() string {
 	checker := m.GetController().GetChecker()
-	if !checker.PentagiRunning {
+	if !checker.OpsagiRunning {
 		return locale.ResetPasswordNotAvailable
 	}
 	return locale.ResetPasswordAvailable
@@ -191,7 +191,7 @@ func (m *ResetPasswordModel) GetCurrentConfiguration() string {
 // IsConfigured returns true if password reset is available
 func (m *ResetPasswordModel) IsConfigured() bool {
 	checker := m.GetController().GetChecker()
-	return checker.PentagiRunning
+	return checker.OpsagiRunning
 }
 
 // Update handles screen updates including processor messages
@@ -271,7 +271,7 @@ func (m *ResetPasswordModel) executePasswordReset(newPassword string, closeOnSuc
 
 	return m.processor.ResetPassword(
 		context.Background(),
-		processor.ProductStackPentagi,
+		processor.ProductStackOpsagi,
 		processor.WithPasswordValue(newPassword),
 	)
 }

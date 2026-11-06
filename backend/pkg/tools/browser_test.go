@@ -704,7 +704,7 @@ func TestBrowser_ResolveUrl_PicksTheScraperForTheTarget(t *testing.T) {
 			name:      "a single-label host nothing resolves goes to the private scraper",
 			scPrvURL:  prv,
 			scPubURL:  pub,
-			targetURL: "http://pentagi-no-such-host:8080",
+			targetURL: "http://opsagi-no-such-host:8080",
 			want:      prv,
 		},
 		{

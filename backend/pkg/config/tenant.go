@@ -57,11 +57,11 @@ func (c *Config) TenantPrefix() string {
 // ScopedName prefixes a docker object name, cookie name, or any other
 // hyphen-separated identifier with this instance's tenant.
 //
-//	ScopedName("pentagi-terminal-1") -> "pentagi-terminal-1"      (no tenant)
-//	ScopedName("pentagi-terminal-1") -> "acme-pentagi-terminal-1" (tenant "acme")
+//	ScopedName("opsagi-terminal-1") -> "opsagi-terminal-1"      (no tenant)
+//	ScopedName("opsagi-terminal-1") -> "acme-opsagi-terminal-1" (tenant "acme")
 //
 // The prefix goes in front rather than in the middle so that tenant-owned
-// objects fall outside existing "pentagi-*" prefix sweeps instead of inside
+// objects fall outside existing "opsagi-*" prefix sweeps instead of inside
 // them — see the installer's volume garbage collector.
 func (c *Config) ScopedName(base string) string {
 	if c == nil || c.TenantID == "" {
@@ -111,7 +111,7 @@ func (c *Config) ParseGroupID(groupID string) (int64, error) {
 }
 
 // TenantUserID namespaces a telemetry "user" identity. Instances share the
-// seeded admin@pentagi.com account, so without this every tenant's traces would
+// seeded admin@opsagi.com account, so without this every tenant's traces would
 // collapse onto one Langfuse user. Returns the address unchanged in
 // single-instance mode.
 func (c *Config) TenantUserID(mail string) string {
@@ -186,4 +186,4 @@ func (c *Config) TenantLabels() map[string]string {
 
 // TenantLabelKey is the docker label carrying the owning tenant id. Sweeps over
 // the daemon should filter on this rather than matching name prefixes.
-const TenantLabelKey = "pentagi.tenant"
+const TenantLabelKey = "opsagi.tenant"

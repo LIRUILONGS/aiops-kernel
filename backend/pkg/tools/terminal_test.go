@@ -1115,10 +1115,10 @@ func TestTerminal_PrimaryTerminalName_PutsTheTenantFirstAndTheFlowLast(t *testin
 		flowID       int64
 		want         string
 	}{
-		{"a single instance", "", 1, "pentagi-terminal-1"},
-		{"flow zero", "", 0, "pentagi-terminal-0"},
-		{"a multi-digit flow", "", 12345, "pentagi-terminal-12345"},
-		{"a tenant", "acme-", 1, "acme-pentagi-terminal-1"},
+		{"a single instance", "", 1, "opsagi-terminal-1"},
+		{"flow zero", "", 0, "opsagi-terminal-0"},
+		{"a multi-digit flow", "", 12345, "opsagi-terminal-12345"},
+		{"a tenant", "acme-", 1, "acme-opsagi-terminal-1"},
 	}
 
 	for _, tt := range tests {

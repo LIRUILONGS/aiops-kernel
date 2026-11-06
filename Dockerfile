@@ -97,11 +97,11 @@ RUN mkdir -p /licenses/backend && \
 # Compile main application binary with embedded version metadata
 RUN go build -trimpath \
     -ldflags "\
-        -X opsagi/pkg/version.PackageName=pentagi \
+        -X opsagi/pkg/version.PackageName=opsagi \
         -X opsagi/pkg/version.PackageVer=${PACKAGE_VER} \
         -X opsagi/pkg/version.PackageRev=${PACKAGE_REV} \
         -X opsagi/pkg/version.Edition=${PACKAGE_EDITION}" \
-    -o /pentagi ./cmd/opsagi
+    -o /opsagi ./cmd/opsagi
 
 # Build ctester utility
 RUN go build -trimpath \
@@ -137,9 +137,9 @@ FROM alpine:3.23.5
 
 # Establish non-privileged execution context with docker socket access
 RUN addgroup -g 998 docker && \
-    addgroup -S pentagi && \
-    adduser -S pentagi -G pentagi && \
-    addgroup pentagi docker
+    addgroup -S opsagi && \
+    adduser -S opsagi -G opsagi && \
+    addgroup opsagi docker
 
 # Install required packages
 RUN apk --no-cache add ca-certificates openssl openssh-keygen shadow
@@ -159,7 +159,7 @@ RUN mkdir -p \
     /opt/opsagi/conf && \
     chmod 777 /root/.ollama
 
-COPY --from=api-builder /pentagi /opt/opsagi/bin/pentagi
+COPY --from=api-builder /opsagi /opt/opsagi/bin/opsagi
 COPY --from=api-builder /ctester /opt/opsagi/bin/ctester
 COPY --from=api-builder /ftester /opt/opsagi/bin/ftester
 COPY --from=api-builder /etester /opt/opsagi/bin/etester
@@ -203,13 +203,13 @@ COPY NOTICE /opt/opsagi/NOTICE
 COPY EULA.md /opt/opsagi/EULA
 COPY EULA.md /opt/opsagi/fe/EULA.md
 
-RUN chown -R pentagi:pentagi /opt/pentagi
+RUN chown -R opsagi:opsagi /opt/opsagi
 
-WORKDIR /opt/pentagi
+WORKDIR /opt/opsagi
 
-USER pentagi
+USER opsagi
 
-ENTRYPOINT ["/opt/opsagi/bin/entrypoint.sh", "/opt/opsagi/bin/pentagi"]
+ENTRYPOINT ["/opt/opsagi/bin/entrypoint.sh", "/opt/opsagi/bin/opsagi"]
 
 # Mirrors GetBinaryVersion in backend/pkg/version: "<edition>", "<edition>.h<rev>",
 # "<ver>-<edition>" or "<ver>-<edition>.h<rev>". The "h" keeps the revision an
@@ -229,10 +229,11 @@ ARG PACKAGE_REV
 ARG PACKAGE_EDITION=ce
 ARG VER_PART=${PACKAGE_VER:+${PACKAGE_VER}-}${PACKAGE_EDITION}
 ARG PACKAGE_VERSION_FULL=${VER_PART}${PACKAGE_REV:+.h${PACKAGE_REV}}
-LABEL com.pentagi.version="${PACKAGE_VERSION_FULL}"
+LABEL com.opsagi.version="${PACKAGE_VERSION_FULL}"
 
 # Image Metadata
-LABEL org.opencontainers.image.source="https://github.com/vxcontrol/pentagi"
-LABEL org.opencontainers.image.description="Fully autonomous AI Agents system capable of performing complex penetration testing tasks"
-LABEL org.opencontainers.image.authors="PentAGI Development Team"
+LABEL org.opencontainers.image.title="OpsAGI"
+LABEL org.opencontainers.image.description="AIOps agent kernel: read-only probes, incident diagnosis and performance optimisation against SSH targets"
+LABEL org.opencontainers.image.authors="OpsAGI contributors"
 LABEL org.opencontainers.image.licenses="MIT License"
+LABEL org.opencontainers.image.base.name="docker.io/library/alpine"

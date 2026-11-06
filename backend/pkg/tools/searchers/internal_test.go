@@ -215,11 +215,11 @@ func TestInternal_AppendSources_ListsEachSourceHostAsANumberedLink(t *testing.T)
 
 	got := appendSources("answer\n\n", []string{
 		"https://github.com/vxcontrol/pentagi",
-		"https://pentagi.com/get-started",
+		"https://opsagi.com/get-started",
 	})
 	want := "answer\n\n### Sources\n\n" +
 		"1. [github.com](https://github.com/vxcontrol/pentagi)\n" +
-		"2. [pentagi.com](https://pentagi.com/get-started)\n"
+		"2. [opsagi.com](https://opsagi.com/get-started)\n"
 	if got != want {
 		t.Errorf("appendSources = %q, want %q", got, want)
 	}

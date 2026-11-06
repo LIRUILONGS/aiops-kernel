@@ -22,7 +22,7 @@ import { UpdateState } from '@/graphql/types';
 import { cn } from '@/lib/utils';
 import { useVersionInfo } from '@/providers/version-info-provider';
 
-export const PENTAGI_RELEASES_URL = 'https://github.com/vxcontrol/pentagi/releases';
+export const OPSAGI_RELEASES_URL = 'https://github.com/vxcontrol/pentagi/releases';
 
 export const UPDATE_INSTRUCTION =
     'Run the installer tool on the host where OpsAGI is deployed and choose Maintenance → Update OpsAGI.';
@@ -149,7 +149,7 @@ export function releaseNotesUrl(version: string): null | string {
     const release = version.replace(EDITION_SUFFIX, '');
     const tag = release.startsWith('v') ? release : `v${release}`;
 
-    return `${PENTAGI_RELEASES_URL}/tag/${encodeURIComponent(tag)}`;
+    return `${OPSAGI_RELEASES_URL}/tag/${encodeURIComponent(tag)}`;
 }
 
 export function splitVersion(current: string): { revision: null | string; version: string } {
@@ -367,7 +367,7 @@ function VersionDetails({
             {releaseNotes && (
                 <ExternalLinkRow href={releaseNotes}>Release notes for {presentation.latest}</ExternalLinkRow>
             )}
-            <ExternalLinkRow href={PENTAGI_RELEASES_URL}>All releases</ExternalLinkRow>
+            <ExternalLinkRow href={OPSAGI_RELEASES_URL}>All releases</ExternalLinkRow>
         </>
     );
 }

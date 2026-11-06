@@ -136,12 +136,12 @@ func TestSandbox_DecideSandbox_TurnsTheSandboxOffRatherThanRefusingToStart(t *te
 			wantLevel: logrus.ErrorLevel, wantText: "could not be completed",
 		},
 		{
-			name: "the sandbox daemon is the one PentAGI runs on",
+			name: "the sandbox daemon is the one OpsAGI runs on",
 			cfg:  enabled(),
 			probe: func(context.Context, *config.Config) (sandboxReport, error) {
 				return sandboxReport{daemonID: "orchestrator", total: 35, passed: 35}, nil
 			},
-			wantLevel: logrus.ErrorLevel, wantText: "same daemon PentAGI orchestrates on",
+			wantLevel: logrus.ErrorLevel, wantText: "same daemon OpsAGI orchestrates on",
 		},
 		{
 			name: "a failing check disables it and names what failed",
@@ -236,7 +236,7 @@ func TestSandbox_ProbeScript_EmitsTheContractTheParserReads(t *testing.T) {
 
 	for _, want := range []string{
 		`\"kind\":\"info\"`, `\"kind\":\"check\"`, `\"kind\":\"summary\"`, `\"kind\":\"fatal\"`,
-		"PENTAGI_TEST_IMAGE", "DOCKER_HOST", "DOCKER_TLS_VERIFY", "DOCKER_CERT_PATH",
+		"OPSAGI_TEST_IMAGE", "DOCKER_HOST", "DOCKER_TLS_VERIFY", "DOCKER_CERT_PATH",
 	} {
 		assert.Contains(t, sandboxProbeScript, want)
 	}

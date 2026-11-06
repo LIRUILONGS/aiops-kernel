@@ -46,7 +46,7 @@ func inventoryContainers(t *testing.T) map[models.ComponentType]string {
 
 	got := map[models.ComponentType]string{}
 	for _, group := range [][]imageComponent{
-		pentagiImageComponents, graphitiImageComponents,
+		opsagiImageComponents, graphitiImageComponents,
 		langfuseImageComponents, observabilityImageComponents,
 	} {
 		for _, source := range group {
@@ -137,7 +137,7 @@ func TestComponents_JaegerPluginDir_MatchesWhatTheContainerLoads(t *testing.T) {
 }
 
 func TestComponents_MaxReportedComponents_FitsTheWholeInventory(t *testing.T) {
-	total := len(pentagiImageComponents) + len(graphitiImageComponents) +
+	total := len(opsagiImageComponents) + len(graphitiImageComponents) +
 		len(langfuseImageComponents) + len(observabilityImageComponents) +
 		1 + // worker
 		1 + // installer
@@ -198,7 +198,7 @@ func TestComponents_ImageReference_NamesEveryReferenceButAnAbsentOne(t *testing.
 		reference, wantRepository, wantTag string
 		wantOK                             bool
 	}{
-		{"vxcontrol/pentagi", "vxcontrol/pentagi", "latest", true},
+		{"local/opsagi", "local/opsagi", "latest", true},
 		{":latest", ":latest", "latest", true},
 		{"", "", "", false},
 	}

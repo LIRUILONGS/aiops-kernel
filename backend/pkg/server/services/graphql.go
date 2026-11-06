@@ -68,7 +68,7 @@ func NewGraphqlService(
 	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{
 		DB:              db,
 		Config:          cfg,
-		Logger:          logrus.StandardLogger().WithField("component", "pentagi-gql-bl"),
+		Logger:          logrus.StandardLogger().WithField("component", "opsagi-gql-bl"),
 		TokenCache:      tokenCache,
 		DefaultPrompter: templates.NewDefaultPrompter(),
 		ProvidersCtrl:   providers,
@@ -80,7 +80,7 @@ func NewGraphqlService(
 		Timezones:       timezones,
 	}}))
 
-	component := "pentagi-gql"
+	component := "opsagi-gql"
 	srv.AroundResponses(logger.WithGqlLogger(component))
 	logger := logrus.WithField("component", component)
 	srv.SetErrorPresenter(newGqlErrorPresenter(logger))

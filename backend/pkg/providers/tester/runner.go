@@ -114,7 +114,7 @@ func collectTestRequests(
 
 				// skip capability-gated tests (adaptive thinking, reasoning
 				// off, structured output) whose wire behavior this agent's
-				// ACTUAL config wouldn't produce in a real PentAGI flow — see
+				// ACTUAL config wouldn't produce in a real OpsAGI flow — see
 				// capabilitySupported for why.
 				if !capabilitySupported(prv, agentType, testCase.Capability()) {
 					continue

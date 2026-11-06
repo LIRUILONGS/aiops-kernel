@@ -17,26 +17,26 @@ const (
 	observabilityDirectory         = "observability"
 	graphitiConfigsDirectory       = "graphiti"
 	neo4jDirectory                 = "neo4j"
-	pentagiExampleCustomConfigLLM  = "example.custom.provider.yml"
-	pentagiExampleOllamaConfigLLM  = "example.ollama.provider.yml"
-	pentagiExampleBedrockConfigLLM = "example.bedrock.provider.yml"
+	opsagiExampleCustomConfigLLM  = "example.custom.provider.yml"
+	opsagiExampleOllamaConfigLLM  = "example.ollama.provider.yml"
+	opsagiExampleBedrockConfigLLM = "example.bedrock.provider.yml"
 )
 
-// pentagiExampleConfigs are the default sources of the provider config mounts in
+// opsagiExampleConfigs are the default sources of the provider config mounts in
 // docker-compose.yml. Each has to be on disk as a file before the stack starts:
 // Docker creates a directory in place of a bind-mount source that is missing.
-var pentagiExampleConfigs = []string{
-	pentagiExampleCustomConfigLLM,
-	pentagiExampleOllamaConfigLLM,
-	pentagiExampleBedrockConfigLLM,
+var opsagiExampleConfigs = []string{
+	opsagiExampleCustomConfigLLM,
+	opsagiExampleOllamaConfigLLM,
+	opsagiExampleBedrockConfigLLM,
 }
 
 var filesToExcludeFromVerification = []string{
 	"observability/otel/config.yml",
 	"observability/grafana/config/grafana.ini",
-	pentagiExampleCustomConfigLLM,
-	pentagiExampleOllamaConfigLLM,
-	pentagiExampleBedrockConfigLLM,
+	opsagiExampleCustomConfigLLM,
+	opsagiExampleOllamaConfigLLM,
+	opsagiExampleBedrockConfigLLM,
 	// user-editable Neo4j/APOC static settings: created once if missing, never
 	// overwritten afterwards, even when the user forces a files update
 	"neo4j/conf/neo4j.conf",
@@ -63,7 +63,7 @@ var filesToExcludeFromVerification = []string{
 }
 
 var allStacks = []ProductStack{
-	ProductStackPentagi,
+	ProductStackOpsagi,
 	ProductStackGraphiti,
 	ProductStackLangfuse,
 	ProductStackObservability,
@@ -82,9 +82,9 @@ func (fs *fileSystemOperationsImpl) ensureStackIntegrity(ctx context.Context, st
 	defer fs.processor.appendLog("", stack, state)
 
 	switch stack {
-	case ProductStackPentagi:
-		errs := []error{fs.ensureFileFromEmbed(composeFilePentagi, state)}
-		for _, name := range pentagiExampleConfigs {
+	case ProductStackOpsagi:
+		errs := []error{fs.ensureFileFromEmbed(composeFileOpsagi, state)}
+		for _, name := range opsagiExampleConfigs {
 			errs = append(errs, fs.ensureFileFromEmbed(name, state))
 		}
 		return errors.Join(errs...)
@@ -122,8 +122,8 @@ func (fs *fileSystemOperationsImpl) verifyStackIntegrity(ctx context.Context, st
 	defer fs.processor.appendLog("", stack, state)
 
 	switch stack {
-	case ProductStackPentagi:
-		if err := fs.verifyFileIntegrity(composeFilePentagi, state); err != nil {
+	case ProductStackOpsagi:
+		if err := fs.verifyFileIntegrity(composeFileOpsagi, state); err != nil {
 			return err
 		}
 		fs.restoreExampleConfigs(state)
@@ -162,13 +162,13 @@ func (fs *fileSystemOperationsImpl) verifyStackIntegrity(ctx context.Context, st
 }
 
 // checkStackIntegrity is the read-only counterpart of verifyStackIntegrity; it does not report
-// the provider examples verifyStackIntegrity restores for pentagi.
+// the provider examples verifyStackIntegrity restores for opsagi.
 func (fs *fileSystemOperationsImpl) checkStackIntegrity(ctx context.Context, stack ProductStack) (FilesCheckResult, error) {
 	result := make(FilesCheckResult)
 
 	switch stack {
-	case ProductStackPentagi:
-		result[composeFilePentagi] = fs.checkFileIntegrity(composeFilePentagi)
+	case ProductStackOpsagi:
+		result[composeFileOpsagi] = fs.checkFileIntegrity(composeFileOpsagi)
 
 	case ProductStackGraphiti:
 		result[composeFileGraphiti] = fs.checkFileIntegrity(composeFileGraphiti)
@@ -219,9 +219,9 @@ func (fs *fileSystemOperationsImpl) cleanupStackFiles(ctx context.Context, stack
 	var filesToRemove []string
 
 	switch stack {
-	case ProductStackPentagi:
-		filesToRemove = append(filesToRemove, filepath.Join(workingDir, composeFilePentagi))
-		for _, name := range pentagiExampleConfigs {
+	case ProductStackOpsagi:
+		filesToRemove = append(filesToRemove, filepath.Join(workingDir, composeFileOpsagi))
+		for _, name := range opsagiExampleConfigs {
 			filesToRemove = append(filesToRemove, filepath.Join(workingDir, name))
 		}
 
@@ -285,7 +285,7 @@ func (fs *fileSystemOperationsImpl) ensureFileFromEmbed(filename string, state *
 func (fs *fileSystemOperationsImpl) restoreExampleConfigs(state *operationState) {
 	workingDir := filepath.Dir(fs.processor.state.GetEnvPath())
 
-	for _, name := range pentagiExampleConfigs {
+	for _, name := range opsagiExampleConfigs {
 		if fs.fileExists(filepath.Join(workingDir, name)) {
 			continue
 		}

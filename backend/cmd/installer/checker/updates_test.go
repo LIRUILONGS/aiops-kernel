@@ -39,7 +39,7 @@ func TestUpdates_RecordUpdateFailure_ResetsEveryVerdictAndSaysWhy(t *testing.T) 
 		t.Run(tt.name, func(t *testing.T) {
 			result := &CheckResult{
 				UpdateServerAccessible: true,
-				PentagiIsUpToDate:      true, GraphitiIsUpToDate: true, LangfuseIsUpToDate: true,
+				OpsagiIsUpToDate:      true, GraphitiIsUpToDate: true, LangfuseIsUpToDate: true,
 				ObservabilityIsUpToDate: true, InstallerIsUpToDate: true, WorkerIsUpToDate: true,
 				StackUpdates: []StackUpdate{{Stack: "pentagi"}},
 			}
@@ -47,7 +47,7 @@ func TestUpdates_RecordUpdateFailure_ResetsEveryVerdictAndSaysWhy(t *testing.T) 
 			result.recordUpdateFailure(tt.err)
 
 			for stack, upToDate := range map[string]bool{
-				"pentagi": result.PentagiIsUpToDate, "graphiti": result.GraphitiIsUpToDate,
+				"opsagi": result.OpsagiIsUpToDate, "graphiti": result.GraphitiIsUpToDate,
 				"langfuse": result.LangfuseIsUpToDate, "observability": result.ObservabilityIsUpToDate,
 				"installer": result.InstallerIsUpToDate, "worker": result.WorkerIsUpToDate,
 			} {
@@ -76,8 +76,8 @@ func TestUpdates_ApplyUpdateAnswer_KeepsAStackTheAnswerOmitsUpToDate(t *testing.
 
 	result.applyUpdateAnswer(answer, reportedComponents{})
 
-	if result.PentagiIsUpToDate {
-		t.Error("pentagi has an update but is reported as up to date")
+	if result.OpsagiIsUpToDate {
+		t.Error("opsagi has an update but is reported as up to date")
 	}
 	for stack, upToDate := range map[string]bool{
 		"graphiti": result.GraphitiIsUpToDate, "langfuse": result.LangfuseIsUpToDate,
@@ -163,7 +163,7 @@ func TestUpdates_BuildImageComponentUpdate_TrustsTheServerActionOverADigestCompa
 	offer := func(edit func(*models.ImageUpdate)) models.ImageUpdate {
 		update := models.ImageUpdate{
 			Component: models.ComponentTypePentagi, OS: models.OSTypeLinux, Arch: models.ArchTypeAMD64,
-			Repository: "vxcontrol/pentagi", Tag: "latest",
+			Repository: "local/opsagi", Tag: "latest",
 		}
 		edit(&update)
 		return update
@@ -198,13 +198,13 @@ func TestUpdates_BuildImageComponentUpdate_TrustsTheServerActionOverADigestCompa
 			u.ImageHash, u.ConfigHash, u.Action = digest("m"), ptr(installed), models.ComponentActionUpgrade
 		}), ptr(installed), true, true, installed, ""},
 		{"an image never pulled is an update", offer(func(u *models.ImageUpdate) {
-			u.ImageHash, u.Action, u.PullReference = digest("b"), models.ComponentActionInstall, "vxcontrol/pentagi:latest"
+			u.ImageHash, u.Action, u.PullReference = digest("b"), models.ComponentActionInstall, "local/opsagi:latest"
 		}), nil, true, false, "", ""},
 		{"unknown carries a reason and nothing to act on", offer(func(u *models.ImageUpdate) {
 			u.Action, u.Reason = models.ComponentActionUnknown, &reason
 		}), ptr(installed), false, false, "", "tag_not_published"},
 		{"current with the installed digest stays current", offer(func(u *models.ImageUpdate) {
-			u.ImageHash, u.Action, u.PullReference = installed, models.ComponentActionCurrent, "vxcontrol/pentagi:latest"
+			u.ImageHash, u.Action, u.PullReference = installed, models.ComponentActionCurrent, "local/opsagi:latest"
 		}), ptr(installed), false, true, "", ""},
 	}
 

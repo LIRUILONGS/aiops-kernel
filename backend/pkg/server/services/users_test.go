@@ -315,7 +315,7 @@ func newPasswordHarness(t *testing.T, roleID int) *passwordHarness {
 
 	engine := gin.New()
 	require.NoError(t, engine.SetTrustedProxies(nil))
-	engine.Use(sessions.Sessions("pentagi", cookie.NewStore([]byte("test-secret"))))
+	engine.Use(sessions.Sessions("opsagi", cookie.NewStore([]byte("test-secret"))))
 	overfill := func(c *gin.Context) {
 		if refuse {
 			// Past securecookie's 4096-byte limit, so the handler's Save fails to encode.

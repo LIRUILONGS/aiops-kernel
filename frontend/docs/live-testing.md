@@ -55,12 +55,12 @@ why the UI is then at `https://localhost:8000`. Against a stack brought up with
 ## Bringing up the stack
 
 ```bash
-docker build -t local/pentagi:live .                       # from the repo root
-PENTAGI_IMAGE=local/pentagi:live \
-  docker compose up -d --wait --wait-timeout 300 pentagi
+docker build -t local/opsagi:live .                       # from the repo root
+OPSAGI_IMAGE=local/opsagi:live \
+  docker compose up -d --wait --wait-timeout 300 opsagi
 ```
 
-The app answers on `https://localhost:${PENTAGI_LISTEN_PORT:-8443}` with a
+The app answers on `https://localhost:${OPSAGI_LISTEN_PORT:-8443}` with a
 self-signed certificate — every `curl` below therefore uses `-k`.
 
 **Prove the container runs the image you just built.** `--wait` returns when the
@@ -68,7 +68,7 @@ container is healthy, not when it is the right one; compose reuses a running
 container whose config did not change:
 
 ```bash
-docker inspect -f '{{.Config.Image}} {{.Image}}' pentagi
+docker inspect -f '{{.Config.Image}} {{.Image}}' opsagi
 docker images --no-trunc --format '{{.Repository}}:{{.Tag}} {{.ID}}' | grep live
 ```
 
@@ -115,7 +115,7 @@ Backend startup replays flows and can take a minute; poll rather than sleep.
   it is not a reason to skip the flow walk.
 - **OAuth is not testable locally** — the Google and GitHub flows need a real
   callback origin. Cover the local-account paths live and stub the rest.
-- **`PENTAGI_LISTEN_PORT`** — an `.env` carried over from another checkout can
+- **`OPSAGI_LISTEN_PORT`** — an `.env` carried over from another checkout can
   publish the stack on `443`, and everything you then run against `:8443` quietly
   hits nothing. Keep a dedicated env file for the test stand
   (`docker compose --env-file .env.local-test …`) rather than editing the one you
@@ -124,14 +124,14 @@ Backend startup replays flows and can take a minute; poll rather than sleep.
   listing, terminal input) answer `FlowFiles.ContainerNotRunning` and are simply
   unreachable on a keyless stack. Cover those at the handler level instead of
   pretending the live 400 is the case under test.
-- **The compose file names an image, it does not build one.** The `pentagi`
-  service is declared `image: ${PENTAGI_IMAGE:-vxcontrol/pentagi:latest}`, so a
+- **The compose file names an image, it does not build one.** The `opsagi`
+  service is declared `image: ${OPSAGI_IMAGE:-local/opsagi:latest}`, so a
   plain `docker compose up -d` starts a published build and every green you then
   collect belongs to somebody else's code. Build first and name it:
-  `docker build -t local/pentagi:branch . && PENTAGI_IMAGE=local/pentagi:branch docker compose up -d`.
+  `docker build -t local/opsagi:branch . && OPSAGI_IMAGE=local/opsagi:branch docker compose up -d`.
   Prove the running stack is yours before trusting it — the served bundle carries
   the operations it was built from
-  (`docker exec pentagi grep -o 'value:"<yourNewField>"' /opt/pentagi/fe/assets/index-*.js`),
+  (`docker exec opsagi grep -o 'value:"<yourNewField>"' /opt/opsagi/fe/assets/index-*.js`),
   and the schema answers for the backend half
   (`{ __type(name: "FlowFile") { fields { name } } }`).
 - **GraphQL is at `/api/v1/graphql`.** `/graphql` is not registered at all, so it
@@ -140,7 +140,7 @@ Backend startup replays flows and can take a minute; poll rather than sleep.
   an auth failure and will send you hunting for a session you already have — the
   real path answers `403` when the session is missing, and `/api/v1/info` names
   your user when it is not.
-- **Sandbox ports and names** — a flow's sandbox is `pentagi-terminal-<flowID>`,
+- **Sandbox ports and names** — a flow's sandbox is `opsagi-terminal-<flowID>`,
   and its host ports come out of a 2000-wide window from `DOCKER_PORTS_BASE`
   (see [`backend/docs/docker.md`](../../backend/docs/docker.md)), so flow ids
   1000 apart land on the same ports. A Tier-2 run seeds ids from 90001 and owns
@@ -151,10 +151,10 @@ Backend startup replays flows and can take a minute; poll rather than sleep.
   their flow ids no longer exist, and they still hold ports.
 
   The name collides before the port does, and it fails the whole mutation:
-  `createFlow` answers `Conflict. The container name "/pentagi-terminal-<id>" is
+  `createFlow` answers `Conflict. The container name "/opsagi-terminal-<id>" is
   already in use`, so a stack whose database you recreated cannot start a flow
   until the old sandboxes are removed. `run-local-tier.sh` handles both halves —
-  it removes `pentagi-terminal-9xxxx` and their `-data` volumes, then runs
+  it removes `opsagi-terminal-9xxxx` and their `-data` volumes, then runs
   `ALTER SEQUENCE flows_id_seq RESTART WITH 90001`. Bringing the same compose
   project up by hand does neither, and ids restart at 1 straight into a developer
   stack's names.
@@ -251,7 +251,7 @@ genuinely visual.
   emulation did not reproduce a drop", never as "the client failed to notice one":
   the cheap disproof is a mutation over `curl` while the tab sits offline, and a
   sidebar that updates says the channel is alive. Cut the connection from the
-  server side instead — `docker restart pentagi` produces a real `close 1006`, a
+  server side instead — `docker restart opsagi` produces a real `close 1006`, a
   reconnect within a couple of seconds, and the `ws:reconnected` event the app
   hangs its reconcile on.
 - **A GraphQL error's wording is not the resolver's — unless nothing classified
@@ -382,7 +382,7 @@ have to be sought out:
   screen long enough to click and read:
 
   ```bash
-  MOCK_LLM_DELAY_MS=4000 docker compose -p pentagi-e2e --env-file /dev/null \
+  MOCK_LLM_DELAY_MS=4000 docker compose -p opsagi-e2e --env-file /dev/null \
     -f docker-compose.yml -f docker-compose.e2e.yml up -d --force-recreate mock-llm
   ```
 
@@ -413,7 +413,7 @@ The header of both sidebars — the app's and the settings one — is a button, 
 label. It opens a panel that states which build is running and what the update
 service thinks of it. Three things are worth a pass of their own.
 
-**What it must say.** The trigger shows the shell's title — PentAGI in the app,
+**What it must say.** The trigger shows the shell's title — OpsAGI in the app,
 Settings in the settings — and the version under it;
 the panel repeats the version, adds a `build` line with the revision, a channel
 badge (`preview`, `stable` or `nightly` — the server cannot answer `disabled`), the
@@ -430,7 +430,7 @@ unchanged. Build it the way the pipeline does — `source ./scripts/version.sh`,
 pass `--build-arg PACKAGE_VER --build-arg PACKAGE_REV` — and the binary reports
 `2.1.0-ce.h<rev>`, which the panel shows as `v2.1.0-ce` with a `build <rev>`
 line. Check which you are looking at before filing "the version is wrong":
-`docker inspect <container> --format '{{index .Config.Labels "com.pentagi.version"}}'`.
+`docker inspect <container> --format '{{index .Config.Labels "com.opsagi.version"}}'`.
 The label is composed from the same two args and reads exactly what the binary
 reports — `2.1.0-ce.h<rev>`, without the `v` the panel adds — so a disagreement
 between the label and the binary is itself the defect.
@@ -838,7 +838,7 @@ events does not move a Radix strip.
 
 **Composer states** — with the flow running, the composer must show **Stop**
 (which stops generation) and the textarea carries `disabled`, not `readOnly`, with
-the placeholder "PentAGI is working... Click Stop to interrupt"; with the flow
+the placeholder "OpsAGI is working... Click Stop to interrupt"; with the flow
 finished or failed the form stays disabled and the placeholder becomes "This flow
 has ended. Create a new one to continue." Both strings end in three dots or a full
 sentence exactly as quoted — a check written against a typographic ellipsis matches
@@ -870,13 +870,13 @@ UI walk with raw requests that send an absolute path or `..`.
 The panel lists the **server's** data directory, not the sandbox: the resolver
 calls `flowfiles.List(DataDir, flowID)`, which reads
 `<DATA_DIR>/flow-<id>-data/{uploads,container,resources}` inside the backend
-container. Writing into the sandbox (`docker exec pentagi-terminal-<id> …`) or
+container. Writing into the sandbox (`docker exec opsagi-terminal-<id> …`) or
 into a `flow-<id>` directory leaves the panel empty and looks like a broken
 query. To seed one file for a read path, without going through an upload:
 
 ```bash
-docker exec pentagi sh -c 'mkdir -p /opt/pentagi/data/flow-<id>-data/uploads &&
-  echo body > /opt/pentagi/data/flow-<id>-data/uploads/probe.txt'
+docker exec opsagi sh -c 'mkdir -p /opt/opsagi/data/flow-<id>-data/uploads &&
+  echo body > /opt/opsagi/data/flow-<id>-data/uploads/probe.txt'
 ```
 
 Each listed file carries the flow it belongs to, and it has to: the id is an md5
@@ -948,7 +948,7 @@ quiet system. Test it deliberately:
    flow's id, while the rename of the open flow arrived as exactly one
    `flowUpdated`. A panel that merely "looks unchanged" cannot tell you a delta
    was dropped rather than correctly filtered.
-6. **Kill the backend mid-generation.** `docker restart pentagi` while an
+6. **Kill the backend mid-generation.** `docker restart opsagi` while an
    assistant streams is the cheapest test of two separate things: the socket must
    close `1006`, reconnect and fire `ws:reconnected`; and the reply the user was
    already reading must survive in `assistantlogs`. A row left at `length 0` means
@@ -1152,7 +1152,7 @@ Two habits keep the results honest:
 The standard is a measured difference, not a passing check:
 
 1. Run the exact input against the **previous** image and record the status and
-   body. Keep the old tag around for this — `local/pentagi:<prev>`.
+   body. Keep the old tag around for this — `local/opsagi:<prev>`.
 2. Rebuild, restart, re-verify the container id, run the same input.
 3. Report both. "409 with the file intact, where the previous build answered 200
    and turned it into a directory" is evidence; "works now" is not.

@@ -48,8 +48,8 @@ const (
 	// authorises by — a name of our own invention is a name it does not recognise,
 	// and the failure is a 403 or a quota rejection rather than "no such endpoint".
 	// Neither this nor the path is ours to choose.
-	routeProductUpdate = "pentagi_updates_check"
-	pathProductUpdate  = "/api/v1/proxy/updates/pentagi/check"
+	routeProductUpdate = "opsagi_updates_check"
+	pathProductUpdate  = "/api/v1/proxy/updates/opsagi/check"
 
 	// requestTimeout bounds one exchange. The transport fetches a proof-of-work
 	// ticket first, so the budget covers two round trips and the work between.
@@ -459,7 +459,7 @@ func newClient(cfg *config.Config) (*client, error) {
 	options := []sdk.Option{
 		sdk.WithTransport(transport),
 		sdk.WithInstallationID(installationID),
-		sdk.WithClient("PentAGI", buildVersion),
+		sdk.WithClient("OpsAGI", buildVersion),
 	}
 
 	// Validated before it is handed over: the SDK drops a key it cannot decode

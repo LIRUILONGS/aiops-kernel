@@ -134,7 +134,7 @@ func TestLoader_LoadEnvFile_FillsInConfigDefaults(t *testing.T) {
 	if debug, ok := envFile.Get("DEBUG"); !ok || debug.Default != "false" {
 		t.Errorf("DEBUG = %+v, %v; want default false", debug, ok)
 	}
-	if db, ok := envFile.Get("DATABASE_URL"); !ok || db.Default != "postgres://pentagiuser:pentagipass@pgvector:5432/pentagidb?sslmode=disable" {
+	if db, ok := envFile.Get("DATABASE_URL"); !ok || db.Default != "postgres://opsagiuser:opsagipass@pgvector:5432/opsagidb?sslmode=disable" {
 		t.Errorf("DATABASE_URL = %+v, %v; want the bundled database default", db, ok)
 	}
 	if _, ok := envFile.Get("STATIC_URL"); ok {

@@ -199,7 +199,7 @@ test.describe('account settings', { tag: '@settings' }, () => {
                 'PUT /api/v1/user/email': [
                     {
                         body: { data: {}, status: 'success' },
-                        bodySubset: { current_password: CURRENT_PASSWORD, mail: 'renamed@pentagi.com' },
+                        bodySubset: { current_password: CURRENT_PASSWORD, mail: 'renamed@opsagi.com' },
                     },
                 ],
                 'PUT /api/v1/user/name': [
@@ -220,7 +220,7 @@ test.describe('account settings', { tag: '@settings' }, () => {
             const emailCard = await openSection(page, 'Email address');
 
             await emailCard.getByLabel('Current Password').fill(CURRENT_PASSWORD);
-            await emailCard.getByLabel('New Email').fill('renamed@pentagi.com');
+            await emailCard.getByLabel('New Email').fill('renamed@opsagi.com');
             await emailCard.getByRole('button', { name: 'Update Email' }).click();
             await expect(page.getByText('Email successfully updated')).toBeVisible();
 

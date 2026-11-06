@@ -1,19 +1,19 @@
 volumes:
-  pentagi-data:
+  opsagi-data:
     driver: local
-  pentagi-ssl:
+  opsagi-ssl:
     driver: local
-  pentagi-ollama:
+  opsagi-ollama:
     driver: local
   scraper-ssl:
     driver: local
-  pentagi-postgres-data:
+  opsagi-postgres-data:
     driver: local
 
 networks:
-  pentagi-network:
+  opsagi-network:
     driver: bridge
-    name: pentagi-network
+    name: opsagi-network
   observability-network:
     driver: bridge
     name: observability-network
@@ -22,15 +22,15 @@ networks:
     name: langfuse-network
 
 services:
-  pentagi:
-    image: ${PENTAGI_IMAGE:-vxcontrol/pentagi:latest}
+  opsagi:
+    image: ${OPSAGI_IMAGE:-local/opsagi:latest}
     restart: unless-stopped
-    container_name: pentagi
-    hostname: pentagi
+    container_name: opsagi
+    hostname: opsagi
     expose:
       - 8443/tcp
     ports:
-      - ${PENTAGI_LISTEN_IP:-127.0.0.1}:${PENTAGI_LISTEN_PORT:-8443}:8443
+      - ${OPSAGI_LISTEN_IP:-127.0.0.1}:${OPSAGI_LISTEN_PORT:-8443}:8443
     depends_on:
       pgvector:
         condition: service_healthy
@@ -164,7 +164,7 @@ services:
       - OAUTH_GOOGLE_CLIENT_SECRET=${OAUTH_GOOGLE_CLIENT_SECRET:-}
       - OAUTH_GITHUB_CLIENT_ID=${OAUTH_GITHUB_CLIENT_ID:-}
       - OAUTH_GITHUB_CLIENT_SECRET=${OAUTH_GITHUB_CLIENT_SECRET:-}
-      - DATABASE_URL=postgres://${PENTAGI_POSTGRES_USER:-postgres}:${PENTAGI_POSTGRES_PASSWORD:-postgres}@pgvector:5432/${PENTAGI_POSTGRES_DB:-pentagidb}?sslmode=disable
+      - DATABASE_URL=postgres://${OPSAGI_POSTGRES_USER:-postgres}:${OPSAGI_POSTGRES_PASSWORD:-postgres}@pgvector:5432/${OPSAGI_POSTGRES_DB:-opsagidb}?sslmode=disable
       - DATABASE_EXTENSIONS_SCHEMA=${DATABASE_EXTENSIONS_SCHEMA:-}
       - DATABASE_SEARCH_PATH_VIA_OPTIONS=${DATABASE_SEARCH_PATH_VIA_OPTIONS:-}
       - DATABASE_MAX_OPEN_CONNS=${DATABASE_MAX_OPEN_CONNS:-}
@@ -224,17 +224,17 @@ services:
         max-size: 50m
         max-file: "7"
     volumes:
-      - ${PENTAGI_DATA_DIR:-pentagi-data}:/opt/pentagi/data
-      - ${PENTAGI_SSL_DIR:-pentagi-ssl}:/opt/pentagi/ssl
-      - ${PENTAGI_OLLAMA_DIR:-pentagi-ollama}:/root/.ollama
-      - ${PENTAGI_DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock
-      - ${PENTAGI_LLM_SERVER_CONFIG_PATH:-./example.custom.provider.yml}:/opt/pentagi/conf/custom.provider.yml
-      - ${PENTAGI_OLLAMA_SERVER_CONFIG_PATH:-./example.ollama.provider.yml}:/opt/pentagi/conf/ollama.provider.yml
-      - ${PENTAGI_BEDROCK_CONFIG_PATH:-./example.bedrock.provider.yml}:/opt/pentagi/conf/bedrock.provider.yml
-      - ${PENTAGI_DOCKER_CERT_PATH:-./docker-ssl}:/opt/pentagi/docker/ssl
+      - ${OPSAGI_DATA_DIR:-opsagi-data}:/opt/opsagi/data
+      - ${OPSAGI_SSL_DIR:-opsagi-ssl}:/opt/opsagi/ssl
+      - ${OPSAGI_OLLAMA_DIR:-opsagi-ollama}:/root/.ollama
+      - ${OPSAGI_DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock
+      - ${OPSAGI_LLM_SERVER_CONFIG_PATH:-./example.custom.provider.yml}:/opt/opsagi/conf/custom.provider.yml
+      - ${OPSAGI_OLLAMA_SERVER_CONFIG_PATH:-./example.ollama.provider.yml}:/opt/opsagi/conf/ollama.provider.yml
+      - ${OPSAGI_BEDROCK_CONFIG_PATH:-./example.bedrock.provider.yml}:/opt/opsagi/conf/bedrock.provider.yml
+      - ${OPSAGI_DOCKER_CERT_PATH:-./docker-ssl}:/opt/opsagi/docker/ssl
     user: root:root # while using docker.sock
     networks:
-      - pentagi-network
+      - opsagi-network
       - observability-network
       - langfuse-network
 
@@ -248,23 +248,23 @@ services:
     ports:
       - ${PGVECTOR_LISTEN_IP:-127.0.0.1}:${PGVECTOR_LISTEN_PORT:-5432}:5432
     environment:
-      POSTGRES_USER: ${PENTAGI_POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${PENTAGI_POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${PENTAGI_POSTGRES_DB:-pentagidb}
+      POSTGRES_USER: ${OPSAGI_POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${OPSAGI_POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${OPSAGI_POSTGRES_DB:-opsagidb}
     logging:
       options:
         max-size: 50m
         max-file: "7"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${PENTAGI_POSTGRES_USER:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready -U $${OPSAGI_POSTGRES_USER:-postgres}"]
       interval: 3s
       timeout: 3s
       retries: 10
       start_period: 5s
     volumes:
-      - pentagi-postgres-data:/var/lib/postgresql/data
+      - opsagi-postgres-data:/var/lib/postgresql/data
     networks:
-      - pentagi-network
+      - opsagi-network
 
   pgexporter:
     image: ${PGEXPORTER_IMAGE:-quay.io/prometheuscommunity/postgres-exporter:v0.16.0}
@@ -279,13 +279,13 @@ services:
     ports:
       - ${POSTGRES_EXPORTER_LISTEN_IP:-127.0.0.1}:${POSTGRES_EXPORTER_LISTEN_PORT:-9187}:9187
     environment:
-      - DATA_SOURCE_NAME=postgresql://${PENTAGI_POSTGRES_USER:-postgres}:${PENTAGI_POSTGRES_PASSWORD:-postgres}@pgvector:5432/${PENTAGI_POSTGRES_DB:-pentagidb}?sslmode=disable
+      - DATA_SOURCE_NAME=postgresql://${OPSAGI_POSTGRES_USER:-postgres}:${OPSAGI_POSTGRES_PASSWORD:-postgres}@pgvector:5432/${OPSAGI_POSTGRES_DB:-opsagidb}?sslmode=disable
     logging:
       options:
         max-size: 50m
         max-file: "7"
     networks:
-      - pentagi-network
+      - opsagi-network
 
   scraper:
     image: ${SCRAPER_IMAGE:-vxcontrol/scraper:latest}
@@ -307,5 +307,5 @@ services:
     volumes:
       - scraper-ssl:/usr/src/app/ssl
     networks:
-      - pentagi-network
+      - opsagi-network
     shm_size: 2g

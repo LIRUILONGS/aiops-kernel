@@ -48,22 +48,22 @@ func TestClient_NormalizeHost_ReducesAnAddressToHostAndPort(t *testing.T) {
 		want    string
 		wantErr string
 	}{
-		{name: "empty falls back to the default server", raw: "", want: "update.pentagi.com"},
-		{name: "whitespace only falls back too", raw: "   ", want: "update.pentagi.com"},
-		{name: "bare host passes through", raw: "update.pentagi.com", want: "update.pentagi.com"},
-		{name: "port is kept", raw: "update.pentagi.com:8443", want: "update.pentagi.com:8443"},
+		{name: "empty falls back to the default server", raw: "", want: "update.opsagi.com"},
+		{name: "whitespace only falls back too", raw: "   ", want: "update.opsagi.com"},
+		{name: "bare host passes through", raw: "update.opsagi.com", want: "update.opsagi.com"},
+		{name: "port is kept", raw: "update.opsagi.com:8443", want: "update.opsagi.com:8443"},
 		// The setting has always held a full URL, so this is what most installations carry.
-		{name: "https scheme is stripped", raw: "https://update.pentagi.com", want: "update.pentagi.com"},
-		{name: "trailing slash is stripped", raw: "https://update.pentagi.com/", want: "update.pentagi.com"},
-		{name: "path is stripped", raw: "https://update.pentagi.com/api/v1", want: "update.pentagi.com"},
-		{name: "query is stripped", raw: "https://update.pentagi.com?x=1", want: "update.pentagi.com"},
-		{name: "case is normalised", raw: "HTTPS://Update.PentAGI.com", want: "update.pentagi.com"},
+		{name: "https scheme is stripped", raw: "https://update.opsagi.com", want: "update.opsagi.com"},
+		{name: "trailing slash is stripped", raw: "https://update.opsagi.com/", want: "update.opsagi.com"},
+		{name: "path is stripped", raw: "https://update.opsagi.com/api/v1", want: "update.opsagi.com"},
+		{name: "query is stripped", raw: "https://update.opsagi.com?x=1", want: "update.opsagi.com"},
+		{name: "case is normalised", raw: "HTTPS://Update.OpsAGI.com", want: "update.opsagi.com"},
 
-		{name: "http is refused rather than upgraded", raw: "http://update.pentagi.com", wantErr: "always encrypted"},
-		{name: "other schemes are refused", raw: "ftp://update.pentagi.com", wantErr: "unsupported scheme"},
-		{name: "credentials are refused", raw: "https://user:pass@update.pentagi.com", wantErr: "credentials"},
+		{name: "http is refused rather than upgraded", raw: "http://update.opsagi.com", wantErr: "always encrypted"},
+		{name: "other schemes are refused", raw: "ftp://update.opsagi.com", wantErr: "unsupported scheme"},
+		{name: "credentials are refused", raw: "https://user:pass@update.opsagi.com", wantErr: "credentials"},
 		{name: "scheme with no host is refused", raw: "https:///api", wantErr: "no host"},
-		{name: "whitespace inside is refused", raw: "update pentagi.com", wantErr: "whitespace"},
+		{name: "whitespace inside is refused", raw: "update opsagi.com", wantErr: "whitespace"},
 	}
 
 	for _, tt := range tests {
@@ -113,7 +113,7 @@ func TestClient_NewTransport_PrefersTheConfiguredProxyOverTheEnvironment(t *test
 				t.Fatalf("newTransport(%q) = %v, %v; want a proxy resolver", tt.proxy, transport, err)
 			}
 
-			request, err := http.NewRequest(http.MethodGet, "https://update.pentagi.com/", nil)
+			request, err := http.NewRequest(http.MethodGet, "https://update.opsagi.com/", nil)
 			if err != nil {
 				t.Fatalf("NewRequest: %v", err)
 			}
@@ -140,7 +140,7 @@ func TestClient_New_BuildsAClientOrRefusesItsConfiguration(t *testing.T) {
 		{name: "a zero config talks to the default server anonymously", cfg: Config{}, wantVersion: "0.0.0"},
 		{name: "a development build is sent as the unknown version", cfg: Config{InstallerVersion: "develop-87ac00f"}, wantVersion: "0.0.0"},
 		{name: "an unusable license key is reported, not fatal", cfg: Config{LicenseKey: "NOT-A-REAL-LICENSE"}, wantWarning: "license key is not usable", wantVersion: "0.0.0"},
-		{name: "a plaintext update server is refused", cfg: Config{Host: "http://update.pentagi.com"}, wantErr: "always encrypted"},
+		{name: "a plaintext update server is refused", cfg: Config{Host: "http://update.opsagi.com"}, wantErr: "always encrypted"},
 		{name: "an unusable proxy is refused", cfg: Config{ProxyURL: "://nope"}, wantErr: "not a valid URL"},
 	}
 
@@ -164,8 +164,8 @@ func TestClient_New_BuildsAClientOrRefusesItsConfiguration(t *testing.T) {
 			if client.checkUpdates == nil || client.packageInfo == nil || client.downloadPackage == nil {
 				t.Error("New() left a call unbuilt")
 			}
-			if client.Host() != "update.pentagi.com" || client.InstallerVersion() != tt.wantVersion {
-				t.Errorf("Host(), InstallerVersion() = %q, %q; want update.pentagi.com, %q", client.Host(), client.InstallerVersion(), tt.wantVersion)
+			if client.Host() != "update.opsagi.com" || client.InstallerVersion() != tt.wantVersion {
+				t.Errorf("Host(), InstallerVersion() = %q, %q; want update.opsagi.com, %q", client.Host(), client.InstallerVersion(), tt.wantVersion)
 			}
 		})
 	}

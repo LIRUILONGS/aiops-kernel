@@ -175,7 +175,7 @@ func newCallbackContext(t *testing.T) (*gin.Context, *httptest.ResponseRecorder)
 	req.AddCookie(&http.Cookie{Name: authNonceCookieName, Value: "test-nonce"})
 	c.Request = req
 
-	sessions.Sessions("pentagi", cookie.NewStore([]byte("test-secret")))(c)
+	sessions.Sessions("opsagi", cookie.NewStore([]byte("test-secret")))(c)
 
 	return c, w
 }
@@ -303,7 +303,7 @@ func multipartUploadBodyWithField(
 // rawMultipartUpload writes the file name into the header unescaped, as a
 // hand-rolled client would; mime/multipart percent-encodes CR and LF.
 func rawMultipartUpload(fieldName, fileName, content string) (*bytes.Buffer, string) {
-	const boundary = "PentagiRawBoundary"
+	const boundary = "OpsagiRawBoundary"
 
 	var body bytes.Buffer
 	fmt.Fprintf(&body, "--%s\r\n", boundary)

@@ -50,7 +50,7 @@ func main() {
 		"Ask each door which models it serves and report catalogue entries it did not name")
 	flag.Parse()
 
-	logrus.Infof("Starting PentAGI Provider Configuration Tester %s", version.GetBinaryVersion())
+	logrus.Infof("Starting OpsAGI Provider Configuration Tester %s", version.GetBinaryVersion())
 
 	if err := godotenv.Load(*envFile); err != nil {
 		log.Println("Warning: Error loading .env file:", err)

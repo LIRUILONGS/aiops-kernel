@@ -29,7 +29,7 @@ func TestState_AnOperationIsAnnouncedOnceUnderTheStackAskedFor(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			h := processorHarnessWith(t, func(c *mockCheckConfig) {
-				c.PentagiIsUpToDate, c.GraphitiIsUpToDate, c.ObservabilityIsUpToDate = false, false, false
+				c.OpsagiIsUpToDate, c.GraphitiIsUpToDate, c.ObservabilityIsUpToDate = false, false, false
 			})
 			if tc.wantErr != "" {
 				h.compose.setError("updateStack", errors.New("compose exploded"))

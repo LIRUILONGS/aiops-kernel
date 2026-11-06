@@ -1041,7 +1041,7 @@ func (fp *flowProvider) storeAgentResponseToGraphiti(
 		return
 	}
 
-	parts := []string{fmt.Sprintf("PentAGI %s agent execution in flow %d", agentType, fp.flowID)}
+	parts := []string{fmt.Sprintf("OpsAGI %s agent execution in flow %d", agentType, fp.flowID)}
 	if taskID != nil {
 		parts = append(parts, fmt.Sprintf("task %d", *taskID))
 	}
@@ -1148,7 +1148,7 @@ func (fp *flowProvider) storeToolExecutionToGraphiti(
 		return
 	}
 
-	parts := []string{fmt.Sprintf("PentAGI tool execution in flow %d", fp.flowID)}
+	parts := []string{fmt.Sprintf("OpsAGI tool execution in flow %d", fp.flowID)}
 	if taskID != nil {
 		parts = append(parts, fmt.Sprintf("task %d", *taskID))
 	}

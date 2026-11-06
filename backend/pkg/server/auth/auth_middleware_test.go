@@ -25,7 +25,7 @@ func TestAuthMiddleware_TryUserCookieAuthentication_AdmitsOnlyALiveSessionOfAnAc
 		{name: "a session without the automation privilege", expiresIn: 5 * time.Minute,
 			privileges: []string{"some.permission"}},
 		{name: "a session holding the automation privilege among others", expiresIn: 5 * time.Minute,
-			privileges: []string{"some.permission", "pentagi.automation"}, wantCPT: "automation"},
+			privileges: []string{"some.permission", "opsagi.automation"}, wantCPT: "automation"},
 		{name: "a session granting no privileges", expiresIn: 5 * time.Minute},
 		{name: "no session cookie", wantReason: "cookie claim invalid"},
 		{name: "a session past its expiry", expiresIn: -time.Second, privileges: []string{"some.permission"},
@@ -94,7 +94,7 @@ func TestAuthMiddleware_TryProtoTokenAuthentication_AdmitsOnlyALiveTokenOfAnUnbl
 		lifetime int64
 	}{
 		"token": {authIdentity{
-			UID: 1, RID: 2, UHash: "testhash", TID: "api", CPT: "automation", Prm: []string{"pentagi.automation"},
+			UID: 1, RID: 2, UHash: "testhash", TID: "api", CPT: "automation", Prm: []string{"opsagi.automation"},
 		}, 3600},
 		"cookie": {authIdentity{
 			UID: 1, RID: 2, SGN: 1, UHash: "testhash", TID: "local", UName: "User 1", Prm: []string{"some.permission"},

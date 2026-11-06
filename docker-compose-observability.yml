@@ -15,10 +15,10 @@ networks:
     driver: bridge
     external: true
     name: langfuse-network
-  pentagi-network:
+  opsagi-network:
     driver: bridge
     external: true
-    name: pentagi-network
+    name: opsagi-network
 
 services:
   grafana:
@@ -129,7 +129,7 @@ services:
     networks:
       - observability-network
       - langfuse-network
-      - pentagi-network
+      - opsagi-network
 
   victoriametrics:
     image: ${VICTORIAMETRICS_IMAGE:-victoriametrics/victoria-metrics:v1.108.1}

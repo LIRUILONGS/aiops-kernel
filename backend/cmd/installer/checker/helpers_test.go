@@ -222,11 +222,11 @@ func TestHelpers_CheckCPUResources_AgreesWithTheHostCPUCount(t *testing.T) {
 func TestHelpers_CalculateRequiredMemoryGB_AddsWhatEachStartingComponentNeeds(t *testing.T) {
 	tests := []struct {
 		name                                       string
-		pentagi, graphiti, langfuse, observability bool
+		opsagi, graphiti, langfuse, observability bool
 		want                                       float64
 	}{
 		{"nothing to start", false, false, false, false, 0.5},
-		{"pentagi", true, false, false, false, 1.0},
+		{"opsagi", true, false, false, false, 1.0},
 		{"graphiti", false, true, false, false, 2.5},
 		{"langfuse", false, false, true, false, 2.0},
 		{"observability", false, false, false, true, 2.0},
@@ -234,7 +234,7 @@ func TestHelpers_CalculateRequiredMemoryGB_AddsWhatEachStartingComponentNeeds(t 
 	}
 
 	for _, tt := range tests {
-		if got := calculateRequiredMemoryGB(tt.pentagi, tt.graphiti, tt.langfuse, tt.observability); got != tt.want {
+		if got := calculateRequiredMemoryGB(tt.opsagi, tt.graphiti, tt.langfuse, tt.observability); got != tt.want {
 			t.Errorf("%s: %v GB, want %v", tt.name, got, tt.want)
 		}
 	}
@@ -252,24 +252,24 @@ func TestHelpers_CheckMemoryResources_PassesWhenNothingStartsAndTheHostHasRoom(t
 	if !check(0) || check(1e6) {
 		t.Errorf("0 GB passes: %t, a million GB passes: %t; want only the first", check(0), check(1e6))
 	}
-	// Host-relative and one way only: pentagi alone needs 1 GB, and the margin keeps a host near it from flaking.
+	// Host-relative and one way only: opsagi alone needs 1 GB, and the margin keeps a host near it from flaking.
 	got, free := checkMemoryResources(true, false, false, false), getAvailableMemoryGB()
 	if free > 1.5 && !got {
-		t.Errorf("%.1f GB free refuses to start pentagi", free)
+		t.Errorf("%.1f GB free refuses to start opsagi", free)
 	}
 }
 
 func TestHelpers_CountLocalComponentsToInstall_CountsLocalStacksNotYetInstalled(t *testing.T) {
 	tests := []struct {
 		name                                             string
-		pentagi                                          bool
+		opsagi                                          bool
 		graphitiConnected, graphitiExternal, graphitiIns bool
 		langfuseConnected, langfuseExternal, langfuseIns bool
 		obsConnected, obsExternal, obsIns                bool
 		want                                             int
 	}{
 		{"everything installed", true, true, false, true, true, false, true, true, false, true, 0},
-		{"pentagi missing", false, false, false, false, false, false, false, false, false, false, 1},
+		{"opsagi missing", false, false, false, false, false, false, false, false, false, false, 1},
 		{"a local graphiti missing", true, true, false, false, false, false, false, false, false, false, 1},
 		{"a local langfuse missing", true, false, false, false, true, false, false, false, false, false, 1},
 		{"a local observability missing", true, false, false, false, false, false, false, true, false, false, 1},
@@ -278,7 +278,7 @@ func TestHelpers_CountLocalComponentsToInstall_CountsLocalStacksNotYetInstalled(
 	}
 
 	for _, tt := range tests {
-		got := countLocalComponentsToInstall(tt.pentagi,
+		got := countLocalComponentsToInstall(tt.opsagi,
 			tt.graphitiConnected, tt.graphitiExternal, tt.graphitiIns,
 			tt.langfuseConnected, tt.langfuseExternal, tt.langfuseIns,
 			tt.obsConnected, tt.obsExternal, tt.obsIns)
@@ -355,14 +355,14 @@ func TestHelpers_CheckVolumesExist_MatchesANameOrItsComposeProjectPrefix(t *test
 		search   []string
 		want     bool
 	}{
-		{"an exact name", []string{"pentagi-data", "other-volume"}, []string{"pentagi-data"}, true},
-		{"a compose project prefix", []string{"pentagi_pentagi-data", "pentagi_pentagi-ssl"}, []string{"pentagi-data"}, true},
-		{"no such volume", []string{"other-volume", "another-volume"}, []string{"pentagi-data"}, false},
-		{"a longer name is not a match", []string{"pentagi-data-backup", "my-pentagi-data"}, []string{"pentagi-data"}, false},
-		{"any of the searched names", []string{"other-volume", "langfuse-data"}, []string{"pentagi-data", "langfuse-data"}, true},
-		{"no volumes at all", []string{}, []string{"pentagi-data"}, false},
-		{"nothing searched", []string{"pentagi-data"}, []string{}, false},
-		{"the daemon refuses the listing", nil, []string{"pentagi-data"}, false},
+		{"an exact name", []string{"opsagi-data", "other-volume"}, []string{"opsagi-data"}, true},
+		{"a compose project prefix", []string{"opsagi_opsagi-data", "opsagi_opsagi-ssl"}, []string{"opsagi-data"}, true},
+		{"no such volume", []string{"other-volume", "another-volume"}, []string{"opsagi-data"}, false},
+		{"a longer name is not a match", []string{"opsagi-data-backup", "my-opsagi-data"}, []string{"opsagi-data"}, false},
+		{"any of the searched names", []string{"other-volume", "langfuse-data"}, []string{"opsagi-data", "langfuse-data"}, true},
+		{"no volumes at all", []string{}, []string{"opsagi-data"}, false},
+		{"nothing searched", []string{"opsagi-data"}, []string{}, false},
+		{"the daemon refuses the listing", nil, []string{"opsagi-data"}, false},
 	}
 
 	for _, tt := range tests {
@@ -383,7 +383,7 @@ func TestHelpers_CheckVolumesExist_MatchesANameOrItsComposeProjectPrefix(t *test
 			}
 		})
 	}
-	if checkVolumesExist(t.Context(), nil, []string{"pentagi-data"}) {
+	if checkVolumesExist(t.Context(), nil, []string{"opsagi-data"}) {
 		t.Error("no daemon reports a volume")
 	}
 }

@@ -56,7 +56,7 @@ After editing the schema, regenerate: `gqlgen`, then `swag init` — the swagger
 
 ## Project Overview
 
-**PentAGI** is an automated security testing platform powered by AI agents. A `primary_agent` drives a flow, a `generator`/`refiner` pair plans and re-plans its subtasks, and specialist agents — `pentester`, `coder`, `searcher`, `installer`, `memorist`, `adviser`, `reflector`, `enricher`, `reporter`, `summarizer`, `assistant`, `tool_call_fixer` — execute them against LLM providers, Docker-sandboxed tools and a pgvector memory store. The authoritative list of roles is the `MsgchainType` enum in `backend/pkg/database/models.go`, mirrored as `AgentType` in the GraphQL schema.
+**OpsAGI** is an AIOps agent kernel forked from PentAGI. A `primary_agent` drives a flow, a `generator`/`refiner` pair plans and re-plans its subtasks, and specialist agents execute them against LLM providers, Docker-sandboxed tools and a pgvector memory store. In this fork the AIOps chain is `commander` plus the four analysts — `triage`, `log_analyst`, `metrics_analyst`, `change_analyst` — which hold only the read-only `ops_*` probes and close on a structured exit (`diagnosis` or `optimization_result`). The upstream specialist agents (`pentester`, `coder`, `searcher`, `installer`, `memorist`, `adviser`, `reflector`, `enricher`, `reporter`, `summarizer`, `assistant`, `tool_call_fixer`) are still wired and still reachable through the generic path, but the AIOps prompts never delegate to them. The authoritative list of roles is the `MsgchainType` enum in `backend/pkg/database/models.go`, mirrored as `AgentType` in the GraphQL schema.
 
 The application is a monorepo:
 
@@ -75,12 +75,12 @@ go generate ./cmd/installer/files/           # REQUIRED once per fresh clone and
                                              #   cmd/installer/files/links or to a file linked there: fs.go,
                                              #   fs_test.go and fs/ in cmd/installer/files/ are generated and
                                              #   gitignored; the installer tests fail without them
-go build -trimpath -o pentagi ./cmd/pentagi  # Quick compile; the binary reports version "ce"
+go build -trimpath -o opsagi ./cmd/opsagi  # Quick compile; the binary reports version "ce"
 go test ./...                                # Default test tier (see Testing)
 golangci-lint run --timeout=5m               # Lint — config backend/.golangci.yml (v2 schema); CI pins v2.12.2
 ```
 
-A binary whose reported version matters needs the ldflags CI passes: `-ldflags "-X pentagi/pkg/version.PackageVer=<ver> -X pentagi/pkg/version.PackageRev=<short-sha>"`.
+A binary whose reported version matters needs the ldflags CI passes: `-ldflags "-X opsagi/pkg/version.PackageVer=<ver> -X opsagi/pkg/version.PackageRev=<short-sha>"`.
 
 ### Frontend (run from `frontend/`)
 
@@ -106,7 +106,7 @@ docker compose up -d                                                            
 docker compose -f docker-compose.yml -f docker-compose-observability.yml up -d  # + monitoring
 docker compose -f docker-compose.yml -f docker-compose-langfuse.yml up -d       # + LLM analytics
 docker compose -f docker-compose.yml -f docker-compose-graphiti.yml up -d       # + knowledge graph
-docker build -t local/pentagi:latest .                                          # Image, version "ce"
+docker build -t local/opsagi:latest .                                          # Image, version "ce"
 ./scripts/build-image.sh                                                        # Image stamped the way
                                                                                 #   the pipeline stamps it
 ```
@@ -120,7 +120,7 @@ The full stack runs at `https://localhost:8443`. Copy `.env.example` to `.env` a
 **Backend.** `go test ./...` is not the whole suite — one tier sits behind a build tag and is invisible without it:
 
 ```bash
-PENTAGI_TEST_DSN=postgres://… go test -p 1 -tags postgres ./pkg/database/... ./pkg/timezone/... ./migrations/
+OPSAGI_TEST_DSN=postgres://… go test -p 1 -tags postgres ./pkg/database/... ./pkg/timezone/... ./migrations/
 ```
 
 The tier fails when its variable is unset. `-p 1` because each package migrates into its own schema of one database, while `pg_trgm` is installed once per database: a second package running beside the first fails with `operator class gin_trgm_ops does not exist`. Under a plain `go test ./...` the suites that need a live dependency skip themselves instead — `TEST_DATABASE_URL` for the statement-timeout suite, a reachable Docker daemon for `pkg/docker` — and `go test` without `-v` does not print skips, so a green run can mean they never ran.
@@ -173,7 +173,7 @@ Where a test lives and what it is called decide whether anyone finds it again. E
 
 | Package | Role |
 |---|---|
-| `cmd/pentagi/` | Entry point: config, tenant schema, DB pools, goose migrations, telemetry, Docker, providers, flow restore, HTTP server |
+| `cmd/opsagi/` | Entry point: config, tenant schema, DB pools, goose migrations, telemetry, Docker, providers, flow restore, HTTP server |
 | `pkg/config/` | One env-tagged `Config`; validates `TENANT_ID` and derives the schema name. The widest dependency in the backend |
 | `pkg/server/` | Gin engine and middleware. The work is in its subpackages: `services/` REST handlers, `models/` DTOs and their `Valid()` gates, `auth/` sessions + token JWTs + privilege checks, `oauth/`, `rdb/` filtering and paging, `response/`, `update/` |
 | `pkg/controller/` | Flow/task/subtask agent runtime: spawns and stops workers, publishes agent, message, tool-call, terminal and screenshot logs to the subscription hub |
@@ -245,7 +245,7 @@ The output of the generators below is committed — regenerate and commit in the
 |---|---|---|
 | `backend/pkg/graph/schema.graphqls` | `go run github.com/99designs/gqlgen --config ./gqlgen/gqlgen.yml` (`backend/`) | `pkg/graph/generated.go`, `pkg/graph/model/`, resolver stubs in `pkg/graph/schema.resolvers.go` |
 | `backend/sqlc/models/*.sql`, a migration | `sqlc generate` (`backend/sqlc/`) — needs a **live** PostgreSQL in `DATABASE_URL` | `backend/pkg/database/` |
-| REST handler annotations | `swag init -g ../../pkg/server/router.go -o pkg/server/docs/ --parseDependency --parseInternal --parseDepth 2 -d cmd/pentagi` (`backend/`) | `pkg/server/docs/` |
+| REST handler annotations | `swag init -g ../../pkg/server/router.go -o pkg/server/docs/ --parseDependency --parseInternal --parseDepth 2 -d cmd/opsagi` (`backend/`) | `pkg/server/docs/` |
 | `frontend/graphql-schema.graphql` (the operations file) or the backend schema | `pnpm run graphql:generate` (`frontend/`) | `frontend/src/graphql/types.ts` |
 
 A backend schema change therefore needs **both** gqlgen and the frontend codegen.

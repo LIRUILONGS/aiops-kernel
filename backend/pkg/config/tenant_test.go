@@ -16,7 +16,7 @@ func TestTenant_ScopesNamesOnlyWhenATenantIsSet(t *testing.T) {
 		untenanted string
 		tenanted   string
 	}{
-		{"docker container name", func(c *Config) string { return c.ScopedName("pentagi-terminal-1") }, "pentagi-terminal-1", "acme-pentagi-terminal-1"},
+		{"docker container name", func(c *Config) string { return c.ScopedName("opsagi-terminal-1") }, "opsagi-terminal-1", "acme-opsagi-terminal-1"},
 		{"session cookie name", func(c *Config) string { return c.ScopedName("auth") }, "auth", "acme-auth"},
 		{"oauth state cookie", func(c *Config) string { return c.TenantPrefix() + "state" }, "state", "acme-state"},
 		{"graphiti group id", func(c *Config) string { return c.GroupID(1) }, "flow-1", "acme-flow-1"},
@@ -24,7 +24,7 @@ func TestTenant_ScopesNamesOnlyWhenATenantIsSet(t *testing.T) {
 		{"postgres schema", (*Config).SchemaName, "public", "acme"},
 		{"cookie and jwt salt", (*Config).AuthSalt, "salt", "salt|tenant|acme"},
 		{"langfuse trace prefix", (*Config).TenantLabel, "", "acme "},
-		{"langfuse user id", func(c *Config) string { return c.TenantUserID("admin@pentagi.com") }, "admin@pentagi.com", "acme/admin@pentagi.com"},
+		{"langfuse user id", func(c *Config) string { return c.TenantUserID("admin@opsagi.com") }, "admin@opsagi.com", "acme/admin@opsagi.com"},
 	}
 
 	for _, tt := range tests {
@@ -49,16 +49,16 @@ func TestTenant_ScopesNamesOnlyWhenATenantIsSet(t *testing.T) {
 	}
 }
 
-// The installer force-removes volumes matching pentagi-terminal-*-data; a tenant's volumes must fall outside it.
+// The installer force-removes volumes matching opsagi-terminal-*-data; a tenant's volumes must fall outside it.
 func TestTenant_ScopedName_EscapesTheInstallerVolumeSweep(t *testing.T) {
 	sweepMatches := func(name string) bool {
-		return strings.HasPrefix(name, "pentagi-terminal-") && strings.HasSuffix(name, "-data")
+		return strings.HasPrefix(name, "opsagi-terminal-") && strings.HasSuffix(name, "-data")
 	}
 
-	if tenantVolume := (&Config{TenantID: "acme"}).ScopedName("pentagi-terminal-1") + "-data"; sweepMatches(tenantVolume) {
+	if tenantVolume := (&Config{TenantID: "acme"}).ScopedName("opsagi-terminal-1") + "-data"; sweepMatches(tenantVolume) {
 		t.Errorf("tenant volume %q matches the installer sweep; it would be destroyed by another tenant's purge", tenantVolume)
 	}
-	if defaultVolume := (&Config{}).ScopedName("pentagi-terminal-1") + "-data"; !sweepMatches(defaultVolume) {
+	if defaultVolume := (&Config{}).ScopedName("opsagi-terminal-1") + "-data"; !sweepMatches(defaultVolume) {
 		t.Errorf("default volume %q no longer matches the installer sweep; single-instance cleanup would break", defaultVolume)
 	}
 }
@@ -148,7 +148,7 @@ func TestTenant_IsolationIsMutual(t *testing.T) {
 		what string
 		fn   func(*Config) string
 	}{
-		{"container name", func(c *Config) string { return c.ScopedName("pentagi-terminal-1") }},
+		{"container name", func(c *Config) string { return c.ScopedName("opsagi-terminal-1") }},
 		{"group id", func(c *Config) string { return c.GroupID(flowID) }},
 		{"schema", func(c *Config) string { return c.SchemaName() }},
 		{"cookie name", func(c *Config) string { return c.ScopedName("auth") }},

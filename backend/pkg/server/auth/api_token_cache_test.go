@@ -40,12 +40,12 @@ func TestAPITokenCache_GetStatus_GrantsTheTokenRolePlusAutomation(t *testing.T) 
 // What a token of role 1 and of role 2 is granted, sorted.
 var (
 	apiTokenCacheAdminRole = []string{
-		"flows.admin", "flows.create", "flows.delete", "flows.edit", "flows.view", "pentagi.automation",
+		"flows.admin", "flows.create", "flows.delete", "flows.edit", "flows.view", "opsagi.automation",
 		"roles.view", "settings.tokens.admin", "settings.tokens.create", "settings.tokens.delete",
 		"settings.tokens.edit", "settings.tokens.view", "users.create", "users.delete", "users.edit", "users.view",
 	}
 	apiTokenCacheUserRole = []string{
-		"flows.create", "flows.delete", "flows.edit", "flows.view", "pentagi.automation", "roles.view",
+		"flows.create", "flows.delete", "flows.edit", "flows.view", "opsagi.automation", "roles.view",
 		"settings.tokens.create", "settings.tokens.delete", "settings.tokens.edit", "settings.tokens.view",
 	}
 )

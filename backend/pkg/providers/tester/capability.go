@@ -8,9 +8,9 @@ import (
 
 // capabilitySupported reports whether opt's agent config, exactly as loaded
 // (models.yml + the operator's provider YAML), would actually exercise
-// capability during a real PentAGI flow. ctester exists to answer "will this
-// configuration work inside PentAGI", so a capability test must only run when
-// PentAGI's own runtime — pconfig.AgentConfig.BuildOptions /
+// capability during a real OpsAGI flow. ctester exists to answer "will this
+// configuration work inside OpsAGI", so a capability test must only run when
+// OpsAGI's own runtime — pconfig.AgentConfig.BuildOptions /
 // ProviderConfig.UsesAdaptiveThinking, the same code CallWithTools/Call use on
 // every real request — would make this exact call for this exact agent.
 // Forcing the wire behavior through some other path the app never takes
@@ -22,7 +22,7 @@ func capabilitySupported(prv provider.Provider, opt pconfig.ProviderOptionsType,
 	case cases.CapabilityNone:
 		return true
 	case cases.CapabilityStructuredOutput:
-		// Deliberate exception to the "only test a call PentAGI already
+		// Deliberate exception to the "only test a call OpsAGI already
 		// makes" rule above: AgentConfig.BuildOptions doesn't wire
 		// llms.WithStructuredOutput yet, but that wiring is landing soon for
 		// the simple_json agent specifically. This runs now, ahead of it, as
@@ -46,7 +46,7 @@ func capabilitySupported(prv provider.Provider, opt pconfig.ProviderOptionsType,
 	case cases.CapabilityReasoningOff:
 		// Same gate AgentConfig.BuildOptions uses to decide whether to append
 		// llms.WithReasoningDisabled: only when this agent's own config sets
-		// reasoning mode to off. If it doesn't, PentAGI never sends a disable
+		// reasoning mode to off. If it doesn't, OpsAGI never sends a disable
 		// signal for this agent at all, so there is nothing to verify.
 		return agentConfig.Reasoning.EffectiveMode() == pconfig.ReasoningModeOff
 	default:

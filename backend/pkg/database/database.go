@@ -106,7 +106,7 @@ func (*GormLogger) Print(v ...interface{}) {
 		}
 		logrus.WithContext(ctx).WithFields(
 			logrus.Fields{
-				"component":     "pentagi-gorm",
+				"component":     "opsagi-gorm",
 				"type":          "sql",
 				"rows_returned": v[5],
 				"src":           v[1],
@@ -115,7 +115,7 @@ func (*GormLogger) Print(v ...interface{}) {
 			},
 		).Info(query)
 	case "log":
-		logrus.WithContext(ctx).WithFields(logrus.Fields{"component": "pentagi-gorm"}).Info(v[2])
+		logrus.WithContext(ctx).WithFields(logrus.Fields{"component": "opsagi-gorm"}).Info(v[2])
 	case "info":
 		// do not log validators
 	}

@@ -117,10 +117,10 @@ func TestVersion_GetBinaryVersion_StampsTheEditionAsAPrerelease(t *testing.T) {
 		assert.Equal(t, tc.prerelease, prerelease)
 	}
 }
-func TestVersion_GetBinaryName_FallsBackToPentagi(t *testing.T) {
+func TestVersion_GetBinaryName_FallsBackToOpsagi(t *testing.T) {
 	t.Cleanup(func() { PackageName = "" })
 
-	for name, want := range map[string]string{"": "pentagi", "myservice": "myservice"} {
+	for name, want := range map[string]string{"": "opsagi", "myservice": "myservice"} {
 		PackageName = name
 		assert.Equal(t, want, GetBinaryName(), "PackageName=%q", name)
 	}

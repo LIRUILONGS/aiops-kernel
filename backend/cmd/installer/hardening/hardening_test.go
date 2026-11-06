@@ -170,10 +170,10 @@ func TestHardening_VarsForHardening_ShipInEnvExampleWithTheirDefaults(t *testing
 
 func TestHardening_DoHardening_RegeneratesOnlyTheSecretsOfAFreshStack(t *testing.T) {
 	secrets := []struct{ area, name, shape string }{
-		{"pentagi", "COOKIE_SIGNING_SALT", `^[0-9a-f]{32}$`},
-		{"pentagi", "PENTAGI_POSTGRES_PASSWORD", `^[0-9a-zA-Z]{18}$`},
-		{"pentagi", "LOCAL_SCRAPER_USERNAME", `^[0-9a-zA-Z]{10}$`},
-		{"pentagi", "LOCAL_SCRAPER_PASSWORD", `^[0-9a-zA-Z]{12}$`},
+		{"opsagi", "COOKIE_SIGNING_SALT", `^[0-9a-f]{32}$`},
+		{"opsagi", "OPSAGI_POSTGRES_PASSWORD", `^[0-9a-zA-Z]{18}$`},
+		{"opsagi", "LOCAL_SCRAPER_USERNAME", `^[0-9a-zA-Z]{10}$`},
+		{"opsagi", "LOCAL_SCRAPER_PASSWORD", `^[0-9a-zA-Z]{12}$`},
 		{"graphiti", "NEO4J_PASSWORD", `^[0-9a-zA-Z]{18}$`},
 		{"langfuse", "LANGFUSE_POSTGRES_PASSWORD", `^[0-9a-zA-Z]{18}$`},
 		{"langfuse", "LANGFUSE_CLICKHOUSE_PASSWORD", `^[0-9a-zA-Z]{18}$`},
@@ -201,41 +201,41 @@ func TestHardening_DoHardening_RegeneratesOnlyTheSecretsOfAFreshStack(t *testing
 		custom   map[string]string // values the user changed away from .env.example
 		hardened string            // the areas whose secrets are regenerated
 	}{
-		{"a fresh langfuse is regenerated", checker.CheckResult{PentagiInstalled: true, GraphitiInstalled: true}, nil, "langfuse"},
-		{"a fresh pentagi is regenerated", checker.CheckResult{GraphitiInstalled: true, LangfuseInstalled: true}, nil, "pentagi"},
-		{"a fresh graphiti is regenerated", checker.CheckResult{PentagiInstalled: true, LangfuseInstalled: true}, nil, "graphiti"},
-		{"a fresh installation regenerates every stack", checker.CheckResult{}, nil, "pentagi graphiti langfuse"},
+		{"a fresh langfuse is regenerated", checker.CheckResult{OpsagiInstalled: true, GraphitiInstalled: true}, nil, "langfuse"},
+		{"a fresh opsagi is regenerated", checker.CheckResult{GraphitiInstalled: true, LangfuseInstalled: true}, nil, "opsagi"},
+		{"a fresh graphiti is regenerated", checker.CheckResult{OpsagiInstalled: true, LangfuseInstalled: true}, nil, "graphiti"},
+		{"a fresh installation regenerates every stack", checker.CheckResult{}, nil, "opsagi graphiti langfuse"},
 		{"installed stacks keep their secrets", checker.CheckResult{
-			PentagiInstalled: true, GraphitiInstalled: true, LangfuseInstalled: true,
-			PentagiVolumesExist: true, GraphitiVolumesExist: true, LangfuseVolumesExist: true,
+			OpsagiInstalled: true, GraphitiInstalled: true, LangfuseInstalled: true,
+			OpsagiVolumesExist: true, GraphitiVolumesExist: true, LangfuseVolumesExist: true,
 		}, nil, ""},
 		{"langfuse volumes left behind keep its secrets", checker.CheckResult{
-			PentagiInstalled: true, GraphitiInstalled: true, LangfuseVolumesExist: true,
+			OpsagiInstalled: true, GraphitiInstalled: true, LangfuseVolumesExist: true,
 		}, nil, ""},
-		{"pentagi volumes left behind keep its secrets", checker.CheckResult{
-			GraphitiInstalled: true, LangfuseInstalled: true, PentagiVolumesExist: true,
+		{"opsagi volumes left behind keep its secrets", checker.CheckResult{
+			GraphitiInstalled: true, LangfuseInstalled: true, OpsagiVolumesExist: true,
 		}, nil, ""},
 		{"graphiti volumes left behind keep its secrets", checker.CheckResult{
-			PentagiInstalled: true, LangfuseInstalled: true, GraphitiVolumesExist: true,
+			OpsagiInstalled: true, LangfuseInstalled: true, GraphitiVolumesExist: true,
 		}, nil, ""},
 		{"volumes left behind by every stack keep every secret", checker.CheckResult{
-			PentagiVolumesExist: true, GraphitiVolumesExist: true, LangfuseVolumesExist: true,
+			OpsagiVolumesExist: true, GraphitiVolumesExist: true, LangfuseVolumesExist: true,
 		}, nil, ""},
 		{"a first run records the installation id", checker.CheckResult{
-			PentagiInstalled: true, GraphitiInstalled: true, LangfuseInstalled: true,
+			OpsagiInstalled: true, GraphitiInstalled: true, LangfuseInstalled: true,
 		}, map[string]string{"INSTALLATION_ID": ""}, ""},
-		{"a custom langfuse secret is kept", checker.CheckResult{PentagiInstalled: true, GraphitiInstalled: true},
+		{"a custom langfuse secret is kept", checker.CheckResult{OpsagiInstalled: true, GraphitiInstalled: true},
 			map[string]string{"LANGFUSE_SALT": "custom"}, "langfuse"},
 		{"custom scraper credentials and url are kept", checker.CheckResult{GraphitiInstalled: true, LangfuseInstalled: true},
 			map[string]string{
 				"LOCAL_SCRAPER_USERNAME": "customuser", "LOCAL_SCRAPER_PASSWORD": "custompass",
 				"SCRAPER_PRIVATE_URL": "https://customuser:custompass@scraper/",
-			}, "pentagi"},
+			}, "opsagi"},
 		{"a custom scraper url is kept while its default password is regenerated",
 			checker.CheckResult{GraphitiInstalled: true, LangfuseInstalled: true},
 			map[string]string{
 				"LOCAL_SCRAPER_USERNAME": "customuser", "SCRAPER_PRIVATE_URL": "https://customuser:somepass@scraper/",
-			}, "pentagi"},
+			}, "opsagi"},
 	}
 
 	for _, tt := range tests {
@@ -280,7 +280,7 @@ func TestHardening_DoHardening_RegeneratesOnlyTheSecretsOfAFreshStack(t *testing
 					}
 				}
 			}
-			if _, custom := tt.custom["SCRAPER_PRIVATE_URL"]; hardened["pentagi"] && !custom {
+			if _, custom := tt.custom["SCRAPER_PRIVATE_URL"]; hardened["opsagi"] && !custom {
 				regenerated["SCRAPER_PRIVATE_URL"] = true
 				want := "https://" + st.vars["LOCAL_SCRAPER_USERNAME"].Value + ":" +
 					st.vars["LOCAL_SCRAPER_PASSWORD"].Value + "@scraper/"

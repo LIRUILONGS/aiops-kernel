@@ -18,11 +18,11 @@ import (
 
 const (
 	EmbeddedLLMConfigsPath    = "providers-configs"
-	DefaultDockerCertPath     = "/opt/pentagi/docker/ssl"
-	DefaultCustomConfigsPath  = "/opt/pentagi/conf/custom.provider.yml"
-	DefaultOllamaConfigsPath  = "/opt/pentagi/conf/ollama.provider.yml"
-	DefaultBedrockConfigsPath = "/opt/pentagi/conf/bedrock.provider.yml"
-	DefaultLLMConfigsPath     = "/opt/pentagi/conf/"
+	DefaultDockerCertPath     = "/opt/opsagi/docker/ssl"
+	DefaultCustomConfigsPath  = "/opt/opsagi/conf/custom.provider.yml"
+	DefaultOllamaConfigsPath  = "/opt/opsagi/conf/ollama.provider.yml"
+	DefaultBedrockConfigsPath = "/opt/opsagi/conf/bedrock.provider.yml"
+	DefaultLLMConfigsPath     = "/opt/opsagi/conf/"
 	DefaultScraperBaseURL     = "https://scraper/"
 	DefaultScraperDomain      = "scraper"
 	DefaultScraperSchema      = "https"
@@ -170,7 +170,7 @@ type LLMProviderConfig struct {
 	AnthropicFederationRuleID  loader.EnvVar // ANTHROPIC_FEDERATION_RULE_ID
 	// Bedrock, Ollama and Custom specific fields
 	ConfigPath        loader.EnvVar // BEDROCK_CONFIG_PATH | OLLAMA_SERVER_CONFIG_PATH | LLM_SERVER_CONFIG_PATH
-	HostConfigPath    loader.EnvVar // PENTAGI_BEDROCK_CONFIG_PATH | PENTAGI_OLLAMA_SERVER_CONFIG_PATH | PENTAGI_LLM_SERVER_CONFIG_PATH
+	HostConfigPath    loader.EnvVar // OPSAGI_BEDROCK_CONFIG_PATH | OPSAGI_OLLAMA_SERVER_CONFIG_PATH | OPSAGI_LLM_SERVER_CONFIG_PATH
 	PreserveReasoning loader.EnvVar // LLM_SERVER_PRESERVE_REASONING
 	APIType           loader.EnvVar // LLM_SERVER_API_TYPE
 	APIVersion        loader.EnvVar // LLM_SERVER_API_VERSION
@@ -189,7 +189,7 @@ type LLMProviderConfig struct {
 }
 
 // llmConfigMountPaths are where docker-compose.yml mounts a provider config from the host:
-// the file PENTAGI_<X>_CONFIG_PATH names, or ./example.<provider>.provider.yml beside the
+// the file OPSAGI_<X>_CONFIG_PATH names, or ./example.<provider>.provider.yml beside the
 // compose file when that variable is empty. What stands there is the host's file and not
 // one the image ships, so none of them is offered as embedded, whatever examples/configs
 // holds under the same name.
@@ -316,7 +316,7 @@ func (c *controller) GetLLMProviderConfig(providerID string) *LLMProviderConfig 
 		providerConfig.SessionToken, _ = c.GetVar("BEDROCK_SESSION_TOKEN")
 		providerConfig.BaseURL, _ = c.GetVar("BEDROCK_SERVER_URL")
 		providerConfig.ConfigPath, _ = c.GetVar("BEDROCK_CONFIG_PATH")
-		providerConfig.HostConfigPath, _ = c.GetVar("PENTAGI_BEDROCK_CONFIG_PATH")
+		providerConfig.HostConfigPath, _ = c.GetVar("OPSAGI_BEDROCK_CONFIG_PATH")
 		providerConfig.showConfigPath(LLMConfigMountPath("bedrock"))
 		// Configured if any of three auth methods is set: DefaultAuth, BearerToken, or AccessKey+SecretKey
 		providerConfig.Configured = providerConfig.DefaultAuth.Value == "true" ||
@@ -328,7 +328,7 @@ func (c *controller) GetLLMProviderConfig(providerID string) *LLMProviderConfig 
 		providerConfig.BaseURL, _ = c.GetVar("OLLAMA_SERVER_URL")
 		providerConfig.APIKey, _ = c.GetVar("OLLAMA_SERVER_API_KEY")
 		providerConfig.ConfigPath, _ = c.GetVar("OLLAMA_SERVER_CONFIG_PATH")
-		providerConfig.HostConfigPath, _ = c.GetVar("PENTAGI_OLLAMA_SERVER_CONFIG_PATH")
+		providerConfig.HostConfigPath, _ = c.GetVar("OPSAGI_OLLAMA_SERVER_CONFIG_PATH")
 		providerConfig.showConfigPath(LLMConfigMountPath("ollama"))
 		providerConfig.Model, _ = c.GetVar("OLLAMA_SERVER_MODEL")
 		providerConfig.PullTimeout, _ = c.GetVar("OLLAMA_SERVER_PULL_MODELS_TIMEOUT")
@@ -342,7 +342,7 @@ func (c *controller) GetLLMProviderConfig(providerID string) *LLMProviderConfig 
 		providerConfig.APIKey, _ = c.GetVar("LLM_SERVER_KEY")
 		providerConfig.Model, _ = c.GetVar("LLM_SERVER_MODEL")
 		providerConfig.ConfigPath, _ = c.GetVar("LLM_SERVER_CONFIG_PATH")
-		providerConfig.HostConfigPath, _ = c.GetVar("PENTAGI_LLM_SERVER_CONFIG_PATH")
+		providerConfig.HostConfigPath, _ = c.GetVar("OPSAGI_LLM_SERVER_CONFIG_PATH")
 		providerConfig.showConfigPath(LLMConfigMountPath("custom"))
 		providerConfig.PreserveReasoning, _ = c.GetVar("LLM_SERVER_PRESERVE_REASONING")
 		providerConfig.APIType, _ = c.GetVar("LLM_SERVER_API_TYPE")
@@ -551,7 +551,7 @@ func (c *controller) ResetLLMProviderConfig(providerID string) map[string]*LLMPr
 			"BEDROCK_DEFAULT_AUTH", "BEDROCK_BEARER_TOKEN",
 			"BEDROCK_ACCESS_KEY_ID", "BEDROCK_SECRET_ACCESS_KEY", "BEDROCK_SESSION_TOKEN",
 			"BEDROCK_REGION", "BEDROCK_SERVER_URL", "BEDROCK_CONFIG_PATH",
-			"PENTAGI_BEDROCK_CONFIG_PATH",
+			"OPSAGI_BEDROCK_CONFIG_PATH",
 		}
 	case "ollama":
 		vars = []string{
@@ -562,7 +562,7 @@ func (c *controller) ResetLLMProviderConfig(providerID string) map[string]*LLMPr
 			"OLLAMA_SERVER_PULL_MODELS_TIMEOUT",
 			"OLLAMA_SERVER_PULL_MODELS_ENABLED",
 			"OLLAMA_SERVER_LOAD_MODELS_ENABLED",
-			"PENTAGI_OLLAMA_SERVER_CONFIG_PATH",
+			"OPSAGI_OLLAMA_SERVER_CONFIG_PATH",
 		}
 	case "custom":
 		vars = []string{
@@ -570,7 +570,7 @@ func (c *controller) ResetLLMProviderConfig(providerID string) map[string]*LLMPr
 			"LLM_SERVER_CONFIG_PATH",
 			"LLM_SERVER_PRESERVE_REASONING", "LLM_SERVER_PROVIDER",
 			"LLM_SERVER_API_TYPE", "LLM_SERVER_API_VERSION",
-			"PENTAGI_LLM_SERVER_CONFIG_PATH", // local path to the LLM config file
+			"OPSAGI_LLM_SERVER_CONFIG_PATH", // local path to the LLM config file
 		}
 	}
 
@@ -1330,7 +1330,7 @@ func (c *controller) GetEmbedderConfig() *EmbedderConfig {
 	config.BatchSize, _ = c.GetVar("EMBEDDING_BATCH_SIZE")
 	config.StripNewLines, _ = c.GetVar("EMBEDDING_STRIP_NEW_LINES")
 	config.MaxTextBytes, _ = c.GetVar("EMBEDDING_MAX_TEXT_BYTES")
-	config.Installed = c.checker.PentagiInstalled
+	config.Installed = c.checker.OpsagiInstalled
 
 	// Determine if configured based on provider requirements
 	switch config.Provider.Value {
@@ -1986,7 +1986,7 @@ type DockerConfig struct {
 	// TLS connection settings (optional)
 	DockerHost         loader.EnvVar // DOCKER_HOST
 	DockerTLSVerify    loader.EnvVar // DOCKER_TLS_VERIFY
-	HostDockerCertPath loader.EnvVar // PENTAGI_DOCKER_CERT_PATH
+	HostDockerCertPath loader.EnvVar // OPSAGI_DOCKER_CERT_PATH
 
 	// Daemon endpoint exposed to worker containers when DOCKER_INSIDE is enabled.
 	// These mirror the trio above but describe the sandbox's view, and their paths
@@ -2016,7 +2016,7 @@ func (c *controller) GetDockerConfig() *DockerConfig {
 		"DOCKER_INSIDE_POLICY_TESTS",
 		"DOCKER_HOST",
 		"DOCKER_TLS_VERIFY",
-		"PENTAGI_DOCKER_CERT_PATH",
+		"OPSAGI_DOCKER_CERT_PATH",
 		"DOCKER_INSIDE_HOST",
 		"DOCKER_INSIDE_TLS_VERIFY",
 		"DOCKER_INSIDE_CERT_PATH",
@@ -2037,7 +2037,7 @@ func (c *controller) GetDockerConfig() *DockerConfig {
 		DockerInsidePolicyTests:      vars["DOCKER_INSIDE_POLICY_TESTS"],
 		DockerHost:                   vars["DOCKER_HOST"],
 		DockerTLSVerify:              vars["DOCKER_TLS_VERIFY"],
-		HostDockerCertPath:           vars["PENTAGI_DOCKER_CERT_PATH"],
+		HostDockerCertPath:           vars["OPSAGI_DOCKER_CERT_PATH"],
 		DockerInsideHost:             vars["DOCKER_INSIDE_HOST"],
 		DockerInsideTLSVerify:        vars["DOCKER_INSIDE_TLS_VERIFY"],
 		DockerInsideCertPath:         vars["DOCKER_INSIDE_CERT_PATH"],
@@ -2074,7 +2074,7 @@ func (c *controller) UpdateDockerConfig(config *DockerConfig) error {
 		"DOCKER_INSIDE_POLICY_TESTS":       config.DockerInsidePolicyTests.Value,
 		"DOCKER_HOST":                      config.DockerHost.Value,
 		"DOCKER_TLS_VERIFY":                config.DockerTLSVerify.Value,
-		"PENTAGI_DOCKER_CERT_PATH":         config.HostDockerCertPath.Value,
+		"OPSAGI_DOCKER_CERT_PATH":         config.HostDockerCertPath.Value,
 		"DOCKER_INSIDE_HOST":               config.DockerInsideHost.Value,
 		"DOCKER_INSIDE_TLS_VERIFY":         config.DockerInsideTLSVerify.Value,
 		"DOCKER_INSIDE_CERT_PATH":          config.DockerInsideCertPath.Value,
@@ -2082,11 +2082,11 @@ func (c *controller) UpdateDockerConfig(config *DockerConfig) error {
 
 	dockerHost := config.DockerHost.Value
 	if strings.HasPrefix(dockerHost, "unix://") && !config.DockerHost.IsDefault() {
-		// mount custom docker socket to the pentagi container
-		updates["PENTAGI_DOCKER_SOCKET"] = strings.TrimPrefix(dockerHost, "unix://")
+		// mount custom docker socket to the opsagi container
+		updates["OPSAGI_DOCKER_SOCKET"] = strings.TrimPrefix(dockerHost, "unix://")
 	} else {
 		// ensure previous custom socket mapping is cleared when not using unix socket
-		updates["PENTAGI_DOCKER_SOCKET"] = ""
+		updates["OPSAGI_DOCKER_SOCKET"] = ""
 	}
 
 	if config.HostDockerCertPath.Value != "" {
@@ -2124,8 +2124,8 @@ func (c *controller) ResetDockerConfig() *DockerConfig {
 		"DOCKER_INSIDE_TLS_VERIFY",
 		"DOCKER_INSIDE_CERT_PATH",
 		// Volume mapping for docker socket
-		"PENTAGI_DOCKER_SOCKET",
-		"PENTAGI_DOCKER_CERT_PATH",
+		"OPSAGI_DOCKER_SOCKET",
+		"OPSAGI_DOCKER_CERT_PATH",
 	}
 
 	if err := c.ResetVars(vars); err != nil {
@@ -2135,7 +2135,7 @@ func (c *controller) ResetDockerConfig() *DockerConfig {
 	return c.GetDockerConfig()
 }
 
-// ServerSettingsConfig represents PentAGI server settings configuration
+// ServerSettingsConfig represents OpsAGI server settings configuration
 type ServerSettingsConfig struct {
 	// direct form field mappings using loader.EnvVar
 	TenantID                 loader.EnvVar // TENANT_ID
@@ -2144,8 +2144,8 @@ type ServerSettingsConfig struct {
 	UpdateServerHost         loader.EnvVar // UPDATE_SERVER_HOST
 	SupportServerHost        loader.EnvVar // SUPPORT_SERVER_HOST
 	PprofAddr                loader.EnvVar // PPROF_ADDR
-	ListenIP                 loader.EnvVar // PENTAGI_LISTEN_IP
-	ListenPort               loader.EnvVar // PENTAGI_LISTEN_PORT
+	ListenIP                 loader.EnvVar // OPSAGI_LISTEN_IP
+	ListenPort               loader.EnvVar // OPSAGI_LISTEN_PORT
 	PublicURL                loader.EnvVar // PUBLIC_URL
 	CorsOrigins              loader.EnvVar // CORS_ORIGINS
 	TrustedProxies           loader.EnvVar // TRUSTED_PROXIES
@@ -2155,8 +2155,8 @@ type ServerSettingsConfig struct {
 	TerminalToolTimeout      loader.EnvVar // TERMINAL_TOOL_TIMEOUT
 	ExternalSSLCAPath        loader.EnvVar // EXTERNAL_SSL_CA_PATH
 	ExternalSSLInsecure      loader.EnvVar // EXTERNAL_SSL_INSECURE
-	SSLDir                   loader.EnvVar // PENTAGI_SSL_DIR
-	DataDir                  loader.EnvVar // PENTAGI_DATA_DIR
+	SSLDir                   loader.EnvVar // OPSAGI_SSL_DIR
+	DataDir                  loader.EnvVar // OPSAGI_DATA_DIR
 	DatabaseExtensionsSchema loader.EnvVar // DATABASE_EXTENSIONS_SCHEMA
 	DatabaseSearchPathViaOpt loader.EnvVar // DATABASE_SEARCH_PATH_VIA_OPTIONS
 
@@ -2174,8 +2174,8 @@ func (c *controller) GetServerSettingsConfig() *ServerSettingsConfig {
 		"UPDATE_SERVER_HOST",
 		"SUPPORT_SERVER_HOST",
 		"PPROF_ADDR",
-		"PENTAGI_LISTEN_IP",
-		"PENTAGI_LISTEN_PORT",
+		"OPSAGI_LISTEN_IP",
+		"OPSAGI_LISTEN_PORT",
 		"PUBLIC_URL",
 		"CORS_ORIGINS",
 		"TRUSTED_PROXIES",
@@ -2185,8 +2185,8 @@ func (c *controller) GetServerSettingsConfig() *ServerSettingsConfig {
 		"TERMINAL_TOOL_TIMEOUT",
 		"EXTERNAL_SSL_CA_PATH",
 		"EXTERNAL_SSL_INSECURE",
-		"PENTAGI_SSL_DIR",
-		"PENTAGI_DATA_DIR",
+		"OPSAGI_SSL_DIR",
+		"OPSAGI_DATA_DIR",
 		"DATABASE_EXTENSIONS_SCHEMA",
 		"DATABASE_SEARCH_PATH_VIA_OPTIONS",
 	})
@@ -2197,12 +2197,12 @@ func (c *controller) GetServerSettingsConfig() *ServerSettingsConfig {
 		"UPDATE_SERVER_HOST":               strings.TrimPrefix(strings.TrimSuffix(checker.DefaultUpdateServerEndpoint, "/"), "https://"),
 		"SUPPORT_SERVER_HOST":              strings.TrimPrefix(strings.TrimSuffix(checker.DefaultSupportServerEndpoint, "/"), "https://"),
 		"PPROF_ADDR":                       "",
-		"PENTAGI_LISTEN_IP":                "127.0.0.1",
-		"PENTAGI_LISTEN_PORT":              "8443",
+		"OPSAGI_LISTEN_IP":                "127.0.0.1",
+		"OPSAGI_LISTEN_PORT":              "8443",
 		"PUBLIC_URL":                       "https://localhost:8443",
 		"CORS_ORIGINS":                     "https://localhost:8443",
-		"PENTAGI_DATA_DIR":                 "pentagi-data",
-		"PENTAGI_SSL_DIR":                  "pentagi-ssl",
+		"OPSAGI_DATA_DIR":                 "opsagi-data",
+		"OPSAGI_SSL_DIR":                  "opsagi-ssl",
 		"HTTP_CLIENT_TIMEOUT":              "600",
 		"TERMINAL_TOOL_TIMEOUT":            "600",
 		"EXTERNAL_SSL_INSECURE":            "false",
@@ -2224,8 +2224,8 @@ func (c *controller) GetServerSettingsConfig() *ServerSettingsConfig {
 		UpdateServerHost:         vars["UPDATE_SERVER_HOST"],
 		SupportServerHost:        vars["SUPPORT_SERVER_HOST"],
 		PprofAddr:                vars["PPROF_ADDR"],
-		ListenIP:                 vars["PENTAGI_LISTEN_IP"],
-		ListenPort:               vars["PENTAGI_LISTEN_PORT"],
+		ListenIP:                 vars["OPSAGI_LISTEN_IP"],
+		ListenPort:               vars["OPSAGI_LISTEN_PORT"],
 		PublicURL:                vars["PUBLIC_URL"],
 		CorsOrigins:              vars["CORS_ORIGINS"],
 		TrustedProxies:           vars["TRUSTED_PROXIES"],
@@ -2235,8 +2235,8 @@ func (c *controller) GetServerSettingsConfig() *ServerSettingsConfig {
 		TerminalToolTimeout:      vars["TERMINAL_TOOL_TIMEOUT"],
 		ExternalSSLCAPath:        vars["EXTERNAL_SSL_CA_PATH"],
 		ExternalSSLInsecure:      vars["EXTERNAL_SSL_INSECURE"],
-		SSLDir:                   vars["PENTAGI_SSL_DIR"],
-		DataDir:                  vars["PENTAGI_DATA_DIR"],
+		SSLDir:                   vars["OPSAGI_SSL_DIR"],
+		DataDir:                  vars["OPSAGI_DATA_DIR"],
 		DatabaseExtensionsSchema: vars["DATABASE_EXTENSIONS_SCHEMA"],
 		DatabaseSearchPathViaOpt: vars["DATABASE_SEARCH_PATH_VIA_OPTIONS"],
 	}
@@ -2272,8 +2272,8 @@ func (c *controller) UpdateServerSettingsConfig(config *ServerSettingsConfig) er
 		"UPDATE_SERVER_HOST":               config.UpdateServerHost.Value,
 		"SUPPORT_SERVER_HOST":              config.SupportServerHost.Value,
 		"PPROF_ADDR":                       config.PprofAddr.Value,
-		"PENTAGI_LISTEN_IP":                config.ListenIP.Value,
-		"PENTAGI_LISTEN_PORT":              config.ListenPort.Value,
+		"OPSAGI_LISTEN_IP":                config.ListenIP.Value,
+		"OPSAGI_LISTEN_PORT":              config.ListenPort.Value,
 		"PUBLIC_URL":                       config.PublicURL.Value,
 		"CORS_ORIGINS":                     config.CorsOrigins.Value,
 		"TRUSTED_PROXIES":                  config.TrustedProxies.Value,
@@ -2283,8 +2283,8 @@ func (c *controller) UpdateServerSettingsConfig(config *ServerSettingsConfig) er
 		"TERMINAL_TOOL_TIMEOUT":            config.TerminalToolTimeout.Value,
 		"EXTERNAL_SSL_CA_PATH":             config.ExternalSSLCAPath.Value,
 		"EXTERNAL_SSL_INSECURE":            config.ExternalSSLInsecure.Value,
-		"PENTAGI_SSL_DIR":                  config.SSLDir.Value,
-		"PENTAGI_DATA_DIR":                 config.DataDir.Value,
+		"OPSAGI_SSL_DIR":                  config.SSLDir.Value,
+		"OPSAGI_DATA_DIR":                 config.DataDir.Value,
 		"DATABASE_EXTENSIONS_SCHEMA":       config.DatabaseExtensionsSchema.Value,
 		"DATABASE_SEARCH_PATH_VIA_OPTIONS": config.DatabaseSearchPathViaOpt.Value,
 	}
@@ -2305,8 +2305,8 @@ func (c *controller) ResetServerSettingsConfig() *ServerSettingsConfig {
 		"UPDATE_SERVER_HOST",
 		"SUPPORT_SERVER_HOST",
 		"PPROF_ADDR",
-		"PENTAGI_LISTEN_IP",
-		"PENTAGI_LISTEN_PORT",
+		"OPSAGI_LISTEN_IP",
+		"OPSAGI_LISTEN_PORT",
 		"PUBLIC_URL",
 		"CORS_ORIGINS",
 		"TRUSTED_PROXIES",
@@ -2316,8 +2316,8 @@ func (c *controller) ResetServerSettingsConfig() *ServerSettingsConfig {
 		"TERMINAL_TOOL_TIMEOUT",
 		"EXTERNAL_SSL_CA_PATH",
 		"EXTERNAL_SSL_INSECURE",
-		"PENTAGI_SSL_DIR",
-		"PENTAGI_DATA_DIR",
+		"OPSAGI_SSL_DIR",
+		"OPSAGI_DATA_DIR",
 		"DATABASE_EXTENSIONS_SCHEMA",
 		"DATABASE_SEARCH_PATH_VIA_OPTIONS",
 	}
@@ -2340,7 +2340,7 @@ type ChangeInfo struct {
 // ApplyChangesConfig contains information about pending changes and installation status
 type ApplyChangesConfig struct {
 	// installation state
-	IsInstalled bool // whether PentAGI is currently installed
+	IsInstalled bool // whether OpsAGI is currently installed
 
 	// deployment selections
 	LangfuseEnabled      bool // whether Langfuse embedded deployment is selected
@@ -2356,7 +2356,7 @@ type ApplyChangesConfig struct {
 // GetApplyChangesConfig returns the current apply changes configuration
 func (c *controller) GetApplyChangesConfig() *ApplyChangesConfig {
 	config := &ApplyChangesConfig{
-		IsInstalled: c.checker.PentagiInstalled,
+		IsInstalled: c.checker.OpsagiInstalled,
 		Changes:     []ChangeInfo{},
 	}
 
@@ -2578,8 +2578,8 @@ func (c *controller) getVariableDescription(varName string) string {
 		"TENANT_ID":                         locale.EnvDesc_TENANT_ID,
 		"LICENSE_KEY":                       locale.EnvDesc_LICENSE_KEY,
 		"PPROF_ADDR":                        locale.EnvDesc_PPROF_ADDR,
-		"PENTAGI_LISTEN_IP":                 locale.EnvDesc_PENTAGI_LISTEN_IP,
-		"PENTAGI_LISTEN_PORT":               locale.EnvDesc_PENTAGI_LISTEN_PORT,
+		"OPSAGI_LISTEN_IP":                 locale.EnvDesc_OPSAGI_LISTEN_IP,
+		"OPSAGI_LISTEN_PORT":               locale.EnvDesc_OPSAGI_LISTEN_PORT,
 		"PUBLIC_URL":                        locale.EnvDesc_PUBLIC_URL,
 		"CORS_ORIGINS":                      locale.EnvDesc_CORS_ORIGINS,
 		"TRUSTED_PROXIES":                   locale.EnvDesc_TRUSTED_PROXIES,
@@ -2587,13 +2587,13 @@ func (c *controller) getVariableDescription(varName string) string {
 		"PROXY_URL":                         locale.EnvDesc_PROXY_URL,
 		"EXTERNAL_SSL_CA_PATH":              locale.EnvDesc_EXTERNAL_SSL_CA_PATH,
 		"EXTERNAL_SSL_INSECURE":             locale.EnvDesc_EXTERNAL_SSL_INSECURE,
-		"PENTAGI_SSL_DIR":                   locale.EnvDesc_PENTAGI_SSL_DIR,
-		"PENTAGI_DATA_DIR":                  locale.EnvDesc_PENTAGI_DATA_DIR,
-		"PENTAGI_DOCKER_SOCKET":             locale.EnvDesc_PENTAGI_DOCKER_SOCKET,
-		"PENTAGI_DOCKER_CERT_PATH":          locale.EnvDesc_PENTAGI_DOCKER_CERT_PATH,
-		"PENTAGI_BEDROCK_CONFIG_PATH":       locale.EnvDesc_PENTAGI_BEDROCK_CONFIG_PATH,
-		"PENTAGI_LLM_SERVER_CONFIG_PATH":    locale.EnvDesc_PENTAGI_LLM_SERVER_CONFIG_PATH,
-		"PENTAGI_OLLAMA_SERVER_CONFIG_PATH": locale.EnvDesc_PENTAGI_OLLAMA_SERVER_CONFIG_PATH,
+		"OPSAGI_SSL_DIR":                   locale.EnvDesc_OPSAGI_SSL_DIR,
+		"OPSAGI_DATA_DIR":                  locale.EnvDesc_OPSAGI_DATA_DIR,
+		"OPSAGI_DOCKER_SOCKET":             locale.EnvDesc_OPSAGI_DOCKER_SOCKET,
+		"OPSAGI_DOCKER_CERT_PATH":          locale.EnvDesc_OPSAGI_DOCKER_CERT_PATH,
+		"OPSAGI_BEDROCK_CONFIG_PATH":       locale.EnvDesc_OPSAGI_BEDROCK_CONFIG_PATH,
+		"OPSAGI_LLM_SERVER_CONFIG_PATH":    locale.EnvDesc_OPSAGI_LLM_SERVER_CONFIG_PATH,
+		"OPSAGI_OLLAMA_SERVER_CONFIG_PATH": locale.EnvDesc_OPSAGI_OLLAMA_SERVER_CONFIG_PATH,
 		"DATABASE_EXTENSIONS_SCHEMA":        locale.EnvDesc_DATABASE_EXTENSIONS_SCHEMA,
 		"DATABASE_SEARCH_PATH_VIA_OPTIONS":  locale.EnvDesc_DATABASE_SEARCH_PATH_VIA_OPTIONS,
 
@@ -2634,7 +2634,7 @@ func (c *controller) getVariableDescription(varName string) string {
 		"NEO4J_MEMORY":                          locale.EnvDesc_NEO4J_MEMORY,
 		"NEO4J_SHM_SIZE":                        locale.EnvDesc_NEO4J_SHM_SIZE,
 
-		"PENTAGI_POSTGRES_PASSWORD": locale.EnvDesc_PENTAGI_POSTGRES_PASSWORD,
+		"OPSAGI_POSTGRES_PASSWORD": locale.EnvDesc_OPSAGI_POSTGRES_PASSWORD,
 		"NEO4J_PASSWORD":            locale.EnvDesc_NEO4J_PASSWORD,
 	}
 	if desc, ok := envVarDescriptions[varName]; ok {
@@ -2692,8 +2692,8 @@ var maskedVariables = map[string]bool{
 	// langfuse license key
 	"LANGFUSE_EE_LICENSE_KEY": true,
 
-	// postgres password for pentagi service (pgvector binds on localhost)
-	"PENTAGI_POSTGRES_PASSWORD": true,
+	// postgres password for opsagi service (pgvector binds on localhost)
+	"OPSAGI_POSTGRES_PASSWORD": true,
 
 	// neo4j password for graphiti service (neo4j binds on localhost)
 	"NEO4J_PASSWORD": true,
@@ -2799,10 +2799,10 @@ var criticalVariables = map[string]bool{
 	"SEARXNG_TIME_RANGE":      true,
 	"SEARXNG_TIMEOUT":         true,
 
-	// mounting custom LLM server config into pentagi container changes volume mapping
-	"PENTAGI_BEDROCK_CONFIG_PATH":       true,
-	"PENTAGI_LLM_SERVER_CONFIG_PATH":    true,
-	"PENTAGI_OLLAMA_SERVER_CONFIG_PATH": true,
+	// mounting custom LLM server config into opsagi container changes volume mapping
+	"OPSAGI_BEDROCK_CONFIG_PATH":       true,
+	"OPSAGI_LLM_SERVER_CONFIG_PATH":    true,
+	"OPSAGI_OLLAMA_SERVER_CONFIG_PATH": true,
 
 	// Embedding provider changes
 	"EMBEDDING_PROVIDER":        true,
@@ -2831,7 +2831,7 @@ var criticalVariables = map[string]bool{
 	"DOCKER_INSIDE_HOST":               true,
 	"DOCKER_INSIDE_TLS_VERIFY":         true,
 	"DOCKER_INSIDE_CERT_PATH":          true,
-	"PENTAGI_DOCKER_SOCKET":            true,
+	"OPSAGI_DOCKER_SOCKET":            true,
 
 	// observability changes
 	"OTEL_HOST": true,
@@ -2872,8 +2872,8 @@ var criticalVariables = map[string]bool{
 	"TENANT_ID":                        true,
 	"LICENSE_KEY":                      true,
 	"PPROF_ADDR":                       true,
-	"PENTAGI_LISTEN_IP":                true,
-	"PENTAGI_LISTEN_PORT":              true,
+	"OPSAGI_LISTEN_IP":                true,
+	"OPSAGI_LISTEN_PORT":              true,
 	"PUBLIC_URL":                       true,
 	"CORS_ORIGINS":                     true,
 	"TRUSTED_PROXIES":                  true,
@@ -2888,8 +2888,8 @@ var criticalVariables = map[string]bool{
 	"SERVER_SSL_CRT":                   true,
 	"SERVER_SSL_KEY":                   true,
 	"SERVER_USE_SSL":                   true,
-	"PENTAGI_SSL_DIR":                  true,
-	"PENTAGI_DATA_DIR":                 true,
+	"OPSAGI_SSL_DIR":                  true,
+	"OPSAGI_DATA_DIR":                 true,
 	"DATABASE_EXTENSIONS_SCHEMA":       true,
 	"DATABASE_SEARCH_PATH_VIA_OPTIONS": true,
 
@@ -2903,7 +2903,7 @@ var criticalVariables = map[string]bool{
 	"OAUTH_GITHUB_CLIENT_ID":     true,
 	"OAUTH_GITHUB_CLIENT_SECRET": true,
 
-	// langfuse integration settings passed to pentagi
+	// langfuse integration settings passed to opsagi
 	"LANGFUSE_BASE_URL":   true,
 	"LANGFUSE_PROJECT_ID": true,
 	"LANGFUSE_PUBLIC_KEY": true,

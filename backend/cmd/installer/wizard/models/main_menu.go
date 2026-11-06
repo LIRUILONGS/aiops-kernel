@@ -42,7 +42,7 @@ func (h *MainMenuHandler) LoadItems() []ListItem {
 		{ID: MonitoringScreen},
 		{ID: ServerSettingsScreen},
 		{ID: ApplyChangesScreen, Highlighted: true},
-		{ID: InstallPentagiScreen, Highlighted: true},
+		{ID: InstallOpsagiScreen, Highlighted: true},
 		{ID: MaintenanceScreen, Highlighted: hasUpdates},
 	}
 
@@ -85,7 +85,7 @@ func (h *MainMenuHandler) GetOverview() string {
 		Value bool
 	}{
 		{"Docker", checker.DockerApiAccessible},
-		{"PentAGI", checker.PentagiRunning},
+		{"OpsAGI", checker.OpsagiRunning},
 		{"Langfuse", checker.LangfuseRunning},
 		{"Observability", checker.ObservabilityRunning},
 	}
@@ -124,8 +124,8 @@ func (h *MainMenuHandler) isItemEnabled(item ListItem) bool {
 	case ApplyChangesScreen:
 		// show apply changes only when there are pending changes
 		return h.controller.IsDirty()
-	case InstallPentagiScreen:
-		// show install pentagi only when no pending changes and pentagi not installed yet
+	case InstallOpsagiScreen:
+		// show install opsagi only when no pending changes and opsagi not installed yet
 		return !h.controller.IsDirty() && checker.CanInstallAll()
 	case MaintenanceScreen:
 		// mirror maintenance screen visibility logic: show only when at least one operation is applicable

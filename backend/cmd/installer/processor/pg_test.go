@@ -30,7 +30,7 @@ func TestPg_ResetAdminPassword_ReplacesThePasswordAndEndsSessionsWhereTracked(t 
 			}
 			_, err = db.Exec(schema + `)`)
 			require.NoError(t, err)
-			_, err = db.Exec(`INSERT INTO users (mail, password, status) VALUES (?, 'old', 'blocked'), ('other@pentagi.com', 'x', 'active')`,
+			_, err = db.Exec(`INSERT INTO users (mail, password, status) VALUES (?, 'old', 'blocked'), ('other@opsagi.com', 'x', 'active')`,
 				AdminEmail)
 			require.NoError(t, err)
 
@@ -49,7 +49,7 @@ func TestPg_ResetAdminPassword_ReplacesThePasswordAndEndsSessionsWhereTracked(t 
 
 			var admin, other int
 			require.NoError(t, db.QueryRow(`SELECT session_generation FROM users WHERE mail = ?`, AdminEmail).Scan(&admin))
-			require.NoError(t, db.QueryRow(`SELECT session_generation FROM users WHERE mail = 'other@pentagi.com'`).Scan(&other))
+			require.NoError(t, db.QueryRow(`SELECT session_generation FROM users WHERE mail = 'other@opsagi.com'`).Scan(&other))
 			assert.Equal(t, 2, admin, "a cookie issued before the reset, which is why the reset is run, must stop working")
 			assert.Equal(t, 1, other)
 		})
@@ -67,12 +67,12 @@ func TestPg_PerformPasswordReset_RefusesWhatThePolicyRefuses(t *testing.T) {
 		{"longer than bcrypt hashes", strings.Repeat("a", 73), errPasswordTooLong},
 	} {
 		t.Run(tc.label, func(t *testing.T) {
-			h := processorHarnessWith(t, func(c *mockCheckConfig) { c.PentagiRunning = true })
+			h := processorHarnessWith(t, func(c *mockCheckConfig) { c.OpsagiRunning = true })
 			// A role no database has, so a missing refusal fails at login instead of writing.
 			require.NoError(t, h.p.state.SetVar(EnvPostgreSQLUser, "pagi-policy-test-no-such-role"))
 			require.NoError(t, h.p.state.SetVar(EnvPostgreSQLPassword, "not-a-password-of-any-database"))
 
-			err := h.p.ResetPassword(t.Context(), ProductStackPentagi, WithPasswordValue(tc.password))
+			err := h.p.ResetPassword(t.Context(), ProductStackOpsagi, WithPasswordValue(tc.password))
 			require.ErrorIs(t, err, tc.want)
 		})
 	}

@@ -31,7 +31,7 @@ const sidebarCassette = (overrides: Cassette = {}): Cassette =>
     mergeCassettes({ queries: baseQueries(), rest: baseRest() }, overrides);
 
 const root = (page: Page) => page.locator('[data-side][data-state][data-variant]');
-const header = (page: Page) => page.getByRole('button', { name: /PentAGI e2e/ });
+const header = (page: Page) => page.getByRole('button', { name: /OpsAGI e2e/ });
 
 test.describe('sidebar header', { tag: '@cross' }, () => {
     test.describe('a build with nothing to act on', () => {
@@ -41,7 +41,7 @@ test.describe('sidebar header', { tag: '@cross' }, () => {
             await page.goto('/flows');
 
             await expect(header(page)).toBeVisible();
-            await expect(header(page)).toContainText('PentAGI');
+            await expect(header(page)).toContainText('OpsAGI');
             await expect(header(page)).toContainText('e2e');
             expectCleanPage(pageErrorLog);
         });
@@ -171,7 +171,7 @@ test.describe('sidebar account badge', { tag: '@cross' }, () => {
         test.use({ cassette: sidebarCassette() });
 
         test('is named local', async ({ page, pageErrorLog }) => {
-            await openMenu(page, 'admin@pentagi.com');
+            await openMenu(page, 'admin@opsagi.com');
 
             await expect(page.getByRole('menu').getByText('Local')).toBeVisible();
             expectCleanPage(pageErrorLog);

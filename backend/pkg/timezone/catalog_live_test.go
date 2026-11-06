@@ -15,9 +15,9 @@ import (
 func catalogOpenDB(t *testing.T) *sql.DB {
 	t.Helper()
 
-	dsn := os.Getenv("PENTAGI_TEST_DSN")
+	dsn := os.Getenv("OPSAGI_TEST_DSN")
 	if dsn == "" {
-		t.Fatal("PENTAGI_TEST_DSN is unset; the catalogue is the server's, not ours")
+		t.Fatal("OPSAGI_TEST_DSN is unset; the catalogue is the server's, not ours")
 	}
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {

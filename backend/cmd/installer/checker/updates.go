@@ -158,7 +158,7 @@ type stackFlag struct {
 }
 
 var updateStackFlags = []stackFlag{
-	{models.ProductStackPentagi, func(c *CheckResult, v bool) { c.PentagiIsUpToDate = v }},
+	{models.ProductStackPentagi, func(c *CheckResult, v bool) { c.OpsagiIsUpToDate = v }},
 	{models.ProductStackWorker, func(c *CheckResult, v bool) { c.WorkerIsUpToDate = v }},
 	{models.ProductStackInstaller, func(c *CheckResult, v bool) { c.InstallerIsUpToDate = v }},
 	{models.ProductStackGraphiti, func(c *CheckResult, v bool) { c.GraphitiIsUpToDate = v }},

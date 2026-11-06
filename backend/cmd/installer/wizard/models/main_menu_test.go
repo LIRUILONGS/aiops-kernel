@@ -17,7 +17,7 @@ import (
 func TestMainMenu_LoadItems_HighlightsMaintenanceWhileAnUpdateWaits(t *testing.T) {
 	upToDate := checker.CheckResult{
 		WorkerImageExists: true, WorkerIsUpToDate: true,
-		PentagiInstalled: true, PentagiIsUpToDate: true,
+		OpsagiInstalled: true, OpsagiIsUpToDate: true,
 		InstallerIsUpToDate: true, UpdateServerAccessible: true,
 	}
 
@@ -28,7 +28,7 @@ func TestMainMenu_LoadItems_HighlightsMaintenanceWhileAnUpdateWaits(t *testing.T
 	}{
 		{"everything is up to date", func(*checker.CheckResult) {}, false},
 		{"a newer worker image", func(c *checker.CheckResult) { c.WorkerIsUpToDate = false }, true},
-		{"a newer stack", func(c *checker.CheckResult) { c.PentagiIsUpToDate = false }, true},
+		{"a newer stack", func(c *checker.CheckResult) { c.OpsagiIsUpToDate = false }, true},
 		{"a newer installer", func(c *checker.CheckResult) { c.InstallerIsUpToDate = false }, true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

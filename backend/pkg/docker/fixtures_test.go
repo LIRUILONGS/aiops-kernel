@@ -55,7 +55,7 @@ func startSandbox(t *testing.T, dc *dockerClient, config *container.Config, host
 	t.Helper()
 
 	config.Entrypoint = []string{"tail", "-f", "/dev/null"}
-	config.Labels = map[string]string{"pentagi.test": t.Name()}
+	config.Labels = map[string]string{"opsagi.test": t.Name()}
 
 	ctx := t.Context()
 	created, err := dc.client.ContainerCreate(ctx, client.ContainerCreateOptions{

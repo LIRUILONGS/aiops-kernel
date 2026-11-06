@@ -207,21 +207,21 @@ func (m *ProcessorOperationFormModel) getOperationInfo() *processorOperationInfo
 	// determine title and description based on operation and stack
 	switch m.operation {
 	case processor.ProcessorOperationStart:
-		info.title = locale.MaintenanceStartPentagi
-		info.description = locale.MaintenanceStartPentagiDesc
-		info.help = locale.ProcessorHelpStartPentagi
+		info.title = locale.MaintenanceStartOpsagi
+		info.description = locale.MaintenanceStartOpsagiDesc
+		info.help = locale.ProcessorHelpStartOpsagi
 		info.progressMessage = locale.ProcessorOperationStarting
 
 	case processor.ProcessorOperationStop:
-		info.title = locale.MaintenanceStopPentagi
-		info.description = locale.MaintenanceStopPentagiDesc
-		info.help = locale.ProcessorHelpStopPentagi
+		info.title = locale.MaintenanceStopOpsagi
+		info.description = locale.MaintenanceStopOpsagiDesc
+		info.help = locale.ProcessorHelpStopOpsagi
 		info.progressMessage = locale.ProcessorOperationStopping
 
 	case processor.ProcessorOperationRestart:
-		info.title = locale.MaintenanceRestartPentagi
-		info.description = locale.MaintenanceRestartPentagiDesc
-		info.help = locale.ProcessorHelpRestartPentagi
+		info.title = locale.MaintenanceRestartOpsagi
+		info.description = locale.MaintenanceRestartOpsagiDesc
+		info.help = locale.ProcessorHelpRestartOpsagi
 		info.progressMessage = locale.ProcessorOperationRestarting
 
 	case processor.ProcessorOperationDownload:
@@ -243,9 +243,9 @@ func (m *ProcessorOperationFormModel) getOperationInfo() *processorOperationInfo
 			info.description = locale.MaintenanceUpdateWorkerImageDesc
 			info.help = locale.ProcessorHelpUpdateWorkerImage
 		case processor.ProductStackAll, processor.ProductStackCompose:
-			info.title = locale.MaintenanceUpdatePentagi
-			info.description = locale.MaintenanceUpdatePentagiDesc
-			info.help = locale.ProcessorHelpUpdatePentagi
+			info.title = locale.MaintenanceUpdateOpsagi
+			info.description = locale.MaintenanceUpdateOpsagiDesc
+			info.help = locale.ProcessorHelpUpdateOpsagi
 			info.requiresConfirmation = true
 		default:
 			info.title = fmt.Sprintf(locale.OperationTitleUpdate, string(m.stack))
@@ -262,22 +262,22 @@ func (m *ProcessorOperationFormModel) getOperationInfo() *processorOperationInfo
 		info.requiresConfirmation = true
 
 	case processor.ProcessorOperationRemove:
-		info.title = locale.MaintenanceRemovePentagi
-		info.description = locale.MaintenanceRemovePentagiDesc
-		info.help = locale.ProcessorHelpRemovePentagi
+		info.title = locale.MaintenanceRemoveOpsagi
+		info.description = locale.MaintenanceRemoveOpsagiDesc
+		info.help = locale.ProcessorHelpRemoveOpsagi
 		info.progressMessage = locale.ProcessorOperationRemoving
 
 	case processor.ProcessorOperationPurge:
-		info.title = locale.MaintenancePurgePentagi
-		info.description = locale.MaintenancePurgePentagiDesc
-		info.help = locale.ProcessorHelpPurgePentagi
+		info.title = locale.MaintenancePurgeOpsagi
+		info.description = locale.MaintenancePurgeOpsagiDesc
+		info.help = locale.ProcessorHelpPurgeOpsagi
 		info.progressMessage = locale.ProcessorOperationPurging
 		info.requiresConfirmation = true
 
 	case processor.ProcessorOperationInstall:
-		info.title = locale.OperationTitleInstallPentagi
-		info.description = locale.OperationDescInstallPentagi
-		info.help = locale.ProcessorHelpInstallPentagi
+		info.title = locale.OperationTitleInstallOpsagi
+		info.description = locale.OperationDescInstallOpsagi
+		info.help = locale.ProcessorHelpInstallOpsagi
 		info.progressMessage = locale.ProcessorOperationInstalling
 		info.requiresConfirmation = false
 
@@ -578,7 +578,7 @@ func (m *ProcessorOperationFormModel) renderCurrentStateSummary() string {
 		return "• " + label + ": " + strings.Join(states, ", ")
 	}
 
-	lines = append(lines, comp(locale.ProcessorComponentPentagi, c.PentagiInstalled, c.PentagiRunning, true, true, false))
+	lines = append(lines, comp(locale.ProcessorComponentOpsagi, c.OpsagiInstalled, c.OpsagiRunning, true, true, false))
 	lines = append(lines, comp(locale.ProcessorComponentLangfuse, c.LangfuseInstalled, c.LangfuseRunning, !c.LangfuseExternal, c.LangfuseConnected, c.LangfuseExternal))
 	lines = append(lines, comp(locale.ProcessorComponentObservability, c.ObservabilityInstalled, c.ObservabilityRunning, !c.ObservabilityExternal, c.ObservabilityConnected, c.ObservabilityExternal))
 
@@ -600,20 +600,20 @@ func (m *ProcessorOperationFormModel) renderPlannedActions() string {
 	case processor.ProcessorOperationStart:
 		add(locale.PlannedWillStart, locale.ProcessorComponentObservability, c.CanStartAll() && !c.ObservabilityRunning)
 		add(locale.PlannedWillStart, locale.ProcessorComponentLangfuse, c.CanStartAll() && !c.LangfuseRunning)
-		add(locale.PlannedWillStart, locale.ProcessorComponentPentagi, c.CanStartAll() && !c.PentagiRunning)
+		add(locale.PlannedWillStart, locale.ProcessorComponentOpsagi, c.CanStartAll() && !c.OpsagiRunning)
 	case processor.ProcessorOperationStop:
-		add(locale.PlannedWillStop, locale.ProcessorComponentPentagi, c.PentagiRunning)
+		add(locale.PlannedWillStop, locale.ProcessorComponentOpsagi, c.OpsagiRunning)
 		add(locale.PlannedWillStop, locale.ProcessorComponentLangfuse, c.LangfuseRunning)
 		add(locale.PlannedWillStop, locale.ProcessorComponentObservability, c.ObservabilityRunning)
 	case processor.ProcessorOperationRestart:
-		add(locale.PlannedWillRestart, locale.ProcessorComponentPentagi, c.PentagiRunning)
+		add(locale.PlannedWillRestart, locale.ProcessorComponentOpsagi, c.OpsagiRunning)
 		add(locale.PlannedWillRestart, locale.ProcessorComponentLangfuse, c.LangfuseRunning)
 		add(locale.PlannedWillRestart, locale.ProcessorComponentObservability, c.ObservabilityRunning)
 	case processor.ProcessorOperationUpdate:
 		add(locale.PlannedWillUpdate, locale.ProcessorComponentObservability, c.ObservabilityInstalled && !c.ObservabilityIsUpToDate)
 		add(locale.PlannedWillUpdate, locale.ProcessorComponentLangfuse, c.LangfuseInstalled && !c.LangfuseIsUpToDate)
-		add(locale.PlannedWillUpdate, locale.ProcessorComponentPentagi, c.PentagiInstalled && !c.PentagiIsUpToDate)
-		if !c.PentagiInstalled && !c.LangfuseInstalled && !c.ObservabilityInstalled {
+		add(locale.PlannedWillUpdate, locale.ProcessorComponentOpsagi, c.OpsagiInstalled && !c.OpsagiIsUpToDate)
+		if !c.OpsagiInstalled && !c.LangfuseInstalled && !c.ObservabilityInstalled {
 			return "" // nothing to show
 		}
 	case processor.ProcessorOperationDownload:
@@ -627,7 +627,7 @@ func (m *ProcessorOperationFormModel) renderPlannedActions() string {
 		add(locale.PlannedWillPurge, locale.ProcessorItemComposeStacksImagesVolumes, c.CanPurgeAll())
 	case processor.ProcessorOperationInstall:
 		add(locale.PlannedWillDownload, locale.ProcessorItemComposeFiles, c.CanInstallAll())
-		add(locale.PlannedWillStart, locale.ProcessorComponentPentagi, true)
+		add(locale.PlannedWillStart, locale.ProcessorComponentOpsagi, true)
 	}
 
 	return strings.Join(lines, "\n")

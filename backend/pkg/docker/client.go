@@ -145,7 +145,7 @@ func NewDockerClient(ctx context.Context, db database.Querier, cfg *config.Confi
 	// Resolve which host socket (if any) gets bind-mounted into worker containers.
 	// Autodetection is skipped when DOCKER_INSIDE_HOST designates a daemon
 	// endpoint for sandboxes: a socket alongside it could bypass that endpoint
-	// and might expose the daemon that runs PentAGI.
+	// and might expose the daemon that runs OpsAGI.
 	socket, autodetectSocket := cfg.WorkerDockerSocket()
 	if autodetectSocket {
 		socket = getHostDockerSocket(ctx, cli)
@@ -446,7 +446,7 @@ func (dc *dockerClient) RunContainer(
 	resp, err := dc.client.ContainerCreate(ctx, createOptions)
 	if err != nil && cerrdefs.IsConflict(err) {
 		// The name is still held by an earlier container, typically one left
-		// behind when PentAGI died mid-start. Nothing can be created under that
+		// behind when OpsAGI died mid-start. Nothing can be created under that
 		// name until it is gone, and the image is not at fault, so clear it and
 		// retry before blaming the image below.
 		logger.WithError(err).Warn("container name is already taken, removing the container holding it")
@@ -1376,7 +1376,7 @@ func getHostDataDir(ctx context.Context, cli *client.Client, dataDir, workDir st
 		// it's for the following cases:
 		// * docker socket hosted on the different machine
 		// * data directory is not mounted
-		// * pentagi is not running as a docker container
+		// * opsagi is not running as a docker container
 		return ""
 	}
 

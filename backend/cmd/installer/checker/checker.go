@@ -16,7 +16,7 @@ import (
 
 var (
 	InstallerVersion = version.GetBinaryVersion()
-	UserAgent        = "PentAGI-Installer/" + InstallerVersion
+	UserAgent        = "OpsAGI-Installer/" + InstallerVersion
 )
 
 const (
@@ -26,8 +26,8 @@ const (
 	ObservabilityComposeFile        = "docker-compose-observability.yml"
 	ExampleCustomConfigLLMFile      = "example.custom.provider.yml"
 	ExampleOllamaConfigLLMFile      = "example.ollama.provider.yml"
-	PentagiScriptFile               = "/usr/local/bin/pentagi"
-	PentagiContainerName            = "pentagi"
+	OpsagiScriptFile               = "/usr/local/bin/opsagi"
+	OpsagiContainerName            = "opsagi"
 	ScraperContainerName            = "scraper"
 	PgvectorContainerName           = "pgvector"
 	PgexporterContainerName         = "pgexporter"
@@ -53,10 +53,10 @@ const (
 	DefaultLangfuseEndpoint         = "http://langfuse-web:3000"
 	DefaultObservabilityEndpoint    = "otelcol:8148"
 	DefaultLangfuseOtelEndpoint     = "http://otelcol:4318"
-	DefaultUpdateServerEndpoint     = "https://update.pentagi.com"
-	DefaultSupportServerEndpoint    = "https://support.pentagi.com"
+	DefaultUpdateServerEndpoint     = "https://update.opsagi.com"
+	DefaultSupportServerEndpoint    = "https://support.opsagi.com"
 	MinFreeMemGB                    = 0.5
-	MinFreeMemGBForPentagi          = 0.5
+	MinFreeMemGBForOpsagi          = 0.5
 	MinFreeMemGBForGraphiti         = 2.0
 	MinFreeMemGBForLangfuse         = 1.5
 	MinFreeMemGBForObservability    = 1.5
@@ -82,11 +82,11 @@ type CheckResult struct {
 	DockerVersionOK         bool   `json:"docker_version_ok" yaml:"docker_version_ok"`
 	DockerComposeVersion    string `json:"docker_compose_version" yaml:"docker_compose_version"`
 	DockerComposeVersionOK  bool   `json:"docker_compose_version_ok" yaml:"docker_compose_version_ok"`
-	PentagiScriptInstalled  bool   `json:"pentagi_script_installed" yaml:"pentagi_script_installed"`
-	PentagiExtracted        bool   `json:"pentagi_extracted" yaml:"pentagi_extracted"`
-	PentagiInstalled        bool   `json:"pentagi_installed" yaml:"pentagi_installed"`
-	PentagiRunning          bool   `json:"pentagi_running" yaml:"pentagi_running"`
-	PentagiVolumesExist     bool   `json:"pentagi_volumes_exist" yaml:"pentagi_volumes_exist"`
+	OpsagiScriptInstalled  bool   `json:"opsagi_script_installed" yaml:"opsagi_script_installed"`
+	OpsagiExtracted        bool   `json:"opsagi_extracted" yaml:"opsagi_extracted"`
+	OpsagiInstalled        bool   `json:"opsagi_installed" yaml:"opsagi_installed"`
+	OpsagiRunning          bool   `json:"opsagi_running" yaml:"opsagi_running"`
+	OpsagiVolumesExist     bool   `json:"opsagi_volumes_exist" yaml:"opsagi_volumes_exist"`
 	GraphitiConnected       bool   `json:"graphiti_connected" yaml:"graphiti_connected"`
 	GraphitiExternal        bool   `json:"graphiti_external" yaml:"graphiti_external"`
 	GraphitiExtracted       bool   `json:"graphiti_extracted" yaml:"graphiti_extracted"`
@@ -110,7 +110,7 @@ type CheckResult struct {
 	SysDiskFreeSpaceOK      bool   `json:"sys_disk_free_space_ok" yaml:"sys_disk_free_space_ok"`
 	UpdateServerAccessible  bool   `json:"update_server_accessible" yaml:"update_server_accessible"`
 	InstallerIsUpToDate     bool   `json:"installer_is_up_to_date" yaml:"installer_is_up_to_date"`
-	PentagiIsUpToDate       bool   `json:"pentagi_is_up_to_date" yaml:"pentagi_is_up_to_date"`
+	OpsagiIsUpToDate       bool   `json:"opsagi_is_up_to_date" yaml:"opsagi_is_up_to_date"`
 	GraphitiIsUpToDate      bool   `json:"graphiti_is_up_to_date" yaml:"graphiti_is_up_to_date"`
 	LangfuseIsUpToDate      bool   `json:"langfuse_is_up_to_date" yaml:"langfuse_is_up_to_date"`
 	ObservabilityIsUpToDate bool   `json:"observability_is_up_to_date" yaml:"observability_is_up_to_date"`
@@ -148,7 +148,7 @@ type CheckHandler interface {
 	GatherAllInfo(ctx context.Context, c *CheckResult) error
 	GatherDockerInfo(ctx context.Context, c *CheckResult) error
 	GatherWorkerInfo(ctx context.Context, c *CheckResult) error
-	GatherPentagiInfo(ctx context.Context, c *CheckResult) error
+	GatherOpsagiInfo(ctx context.Context, c *CheckResult) error
 	GatherGraphitiInfo(ctx context.Context, c *CheckResult) error
 	GatherLangfuseInfo(ctx context.Context, c *CheckResult) error
 	GatherObservabilityInfo(ctx context.Context, c *CheckResult) error
@@ -178,11 +178,11 @@ func (c *CheckResult) GatherWorkerInfo(ctx context.Context) error {
 	return c.handler.GatherWorkerInfo(ctx, c)
 }
 
-func (c *CheckResult) GatherPentagiInfo(ctx context.Context) error {
+func (c *CheckResult) GatherOpsagiInfo(ctx context.Context) error {
 	if c.handler == nil {
 		return ErrHandlerNotInitialized
 	}
-	return c.handler.GatherPentagiInfo(ctx, c)
+	return c.handler.GatherOpsagiInfo(ctx, c)
 }
 
 func (c *CheckResult) GatherGraphitiInfo(ctx context.Context) error {
@@ -239,7 +239,7 @@ func (c *CheckResult) IsReadyToContinue() bool {
 
 // CanStartAll returns true when at least one embedded stack is installed and not running
 func (c *CheckResult) CanStartAll() bool {
-	if c.PentagiInstalled && !c.PentagiRunning {
+	if c.OpsagiInstalled && !c.OpsagiRunning {
 		return true
 	}
 	if c.GraphitiConnected && !c.GraphitiExternal && c.GraphitiInstalled && !c.GraphitiRunning {
@@ -256,7 +256,7 @@ func (c *CheckResult) CanStartAll() bool {
 
 // CanStopAll returns true when any compose stack is running
 func (c *CheckResult) CanStopAll() bool {
-	return c.PentagiRunning || c.GraphitiRunning || c.LangfuseRunning || c.ObservabilityRunning
+	return c.OpsagiRunning || c.GraphitiRunning || c.LangfuseRunning || c.ObservabilityRunning
 }
 
 // CanRestartAll mirrors stop logic (requires running services)
@@ -270,7 +270,7 @@ func (c *CheckResult) CanUpdateWorker() bool { return c.WorkerImageExists && !c.
 
 // CanUpdateAll returns true when any installed stack has updates available
 func (c *CheckResult) CanUpdateAll() bool {
-	if c.PentagiInstalled && !c.PentagiIsUpToDate {
+	if c.OpsagiInstalled && !c.OpsagiIsUpToDate {
 		return true
 	}
 	if c.GraphitiInstalled && !c.GraphitiIsUpToDate {
@@ -292,7 +292,7 @@ func (c *CheckResult) CanUpdateInstaller() bool {
 
 // CanFactoryReset returns true when any compose stack is installed
 func (c *CheckResult) CanFactoryReset() bool {
-	return c.PentagiInstalled || c.GraphitiInstalled || c.LangfuseInstalled || c.ObservabilityInstalled
+	return c.OpsagiInstalled || c.GraphitiInstalled || c.LangfuseInstalled || c.ObservabilityInstalled
 }
 
 // CanRemoveAll returns true when any compose stack is installed
@@ -301,11 +301,11 @@ func (c *CheckResult) CanRemoveAll() bool { return c.CanFactoryReset() }
 // CanPurgeAll returns true when any compose stack is installed
 func (c *CheckResult) CanPurgeAll() bool { return c.CanFactoryReset() }
 
-// CanResetPassword returns true when PentAGI is running
-func (c *CheckResult) CanResetPassword() bool { return c.PentagiRunning }
+// CanResetPassword returns true when OpsAGI is running
+func (c *CheckResult) CanResetPassword() bool { return c.OpsagiRunning }
 
 // CanInstallAll returns true when main stack is not installed yet
-func (c *CheckResult) CanInstallAll() bool { return !c.PentagiInstalled }
+func (c *CheckResult) CanInstallAll() bool { return !c.OpsagiInstalled }
 
 // defaultCheckHandler provides the existing implementation of gathering logic
 type defaultCheckHandler struct {
@@ -332,7 +332,7 @@ func (h *defaultCheckHandler) GatherAllInfo(ctx context.Context, c *CheckResult)
 	if err := h.GatherWorkerInfo(ctx, c); err != nil {
 		return err
 	}
-	if err := h.GatherPentagiInfo(ctx, c); err != nil {
+	if err := h.GatherOpsagiInfo(ctx, c); err != nil {
 		return err
 	}
 	if err := h.GatherGraphitiInfo(ctx, c); err != nil {
@@ -391,7 +391,7 @@ func (h *defaultCheckHandler) GatherWorkerInfo(ctx context.Context, c *CheckResu
 	defer h.mx.Unlock()
 
 	dockerHost := getEnvVar(h.appState, "DOCKER_HOST", "")
-	dockerCertPath := getEnvVar(h.appState, "PENTAGI_DOCKER_CERT_PATH", "")
+	dockerCertPath := getEnvVar(h.appState, "OPSAGI_DOCKER_CERT_PATH", "")
 	dockerTLSVerify := getEnvVar(h.appState, "DOCKER_TLS_VERIFY", "") != ""
 
 	cli, err := createDockerClient(dockerHost, dockerCertPath, dockerTLSVerify)
@@ -417,7 +417,7 @@ func (h *defaultCheckHandler) GatherWorkerInfo(ctx context.Context, c *CheckResu
 	return nil
 }
 
-func (h *defaultCheckHandler) GatherPentagiInfo(ctx context.Context, c *CheckResult) error {
+func (h *defaultCheckHandler) GatherOpsagiInfo(ctx context.Context, c *CheckResult) error {
 	h.mx.Lock()
 	defer h.mx.Unlock()
 
@@ -426,19 +426,19 @@ func (h *defaultCheckHandler) GatherPentagiInfo(ctx context.Context, c *CheckRes
 	// The bedrock example is deliberately not asked for: a stack extracted without it
 	// would count as not extracted, and extraction overwrites the examples the user
 	// edited when the update is forced. Verification of an extracted stack writes it.
-	c.PentagiExtracted = checkFileExists(dockerComposeFile) &&
+	c.OpsagiExtracted = checkFileExists(dockerComposeFile) &&
 		checkFileExists(filepath.Join(envDir, ExampleCustomConfigLLMFile)) &&
 		checkFileExists(filepath.Join(envDir, ExampleOllamaConfigLLMFile))
-	c.PentagiScriptInstalled = checkFileExists(PentagiScriptFile)
+	c.OpsagiScriptInstalled = checkFileExists(OpsagiScriptFile)
 
 	if h.dockerClient != nil {
-		exists, running := checkContainerExists(ctx, h.dockerClient, PentagiContainerName)
-		c.PentagiInstalled = exists
-		c.PentagiRunning = running
+		exists, running := checkContainerExists(ctx, h.dockerClient, OpsagiContainerName)
+		c.OpsagiInstalled = exists
+		c.OpsagiRunning = running
 
-		// check if pentagi-related volumes exist (indicates previous installation)
-		pentagiVolumes := []string{"pentagi-postgres-data", "pentagi-data", "pentagi-ssl", "scraper-ssl"}
-		c.PentagiVolumesExist = checkVolumesExist(ctx, h.dockerClient, pentagiVolumes)
+		// check if opsagi-related volumes exist (indicates previous installation)
+		opsagiVolumes := []string{"opsagi-postgres-data", "opsagi-data", "opsagi-ssl", "scraper-ssl"}
+		c.OpsagiVolumesExist = checkVolumesExist(ctx, h.dockerClient, opsagiVolumes)
 	}
 
 	return nil
@@ -545,18 +545,18 @@ func (h *defaultCheckHandler) GatherSystemInfo(ctx context.Context, c *CheckResu
 	c.SysCPUOK = checkCPUResources()
 
 	// memory check and calculations
-	needsForPentagi, needsForGraphiti, needsForLangfuse, needsForObservability := determineComponentNeeds(c)
+	needsForOpsagi, needsForGraphiti, needsForLangfuse, needsForObservability := determineComponentNeeds(c)
 
 	// calculate required memory using shared function
-	c.SysMemoryRequired = calculateRequiredMemoryGB(needsForPentagi, needsForGraphiti, needsForLangfuse, needsForObservability)
+	c.SysMemoryRequired = calculateRequiredMemoryGB(needsForOpsagi, needsForGraphiti, needsForLangfuse, needsForObservability)
 
 	// get available memory and check if sufficient
 	c.SysMemoryAvailable = getAvailableMemoryGB()
-	c.SysMemoryOK = checkMemoryResources(needsForPentagi, needsForGraphiti, needsForLangfuse, needsForObservability)
+	c.SysMemoryOK = checkMemoryResources(needsForOpsagi, needsForGraphiti, needsForLangfuse, needsForObservability)
 
 	// disk check and calculations
 	localComponents := countLocalComponentsToInstall(
-		c.PentagiInstalled,
+		c.OpsagiInstalled,
 		c.GraphitiConnected, c.GraphitiExternal, c.GraphitiInstalled,
 		c.LangfuseConnected, c.LangfuseExternal, c.LangfuseInstalled,
 		c.ObservabilityConnected, c.ObservabilityExternal, c.ObservabilityInstalled,
@@ -570,7 +570,7 @@ func (h *defaultCheckHandler) GatherSystemInfo(ctx context.Context, c *CheckResu
 	c.SysDiskFreeSpaceOK = checkDiskSpaceWithContext(
 		ctx,
 		c.WorkerImageExists,
-		c.PentagiInstalled,
+		c.OpsagiInstalled,
 		c.GraphitiConnected,
 		c.GraphitiExternal,
 		c.GraphitiInstalled,

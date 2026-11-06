@@ -10,12 +10,12 @@ let sandboxRoot = '';
 
 // TMPDIR alone does NOT contain this script: `clean --all` also sweeps a fallback root derived from
 // the script's own location, so a bare `pnpm test` used to rm -rf real directories in the repo's
-// parent. PENTAGI_SANDBOX_ROOT moves both roots, which is what keeps a run inside its own tree.
+// parent. OPSAGI_SANDBOX_ROOT moves both roots, which is what keeps a run inside its own tree.
 const run = (...args: string[]) => {
     try {
         const stdout = execFileSync(SCRIPT, args, {
             encoding: 'utf8',
-            env: { ...process.env, PENTAGI_SANDBOX_ROOT: sandboxRoot, TMPDIR: sandboxRoot },
+            env: { ...process.env, OPSAGI_SANDBOX_ROOT: sandboxRoot, TMPDIR: sandboxRoot },
             stdio: ['ignore', 'pipe', 'pipe'],
         });
 
@@ -65,7 +65,7 @@ describe('review-sandbox clean — containment', { timeout: 30_000 }, () => {
 
     it('refuses the sandbox root itself, and a sibling of it', () => {
         const { stdout: sandbox } = run('create');
-        const root = join(sandboxRoot, 'pentagi-review-sandboxes');
+        const root = join(sandboxRoot, 'opsagi-review-sandboxes');
 
         expect(run('clean', root).code).not.toBe(0);
         expect(run('clean', `${root}-old`).code).not.toBe(0);
@@ -82,7 +82,7 @@ describe('review-sandbox clean — containment', { timeout: 30_000 }, () => {
 
 describe('review-sandbox create — where the sandbox lands', { timeout: 30_000 }, () => {
     // `clean --all` also sweeps a root derived from the script's own location, which no TMPDIR can
-    // move: before PENTAGI_SANDBOX_ROOT governed it too, running this very file deleted real stale
+    // move: before OPSAGI_SANDBOX_ROOT governed it too, running this very file deleted real stale
     // sandboxes from the repo's parent directory on the developer's machine.
     it('sweeps no root outside the one it was given', () => {
         const swept = run('clean', '--all')
@@ -97,17 +97,17 @@ describe('review-sandbox create — where the sandbox lands', { timeout: 30_000 
         }
     });
 
-    it('honours PENTAGI_SANDBOX_ROOT, the escape hatch for a $TMPDIR on another filesystem', () => {
+    it('honours OPSAGI_SANDBOX_ROOT, the escape hatch for a $TMPDIR on another filesystem', () => {
         const override = mkdtempSync(join(tmpdir(), 'override-root-'));
         const sandbox = execFileSync(SCRIPT, ['create'], {
             encoding: 'utf8',
-            env: { ...process.env, PENTAGI_SANDBOX_ROOT: override, TMPDIR: sandboxRoot },
+            env: { ...process.env, OPSAGI_SANDBOX_ROOT: override, TMPDIR: sandboxRoot },
         }).trim();
 
-        expect(sandbox.startsWith(`${override}/pentagi-review-sandboxes/`)).toBe(true);
+        expect(sandbox.startsWith(`${override}/opsagi-review-sandboxes/`)).toBe(true);
 
         execFileSync(SCRIPT, ['clean', sandbox], {
-            env: { ...process.env, PENTAGI_SANDBOX_ROOT: override, TMPDIR: sandboxRoot },
+            env: { ...process.env, OPSAGI_SANDBOX_ROOT: override, TMPDIR: sandboxRoot },
         });
         expect(existsSync(sandbox)).toBe(false);
 
