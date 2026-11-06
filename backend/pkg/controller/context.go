@@ -31,6 +31,9 @@ type FlowContext struct {
 	TermLog    FlowTermLogWorker
 	MsgLog     FlowMsgLogWorker
 	Screenshot FlowScreenshotWorker
+
+	// SubtaskConcurrency bounds how many subtasks of one task run at once.
+	SubtaskConcurrency int
 }
 
 type TaskContext struct {

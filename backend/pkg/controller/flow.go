@@ -277,6 +277,8 @@ func buildFlowWorker(
 		MsgLog:     workers.mlw,
 		TermLog:    workers.tlw,
 		Screenshot: workers.sw,
+
+		SubtaskConcurrency: fwc.cfg.SubtaskConcurrency,
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	ctx, _ = obs.Observer.NewObservation(ctx, langfuse.WithObservationTraceID(observation.TraceID()))
@@ -445,6 +447,8 @@ func LoadFlowWorker(ctx context.Context, flow database.Flow, fwc flowWorkerCtx) 
 		MsgLog:     workers.mlw,
 		TermLog:    workers.tlw,
 		Screenshot: workers.sw,
+
+		SubtaskConcurrency: fwc.cfg.SubtaskConcurrency,
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	ctx, _ = obs.Observer.NewObservation(ctx, langfuse.WithObservationTraceID(observation.TraceID()))

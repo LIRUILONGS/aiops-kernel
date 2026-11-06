@@ -110,6 +110,7 @@ def main() -> int:
             # The commander refuses to run without a target, and this run never
             # probes one: the mock answers the exit tool on its first turn, so the
             # loopback target is a name, not an address that gets dialled.
+            "OPSAGI_SUBTASK_CONCURRENCY": os.environ.get("OPSAGI_SUBTASK_CONCURRENCY", "1"),
             "OPSAGI_TARGETS": (
                 '[{"id":"acceptance","host":"127.0.0.1","port":22,"user":"root",'
                 '"password":"acceptance"}]'

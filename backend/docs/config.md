@@ -2166,6 +2166,7 @@ The commander and the four analysts read a target host over SSH and, optionally,
 | Field | Env Variable | Default | Description |
 |-------|--------------|---------|-------------|
 | OpsTargets | `OPSAGI_TARGETS` | *(none)* | JSON array of `{"id","host","port","user","password"}` targets. Empty means the AIOps executors refuse to start rather than failing mid-flow. The password is a secret: keep it out of logs and transcripts. |
+| SubtaskConcurrency | `OPSAGI_SUBTASK_CONCURRENCY` | `1` | How many subtasks of one task run at the same time, clamped to 4. At 1 the queue is exactly serial; above that the steps of a plan run as one batch and the refiner re-plans only after the whole batch is done, so a re-plan can never delete a step another chain is working on. Each step in flight is one more agent chain against the model endpoint. |
 | PrometheusURL | `PROMETHEUS_URL` | *(none)* | Base URL of a Prometheus-compatible query API, e.g. `http://prometheus:9090`. When empty the `prom_query` tool is not offered to any agent at all, rather than offered and failing when called. |
 | K8sKubeconfig | `K8S_KUBECONFIG` | `~/.kube/config` when it exists | Path to a kubeconfig. The first cluster and the first user of the file are used, so a single-cluster file needs no context selection; embedded `*-data` fields and file paths are both read. Empty and no `K8S_API_URL` means `k8s_get` is not offered. |
 | K8sAPIURL | `K8S_API_URL` | *(none)* | A bare API server URL, used when no kubeconfig is available (typically a tunnel). |

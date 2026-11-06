@@ -18,7 +18,7 @@ type SubtaskController interface {
 	LoadSubtasks(ctx context.Context, taskID int64, updater TaskUpdater) error
 	GenerateSubtasks(ctx context.Context) error
 	RefineSubtasks(ctx context.Context) error
-	PopSubtask(ctx context.Context, updater TaskUpdater) (SubtaskWorker, error)
+	PopSubtasks(ctx context.Context, updater TaskUpdater, limit int) ([]SubtaskWorker, error)
 	ListSubtasks(ctx context.Context) []SubtaskWorker
 	GetSubtask(ctx context.Context, subtaskID int64) (SubtaskWorker, error)
 	InvalidateSubtasks(subtaskIDs []int64)
@@ -28,6 +28,11 @@ type subtaskController struct {
 	mx       *sync.Mutex
 	taskCtx  *TaskContext
 	subtasks map[int64]SubtaskWorker
+
+	// claimed names the subtasks a run has taken but not yet finished. The row
+	// turns to running only once its worker starts, so a batch that read the
+	// planned list twice would otherwise hand the same subtask to two chains.
+	claimed map[int64]struct{}
 }
 
 func NewSubtaskController(taskCtx *TaskContext) SubtaskController {
@@ -35,6 +40,7 @@ func NewSubtaskController(taskCtx *TaskContext) SubtaskController {
 		mx:       &sync.Mutex{},
 		taskCtx:  taskCtx,
 		subtasks: make(map[int64]SubtaskWorker),
+		claimed:  make(map[int64]struct{}),
 	}
 }
 
@@ -162,32 +168,62 @@ func (stc *subtaskController) RefineSubtasks(ctx context.Context) error {
 	return nil
 }
 
-func (stc *subtaskController) PopSubtask(ctx context.Context, updater TaskUpdater) (SubtaskWorker, error) {
+func (stc *subtaskController) PopSubtasks(ctx context.Context, updater TaskUpdater, limit int) ([]SubtaskWorker, error) {
 	stc.mx.Lock()
 	defer stc.mx.Unlock()
 
-	subtasks, err := stc.taskCtx.DB.GetTaskPlannedSubtasks(ctx, stc.taskCtx.TaskID)
+	planned, err := stc.taskCtx.DB.GetTaskPlannedSubtasks(ctx, stc.taskCtx.TaskID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get task planned subtasks: %w", err)
 	}
 
-	if len(subtasks) == 0 {
-		return nil, nil
+	claimed := claimPlanned(planned, stc.claimed, limit)
+	workers := make([]SubtaskWorker, 0, len(claimed))
+
+	for _, stdb := range claimed {
+		stc.claimed[stdb.ID] = struct{}{}
+
+		if st, ok := stc.subtasks[stdb.ID]; ok {
+			workers = append(workers, st)
+
+			continue
+		}
+
+		st, err := NewSubtaskWorker(ctx, stc.taskCtx, stdb.ID, stdb.Title, stdb.Description, updater)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create subtask worker: %w", err)
+		}
+
+		stc.subtasks[stdb.ID] = st
+		workers = append(workers, st)
 	}
 
-	stdb := subtasks[0]
-	if st, ok := stc.subtasks[stdb.ID]; ok {
-		return st, nil
+	return workers, nil
+}
+
+// claimPlanned takes the first planned subtasks that no run holds yet, in the
+// order the planner wrote them. The order matters: a plan is a sequence, and the
+// first entries are the ones the planner believed were needed first.
+func claimPlanned(planned []database.Subtask, claimed map[int64]struct{}, limit int) []database.Subtask {
+	if limit < 1 {
+		return nil
 	}
 
-	st, err := NewSubtaskWorker(ctx, stc.taskCtx, stdb.ID, stdb.Title, stdb.Description, updater)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create subtask worker: %w", err)
+	out := make([]database.Subtask, 0, limit)
+
+	for _, subtask := range planned {
+		if len(out) == limit {
+			break
+		}
+
+		if _, taken := claimed[subtask.ID]; taken {
+			continue
+		}
+
+		out = append(out, subtask)
 	}
 
-	stc.subtasks[stdb.ID] = st
-
-	return st, nil
+	return out
 }
 
 func (stc *subtaskController) ListSubtasks(ctx context.Context) []SubtaskWorker {

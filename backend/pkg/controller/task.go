@@ -342,18 +342,18 @@ func (tw *taskWorker) Run(ctx context.Context) error {
 	ctx = tools.PutAgentContext(ctx, database.MsgchainTypePrimaryAgent)
 
 	for len(tw.stc.ListSubtasks(ctx)) < providers.TasksNumberLimit+3 {
-		st, err := tw.stc.PopSubtask(ctx, tw)
+		batch, err := tw.stc.PopSubtasks(ctx, tw, tw.subtaskConcurrency())
 		if err != nil {
 			tw.handleInterrupting(err)
 			return err
 		}
 
 		// empty queue for subtasks means that task is done
-		if st == nil {
+		if len(batch) == 0 {
 			break
 		}
 
-		if err := st.Run(ctx); err != nil {
+		if err := tw.runBatch(ctx, batch); err != nil {
 			tw.handleInterrupting(err)
 			return err
 		}
@@ -373,6 +373,63 @@ func (tw *taskWorker) Run(ctx context.Context) error {
 	}
 
 	return tw.writeResult(ctx)
+}
+
+// maxSubtasksInFlight caps what an operator may ask for. Every subtask in flight
+// is one more agent chain against the same model endpoint.
+const maxSubtasksInFlight = 4
+
+func (tw *taskWorker) subtaskConcurrency() int {
+	want := tw.taskCtx.SubtaskConcurrency
+	if want < 2 {
+		return 1
+	}
+
+	if want > maxSubtasksInFlight {
+		return maxSubtasksInFlight
+	}
+
+	return want
+}
+
+// runBatch runs the claimed subtasks and waits for all of them. A barrier, not a
+// race: the refiner re-plans from the result of the whole batch, and re-planning
+// while a sibling is still gathering evidence would let it delete the step that
+// step is working on. The first error wins; the rest are joined so a failure is
+// never silently dropped.
+func (tw *taskWorker) runBatch(ctx context.Context, batch []SubtaskWorker) error {
+	if len(batch) == 1 {
+		return batch[0].Run(ctx)
+	}
+
+	ids := make([]int64, 0, len(batch))
+	for _, subtask := range batch {
+		ids = append(ids, subtask.GetSubtaskID())
+	}
+
+	logrus.WithContext(ctx).WithFields(logrus.Fields{
+		"task_id":     tw.taskCtx.TaskID,
+		"subtasks":    ids,
+		"concurrency": len(ids),
+	}).Info("running subtasks concurrently")
+
+	var wait sync.WaitGroup
+
+	errs := make([]error, len(batch))
+
+	for index, subtask := range batch {
+		wait.Add(1)
+
+		go func(index int, subtask SubtaskWorker) {
+			defer wait.Done()
+
+			errs[index] = subtask.Run(ctx)
+		}(index, subtask)
+	}
+
+	wait.Wait()
+
+	return errors.Join(errs...)
 }
 
 // writeResult asks the reporter for the task's write-up and publishes it: the

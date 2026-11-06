@@ -145,6 +145,11 @@ type Config struct {
 	// === Ops targets: JSON array of opsremote.Target, read-only SSH probes ===
 	OpsTargets string `env:"OPSAGI_TARGETS"`
 
+	// SubtaskConcurrency is how many subtasks of one task may run at the same
+	// time. Subtasks are independent by construction, so the default is the
+	// serial value only to keep the ordering of a plan observable.
+	SubtaskConcurrency int `env:"OPSAGI_SUBTASK_CONCURRENCY" envDefault:"1"`
+
 	// === Metrics: Prometheus-compatible HTTP API behind the prom_query tool ===
 	PrometheusURL string `env:"PROMETHEUS_URL"`
 

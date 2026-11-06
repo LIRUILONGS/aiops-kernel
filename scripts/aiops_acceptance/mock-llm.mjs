@@ -17,6 +17,11 @@ import { createServer } from 'node:http';
 const PORT = Number(process.argv[2] || 41499);
 const VERBOSE = process.env.MOCK_LLM_VERBOSE === '1';
 
+// Two knobs that make a run comparable: a slower answer, and a plan long enough
+// that running its steps at the same time is visible in the wall clock.
+const DELAY_MS = Number(process.env.MOCK_LLM_DELAY_MS || 0);
+const PLAN_SIZE = Math.max(1, Number(process.env.MOCK_LLM_PLAN_SIZE || 1));
+
 const DIAGNOSIS = {
     blast_radius: 'only the acceptance host',
     confidence: 0.8,
@@ -46,13 +51,11 @@ const DIAGNOSIS = {
 
 const PLAN = {
     message: 'Acceptance plan',
-    subtasks: [
-        {
-            description: 'Answer from the recorded evidence, without touching a host.',
-            mode: 'diagnosis',
-            title: 'Diagnose the acceptance host',
-        },
-    ],
+    subtasks: Array.from({ length: PLAN_SIZE }, (_, index) => ({
+        description: `Answer from the recorded evidence, without touching a host (step ${index + 1}).`,
+        mode: 'diagnosis',
+        title: `Diagnose the acceptance host, step ${index + 1}`,
+    })),
 };
 
 // The mode of the planned subtask is what decides which exit tool the commander
@@ -240,8 +243,19 @@ const server = createServer((request, response) => {
             return;
         }
 
-        response.writeHead(200, { 'Content-Type': 'application/json' });
-        response.end(JSON.stringify(toResponse(rule)));
+        const payload = JSON.stringify(toResponse(rule));
+        const send = () => {
+            response.writeHead(200, { 'Content-Type': 'application/json' });
+            response.end(payload);
+        };
+
+        if (DELAY_MS > 0) {
+            setTimeout(send, DELAY_MS);
+
+            return;
+        }
+
+        send();
     });
 });
 

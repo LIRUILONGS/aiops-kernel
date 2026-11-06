@@ -362,3 +362,28 @@ func TestTask_Report_RefusesACompletedTaskWithASentinel(t *testing.T) {
 	// Every other field is nil, so a guard that fired after touching one would panic.
 	assert.ErrorIs(t, tw.Report(context.Background()), ErrTaskAlreadyCompleted)
 }
+
+func TestTaskWorker_subtaskConcurrency_KeepsTheLoopSerialUnlessAsked(t *testing.T) {
+	tests := []struct {
+		name  string
+		want  int
+		given int
+	}{
+		{name: "unset", given: 0, want: 1},
+		{name: "one is the serial default", given: 1, want: 1},
+		{name: "two", given: 2, want: 2},
+		{name: "the cap", given: maxSubtasksInFlight, want: maxSubtasksInFlight},
+		{name: "above the cap", given: maxSubtasksInFlight + 5, want: maxSubtasksInFlight},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			worker := &taskWorker{taskCtx: &TaskContext{}}
+			worker.taskCtx.SubtaskConcurrency = test.given
+
+			if got := worker.subtaskConcurrency(); got != test.want {
+				t.Errorf("subtaskConcurrency() = %d, want %d", got, test.want)
+			}
+		})
+	}
+}
