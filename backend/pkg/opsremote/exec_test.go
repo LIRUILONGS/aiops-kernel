@@ -48,6 +48,23 @@ func TestExec_Render_RefusesAnythingThatCouldLeaveTheCatalogue(t *testing.T) {
 			want: "非法",
 		},
 		{
+			name: "an image reference carrying a command substitution is refused",
+			id:   "image_history",
+			args: map[string]string{"Image": "nginx$(id)"},
+			want: "非法",
+		},
+		{
+			name: "an image reference starting with a dash is refused",
+			id:   "image_history",
+			args: map[string]string{"Image": "--help"},
+			want: "非法",
+		},
+		{
+			name: "a missing image reference is refused",
+			id:   "image_history",
+			want: "缺少参数",
+		},
+		{
 			name: "a missing name is refused",
 			id:   "unit_logs",
 			want: "缺少参数",
@@ -125,6 +142,17 @@ func TestExec_Render_BuildsTheCommandFromTheTemplateAndTheValidatedValue(t *test
 			id:   "file_stat",
 			args: map[string]string{"Path": "/etc/nginx/nginx.conf"},
 			want: "stat /etc/nginx/nginx.conf 2>&1",
+		},
+		{
+			name: "an image reference keeps its registry, tag and digest",
+			id:   "image_history",
+			args: map[string]string{"Image": "ghcr.io/vx/opsagi:1.2.3@sha256:abc123"},
+			want: "ghcr.io/vx/opsagi:1.2.3@sha256:abc123",
+		},
+		{
+			name: "the package history takes its default when no count is given",
+			id:   "package_history",
+			want: "tail -n 40",
 		},
 	}
 

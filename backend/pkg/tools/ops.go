@@ -186,6 +186,7 @@ type OpsExecArgs struct {
 	Unit      string `json:"unit,omitempty" jsonschema:"description=systemd 单元名，unit_status 与 unit_logs 必填,example=nginx.service"`
 	Container string `json:"container,omitempty" jsonschema:"description=容器名，docker_inspect 必填,example=opslab-broken"`
 	Path      string `json:"path,omitempty" jsonschema:"description=绝对路径，file_stat 必填,example=/etc/nginx/nginx.conf"`
+	Image     string `json:"image,omitempty" jsonschema:"description=镜像引用，image_history 必填,example=nginx:1.27-alpine"`
 	Lines     int    `json:"lines,omitempty" jsonschema:"description=行数，见各命令允许的范围,example=100"`
 }
 
@@ -198,14 +199,7 @@ func (o *opsTools) HandleExec(ctx context.Context, name string, args json.RawMes
 		return "", fmt.Errorf("缺少 command：必须是只读命令 ID 之一（%s）", strings.Join(opsremote.CommandIDs(), ", "))
 	}
 
-	execArgs := map[string]string{
-		"Unit":      parsed.Unit,
-		"Container": parsed.Container,
-		"Path":      parsed.Path,
-	}
-	if parsed.Lines > 0 {
-		execArgs["Lines"] = fmt.Sprintf("%d", parsed.Lines)
-	}
+	execArgs := catalogueArgs(parsed)
 
 	// Rendered before dialing: an unknown id or a value carrying a shell is a
 	// mistake the model can fix, and a 20s connection timeout teaches it nothing.
@@ -445,4 +439,20 @@ func formatExec(target opsremote.Target, label string, res opsremote.Result) str
 	}
 
 	return b.String() + body
+}
+
+// catalogueArgs maps the tool's fields onto the placeholders the catalogue
+// declares. A field that is not named here is a parameter the model can supply
+// and the renderer never sees, which reads to the model as "missing argument".
+func catalogueArgs(args OpsExecArgs) map[string]string {
+	out := map[string]string{
+		"Unit":      args.Unit,
+		"Container": args.Container,
+		"Path":      args.Path,
+		"Image":     args.Image,
+	}
+	if args.Lines > 0 {
+		out["Lines"] = fmt.Sprintf("%d", args.Lines)
+	}
+	return out
 }

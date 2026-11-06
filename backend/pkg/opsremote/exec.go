@@ -19,6 +19,8 @@ const (
 	ParamPath
 	// ParamCount accepts a whole number inside a range
 	ParamCount
+	// ParamImage accepts an image reference, which needs : and / to carry a tag
+	ParamImage
 )
 
 // Param is one placeholder of a catalogue command. Template names it as
@@ -45,6 +47,7 @@ type Command struct {
 var (
 	namePattern  = regexp.MustCompile(`^[a-zA-Z0-9_.-]{1,128}$`)
 	pathPattern  = regexp.MustCompile(`^/[a-zA-Z0-9_.\-/]{1,255}$`)
+	imagePattern = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.\-/:@]{0,200}$`)
 	catalogOrder = []string{
 		"listen_ports",
 		"established",
@@ -60,6 +63,10 @@ var (
 		"docker_inspect",
 		"docker_stats",
 		"file_stat",
+		"package_history",
+		"unit_activated_at",
+		"container_image",
+		"image_history",
 	}
 	catalog = map[string]Command{
 		"listen_ports": {
@@ -142,6 +149,33 @@ var (
 			Template:    `stat %Path% 2>&1`,
 			Params:      []Param{{Template: "Path", Kind: ParamPath}},
 		},
+		"package_history": {
+			ID:          "package_history",
+			Description: "最近安装与升级的软件包及其时刻，带原始时间戳（dpkg 或 dnf 历史）",
+			Template:    `if [ -r /var/log/dpkg.log ]; then grep -h ' install \| upgrade ' /var/log/dpkg.log /var/log/dpkg.log.1 2>/dev/null; elif command -v dnf >/dev/null 2>&1; then dnf history --reverse 2>/dev/null; else echo 'no package history on this host'; fi | tail -n %Lines%`,
+			Params:      []Param{{Template: "Lines", Kind: ParamCount, Min: 1, Max: 500, Default: 40}},
+		},
+		"unit_activated_at": {
+			ID:          "unit_activated_at",
+			Description: "一个 systemd 单元的激活、失活与主进程启动时刻，以及它的单元文件路径（systemctl show）",
+			Template:    `systemctl show %Unit% -p Id -p FragmentPath -p ActiveState -p SubState -p ActiveEnterTimestamp -p InactiveEnterTimestamp -p ExecMainStartTimestamp -p NRestarts 2>&1`,
+			Params:      []Param{{Template: "Unit", Kind: ParamName}},
+		},
+		"container_image": {
+			ID:          "container_image",
+			Description: "一个容器所用的镜像引用、镜像 ID 与容器创建时刻，用来对齐变更时间线",
+			Template:    `docker inspect %Container% --format 'image={{.Config.Image}} image_id={{.Image}} container_created={{.Created}}' 2>&1`,
+			Params:      []Param{{Template: "Container", Kind: ParamName}},
+		},
+		"image_history": {
+			ID:          "image_history",
+			Description: "一个镜像的各层及其构建命令与时刻（docker history），用来判断镜像何时被换掉",
+			Template:    `docker history --no-trunc --format '{{.CreatedAt}}  {{.Size}}  {{.CreatedBy}}' %Image% 2>&1 | head -n %Lines%`,
+			Params: []Param{
+				{Template: "Image", Kind: ParamImage},
+				{Template: "Lines", Kind: ParamCount, Min: 1, Max: 50, Default: 15},
+			},
+		},
 	}
 )
 
@@ -217,6 +251,15 @@ func renderParam(param Param, raw string) (string, error) {
 		}
 		if !pathPattern.MatchString(raw) {
 			return "", fmt.Errorf("参数 %s 取值 %q 非法：必须是绝对路径，只允许字母、数字与 . _ - /，最长 255 个字符", param.Template, raw)
+		}
+		return raw, nil
+
+	case ParamImage:
+		if raw == "" {
+			return "", fmt.Errorf("缺少参数 %s：需要一个镜像引用，例如 nginx:1.27-alpine", param.Template)
+		}
+		if !imagePattern.MatchString(raw) {
+			return "", fmt.Errorf("参数 %s 取值 %q 非法：只允许字母、数字与 . _ - / : @，必须以字母或数字开头，最长 201 个字符", param.Template, raw)
 		}
 		return raw, nil
 

@@ -531,7 +531,9 @@ var registryDefinitions = map[string]llms.FunctionDefinition{
 		Description: "按名称执行一条预置的只读诊断命令，用于其他取证工具没覆盖到的角度。command 只能取下列 ID 之一，命令文本本身来自代码里的目录，不接受自由命令：" +
 			"listen_ports（监听端口与进程）、established（已建立连接）、disk_usage（容量）、inode_usage（inode）、memory（内存与 Swap）、load（平均负载与核数）、" +
 			"top_cpu / top_mem（按 CPU 或内存排序的进程，可传 lines）、unit_status / unit_logs（systemd 单元状态与日志，需 unit）、kernel_log（内核日志，可传 lines）、" +
-			"docker_inspect（容器状态、退出码、OOMKilled、重启次数，需 container）、docker_stats（一次性资源采样）、file_stat（绝对路径的元数据，需 path）。" +
+			"docker_inspect（容器状态、退出码、OOMKilled、重启次数，需 container）、docker_stats（一次性资源采样）、file_stat（绝对路径的元数据，需 path）、" +
+			"package_history（最近的软件包安装与升级，可传 lines，用来对齐变更时间线）、unit_activated_at（systemd 单元的激活与启动时刻，需 unit）、" +
+			"container_image（容器所用镜像与创建时刻，需 container）、image_history（镜像各层的构建命令与时刻，需 image，可传 lines）。" +
 			"参数只允许字母、数字与 . _ - /，含空格或 shell 元字符会被拒绝。" +
 			"返回结果会带上真实执行的命令原文，写证据时直接引用它。",
 		Parameters: reflector.Reflect(&OpsExecArgs{}),

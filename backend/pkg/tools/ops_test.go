@@ -7,6 +7,32 @@ import (
 	"opsagi/pkg/opsremote"
 )
 
+func TestCatalogueArgs_CarriesEveryPlaceholderTheCatalogueDeclares(t *testing.T) {
+	args := catalogueArgs(OpsExecArgs{
+		Command:   "image_history",
+		Unit:      "docker.service",
+		Container: "caddy",
+		Path:      "/etc/nginx/nginx.conf",
+		Image:     "caddy:2.10.2-alpine",
+		Lines:     50,
+	})
+
+	rendered, err := opsremote.Render("image_history", args)
+	if err != nil {
+		t.Fatalf("an argument the schema carries was not rendered: %v", err)
+	}
+	if !strings.Contains(rendered, "caddy:2.10.2-alpine") || !strings.Contains(rendered, "-n 50") {
+		t.Errorf("command = %q, want the image and the count in it", rendered)
+	}
+}
+
+func TestCatalogueArgs_LeavesTheCountOutWhenItWasNotGiven(t *testing.T) {
+	args := catalogueArgs(OpsExecArgs{Command: "listen_ports"})
+	if _, ok := args["Lines"]; ok {
+		t.Errorf("Lines = %q, want the catalogue to apply its own default", args["Lines"])
+	}
+}
+
 func TestOpsTools_HandleExec_RefusesAnUnknownCommandBeforeItDials(t *testing.T) {
 	tools := &opsTools{targets: map[string]opsremote.Target{"lab": {ID: "lab", Host: "192.0.2.10"}}}
 

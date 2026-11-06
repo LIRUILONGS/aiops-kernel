@@ -33,6 +33,7 @@ func main() {
 		argUnit  = flag.String("unit", "", "unit name for -command unit_status / unit_logs")
 		argBox   = flag.String("container", "", "container name for -command docker_inspect")
 		argPath  = flag.String("path", "", "absolute path for -command file_stat")
+		argImage = flag.String("image", "", "image reference for -command image_history")
 		argLines = flag.Int("lines", 0, "line count for the commands that accept one")
 		asJSON   = flag.Bool("json", false, "print the raw JSON report")
 		timeout  = flag.Duration("timeout", 60*time.Second, "overall deadline")
@@ -76,6 +77,7 @@ func main() {
 			"Unit":      *argUnit,
 			"Container": *argBox,
 			"Path":      *argPath,
+			"Image":     *argImage,
 			"Lines":     strconv.Itoa(*argLines),
 		})
 		return
