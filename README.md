@@ -25,6 +25,12 @@ Add `PROMETHEUS_URL=http://prometheus:9090` to give the agents a time series. Wi
 
 Then open the UI on `http://localhost:8443`, create the first administrator with `go run ./cmd/opsagi-seed -mail ops@example.com -name "On Call" -password-stdin`, start a flow, and read the conclusion either in the UI card or with `python scripts/opsagi_run.py "<request>"`.
 
+To check an installation without a host or a model, run the acceptance flow: it starts a stub model, starts the server against your database, seeds an administrator and asserts that a flow reaches a validated conclusion. It takes about twenty seconds and exits non-zero if any of that breaks:
+
+```bash
+python scripts/aiops_acceptance/run.py
+```
+
 The rest of this file documents the platform OpsAGI inherits, and it is accurate for the parts that were inherited unchanged. Where it describes penetration-testing agents (`pentester`, `coder`, `searcher`, …) that is upstream documentation: those roles still exist in the codebase, but the AIOps chains do not delegate to them.
 
 ## Table of Contents
