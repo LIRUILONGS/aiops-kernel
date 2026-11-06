@@ -388,6 +388,41 @@ func TestPerformer_PerformReflector_ChargesTheAgentThatAnswered(t *testing.T) {
 	assert.InDelta(t, float64(usage.Output)*originOutput/1e6, db.updates[0].UsageCostOut, 1e-12)
 }
 
+func TestFlowProvider_budgetNudge_LeavesRoomToConclude(t *testing.T) {
+	tests := []struct {
+		name        string
+		iteration   int
+		limit       int
+		wantMessage bool
+	}{
+		{name: "early in the budget", iteration: 3, limit: 20},
+		{name: "the turn before the nudge", iteration: 11, limit: 20},
+		{name: "the third fifth of the budget", iteration: 12, limit: 20, wantMessage: true},
+		{name: "still inside the budget", iteration: 16, limit: 20, wantMessage: true},
+		{name: "the shutdown window has its own message", iteration: 17, limit: 20},
+		{name: "never at the hard limit", iteration: 20, limit: 20},
+		{name: "a short chain of ten turns", iteration: 6, limit: 10, wantMessage: true},
+		{name: "a chain with no room for advice", iteration: 4, limit: 8},
+		{name: "an unset limit", iteration: 4, limit: 0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			message, ok := budgetNudge(tt.iteration, tt.limit)
+
+			assert.Equal(t, tt.wantMessage, ok)
+			if !tt.wantMessage {
+				assert.Empty(t, message)
+
+				return
+			}
+
+			assert.Contains(t, message, "收尾工具")
+			assert.Contains(t, message, fmt.Sprintf("%d/%d", tt.iteration, tt.limit))
+		})
+	}
+}
+
 type performerToolRecordingProvider struct {
 	*mock.Provider
 

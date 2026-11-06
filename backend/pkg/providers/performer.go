@@ -69,6 +69,7 @@ func (fp *flowProvider) performAgentChain(
 
 	var (
 		wantToStop        bool
+		nudged            bool
 		monitor           = fp.buildMonitor()
 		detector          = &repeatingDetector{}
 		summarizerHandler = fp.GetSummarizeResultHandler(taskID, subtaskID)
@@ -253,6 +254,21 @@ func (fp *flowProvider) performAgentChain(
 			return nil
 		}
 
+		if advice, ok := budgetNudge(iteration, maxCallsLimit); ok && !nudged {
+			nudged = true
+
+			chain = append(chain, llms.TextParts(llms.ChatMessageTypeHuman, advice))
+			if err := fp.updateMsgChain(ctx, optAgentType, chainID, chain, rollLastUpdateTime()); err != nil {
+				obs.LogErrorOrCancel(logger, err, "failed to update msg chain")
+				return err
+			}
+
+			logger.WithFields(logrus.Fields{
+				"iteration": iteration,
+				"limit":     maxCallsLimit,
+			}).Info("tool budget spent, asking the agent to conclude")
+		}
+
 		if summarizer != nil {
 			// it returns the same chain state if error occurs
 			chain, err = summarizer.SummarizeChain(ctx, summarizerHandler, chain, fp.tcIDTemplate)
@@ -277,6 +293,26 @@ func (fp *flowProvider) performAgentChain(
 			}
 		}
 	}
+}
+
+// budgetNudge asks for a conclusion while there are still turns left to write
+// one. A chain that only stops at the hard limit spends its final turns being
+// told to give up, which is the one thing an agent that already has its evidence
+// should not be doing.
+func budgetNudge(iteration, maxCallsLimit int) (string, bool) {
+	if maxCallsLimit < 2*maxAgentShutdownIterations+4 {
+		return "", false
+	}
+
+	threshold := min(maxCallsLimit*3/5, maxCallsLimit-maxAgentShutdownIterations-1)
+	if iteration < threshold || iteration >= maxCallsLimit-maxAgentShutdownIterations {
+		return "", false
+	}
+
+	return fmt.Sprintf(
+		"本次任务已用掉 %d/%d 次工具调用预算。停止扩大取证范围：用已有证据给出结论并调用你的收尾工具。确实缺最关键的一条证据时，只补那一条。",
+		iteration, maxCallsLimit,
+	), true
 }
 
 func (fp *flowProvider) execToolCall(
