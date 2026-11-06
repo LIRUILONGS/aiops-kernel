@@ -142,6 +142,9 @@ type Config struct {
 	LLMServerAPIType           string `env:"LLM_SERVER_API_TYPE"`
 	LLMServerAPIVersion        string `env:"LLM_SERVER_API_VERSION" envDefault:"2024-10-21"`
 
+	// === Ops targets: JSON array of opsremote.Target, read-only SSH probes ===
+	OpsTargets string `env:"OPSAGI_TARGETS"`
+
 	// === LLM Provider: Ollama (Local/Remote) ===
 	OllamaServerURL               string `env:"OLLAMA_SERVER_URL"`
 	OllamaServerAPIKey            string `env:"OLLAMA_SERVER_API_KEY"`

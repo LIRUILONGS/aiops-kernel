@@ -1,0 +1,65 @@
+# OpsAGI fault-injection lab. Runs as its own compose project so it never
+# touches the host's existing caddy/imgli stack.
+services:
+  # Pegs one core. Used for the "slow response" and "high load" scenarios.
+  cpu-hog:
+    image: alpine:latest
+    container_name: opslab-cpu
+    command: ["sh", "-c", "while true; do :; done"]
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.9"
+
+  # Exits immediately because of an invalid directive, so the restart policy
+  # turns it into a crash loop. Same shape as a CrashLoopBackOff pod.
+  broken-app:
+    image: nginx:latest
+    container_name: opslab-broken
+    volumes:
+      - ./broken-nginx.conf:/etc/nginx/nginx.conf:ro
+    restart: always
+
+  # Healthy but slow upstream: every request takes 12 seconds.
+  slow-api:
+    image: python:latest
+    container_name: opslab-slow
+    command:
+      - python
+      - -c
+      - |
+        import time
+        from http.server import BaseHTTPRequestHandler, HTTPServer
+
+        class H(BaseHTTPRequestHandler):
+            def do_GET(self):
+                time.sleep(12)
+                body = b"ok\n"
+                self.send_response(200)
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+        HTTPServer(("0.0.0.0", 8080), H).serve_forever()
+    restart: unless-stopped
+
+  # Allocates 40 MB per second until the container limit is hit, then gets
+  # OOM-killed and restarts. Used for the memory-pressure scenario.
+  mem-leak:
+    image: python:latest
+    container_name: opslab-mem
+    command:
+      - python
+      - -c
+      - |
+        import time
+        blocks = []
+        while True:
+            blocks.append(bytearray(40 * 1024 * 1024))
+            time.sleep(1)
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M

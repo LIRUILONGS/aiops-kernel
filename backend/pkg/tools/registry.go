@@ -51,6 +51,9 @@ const (
 	SubmitFlowInputToolName    = "submit_flow_input"
 	PatchFlowSubtasksToolName  = "patch_flow_subtasks"
 	WaitFlowCompletionToolName = "wait_flow_completion"
+	OpsSystemToolName          = "ops_system"
+	OpsContainersToolName      = "ops_containers"
+	OpsLogsToolName            = "ops_logs"
 )
 
 type ToolType int
@@ -138,6 +141,9 @@ var toolsTypeMapping = map[string]ToolType{
 	SubmitFlowInputToolName:    EnvironmentToolType,
 	PatchFlowSubtasksToolName:  EnvironmentToolType,
 	WaitFlowCompletionToolName: EnvironmentToolType,
+	OpsSystemToolName:          EnvironmentToolType,
+	OpsContainersToolName:      EnvironmentToolType,
+	OpsLogsToolName:            EnvironmentToolType,
 }
 
 var reflector = &jsonschema.Reflector{
@@ -454,6 +460,26 @@ var registryDefinitions = map[string]llms.FunctionDefinition{
 			"use " + GetFlowStatusToolName + " first to confirm the flow state before calling this tool. " +
 			"On return, always call " + GetFlowStatusToolName + " with detail='summary' to inspect the final status.",
 		Parameters: reflector.Reflect(&WaitFlowCompletionAction{}),
+	},
+	OpsSystemToolName: {
+		Name: OpsSystemToolName,
+		Description: "以只读方式采集目标主机的系统快照：主机名、运行时长、负载、CPU 使用率、内存与 Swap、文件系统使用率、CPU 占用最高的进程。" +
+			"用于判断是否存在资源饱和、内存泄漏、磁盘写满或热点进程。" +
+			"该工具只读取数据，不会修改目标主机上的任何状态。",
+		Parameters: reflector.Reflect(&OpsTargetArgs{}),
+	},
+	OpsContainersToolName: {
+		Name: OpsContainersToolName,
+		Description: "列出目标主机上的全部容器及其状态、重启次数、退出码与镜像，并附带处于 failed 状态的 systemd 单元。" +
+			"重启次数持续增长说明容器在崩溃重启；退出码 137 通常表示被 OOM 杀死，退出码 1 通常表示启动配置错误。" +
+			"该工具只读取数据，不会重启或停止任何容器。",
+		Parameters: reflector.Reflect(&OpsTargetArgs{}),
+	},
+	OpsLogsToolName: {
+		Name: OpsLogsToolName,
+		Description: "读取目标主机的日志尾部。source 填容器名时读取该容器的 docker logs；source 留空时读取最近 30 分钟的系统错误日志（journalctl -p err）。" +
+			"日志通常是定位根因最直接的证据，优先用它确认报错文本与时间点。",
+		Parameters: reflector.Reflect(&OpsLogsArgs{}),
 	},
 }
 

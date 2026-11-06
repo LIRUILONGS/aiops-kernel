@@ -976,6 +976,18 @@ func (fte *flowToolsExecutor) GetAssistantExecutor(cfg AssistantExecutorConfig) 
 		handlers[WaitFlowCompletionToolName] = waitFlowCompletion.Handle
 	}
 
+	ops := NewOpsTools(fte.cfg)
+	if ops.IsAvailable() {
+		definitions = append(definitions,
+			registryDefinitions[OpsSystemToolName],
+			registryDefinitions[OpsContainersToolName],
+			registryDefinitions[OpsLogsToolName],
+		)
+		handlers[OpsSystemToolName] = ops.HandleSystem
+		handlers[OpsContainersToolName] = ops.HandleContainers
+		handlers[OpsLogsToolName] = ops.HandleLogs
+	}
+
 	ce := &customExecutor{
 		userID:      fte.userID,
 		flowID:      fte.flowID,
