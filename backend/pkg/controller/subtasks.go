@@ -130,8 +130,13 @@ func (stc *subtaskController) RefineSubtasks(ctx context.Context) error {
 		return fmt.Errorf("failed to refine subtasks for task %d: %w", stc.taskCtx.TaskID, err)
 	}
 
-	if len(plan) == 0 {
-		return nil // no subtasks refined
+	// A nil plan means the refiner produced nothing to apply -- it refused, or the
+	// call failed in a way the provider already handled. An empty plan is the
+	// opposite: the model removed every remaining hypothesis because the evidence
+	// was enough. Dropping that decision here leaves those rows 'created' forever,
+	// and the task then waits on a hypothesis nobody will ever run.
+	if plan == nil {
+		return nil
 	}
 
 	subtaskIDs := make([]int64, 0, len(subtasks))

@@ -75,10 +75,18 @@ class CheckFlow(unittest.TestCase):
             opsagi_smoke.check_flow("finished", [call("optimization_result", optimization())], "optimization"), []
         )
 
-    def test_a_flow_that_did_not_finish_fails(self):
+    def test_a_flow_that_answered_and_waits_is_settled(self):
+        self.assertEqual(opsagi_smoke.check_flow("waiting", [call("diagnosis", diagnosis())], "diagnosis"), [])
+
+    def test_a_failed_flow_fails(self):
         failures = opsagi_smoke.check_flow("failed", [call("diagnosis", diagnosis())], "diagnosis")
 
-        self.assertIn("flow settled as 'failed', not 'finished'", failures)
+        self.assertIn("flow failed", failures)
+
+    def test_a_flow_still_planning_fails(self):
+        failures = opsagi_smoke.check_flow("running", [call("diagnosis", diagnosis())], "diagnosis")
+
+        self.assertTrue(any("not finished or waiting" in failure for failure in failures), failures)
 
     def test_a_flow_without_an_exit_fails(self):
         failures = opsagi_smoke.check_flow("finished", [call("ops_system", {"host": "lab"})], "diagnosis")

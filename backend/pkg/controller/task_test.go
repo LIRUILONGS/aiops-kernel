@@ -24,6 +24,7 @@ type generatorFakeQuerier struct {
 	subtasks      []database.Subtask
 	subtasksErr   error
 	subtaskLimit  int
+	deleted       [][]int64
 }
 
 func (q *generatorFakeQuerier) CreateTask(ctx context.Context, arg database.CreateTaskParams) (database.Task, error) {
@@ -75,6 +76,15 @@ func (q *generatorFakeQuerier) CreateSubtask(
 	return subtask, nil
 }
 
+func (q *generatorFakeQuerier) DeleteSubtasks(ctx context.Context, ids []int64) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	q.deleted = append(q.deleted, ids)
+
+	return nil
+}
+
 func (q *generatorFakeQuerier) GetTaskSubtasks(context.Context, int64) ([]database.Subtask, error) {
 	if q.subtasksErr != nil {
 		return nil, q.subtasksErr
@@ -105,6 +115,7 @@ type generatorFakeProvider struct {
 	err       error
 	cancel    context.CancelFunc
 	refineErr error
+	refined   []tools.SubtaskInfo
 }
 
 func (generatorFakeProvider) GetTaskTitle(context.Context, string) (string, error) {
@@ -122,7 +133,7 @@ func (p generatorFakeProvider) GenerateSubtasks(ctx context.Context, _ int64) ([
 }
 
 func (p generatorFakeProvider) RefineSubtasks(context.Context, int64) ([]tools.SubtaskInfo, error) {
-	return nil, p.refineErr
+	return p.refined, p.refineErr
 }
 
 func TestTask_AnExplicitlyEmptyGeneratorPlanRunsTheOriginalRequest(t *testing.T) {
@@ -216,6 +227,45 @@ func TestTask_RefinerFailureKeepsTheExistingPlanOnlyForModelFailures(t *testing.
 			assert.Equal(t, tc.plan, q.subtasks, "refiner failure must not mutate the original plan")
 		})
 	}
+}
+
+func TestTask_RefineSubtasks_AppliesAnEmptyPlanAsADecisionToStop(t *testing.T) {
+	newController := func(q *generatorFakeQuerier, provider generatorFakeProvider) SubtaskController {
+		return NewSubtaskController(&TaskContext{
+			TaskID: 5,
+			FlowContext: FlowContext{
+				DB:        q,
+				Provider:  provider,
+				Publisher: &cascadeFakePublisher{},
+				MsgLog:    generatorFakeMsgLog{},
+			},
+		})
+	}
+
+	t.Run("an empty plan deletes the hypotheses that were left", func(t *testing.T) {
+		q := &generatorFakeQuerier{subtasks: []database.Subtask{
+			{ID: 1, Status: database.SubtaskStatusFinished},
+			{ID: 7, Status: database.SubtaskStatusCreated},
+		}}
+		stc := newController(q, generatorFakeProvider{refined: []tools.SubtaskInfo{}})
+
+		require.NoError(t, stc.RefineSubtasks(context.Background()))
+
+		require.Len(t, q.deleted, 1, "the empty plan has to reach the rows it makes obsolete")
+		assert.Equal(t, []int64{7}, q.deleted[0], "only a subtask still waiting to run is deleted")
+		assert.Len(t, q.subtasks, 2, "nothing is planned in its place")
+	})
+
+	t.Run("a nil plan leaves the remaining hypotheses alone", func(t *testing.T) {
+		q := &generatorFakeQuerier{subtasks: []database.Subtask{
+			{ID: 7, Status: database.SubtaskStatusCreated},
+		}}
+		stc := newController(q, generatorFakeProvider{refined: nil})
+
+		require.NoError(t, stc.RefineSubtasks(context.Background()))
+
+		assert.Empty(t, q.deleted, "a refiner that said nothing cannot cancel the plan")
+	})
 }
 
 func TestTask_NewTaskWorker_ClosesATaskThatCannotStart(t *testing.T) {

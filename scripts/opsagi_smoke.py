@@ -27,6 +27,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import opsagi_run
 
 EXIT_TOOL = {"diagnosis": "diagnosis", "optimization": "optimization_result"}
+# A flow that has answered waits for the next question rather than closing, so
+# 'waiting' is a settled flow too. Only 'failed' means it never got there.
+SETTLED = ("finished", "waiting", "failed")
 VERDICTS = ("improved", "no_measurable_effect", "degraded", "unverified")
 
 
@@ -50,8 +53,10 @@ def check_flow(status, calls, target):
     failures = []
     name = EXIT_TOOL[target]
 
-    if status != "finished":
-        failures.append("flow settled as {!r}, not 'finished'".format(status))
+    if status == "failed":
+        failures.append("flow failed")
+    elif status not in SETTLED:
+        failures.append("flow settled as {!r}, not finished or waiting".format(status))
 
     found = exits(calls, name)
     if not found:
@@ -152,7 +157,7 @@ def wait_for(client, flow_id, timeout, interval):
     status = client.flow_status(flow_id)["status"]
 
     while time.monotonic() < deadline:
-        if status in ("finished", "failed"):
+        if status in SETTLED:
             return status
         time.sleep(interval)
         status = client.flow_status(flow_id)["status"]
@@ -196,7 +201,7 @@ def main(argv):
     reports = client.reports(flow_id)
 
     failures = check_flow(status, calls, args.target)
-    if status == "finished" and not reports:
+    if status != "failed" and not reports:
         failures.append("no report message: the flow ended without saying anything")
 
     elapsed = int(time.monotonic() - started)
