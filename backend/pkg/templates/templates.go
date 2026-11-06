@@ -369,6 +369,10 @@ var PromptVariables = map[PromptType][]string{
 	},
 	PromptTypeToolCallFixer: {},
 	PromptTypeCommander: {
+		"DiagnosisToolName",
+		"AskToolName",
+		"AskUserEnabled",
+		"ExecutionContext",
 		"Lang",
 	},
 	PromptTypeTriage: {
@@ -477,24 +481,24 @@ type AgentPrompts struct {
 }
 
 type AgentsPrompts struct {
-	PrimaryAgent  AgentPrompt
-	Assistant     AgentPrompt
-	Pentester     AgentPrompts
-	Coder         AgentPrompts
-	Installer     AgentPrompts
-	Searcher      AgentPrompts
-	Memorist      AgentPrompts
-	Adviser       AgentPrompts
-	Generator     AgentPrompts
-	Refiner       AgentPrompts
-	Reporter      AgentPrompts
-	Reflector     AgentPrompts
-	Enricher      AgentPrompts
-	ToolCallFixer AgentPrompts
-	Summarizer    AgentPrompt
-	Commander     AgentPrompt
-	Triage        AgentPrompt
-	LogAnalyst    AgentPrompt
+	PrimaryAgent   AgentPrompt
+	Assistant      AgentPrompt
+	Pentester      AgentPrompts
+	Coder          AgentPrompts
+	Installer      AgentPrompts
+	Searcher       AgentPrompts
+	Memorist       AgentPrompts
+	Adviser        AgentPrompts
+	Generator      AgentPrompts
+	Refiner        AgentPrompts
+	Reporter       AgentPrompts
+	Reflector      AgentPrompts
+	Enricher       AgentPrompts
+	ToolCallFixer  AgentPrompts
+	Summarizer     AgentPrompt
+	Commander      AgentPrompt
+	Triage         AgentPrompt
+	LogAnalyst     AgentPrompt
 	MetricsAnalyst AgentPrompt
 	ChangeAnalyst  AgentPrompt
 }

@@ -178,6 +178,101 @@ func (o *opsTools) HandleLogs(ctx context.Context, name string, args json.RawMes
 	return formatLogs(target, "容器 "+parsed.Source+" 日志", res), nil
 }
 
+// OpsBaselineArgs captures a named sample of a host for later comparison.
+type OpsBaselineArgs struct {
+	Target string `json:"target,omitempty" jsonschema:"description=目标主机 ID，留空使用默认主机"`
+	Label  string `json:"label,omitempty" jsonschema:"description=这次采样的名字，例如 before-change / after-change,example=before-change"`
+}
+
+// OpsDiffArgs compares two samples taken by ops_baseline.
+type OpsDiffArgs struct {
+	Before string `json:"before" jsonschema:"description=ops_baseline 返回的 before 指纹 JSON"`
+	After  string `json:"after" jsonschema:"description=ops_baseline 返回的 after 指纹 JSON"`
+}
+
+func (o *opsTools) HandleBaseline(ctx context.Context, name string, args json.RawMessage) (string, error) {
+	var parsed OpsBaselineArgs
+	if err := json.Unmarshal(args, &parsed); err != nil {
+		return "", fmt.Errorf("解析参数失败：%w", err)
+	}
+
+	client, target, err := o.dial(ctx, args)
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = client.Close() }()
+
+	ctx, cancel := context.WithTimeout(ctx, o.timeout)
+	defer cancel()
+
+	snap, err := client.System(ctx)
+	if err != nil {
+		return "", fmt.Errorf("采集基线失败：%w", err)
+	}
+	containers, err := client.Containers(ctx)
+	if err != nil {
+		containers = nil
+	}
+
+	label := parsed.Label
+	if label == "" {
+		label = "sample-" + time.Now().Format("150405")
+	}
+
+	fp := opsremote.SnapshotFingerprint(label, snap, containers)
+	payload, err := json.Marshal(fp)
+	if err != nil {
+		return "", fmt.Errorf("序列化基线失败：%w", err)
+	}
+
+	var b strings.Builder
+	fmt.Fprintf(&b, "已采集基线 %q（目标 %s，主机 %s）\n", label, target.ID, fp.Host)
+	fmt.Fprintf(&b, "负载 %.2f，CPU %.1f%%，内存 %d/%d MB，磁盘根分区 %.0f%%\n",
+		fp.Load1, fp.CPUPercent, fp.MemUsedMB, fp.MemTotalMB, fp.Filesystems["/"])
+	b.WriteString("\n把下面这一整行原样保存下来，做完变更后再次调用 ops_baseline 采一个 after，再用 ops_diff 对比：\n")
+	b.WriteString(string(payload))
+	b.WriteString("\n")
+
+	return b.String(), nil
+}
+
+func (o *opsTools) HandleDiff(ctx context.Context, name string, args json.RawMessage) (string, error) {
+	var parsed OpsDiffArgs
+	if err := json.Unmarshal(args, &parsed); err != nil {
+		return "", fmt.Errorf("解析参数失败：%w", err)
+	}
+	if strings.TrimSpace(parsed.Before) == "" || strings.TrimSpace(parsed.After) == "" {
+		return "", fmt.Errorf("before 与 after 都是必填：请分别填入两次 ops_baseline 返回的指纹 JSON")
+	}
+
+	var before, after opsremote.Fingerprint
+	if err := json.Unmarshal([]byte(extractJSON(parsed.Before)), &before); err != nil {
+		return "", fmt.Errorf("解析 before 失败：%w", err)
+	}
+	if err := json.Unmarshal([]byte(extractJSON(parsed.After)), &after); err != nil {
+		return "", fmt.Errorf("解析 after 失败：%w", err)
+	}
+	if before.Host == "" || after.Host == "" {
+		return "", fmt.Errorf("指纹里缺少主机信息，请确认传入的是 ops_baseline 的输出")
+	}
+	if before.Host != after.Host {
+		return "", fmt.Errorf("两次采样来自不同主机（%s 与 %s），无法对比", before.Host, after.Host)
+	}
+
+	return opsremote.FormatDeltas(before, after, opsremote.CompareFingerprints(before, after)), nil
+}
+
+// extractJSON tolerates a fingerprint pasted together with the sentence around
+// it: models copy the whole tool result rather than the bare object.
+func extractJSON(s string) string {
+	start := strings.Index(s, "{")
+	end := strings.LastIndex(s, "}")
+	if start >= 0 && end > start {
+		return s[start : end+1]
+	}
+	return s
+}
+
 func formatSystem(target opsremote.Target, snap opsremote.SystemSnapshot) string {
 	var b strings.Builder
 

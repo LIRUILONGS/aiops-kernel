@@ -321,6 +321,35 @@ func (fp *flowProvider) ensureChainConsistency(chain []llms.MessageContent) ([]l
 	return ast.Messages(), nil
 }
 
+// The chain that drives a task is named after the agent driving it. Rows
+// written by flows that ran under the primary agent stay readable, so a lookup
+// tries the commander first and that name second.
+var taskChainCandidates = []database.MsgchainType{
+	database.MsgchainTypeCommander,
+	database.MsgchainTypePrimaryAgent,
+}
+
+func (fp *flowProvider) getTaskMainChain(ctx context.Context, taskID int64) (database.Msgchain, error) {
+	var lastErr error
+	for _, chainType := range taskChainCandidates {
+		msgChain, err := fp.db.GetFlowTaskTypeLastMsgChain(ctx, database.GetFlowTaskTypeLastMsgChainParams{
+			FlowID: fp.flowID,
+			TaskID: database.Int64ToNullInt64(&taskID),
+			Type:   chainType,
+		})
+		if err == nil && !isEmptyChain(msgChain.Chain) {
+			return msgChain, nil
+		}
+		lastErr = err
+	}
+
+	if lastErr == nil {
+		lastErr = fmt.Errorf("no chain for task %d", taskID)
+	}
+
+	return database.Msgchain{}, lastErr
+}
+
 func (fp *flowProvider) getTaskPrimaryAgentChainSummary(
 	ctx context.Context,
 	taskID int64,
@@ -335,11 +364,7 @@ func (fp *flowProvider) getTaskPrimaryAgentChainSummary(
 	)
 	ctx, _ = evaluator.Observation(ctx)
 
-	msgChain, err := fp.db.GetFlowTaskTypeLastMsgChain(ctx, database.GetFlowTaskTypeLastMsgChainParams{
-		FlowID: fp.flowID,
-		TaskID: database.Int64ToNullInt64(&taskID),
-		Type:   database.MsgchainTypePrimaryAgent,
-	})
+	msgChain, err := fp.getTaskMainChain(ctx, taskID)
 	if err != nil || isEmptyChain(msgChain.Chain) {
 		return "", wrapErrorEndEvaluatorSpan(ctx, evaluator, "failed to get task primary agent chain", err)
 	}

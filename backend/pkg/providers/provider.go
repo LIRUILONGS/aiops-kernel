@@ -637,7 +637,7 @@ func (fp *flowProvider) PrepareAgentChain(ctx context.Context, taskID, subtaskID
 	ctx, span := obs.Observer.NewSpan(ctx, obs.SpanKindInternal, "providers.flowProvider.PrepareAgentChain")
 	defer span.End()
 
-	msgChainType := database.MsgchainTypePrimaryAgent
+	msgChainType := database.MsgchainTypeCommander
 	optAgentType := agentByChain[msgChainType]
 
 	logger := logrus.WithContext(ctx).WithFields(logrus.Fields{
@@ -669,29 +669,16 @@ func (fp *flowProvider) PrepareAgentChain(ctx context.Context, taskID, subtaskID
 		return 0, fmt.Errorf("failed to update subtask context: %w", err)
 	}
 
-	systemAgentTmpl, err := fp.prompter.RenderTemplate(templates.PromptTypePrimaryAgent, map[string]any{
-		"FinalyToolName":          tools.FinalyToolName,
-		"SearchToolName":          tools.SearchToolName,
-		"PentesterToolName":       tools.PentesterToolName,
-		"CoderToolName":           tools.CoderToolName,
-		"AdviceToolName":          tools.AdviceToolName,
-		"MemoristToolName":        tools.MemoristToolName,
-		"MaintenanceToolName":     tools.MaintenanceToolName,
-		"SummarizationToolName":   cast.SummarizationToolName,
-		"SummarizedContentPrefix": strings.ReplaceAll(csum.SummarizedContentPrefix, "\n", "\\n"),
-		"AskUserToolName":         tools.AskUserToolName,
-		"AskUserEnabled":          fp.askUser,
-		"ExecutionContext":        executionContext,
-		"Cwd":                     docker.WorkFolderPathInContainer,
-		"Lang":                    fp.language,
-		"DockerImage":             fp.image,
-		"CurrentTime":             getCurrentTime(),
-		"ToolPlaceholder":         ToolPlaceholder,
-		"UserFiles":               fp.userFilesListing(),
+	systemAgentTmpl, err := fp.prompter.RenderTemplate(templates.PromptTypeCommander, map[string]any{
+		"DiagnosisToolName": tools.DiagnosisToolName,
+		"AskToolName":       tools.AskUserToolName,
+		"AskUserEnabled":    fp.askUser,
+		"ExecutionContext":  executionContext,
+		"Lang":              fp.language,
 	})
 	if err != nil {
-		logger.WithError(err).Error("failed to get system prompt for primary agent template")
-		return 0, fmt.Errorf("failed to get system prompt for primary agent template: %w", err)
+		logger.WithError(err).Error("failed to get system prompt for commander template")
+		return 0, fmt.Errorf("failed to get system prompt for commander template: %w", err)
 	}
 
 	msgChainID, _, err := fp.restoreChain(
@@ -709,7 +696,7 @@ func (fp *flowProvider) PerformAgentChain(ctx context.Context, taskID, subtaskID
 	ctx, span := obs.Observer.NewSpan(ctx, obs.SpanKindInternal, "providers.flowProvider.PerformAgentChain")
 	defer span.End()
 
-	msgChainType := database.MsgchainTypePrimaryAgent
+	msgChainType := database.MsgchainTypeCommander
 	optAgentType := agentByChain[msgChainType]
 
 	logger := logrus.WithContext(ctx).WithFields(logrus.Fields{
@@ -723,50 +710,14 @@ func (fp *flowProvider) PerformAgentChain(ctx context.Context, taskID, subtaskID
 
 	msgChain, err := fp.db.GetMsgChain(ctx, msgChainID)
 	if err != nil {
-		logger.WithError(err).Error("failed to get primary agent msg chain")
-		return PerformResultError, fmt.Errorf("failed to get primary agent msg chain %d: %w", msgChainID, err)
+		logger.WithError(err).Error("failed to get commander msg chain")
+		return PerformResultError, fmt.Errorf("failed to get commander msg chain %d: %w", msgChainID, err)
 	}
 
 	var chain []llms.MessageContent
 	if err := json.Unmarshal(msgChain.Chain, &chain); err != nil {
-		logger.WithError(err).Error("failed to unmarshal primary agent msg chain")
-		return PerformResultError, fmt.Errorf("failed to unmarshal primary agent msg chain %d: %w", msgChainID, err)
-	}
-
-	adviser, err := fp.GetAskAdviceHandler(ctx, &taskID, &subtaskID)
-	if err != nil {
-		logger.WithError(err).Error("failed to get ask advice handler")
-		return PerformResultError, fmt.Errorf("failed to get ask advice handler: %w", err)
-	}
-
-	coder, err := fp.GetCoderHandler(ctx, &taskID, &subtaskID)
-	if err != nil {
-		logger.WithError(err).Error("failed to get coder handler")
-		return PerformResultError, fmt.Errorf("failed to get coder handler: %w", err)
-	}
-
-	installer, err := fp.GetInstallerHandler(ctx, &taskID, &subtaskID)
-	if err != nil {
-		logger.WithError(err).Error("failed to get installer handler")
-		return PerformResultError, fmt.Errorf("failed to get installer handler: %w", err)
-	}
-
-	memorist, err := fp.GetMemoristHandler(ctx, &taskID, &subtaskID)
-	if err != nil {
-		logger.WithError(err).Error("failed to get memorist handler")
-		return PerformResultError, fmt.Errorf("failed to get memorist handler: %w", err)
-	}
-
-	pentester, err := fp.GetPentesterHandler(ctx, &taskID, &subtaskID)
-	if err != nil {
-		logger.WithError(err).Error("failed to get pentester handler")
-		return PerformResultError, fmt.Errorf("failed to get pentester handler: %w", err)
-	}
-
-	searcher, err := fp.GetSubtaskSearcherHandler(ctx, &taskID, &subtaskID)
-	if err != nil {
-		logger.WithError(err).Error("failed to get searcher handler")
-		return PerformResultError, fmt.Errorf("failed to get searcher handler: %w", err)
+		logger.WithError(err).Error("failed to unmarshal commander msg chain")
+		return PerformResultError, fmt.Errorf("failed to unmarshal commander msg chain %d: %w", msgChainID, err)
 	}
 
 	subtask, err := fp.db.GetSubtask(ctx, subtaskID)
@@ -777,7 +728,7 @@ func (fp *flowProvider) PerformAgentChain(ctx context.Context, taskID, subtaskID
 
 	ctx, observation := obs.Observer.NewObservation(ctx)
 	executorAgent := observation.Agent(
-		langfuse.WithAgentName(fmt.Sprintf("primary agent for subtask %d: %s", subtaskID, subtask.Title)),
+		langfuse.WithAgentName(fmt.Sprintf("commander for subtask %d: %s", subtaskID, subtask.Title)),
 		langfuse.WithAgentInput(chain),
 		langfuse.WithAgentMetadata(langfuse.Metadata{
 			"flow_id":      fp.flowID,
@@ -793,125 +744,112 @@ func (fp *flowProvider) PerformAgentChain(ctx context.Context, taskID, subtaskID
 	ctx, _ = executorAgent.Observation(ctx)
 
 	performResult := PerformResultError
-	cfg := tools.PrimaryExecutorConfig{
-		TaskID:    taskID,
-		SubtaskID: subtaskID,
-		Adviser:   adviser,
-		Coder:     coder,
-		Installer: installer,
-		Memorist:  memorist,
-		Pentester: pentester,
-		Searcher:  searcher,
-		Barrier: func(ctx context.Context, name string, args json.RawMessage) (string, error) {
-			loggerFunc := logger.WithContext(ctx).WithFields(logrus.Fields{
-				"name": name,
-				"args": string(args),
-			})
+	// Both exits go through one closure: diagnosis ends the chain with the
+	// conclusion, ask hands control back to a human. Anything else reaching here
+	// is a programming error, not a model error.
+	barrier := func(ctx context.Context, name string, args json.RawMessage) (string, error) {
+		loggerFunc := logger.WithContext(ctx).WithFields(logrus.Fields{
+			"name": name,
+			"args": string(args),
+		})
 
-			switch name {
-			case tools.FinalyToolName:
-				var done tools.Done
-				if err := json.Unmarshal(args, &done); err != nil {
-					loggerFunc.WithError(err).Error("failed to unmarshal done result")
-					return "", fmt.Errorf("failed to unmarshal done result: %w", err)
-				}
-				if err := done.Validate(); err != nil {
-					loggerFunc.WithError(err).Warn("done result is incomplete")
-					return "", fmt.Errorf("failed to unmarshal done result: %w", err)
-				}
-
-				loggerFunc = loggerFunc.WithFields(logrus.Fields{
-					"status": done.Success.Bool(),
-					"result": done.Result[:min(len(done.Result), 1000)],
-				})
-
-				opts := []langfuse.AgentOption{
-					langfuse.WithAgentOutput(done.Result),
-				}
-				defer func() {
-					executorAgent.End(opts...)
-				}()
-
-				if !done.Success.Bool() {
-					performResult = PerformResultError
-					opts = append(opts,
-						langfuse.WithAgentStatus("done handler: failed"),
-						langfuse.WithAgentLevel(langfuse.ObservationLevelWarning),
-					)
-				} else {
-					performResult = PerformResultDone
-					opts = append(opts,
-						langfuse.WithAgentStatus("done handler: success"),
-					)
-				}
-
-				// TODO: here need to call SetResult from SubtaskWorker interface
-				subtask, err = fp.db.UpdateSubtaskResult(ctx, database.UpdateSubtaskResultParams{
-					Result: done.Result,
-					ID:     subtaskID,
-				})
-				if err != nil {
-					opts = append(opts,
-						langfuse.WithAgentStatus(err.Error()),
-						langfuse.WithAgentLevel(langfuse.ObservationLevelError),
-					)
-					loggerFunc.WithError(err).Error("failed to update subtask result")
-					return "", fmt.Errorf("failed to update subtask %d result: %w", subtaskID, err)
-				}
-
-				// report result to msg log as a final message for the subtask execution
-				reportMsgID, err := fp.putMsgLog(
-					ctx,
-					database.MsglogTypeReport,
-					&taskID, &subtaskID, 0,
-					"", subtask.Description,
-				)
-				if err != nil {
-					opts = append(opts,
-						langfuse.WithAgentStatus(err.Error()),
-						langfuse.WithAgentLevel(langfuse.ObservationLevelError),
-					)
-					loggerFunc.WithError(err).Error("failed to put report msg")
-					return "", fmt.Errorf("failed to put report msg: %w", err)
-				}
-
-				err = fp.updateMsgLogResult(
-					ctx,
-					reportMsgID, 0,
-					done.Result, database.MsglogResultFormatMarkdown,
-				)
-				if err != nil {
-					opts = append(opts,
-						langfuse.WithAgentStatus(err.Error()),
-						langfuse.WithAgentLevel(langfuse.ObservationLevelError),
-					)
-					loggerFunc.WithError(err).Error("failed to update report msg result")
-					return "", fmt.Errorf("failed to update report msg result: %w", err)
-				}
-
-			case tools.AskUserToolName:
-				performResult = PerformResultWaiting
-
-				var askUser tools.AskUser
-				if err := json.Unmarshal(args, &askUser); err != nil {
-					loggerFunc.WithError(err).Error("failed to unmarshal ask user result")
-					return "", fmt.Errorf("failed to unmarshal ask user result: %w", err)
-				}
-
-				executorAgent.End(
-					langfuse.WithAgentOutput(askUser.Message),
-					langfuse.WithAgentStatus("ask user handler"),
-				)
+		switch name {
+		case tools.DiagnosisToolName:
+			var diagnosis tools.Diagnosis
+			if err := json.Unmarshal(args, &diagnosis); err != nil {
+				loggerFunc.WithError(err).Error("failed to unmarshal diagnosis")
+				return "", fmt.Errorf("failed to unmarshal diagnosis: %w", err)
+			}
+			if err := diagnosis.Validate(); err != nil {
+				loggerFunc.WithError(err).Warn("diagnosis is incomplete")
+				return "", fmt.Errorf("diagnosis is incomplete: %w", err)
 			}
 
-			return fmt.Sprintf("function %s successfully processed arguments", name), nil
-		},
-		Summarizer: fp.GetSummarizeResultHandler(&taskID, &subtaskID),
+			report, err := diagnosis.Render()
+			if err != nil {
+				loggerFunc.WithError(err).Error("failed to render diagnosis")
+				return "", fmt.Errorf("failed to render diagnosis: %w", err)
+			}
+
+			performResult = PerformResultDone
+
+			// TODO: here need to call SetResult from SubtaskWorker interface
+			subtask, err = fp.db.UpdateSubtaskResult(ctx, database.UpdateSubtaskResultParams{
+				Result: report,
+				ID:     subtaskID,
+			})
+			if err != nil {
+				executorAgent.End(
+					langfuse.WithAgentStatus(err.Error()),
+					langfuse.WithAgentLevel(langfuse.ObservationLevelError),
+				)
+				loggerFunc.WithError(err).Error("failed to update subtask result")
+				return "", fmt.Errorf("failed to update subtask %d result: %w", subtaskID, err)
+			}
+
+			// report result to msg log as a final message for the subtask execution
+			reportMsgID, err := fp.putMsgLog(
+				ctx,
+				database.MsglogTypeReport,
+				&taskID, &subtaskID, 0,
+				"", subtask.Description,
+			)
+			if err != nil {
+				executorAgent.End(
+					langfuse.WithAgentStatus(err.Error()),
+					langfuse.WithAgentLevel(langfuse.ObservationLevelError),
+				)
+				loggerFunc.WithError(err).Error("failed to put report msg")
+				return "", fmt.Errorf("failed to put report msg: %w", err)
+			}
+
+			if err := fp.updateMsgLogResult(
+				ctx, reportMsgID, 0, report, database.MsglogResultFormatMarkdown,
+			); err != nil {
+				executorAgent.End(
+					langfuse.WithAgentStatus(err.Error()),
+					langfuse.WithAgentLevel(langfuse.ObservationLevelError),
+				)
+				loggerFunc.WithError(err).Error("failed to update report msg result")
+				return "", fmt.Errorf("failed to update report msg result: %w", err)
+			}
+
+			executorAgent.End(
+				langfuse.WithAgentOutput(report),
+				langfuse.WithAgentStatus("diagnosis: accepted"),
+			)
+
+		case tools.AskUserToolName:
+			performResult = PerformResultWaiting
+
+			var askUser tools.AskUser
+			if err := json.Unmarshal(args, &askUser); err != nil {
+				loggerFunc.WithError(err).Error("failed to unmarshal ask user result")
+				return "", fmt.Errorf("failed to unmarshal ask user result: %w", err)
+			}
+
+			executorAgent.End(
+				langfuse.WithAgentOutput(askUser.Message),
+				langfuse.WithAgentStatus("ask user handler"),
+			)
+		}
+
+		return fmt.Sprintf("function %s successfully processed arguments", name), nil
 	}
 
-	executor, err := fp.executor.GetPrimaryExecutor(cfg)
+	cfg := tools.CommanderExecutorConfig{
+		TaskID:     taskID,
+		SubtaskID:  subtaskID,
+		Diagnosis:  barrier,
+		Summarizer: fp.GetSummarizeResultHandler(&taskID, &subtaskID),
+	}
+	if fp.askUser {
+		cfg.AskUser = barrier
+	}
+
+	executor, err := fp.executor.GetCommanderExecutor(cfg)
 	if err != nil {
-		return PerformResultError, wrapErrorEndAgentSpan(ctx, executorAgent, "failed to get primary executor", err)
+		return PerformResultError, wrapErrorEndAgentSpan(ctx, executorAgent, "failed to get commander executor", err)
 	}
 
 	ctx = tools.PutAgentContext(ctx, msgChainType)
@@ -919,7 +857,7 @@ func (fp *flowProvider) PerformAgentChain(ctx context.Context, taskID, subtaskID
 		ctx, optAgentType, msgChain.ID, &taskID, &subtaskID, chain, executor, fp.summarizer,
 	)
 	if err != nil {
-		return PerformResultError, wrapErrorEndAgentSpan(ctx, executorAgent, "failed to perform primary agent chain", err)
+		return PerformResultError, wrapErrorEndAgentSpan(ctx, executorAgent, "failed to perform commander chain", err)
 	}
 
 	executorAgent.End()

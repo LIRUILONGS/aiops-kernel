@@ -4,11 +4,13 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 	"text/tabwriter"
 	"time"
 
@@ -23,10 +25,17 @@ func main() {
 		password = flag.String("password", os.Getenv("OPSAGI_SSH_PASSWORD"), "ssh password")
 		keyFile  = flag.String("key", os.Getenv("OPSAGI_SSH_KEY"), "ssh private key file")
 		logs     = flag.String("logs", "", "also dump the tail of this container's logs")
+		baseline = flag.String("baseline", "", "collect a named baseline fingerprint and print it as one JSON line")
+		diff     = flag.String("diff", "", "compare two fingerprint files: -diff before.json,after.json")
 		asJSON   = flag.Bool("json", false, "print the raw JSON report")
 		timeout  = flag.Duration("timeout", 60*time.Second, "overall deadline")
 	)
 	flag.Parse()
+
+	if *diff != "" {
+		runDiff(*diff)
+		return
+	}
 
 	if *host == "" {
 		fatal("target host is required (-host or OPSAGI_SSH_HOST)")
@@ -76,7 +85,43 @@ func main() {
 		return
 	}
 
+	if *baseline != "" {
+		fp := opsremote.SnapshotFingerprint(*baseline, report.System, report.Containers)
+		enc := json.NewEncoder(os.Stdout)
+		if err := enc.Encode(fp); err != nil {
+			fatal("encode: " + err.Error())
+		}
+		return
+	}
+
 	printReport(report, logResult)
+}
+
+// runDiff compares two saved fingerprints. It reads only local files, which is
+// what makes a before/after check reproducible after the target has changed.
+func runDiff(spec string) {
+	parts := strings.Split(spec, ",")
+	if len(parts) != 2 {
+		fatal("-diff expects before.json,after.json")
+	}
+
+	load := func(path string) opsremote.Fingerprint {
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			fatal("read " + path + ": " + err.Error())
+		}
+		// PowerShell's UTF8 encoding writes a BOM, and a hand-saved fingerprint
+		// is a normal way to carry one between runs.
+		raw = bytes.TrimPrefix(raw, []byte{0xEF, 0xBB, 0xBF})
+		var fp opsremote.Fingerprint
+		if err := json.Unmarshal(raw, &fp); err != nil {
+			fatal("parse " + path + ": " + err.Error())
+		}
+		return fp
+	}
+
+	before, after := load(parts[0]), load(parts[1])
+	fmt.Print(opsremote.FormatDeltas(before, after, opsremote.CompareFingerprints(before, after)))
 }
 
 func printReport(report opsremote.Report, logs *opsremote.Result) {

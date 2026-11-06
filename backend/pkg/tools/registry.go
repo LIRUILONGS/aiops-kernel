@@ -54,6 +54,13 @@ const (
 	OpsSystemToolName          = "ops_system"
 	OpsContainersToolName      = "ops_containers"
 	OpsLogsToolName            = "ops_logs"
+	OpsBaselineToolName        = "ops_baseline"
+	OpsDiffToolName            = "ops_diff"
+	DiagnosisToolName          = "diagnosis"
+	TriageResultToolName       = "triage_result"
+	LogFindingToolName         = "log_finding"
+	MetricFindingToolName      = "metric_finding"
+	ChangeFindingToolName      = "change_finding"
 )
 
 type ToolType int
@@ -144,6 +151,13 @@ var toolsTypeMapping = map[string]ToolType{
 	OpsSystemToolName:          EnvironmentToolType,
 	OpsContainersToolName:      EnvironmentToolType,
 	OpsLogsToolName:            EnvironmentToolType,
+	OpsBaselineToolName:        EnvironmentToolType,
+	OpsDiffToolName:            EnvironmentToolType,
+	DiagnosisToolName:          BarrierToolType,
+	TriageResultToolName:       StoreAgentResultToolType,
+	LogFindingToolName:         StoreAgentResultToolType,
+	MetricFindingToolName:      StoreAgentResultToolType,
+	ChangeFindingToolName:      StoreAgentResultToolType,
 }
 
 var reflector = &jsonschema.Reflector{
@@ -481,6 +495,51 @@ var registryDefinitions = map[string]llms.FunctionDefinition{
 			"日志通常是定位根因最直接的证据，优先用它确认报错文本与时间点。",
 		Parameters: reflector.Reflect(&OpsLogsArgs{}),
 	},
+	OpsBaselineToolName: {
+		Name: OpsBaselineToolName,
+		Description: "对目标主机采集一次带时间戳的基线指纹，返回一段 JSON。用于性能优化类目标：变更前采一次、变更后再采一次，然后用 ops_diff 对比。" +
+			"指纹包含负载、CPU、内存、Swap、各分区使用率、容器状态与重启次数、CPU 与内存占用最高的进程。" +
+			"该工具只读取数据，不修改目标主机。",
+		Parameters: reflector.Reflect(&OpsBaselineArgs{}),
+	},
+	OpsDiffToolName: {
+		Name: OpsDiffToolName,
+		Description: "对比两次 ops_baseline 采集的指纹，逐项给出变化量、百分比与「改善/恶化/持平」判定，并标注变化是否显著。" +
+			"差值与百分比由代码计算，不要自己心算：直接把两次指纹原样传入即可。" +
+			"没有显著变化时结论应当是「本次变更未产生可测量效果」，而不是勉强找一条改善。",
+		Parameters: reflector.Reflect(&OpsDiffArgs{}),
+	},
+	DiagnosisToolName: {
+		Name: DiagnosisToolName,
+		Description: "提交本次事故的最终诊断，并结束当前排查。这是唯一的正常出口。" +
+			"调用之前结论必须已经被工具真实取证过：evidence 至少两条，每条都要能靠 query 复现。" +
+			"没查过的东西不要写进结论；结论不完整或需要人动手时把 needs_human 置为 true。",
+		Parameters: reflector.Reflect(&Diagnosis{}),
+	},
+	TriageResultToolName: {
+		Name: TriageResultToolName,
+		Description: "交回分诊结论：分级、影响面、是否命中已知故障模式。" +
+			"result 是完整技术报告，事故指挥只看这一段，写短了这次委派就白做了。",
+		Parameters: reflector.Reflect(&TriageResult{}),
+	},
+	LogFindingToolName: {
+		Name: LogFindingToolName,
+		Description: "交回日志分析结论：错误模式、首次出现时刻、与告警的先后关系。" +
+			"pattern 要写成能直接匹配日志原文的特征，不要写「报错很多」。",
+		Parameters: reflector.Reflect(&LogFinding{}),
+	},
+	MetricFindingToolName: {
+		Name: MetricFindingToolName,
+		Description: "交回指标分析结论：哪些指标、拐点时刻、拐点前后的数值变化。" +
+			"onset 是数值开始异常的那一刻，不是发现异常的时刻。",
+		Parameters: reflector.Reflect(&MetricFinding{}),
+	},
+	ChangeFindingToolName: {
+		Name: ChangeFindingToolName,
+		Description: "交回变更分析结论：谁在什么时候改了什么、变更什么时候生效、与告警的间隔。" +
+			"只报时间先后时明说只有相关性，不要断言因果。",
+		Parameters: reflector.Reflect(&ChangeFinding{}),
+	},
 }
 
 func getMessageType(name string) database.MsglogType {
@@ -500,6 +559,8 @@ func getMessageType(name string) database.MsglogType {
 	case AskUserToolName:
 		return database.MsglogTypeAsk
 	case FinalyToolName:
+		return database.MsglogTypeDone
+	case DiagnosisToolName:
 		return database.MsglogTypeDone
 	default:
 		return database.MsglogTypeThoughts

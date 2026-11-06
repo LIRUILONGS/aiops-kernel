@@ -321,6 +321,18 @@ type ReporterExecutorConfig struct {
 	ReportResult ExecutorHandler
 }
 
+// CommanderExecutorConfig is the AIOps primary agent: read-only evidence tools
+// and a single structured exit. AskUser is optional because a flow can run with
+// ask-user disabled, and a commander that offers a tool its prompt has no rule
+// for would only invite an invalid call.
+type CommanderExecutorConfig struct {
+	TaskID     int64
+	SubtaskID  int64
+	Diagnosis  ExecutorHandler
+	AskUser    ExecutorHandler
+	Summarizer SummarizeHandler
+}
+
 type FlowToolsExecutor interface {
 	SetUserID(userID int64)
 	SetFlowID(flowID int64)
@@ -342,6 +354,7 @@ type FlowToolsExecutor interface {
 	GetCustomExecutor(cfg CustomExecutorConfig) (ContextToolsExecutor, error)
 	GetAssistantExecutor(cfg AssistantExecutorConfig) (ContextToolsExecutor, error)
 	GetPrimaryExecutor(cfg PrimaryExecutorConfig) (ContextToolsExecutor, error)
+	GetCommanderExecutor(cfg CommanderExecutorConfig) (ContextToolsExecutor, error)
 	GetInstallerExecutor(cfg InstallerExecutorConfig) (ContextToolsExecutor, error)
 	GetCoderExecutor(cfg CoderExecutorConfig) (ContextToolsExecutor, error)
 	GetPentesterExecutor(cfg PentesterExecutorConfig) (ContextToolsExecutor, error)
@@ -982,10 +995,14 @@ func (fte *flowToolsExecutor) GetAssistantExecutor(cfg AssistantExecutorConfig) 
 			registryDefinitions[OpsSystemToolName],
 			registryDefinitions[OpsContainersToolName],
 			registryDefinitions[OpsLogsToolName],
+			registryDefinitions[OpsBaselineToolName],
+			registryDefinitions[OpsDiffToolName],
 		)
 		handlers[OpsSystemToolName] = ops.HandleSystem
 		handlers[OpsContainersToolName] = ops.HandleContainers
 		handlers[OpsLogsToolName] = ops.HandleLogs
+		handlers[OpsBaselineToolName] = ops.HandleBaseline
+		handlers[OpsDiffToolName] = ops.HandleDiff
 	}
 
 	ce := &customExecutor{
@@ -1004,6 +1021,63 @@ func (fte *flowToolsExecutor) GetAssistantExecutor(cfg AssistantExecutorConfig) 
 	}
 
 	return ce, nil
+}
+
+// GetCommanderExecutor builds the incident commander's toolset: the read-only
+// ops probes and the diagnosis barrier, and nothing else. There is no terminal,
+// no file access and no delegation tool on purpose -- what an agent may do is
+// its tool list, and M0 allows reading only. The barrier set is what lets the
+// chain end normally instead of running out of iterations.
+func (fte *flowToolsExecutor) GetCommanderExecutor(cfg CommanderExecutorConfig) (ContextToolsExecutor, error) {
+	if cfg.Diagnosis == nil {
+		return nil, fmt.Errorf("diagnosis handler is required")
+	}
+
+	ops := NewOpsTools(fte.cfg)
+	if !ops.IsAvailable() {
+		return nil, fmt.Errorf("no ops targets configured: OPSAGI_TARGETS is empty, the commander has nothing to read")
+	}
+
+	definitions := []llms.FunctionDefinition{
+		registryDefinitions[OpsContainersToolName],
+		registryDefinitions[OpsLogsToolName],
+		registryDefinitions[OpsSystemToolName],
+		registryDefinitions[OpsBaselineToolName],
+		registryDefinitions[OpsDiffToolName],
+		registryDefinitions[DiagnosisToolName],
+	}
+	handlers := map[string]ExecutorHandler{
+		OpsContainersToolName: ops.HandleContainers,
+		OpsLogsToolName:       ops.HandleLogs,
+		OpsSystemToolName:     ops.HandleSystem,
+		OpsBaselineToolName:   ops.HandleBaseline,
+		OpsDiffToolName:       ops.HandleDiff,
+		DiagnosisToolName:     cfg.Diagnosis,
+	}
+	barriers := map[string]struct{}{DiagnosisToolName: {}}
+
+	if cfg.AskUser != nil {
+		definitions = append(definitions, registryDefinitions[AskUserToolName])
+		handlers[AskUserToolName] = cfg.AskUser
+		barriers[AskUserToolName] = struct{}{}
+	}
+
+	return &customExecutor{
+		userID:      fte.userID,
+		flowID:      fte.flowID,
+		taskID:      &cfg.TaskID,
+		subtaskID:   &cfg.SubtaskID,
+		mlp:         fte.mlp,
+		tclp:        fte.tclp,
+		replacer:    fte.replacer,
+		vslp:        fte.vslp,
+		db:          fte.db,
+		store:       fte.store,
+		definitions: definitions,
+		handlers:    handlers,
+		barriers:    barriers,
+		summarizer:  cfg.Summarizer,
+	}, nil
 }
 
 func (fte *flowToolsExecutor) GetPrimaryExecutor(cfg PrimaryExecutorConfig) (ContextToolsExecutor, error) {

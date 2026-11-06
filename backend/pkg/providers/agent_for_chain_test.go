@@ -89,13 +89,19 @@ func TestAgentForChain_AgentByChain_NamesAConfiguredAgentForEveryChainType(t *te
 	}
 }
 
-// Every other chain runs under the agent of its own name.
-func TestAgentForChain_AgentByChain_RunsFourChainsUnderAnotherAgentsName(t *testing.T) {
+// A chain runs under an agent of its own name unless its role has no model
+// configuration of its own, in which case it borrows the one it shares.
+func TestAgentForChain_AgentByChain_BorrowsAConfiguredAgentForChainsWithoutOwnConfig(t *testing.T) {
 	borrowed := map[database.MsgchainType]pconfig.ProviderOptionsType{
-		database.MsgchainTypeReporter:      pconfig.OptionsTypeSimple,
-		database.MsgchainTypeSummarizer:    pconfig.OptionsTypeSimple,
-		database.MsgchainTypeToolCallFixer: pconfig.OptionsTypeSimpleJSON,
-		database.MsgchainTypeMemorist:      pconfig.OptionsTypeSearcher,
+		database.MsgchainTypeReporter:       pconfig.OptionsTypeSimple,
+		database.MsgchainTypeSummarizer:     pconfig.OptionsTypeSimple,
+		database.MsgchainTypeToolCallFixer:  pconfig.OptionsTypeSimpleJSON,
+		database.MsgchainTypeMemorist:       pconfig.OptionsTypeSearcher,
+		database.MsgchainTypeCommander:      pconfig.OptionsTypePrimaryAgent,
+		database.MsgchainTypeTriage:         pconfig.OptionsTypeSimple,
+		database.MsgchainTypeLogAnalyst:     pconfig.OptionsTypeSearcher,
+		database.MsgchainTypeMetricsAnalyst: pconfig.OptionsTypeSearcher,
+		database.MsgchainTypeChangeAnalyst:  pconfig.OptionsTypeSearcher,
 	}
 
 	for chain, got := range agentByChain {

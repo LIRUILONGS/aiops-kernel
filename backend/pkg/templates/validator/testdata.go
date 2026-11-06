@@ -58,6 +58,8 @@ func CreateDummyTemplateData() map[string]any {
 		"SubtaskPatchToolName":       tools.SubtaskPatchToolName,
 		"AskUserToolName":            tools.AskUserToolName,
 		"AskUserEnabled":             true,
+		"DiagnosisToolName":          tools.DiagnosisToolName,
+		"AskToolName":                tools.AskUserToolName,
 		"GetFlowStatusToolName":      tools.GetFlowStatusToolName,
 		"StopFlowToolName":           tools.StopFlowToolName,
 		"SubmitFlowInputToolName":    tools.SubmitFlowInputToolName,
