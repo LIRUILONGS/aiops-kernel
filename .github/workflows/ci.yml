@@ -158,16 +158,16 @@ jobs:
             PACKAGE_REV=""
           fi
 
-          LDFLAGS="-X pentagi/pkg/version.PackageName=pentagi -X pentagi/pkg/version.PackageVer=${PACKAGE_VER} -X pentagi/pkg/version.PackageRev=${PACKAGE_REV}"
+          LDFLAGS="-X opsagi/pkg/version.PackageName=pentagi -X opsagi/pkg/version.PackageVer=${PACKAGE_VER} -X opsagi/pkg/version.PackageRev=${PACKAGE_REV}"
 
           echo "Building with version: ${PACKAGE_VER}${PACKAGE_REV:+-$PACKAGE_REV}"
 
           # Build for AMD64
-          GOOS=linux GOARCH=amd64 go build -trimpath -ldflags "$LDFLAGS" -o /tmp/pentagi-amd64 ./cmd/pentagi
+          GOOS=linux GOARCH=amd64 go build -trimpath -ldflags "$LDFLAGS" -o /tmp/pentagi-amd64 ./cmd/opsagi
           echo "✓ Successfully built for linux/amd64"
 
           # Build for ARM64
-          GOOS=linux GOARCH=arm64 go build -trimpath -ldflags "$LDFLAGS" -o /tmp/pentagi-arm64 ./cmd/pentagi
+          GOOS=linux GOARCH=arm64 go build -trimpath -ldflags "$LDFLAGS" -o /tmp/pentagi-arm64 ./cmd/opsagi
           echo "✓ Successfully built for linux/arm64"
 
   docker-build:

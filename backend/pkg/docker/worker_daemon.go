@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"pentagi/pkg/config"
+	"opsagi/pkg/config"
 
 	cerrdefs "github.com/containerd/errdefs"
 	"github.com/moby/moby/client"

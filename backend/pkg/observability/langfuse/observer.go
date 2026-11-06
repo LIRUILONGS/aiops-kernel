@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"pentagi/pkg/observability/langfuse/api"
-	"pentagi/pkg/observability/langfuse/api/core"
+	"opsagi/pkg/observability/langfuse/api"
+	"opsagi/pkg/observability/langfuse/api/core"
 
 	"github.com/sirupsen/logrus"
 )

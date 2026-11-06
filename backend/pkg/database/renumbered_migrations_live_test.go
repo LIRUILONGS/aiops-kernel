@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/migrations"
-	"pentagi/pkg/config"
-	"pentagi/pkg/database"
+	"opsagi/migrations"
+	"opsagi/pkg/config"
+	"opsagi/pkg/database"
 
 	"github.com/pressly/goose/v3"
 )

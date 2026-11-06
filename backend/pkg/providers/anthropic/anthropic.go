@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"strings"
 
-	"pentagi/pkg/config"
-	"pentagi/pkg/providers/pconfig"
-	"pentagi/pkg/providers/provider"
-	"pentagi/pkg/system"
-	"pentagi/pkg/templates"
+	"opsagi/pkg/config"
+	"opsagi/pkg/providers/pconfig"
+	"opsagi/pkg/providers/provider"
+	"opsagi/pkg/system"
+	"opsagi/pkg/templates"
 
 	"github.com/vxcontrol/langchaingo/llms"
 	"github.com/vxcontrol/langchaingo/llms/anthropic"

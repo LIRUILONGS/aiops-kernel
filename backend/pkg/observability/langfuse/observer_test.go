@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/observability/langfuse/api"
+	"opsagi/pkg/observability/langfuse/api"
 )
 
 // observerSink serves the project list NewClient validates against and hands every ingestion POST to ingest.

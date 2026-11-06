@@ -16,7 +16,7 @@ package searchers
 import (
 	"context"
 
-	"pentagi/pkg/database"
+	"opsagi/pkg/database"
 )
 
 // Request is the engine-agnostic, already-parsed input the orchestrator hands to

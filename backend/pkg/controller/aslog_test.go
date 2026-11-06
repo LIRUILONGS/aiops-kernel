@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/database"
-	"pentagi/pkg/graph/subscriptions"
-	"pentagi/pkg/providers"
+	"opsagi/pkg/database"
+	"opsagi/pkg/graph/subscriptions"
+	"opsagi/pkg/providers"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

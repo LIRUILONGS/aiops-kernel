@@ -4,10 +4,10 @@ import (
 	"context"
 	"sync"
 
-	"pentagi/cmd/installer/checker"
-	"pentagi/cmd/installer/files"
-	"pentagi/cmd/installer/state"
-	"pentagi/cmd/installer/wizard/terminal"
+	"opsagi/cmd/installer/checker"
+	"opsagi/cmd/installer/files"
+	"opsagi/cmd/installer/state"
+	"opsagi/cmd/installer/wizard/terminal"
 )
 
 type ProductStack string

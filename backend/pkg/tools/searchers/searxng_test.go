@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"pentagi/pkg/config"
-	"pentagi/pkg/database"
+	"opsagi/pkg/config"
+	"opsagi/pkg/database"
 )
 
 func TestSearxng_Handle_SendsTheConfiguredQueryAndReturnsItsOutcome(t *testing.T) {

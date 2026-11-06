@@ -3,8 +3,8 @@ package tester
 import (
 	"testing"
 
-	"pentagi/pkg/providers/pconfig"
-	"pentagi/pkg/providers/tester/cases"
+	"opsagi/pkg/providers/pconfig"
+	"opsagi/pkg/providers/tester/cases"
 )
 
 func TestConfig_ApplyOptions_StartsFromTheDefaultsAndAppliesTheOptions(t *testing.T) {

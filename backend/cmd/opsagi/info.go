@@ -8,10 +8,10 @@ import (
 	"os"
 	"time"
 
-	"pentagi/pkg/config"
-	"pentagi/pkg/database"
-	"pentagi/pkg/providers"
-	"pentagi/pkg/providers/embeddings"
+	"opsagi/pkg/config"
+	"opsagi/pkg/database"
+	"opsagi/pkg/providers"
+	"opsagi/pkg/providers/embeddings"
 
 	"github.com/sirupsen/logrus"
 )

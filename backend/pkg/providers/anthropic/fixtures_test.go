@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/config"
+	"opsagi/pkg/config"
 )
 
 // anthropicUpstream answers the token exchange and every other request with a short text turn, and keeps

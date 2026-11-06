@@ -8,7 +8,7 @@ import (
 	"time"
 	_ "time/tzdata"
 
-	"pentagi/pkg/database"
+	"opsagi/pkg/database"
 )
 
 func TestFlows_GetFlowsStatsByDay_BucketsInTheGivenZoneAndZeroFillsEmptyDays(t *testing.T) {

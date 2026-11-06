@@ -4,12 +4,12 @@ import (
 	"errors"
 	"net/http"
 
-	"pentagi/pkg/database"
-	"pentagi/pkg/graph/subscriptions"
-	"pentagi/pkg/server/auth"
-	"pentagi/pkg/server/logger"
-	"pentagi/pkg/server/models"
-	"pentagi/pkg/server/response"
+	"opsagi/pkg/database"
+	"opsagi/pkg/graph/subscriptions"
+	"opsagi/pkg/server/auth"
+	"opsagi/pkg/server/logger"
+	"opsagi/pkg/server/models"
+	"opsagi/pkg/server/response"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"

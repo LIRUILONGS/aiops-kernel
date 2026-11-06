@@ -17,7 +17,7 @@ This document describes how the product uses the database. It is not a substitut
 1. `backend/migrations/sql/*.sql` — schema and data migrations;
 2. `backend/sqlc/models/*.sql` — application queries;
 3. `backend/pkg/database/*.sql.go`, `models.go`, `querier.go` — generated Go API;
-4. `backend/cmd/pentagi/main.go` and `backend/pkg/database/tenant.go` — connection, migration and tenant bootstrap behavior;
+4. `backend/cmd/opsagi/main.go` and `backend/pkg/database/tenant.go` — connection, migration and tenant bootstrap behavior;
 5. `backend/pkg/database/{database.go,converter,knowledge}` — helpers and higher-level database services.
 
 Environment variables, PgBouncer and Supavisor setup are documented in [config.md](config.md); this file only covers the product behavior those settings enable.
@@ -26,7 +26,7 @@ Environment variables, PgBouncer and Supavisor setup are documented in [config.m
 
 ### Startup sequence
 
-`backend/cmd/pentagi/main.go` initializes PostgreSQL in this order:
+`backend/cmd/opsagi/main.go` initializes PostgreSQL in this order:
 
 1. Load and validate configuration (including `TENANT_ID`).
 2. If `TENANT_ID` is set, create the tenant schema, validate shared extension placement and rewrite `DATABASE_URL` with the tenant `search_path` (`database.EnsureTenantSchema`).
@@ -95,7 +95,7 @@ The stock Compose stack uses `vxcontrol/pgvector:latest`. Do not assume a specif
 | `backend/pkg/database/converter/` | Conversion from database rows to GraphQL models plus execution analytics calculations |
 | `backend/pkg/database/knowledge/` | Knowledge-store business logic over sqlc, pgvector embeddings and GraphQL subscriptions |
 | `backend/pkg/server/models/` | GORM v1 models used by REST/server services |
-| `backend/cmd/pentagi/main.go` | Production pool creation, migration execution and dependency wiring |
+| `backend/cmd/opsagi/main.go` | Production pool creation, migration execution and dependency wiring |
 
 sqlc and GORM are both active. Controllers and GraphQL paths primarily use generated sqlc queries; REST/server services continue to use GORM models for authentication, users, logs, settings, analytics, resources, flow files and related endpoints. Both clients share the same `*sql.DB`. GORM never owns schema creation.
 
@@ -492,7 +492,7 @@ Set `DATABASE_EXTENSIONS_SCHEMA` to the existing shared extension schema. Do not
 
 ### No migrations run in a new tenant
 
-Every tenant must have its own `<schema>.goose_db_version`. If a newly created tenant reports the public migration version but has no application tables, verify that the running binary includes schema-qualified goose table handling from `cmd/pentagi/main.go`.
+Every tenant must have its own `<schema>.goose_db_version`. If a newly created tenant reports the public migration version but has no application tables, verify that the running binary includes schema-qualified goose table handling from `cmd/opsagi/main.go`.
 
 ### Constraint and scan errors
 

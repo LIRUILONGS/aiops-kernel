@@ -8,13 +8,13 @@ import (
 	"sync"
 	"time"
 
-	"pentagi/pkg/config"
-	"pentagi/pkg/database"
-	"pentagi/pkg/docker"
-	"pentagi/pkg/graph/subscriptions"
-	"pentagi/pkg/providers"
-	"pentagi/pkg/providers/provider"
-	"pentagi/pkg/tools"
+	"opsagi/pkg/config"
+	"opsagi/pkg/database"
+	"opsagi/pkg/docker"
+	"opsagi/pkg/graph/subscriptions"
+	"opsagi/pkg/providers"
+	"opsagi/pkg/providers/provider"
+	"opsagi/pkg/tools"
 
 	"github.com/sirupsen/logrus"
 )

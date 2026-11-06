@@ -3,7 +3,7 @@ package graph
 import (
 	"testing"
 
-	"pentagi/pkg/graph/model"
+	"opsagi/pkg/graph/model"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

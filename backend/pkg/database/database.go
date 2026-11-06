@@ -8,7 +8,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	obs "pentagi/pkg/observability"
+	obs "opsagi/pkg/observability"
 
 	"github.com/jinzhu/gorm"
 	"github.com/sirupsen/logrus"

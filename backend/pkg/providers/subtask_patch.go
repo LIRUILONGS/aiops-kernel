@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"slices"
 
-	"pentagi/pkg/database"
-	"pentagi/pkg/tools"
+	"opsagi/pkg/database"
+	"opsagi/pkg/tools"
 
 	"github.com/sirupsen/logrus"
 )

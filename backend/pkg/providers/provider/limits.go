@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"pentagi/pkg/cast"
-	"pentagi/pkg/providers/pconfig"
+	"opsagi/pkg/cast"
+	"opsagi/pkg/providers/pconfig"
 
 	"github.com/vxcontrol/langchaingo/llms"
 )

@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"pentagi/pkg/server/logger"
-	"pentagi/pkg/version"
+	"opsagi/pkg/server/logger"
+	"opsagi/pkg/version"
 
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"

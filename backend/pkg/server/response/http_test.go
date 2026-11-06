@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"pentagi/pkg/version"
+	"opsagi/pkg/version"
 
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"

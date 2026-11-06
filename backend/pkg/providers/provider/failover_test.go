@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"testing"
 
-	"pentagi/pkg/providers/pconfig"
-	"pentagi/pkg/templates"
+	"opsagi/pkg/providers/pconfig"
+	"opsagi/pkg/templates"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

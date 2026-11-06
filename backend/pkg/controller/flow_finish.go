@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 
-	"pentagi/pkg/database"
-	"pentagi/pkg/graph/subscriptions"
+	"opsagi/pkg/database"
+	"opsagi/pkg/graph/subscriptions"
 
 	"github.com/sirupsen/logrus"
 )

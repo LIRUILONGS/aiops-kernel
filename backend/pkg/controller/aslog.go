@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"pentagi/pkg/database"
-	"pentagi/pkg/graph/subscriptions"
-	"pentagi/pkg/providers"
+	"opsagi/pkg/database"
+	"opsagi/pkg/graph/subscriptions"
+	"opsagi/pkg/providers"
 
 	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/vxcontrol/langchaingo/llms/reasoning"

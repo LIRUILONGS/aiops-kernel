@@ -9,8 +9,8 @@ import (
 	"runtime"
 	"strings"
 
-	"pentagi/cmd/installer/checker"
-	"pentagi/cmd/installer/cloud"
+	"opsagi/cmd/installer/checker"
+	"opsagi/cmd/installer/cloud"
 
 	"github.com/vxcontrol/cloud/models"
 )

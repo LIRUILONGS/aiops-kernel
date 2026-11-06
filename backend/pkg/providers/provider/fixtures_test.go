@@ -3,7 +3,7 @@ package provider
 import (
 	"testing"
 
-	"pentagi/pkg/providers/pconfig"
+	"opsagi/pkg/providers/pconfig"
 
 	"github.com/vxcontrol/langchaingo/llms"
 )

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/graph/model"
+	"opsagi/pkg/graph/model"
 )
 
 // Subtests are keyed by method.

@@ -15,12 +15,12 @@ import (
 	"strings"
 	"time"
 
-	"pentagi/pkg/graph/model"
-	"pentagi/pkg/graph/subscriptions"
-	"pentagi/pkg/resources"
-	"pentagi/pkg/server/logger"
-	"pentagi/pkg/server/models"
-	"pentagi/pkg/server/response"
+	"opsagi/pkg/graph/model"
+	"opsagi/pkg/graph/subscriptions"
+	"opsagi/pkg/resources"
+	"opsagi/pkg/server/logger"
+	"opsagi/pkg/server/models"
+	"opsagi/pkg/server/response"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"

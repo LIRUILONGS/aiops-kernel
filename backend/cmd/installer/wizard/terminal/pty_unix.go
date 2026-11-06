@@ -10,7 +10,7 @@ import (
 	"os/exec"
 	"syscall"
 
-	"pentagi/cmd/installer/wizard/terminal/vt"
+	"opsagi/cmd/installer/wizard/terminal/vt"
 
 	"github.com/creack/pty"
 )

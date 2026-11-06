@@ -10,12 +10,12 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/database"
-	"pentagi/pkg/docker"
-	obs "pentagi/pkg/observability"
-	"pentagi/pkg/providers"
-	"pentagi/pkg/providers/provider"
-	"pentagi/pkg/providers/tester/mock"
+	"opsagi/pkg/database"
+	"opsagi/pkg/docker"
+	obs "opsagi/pkg/observability"
+	"opsagi/pkg/providers"
+	"opsagi/pkg/providers/provider"
+	"opsagi/pkg/providers/tester/mock"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

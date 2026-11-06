@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"pentagi/pkg/config"
-	"pentagi/pkg/database"
+	"opsagi/pkg/config"
+	"opsagi/pkg/database"
 )
 
 func TestTraversaal_Handle_PostsTheQueryAndReturnsItsOutcome(t *testing.T) {

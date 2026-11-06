@@ -9,8 +9,8 @@ import (
 	"strings"
 	"sync"
 
-	"pentagi/pkg/cast"
-	"pentagi/pkg/tools"
+	"opsagi/pkg/cast"
+	"opsagi/pkg/tools"
 
 	"github.com/vxcontrol/langchaingo/llms"
 )

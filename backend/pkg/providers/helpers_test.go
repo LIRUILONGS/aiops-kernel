@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"pentagi/pkg/templates"
-	"pentagi/pkg/tools"
+	"opsagi/pkg/templates"
+	"opsagi/pkg/tools"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

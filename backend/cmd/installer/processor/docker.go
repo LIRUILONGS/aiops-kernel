@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"pentagi/pkg/docker"
-	"pentagi/pkg/tools"
+	"opsagi/pkg/docker"
+	"opsagi/pkg/tools"
 
 	cerrdefs "github.com/containerd/errdefs"
 	"github.com/moby/moby/api/types/container"

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"pentagi/pkg/observability/langfuse/api"
+	"opsagi/pkg/observability/langfuse/api"
 
 	"github.com/vxcontrol/langchaingo/llms"
 )

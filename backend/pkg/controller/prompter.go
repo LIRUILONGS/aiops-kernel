@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"pentagi/pkg/database"
-	"pentagi/pkg/templates"
-	"pentagi/pkg/templates/validator"
+	"opsagi/pkg/database"
+	"opsagi/pkg/templates"
+	"opsagi/pkg/templates/validator"
 
 	"github.com/sirupsen/logrus"
 )

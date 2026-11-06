@@ -5,12 +5,12 @@ import (
 	"os"
 	"strings"
 
-	"pentagi/cmd/installer/loader"
-	"pentagi/cmd/installer/wizard/controller"
-	"pentagi/cmd/installer/wizard/locale"
-	"pentagi/cmd/installer/wizard/logger"
-	"pentagi/cmd/installer/wizard/styles"
-	"pentagi/cmd/installer/wizard/window"
+	"opsagi/cmd/installer/loader"
+	"opsagi/cmd/installer/wizard/controller"
+	"opsagi/cmd/installer/wizard/locale"
+	"opsagi/cmd/installer/wizard/logger"
+	"opsagi/cmd/installer/wizard/styles"
+	"opsagi/cmd/installer/wizard/window"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

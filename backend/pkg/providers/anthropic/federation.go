@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	"pentagi/pkg/config"
+	"opsagi/pkg/config"
 
 	"github.com/sirupsen/logrus"
 )

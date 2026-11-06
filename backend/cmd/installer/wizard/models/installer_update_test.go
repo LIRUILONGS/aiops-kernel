@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"pentagi/cmd/installer/processor"
+	"opsagi/cmd/installer/processor"
 )
 
 func TestInstallerUpdate_InstallerUpdateLines_DescribesTheOfferBeforeAnyDownload(t *testing.T) {

@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/controller"
-	"pentagi/pkg/database"
-	"pentagi/pkg/graph/subscriptions"
-	"pentagi/pkg/server/models"
+	"opsagi/pkg/controller"
+	"opsagi/pkg/database"
+	"opsagi/pkg/graph/subscriptions"
+	"opsagi/pkg/server/models"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

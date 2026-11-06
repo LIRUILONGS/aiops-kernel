@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strings"
 
-	"pentagi/pkg/config"
-	"pentagi/pkg/observability/langfuse"
-	"pentagi/pkg/system"
+	"opsagi/pkg/config"
+	"opsagi/pkg/observability/langfuse"
+	"opsagi/pkg/system"
 
 	"github.com/vxcontrol/langchaingo/embeddings"
 	"github.com/vxcontrol/langchaingo/embeddings/huggingface"

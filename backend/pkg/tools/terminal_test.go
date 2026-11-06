@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/database"
-	"pentagi/pkg/docker"
+	"opsagi/pkg/database"
+	"opsagi/pkg/docker"
 
 	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/client"

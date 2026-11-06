@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"net/url"
 
-	"pentagi/cmd/installer/checker"
-	"pentagi/cmd/installer/loader"
-	"pentagi/cmd/installer/state"
+	"opsagi/cmd/installer/checker"
+	"opsagi/cmd/installer/loader"
+	"opsagi/cmd/installer/state"
 
 	"github.com/google/uuid"
 	"github.com/vxcontrol/cloud/sdk"

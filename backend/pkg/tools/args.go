@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"pentagi/pkg/database/knowledge/limits"
-	"pentagi/pkg/graph/model"
+	"opsagi/pkg/database/knowledge/limits"
+	"opsagi/pkg/graph/model"
 )
 
 // FileOp is a type alias (not a distinct type) for String: it shares the

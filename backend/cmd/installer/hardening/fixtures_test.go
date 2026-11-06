@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"pentagi/cmd/installer/loader"
+	"opsagi/cmd/installer/loader"
 )
 
 var errMocked = errors.New("mocked error")

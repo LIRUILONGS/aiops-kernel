@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/migrations"
+	"opsagi/migrations"
 
 	_ "github.com/lib/pq"
 	"github.com/pressly/goose/v3"

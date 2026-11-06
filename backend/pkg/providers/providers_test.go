@@ -15,10 +15,10 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/config"
-	"pentagi/pkg/database"
-	"pentagi/pkg/providers/pconfig"
-	"pentagi/pkg/providers/provider"
+	"opsagi/pkg/config"
+	"opsagi/pkg/database"
+	"opsagi/pkg/providers/pconfig"
+	"opsagi/pkg/providers/provider"
 
 	"github.com/sirupsen/logrus"
 	logtest "github.com/sirupsen/logrus/hooks/test"

@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"pentagi/pkg/providers/pconfig"
-	"pentagi/pkg/providers/provider"
-	"pentagi/pkg/templates"
+	"opsagi/pkg/providers/pconfig"
+	"opsagi/pkg/providers/provider"
+	"opsagi/pkg/templates"
 
 	"github.com/vxcontrol/langchaingo/llms"
 	"github.com/vxcontrol/langchaingo/llms/openai"

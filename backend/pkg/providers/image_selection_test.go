@@ -3,7 +3,7 @@ package providers
 import (
 	"testing"
 
-	"pentagi/pkg/config"
+	"opsagi/pkg/config"
 
 	"github.com/stretchr/testify/assert"
 )

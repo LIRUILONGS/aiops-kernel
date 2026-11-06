@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"pentagi/pkg/database"
-	obs "pentagi/pkg/observability"
-	"pentagi/pkg/observability/langfuse"
+	"opsagi/pkg/database"
+	obs "opsagi/pkg/observability"
+	"opsagi/pkg/observability/langfuse"
 
 	"github.com/sirupsen/logrus"
 	"github.com/vxcontrol/cloud/anonymizer"

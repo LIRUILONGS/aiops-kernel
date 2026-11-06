@@ -12,9 +12,9 @@ import (
 	"testing/synctest"
 	"time"
 
-	"pentagi/pkg/config"
-	"pentagi/pkg/database"
-	"pentagi/pkg/tools/searchers"
+	"opsagi/pkg/config"
+	"opsagi/pkg/database"
+	"opsagi/pkg/tools/searchers"
 )
 
 // webSearchLogRecorder stands in for the search log, keeping the last row; like the database, it refuses a done context.

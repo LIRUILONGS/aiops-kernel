@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/database"
-	"pentagi/pkg/docker"
+	"opsagi/pkg/database"
+	"opsagi/pkg/docker"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

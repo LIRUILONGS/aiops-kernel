@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"pentagi/pkg/database"
+	"opsagi/pkg/database"
 
 	"github.com/vxcontrol/langchaingo/schema"
 )

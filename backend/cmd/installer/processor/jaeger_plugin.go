@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"pentagi/cmd/installer/checker"
+	"opsagi/cmd/installer/checker"
 
 	"github.com/vxcontrol/cloud/models"
 )

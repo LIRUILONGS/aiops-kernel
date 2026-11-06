@@ -3,7 +3,7 @@ package terminal
 import (
 	"testing"
 
-	"pentagi/cmd/installer/wizard/terminal/vt"
+	"opsagi/cmd/installer/wizard/terminal/vt"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

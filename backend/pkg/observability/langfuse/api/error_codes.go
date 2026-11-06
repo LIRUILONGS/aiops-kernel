@@ -3,8 +3,8 @@
 package api
 
 import (
-    internal "pentagi/pkg/observability/langfuse/api/internal"
-    core "pentagi/pkg/observability/langfuse/api/core"
+    internal "opsagi/pkg/observability/langfuse/api/internal"
+    core "opsagi/pkg/observability/langfuse/api/core"
 )
 
 

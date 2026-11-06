@@ -6,7 +6,7 @@ import (
 	"database/sql"
 	"errors"
 
-	"pentagi/pkg/database"
+	"opsagi/pkg/database"
 )
 
 // errStoppedBeforeTokenCache ends CreateAPIToken at its insert: the token cache after it needs gorm.

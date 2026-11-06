@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/migrations"
-	"pentagi/pkg/database/knowledge/vectorstore"
+	"opsagi/migrations"
+	"opsagi/pkg/database/knowledge/vectorstore"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pressly/goose/v3"

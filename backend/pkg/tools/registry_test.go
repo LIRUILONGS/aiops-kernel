@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	"pentagi/pkg/database"
+	"opsagi/pkg/database"
 )
 
 func TestRegistry_ToolType_StringNamesEveryType(t *testing.T) {

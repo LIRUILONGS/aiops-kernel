@@ -8,10 +8,10 @@ import (
 	"sort"
 	"strings"
 
-	"pentagi/pkg/config"
-	"pentagi/pkg/providers/anthropic"
-	"pentagi/pkg/providers/pconfig"
-	"pentagi/pkg/providers/provider"
+	"opsagi/pkg/config"
+	"opsagi/pkg/providers/anthropic"
+	"opsagi/pkg/providers/pconfig"
+	"opsagi/pkg/providers/provider"
 )
 
 // Unchecked is not clean: a door whose endpoint refused to answer proves

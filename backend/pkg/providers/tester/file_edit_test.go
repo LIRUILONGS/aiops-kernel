@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/providers/tester/cases"
-	"pentagi/pkg/tools"
+	"opsagi/pkg/providers/tester/cases"
+	"opsagi/pkg/tools"
 
 	"github.com/vxcontrol/langchaingo/llms"
 )

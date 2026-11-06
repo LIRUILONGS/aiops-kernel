@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"pentagi/cmd/installer/checker"
-	"pentagi/cmd/installer/loader"
+	"opsagi/cmd/installer/checker"
+	"opsagi/cmd/installer/loader"
 
 	"github.com/vxcontrol/cloud/system"
 )

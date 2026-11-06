@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"pentagi/cmd/installer/cloud"
-	"pentagi/cmd/installer/state"
-	"pentagi/cmd/installer/wizard/logger"
+	"opsagi/cmd/installer/cloud"
+	"opsagi/cmd/installer/state"
+	"opsagi/cmd/installer/wizard/logger"
 
 	"github.com/vxcontrol/cloud/models"
 )

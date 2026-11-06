@@ -10,10 +10,10 @@ import (
 	"strconv"
 	"strings"
 
-	"pentagi/pkg/database"
-	"pentagi/pkg/graph/model"
-	"pentagi/pkg/graph/subscriptions"
-	"pentagi/pkg/providers/embeddings"
+	"opsagi/pkg/database"
+	"opsagi/pkg/graph/model"
+	"opsagi/pkg/graph/subscriptions"
+	"opsagi/pkg/providers/embeddings"
 
 	"github.com/google/uuid"
 	"github.com/sqlc-dev/pqtype"

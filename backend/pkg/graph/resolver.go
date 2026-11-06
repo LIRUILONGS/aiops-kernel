@@ -1,16 +1,16 @@
 package graph
 
 import (
-	"pentagi/pkg/config"
-	"pentagi/pkg/controller"
-	"pentagi/pkg/database"
-	"pentagi/pkg/database/knowledge"
-	"pentagi/pkg/graph/subscriptions"
-	"pentagi/pkg/providers"
-	"pentagi/pkg/server/auth"
-	"pentagi/pkg/server/update"
-	"pentagi/pkg/templates"
-	"pentagi/pkg/timezone"
+	"opsagi/pkg/config"
+	"opsagi/pkg/controller"
+	"opsagi/pkg/database"
+	"opsagi/pkg/database/knowledge"
+	"opsagi/pkg/graph/subscriptions"
+	"opsagi/pkg/providers"
+	"opsagi/pkg/server/auth"
+	"opsagi/pkg/server/update"
+	"opsagi/pkg/templates"
+	"opsagi/pkg/timezone"
 
 	"github.com/sirupsen/logrus"
 	"github.com/vxcontrol/cloud/anonymizer"

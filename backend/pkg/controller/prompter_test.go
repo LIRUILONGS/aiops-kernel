@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"pentagi/pkg/database"
-	"pentagi/pkg/templates"
+	"opsagi/pkg/database"
+	"opsagi/pkg/templates"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

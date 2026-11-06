@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"pentagi/cmd/installer/loader"
+	"opsagi/cmd/installer/loader"
 )
 
 // Drives GatherGraphitiInfo, GatherLangfuseInfo and GatherObservabilityInfo on one configuration.

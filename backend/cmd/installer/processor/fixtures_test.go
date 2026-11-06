@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/cmd/installer/checker"
-	"pentagi/cmd/installer/files"
-	"pentagi/cmd/installer/loader"
+	"opsagi/cmd/installer/checker"
+	"opsagi/cmd/installer/files"
+	"opsagi/cmd/installer/loader"
 
 	"github.com/stretchr/testify/require"
 )

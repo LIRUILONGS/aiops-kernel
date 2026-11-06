@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"pentagi/cmd/installer/files"
-	"pentagi/pkg/version"
+	"opsagi/cmd/installer/files"
+	"opsagi/pkg/version"
 )
 
 func TestMain_ParseFlags_ReadsTheEnvPathAndVersionFlags(t *testing.T) {

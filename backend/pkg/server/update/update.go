@@ -31,11 +31,11 @@ import (
 	"sync"
 	"time"
 
-	"pentagi/pkg/config"
-	"pentagi/pkg/database"
-	"pentagi/pkg/providers"
-	"pentagi/pkg/providers/embeddings"
-	"pentagi/pkg/version"
+	"opsagi/pkg/config"
+	"opsagi/pkg/database"
+	"opsagi/pkg/providers"
+	"opsagi/pkg/providers/embeddings"
+	"opsagi/pkg/version"
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"

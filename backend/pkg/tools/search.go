@@ -7,12 +7,12 @@ import (
 	"maps"
 	"strings"
 
-	"pentagi/pkg/database"
-	"pentagi/pkg/database/knowledge/limits"
-	"pentagi/pkg/graph/model"
-	obs "pentagi/pkg/observability"
-	"pentagi/pkg/observability/langfuse"
-	"pentagi/pkg/providers/embeddings"
+	"opsagi/pkg/database"
+	"opsagi/pkg/database/knowledge/limits"
+	"opsagi/pkg/graph/model"
+	obs "opsagi/pkg/observability"
+	"opsagi/pkg/observability/langfuse"
+	"opsagi/pkg/providers/embeddings"
 
 	"github.com/sirupsen/logrus"
 	"github.com/vxcontrol/cloud/anonymizer"

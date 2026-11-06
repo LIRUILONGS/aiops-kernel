@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/config"
+	"opsagi/pkg/config"
 
 	"github.com/moby/moby/client"
 	"github.com/sirupsen/logrus"

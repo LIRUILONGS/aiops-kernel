@@ -10,9 +10,9 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"pentagi/pkg/database"
-	"pentagi/pkg/database/knowledge/limits"
-	"pentagi/pkg/graph/model"
+	"opsagi/pkg/database"
+	"opsagi/pkg/database/knowledge/limits"
+	"opsagi/pkg/graph/model"
 
 	"github.com/vxcontrol/cloud/anonymizer"
 	"github.com/vxcontrol/langchaingo/schema"

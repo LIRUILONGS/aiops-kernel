@@ -3,7 +3,7 @@ package subscriptions
 import (
 	"context"
 
-	"pentagi/pkg/graph/model"
+	"opsagi/pkg/graph/model"
 )
 
 type flowSubscriber struct {

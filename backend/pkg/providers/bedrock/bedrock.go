@@ -8,11 +8,11 @@ import (
 	"os"
 	"reflect"
 
-	"pentagi/pkg/config"
-	"pentagi/pkg/providers/pconfig"
-	"pentagi/pkg/providers/provider"
-	"pentagi/pkg/system"
-	"pentagi/pkg/templates"
+	"opsagi/pkg/config"
+	"opsagi/pkg/providers/pconfig"
+	"opsagi/pkg/providers/provider"
+	"opsagi/pkg/system"
+	"opsagi/pkg/templates"
 
 	bconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"

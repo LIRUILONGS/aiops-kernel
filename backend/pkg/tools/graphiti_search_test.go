@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/graphiti"
+	"opsagi/pkg/graphiti"
 )
 
 const graphitiSearchGroupID = "test-group"

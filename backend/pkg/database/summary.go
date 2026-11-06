@@ -7,7 +7,7 @@ import (
 	"sort"
 	"time"
 
-	"pentagi/pkg/version"
+	"opsagi/pkg/version"
 )
 
 // InstanceSummarySchema is the version of the document GetInstanceSummary

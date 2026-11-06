@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	"pentagi/pkg/config"
+	"opsagi/pkg/config"
 )
 
 const (

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"pentagi/pkg/config"
+	"opsagi/pkg/config"
 
 	"github.com/moby/moby/api/pkg/stdcopy"
 	"github.com/moby/moby/api/types/container"

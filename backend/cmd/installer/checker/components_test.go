@@ -12,8 +12,8 @@ import (
 	"sync"
 	"testing"
 
-	"pentagi/cmd/installer/cloud"
-	"pentagi/cmd/installer/loader"
+	"opsagi/cmd/installer/cloud"
+	"opsagi/cmd/installer/loader"
 
 	"github.com/vxcontrol/cloud/models"
 )

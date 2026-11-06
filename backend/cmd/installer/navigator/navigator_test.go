@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"testing"
 
-	"pentagi/cmd/installer/checker"
-	"pentagi/cmd/installer/loader"
-	"pentagi/cmd/installer/wizard/models"
+	"opsagi/cmd/installer/checker"
+	"opsagi/cmd/installer/loader"
+	"opsagi/cmd/installer/wizard/models"
 )
 
 type mockState struct {

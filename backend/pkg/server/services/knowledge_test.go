@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	knowledgepkg "pentagi/pkg/database/knowledge"
-	gqlmodel "pentagi/pkg/graph/model"
+	knowledgepkg "opsagi/pkg/database/knowledge"
+	gqlmodel "opsagi/pkg/graph/model"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"

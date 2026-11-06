@@ -3,10 +3,10 @@ package main
 import (
 	"testing"
 
-	"pentagi/pkg/providers/pconfig"
-	"pentagi/pkg/providers/provider"
-	"pentagi/pkg/providers/tester"
-	"pentagi/pkg/providers/tester/cases"
+	"opsagi/pkg/providers/pconfig"
+	"opsagi/pkg/providers/provider"
+	"opsagi/pkg/providers/tester"
+	"opsagi/pkg/providers/tester/cases"
 )
 
 type namedModelProvider struct{ provider.Provider }

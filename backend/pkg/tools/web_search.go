@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"pentagi/pkg/config"
-	"pentagi/pkg/database"
-	obs "pentagi/pkg/observability"
-	"pentagi/pkg/observability/langfuse"
-	"pentagi/pkg/tools/searchers"
+	"opsagi/pkg/config"
+	"opsagi/pkg/database"
+	obs "opsagi/pkg/observability"
+	"opsagi/pkg/observability/langfuse"
+	"opsagi/pkg/tools/searchers"
 
 	"github.com/sirupsen/logrus"
 )

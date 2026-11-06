@@ -8,11 +8,11 @@ import (
 	"net"
 	"strconv"
 
-	"pentagi/pkg/controller"
-	"pentagi/pkg/database/knowledge"
-	"pentagi/pkg/graph"
-	"pentagi/pkg/server/logger"
-	"pentagi/pkg/version"
+	"opsagi/pkg/controller"
+	"opsagi/pkg/database/knowledge"
+	"opsagi/pkg/graph"
+	"opsagi/pkg/server/logger"
+	"opsagi/pkg/version"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/jinzhu/gorm"

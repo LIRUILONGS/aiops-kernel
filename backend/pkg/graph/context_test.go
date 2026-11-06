@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"pentagi/pkg/database"
+	"opsagi/pkg/database"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

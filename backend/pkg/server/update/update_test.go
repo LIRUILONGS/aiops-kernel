@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/config"
-	"pentagi/pkg/version"
+	"opsagi/pkg/config"
+	"opsagi/pkg/version"
 
 	"github.com/sirupsen/logrus"
 	"github.com/vxcontrol/cloud/models"

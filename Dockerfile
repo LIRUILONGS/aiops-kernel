@@ -92,42 +92,42 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 # Generate license reports for backend dependencies
 RUN mkdir -p /licenses/backend && \
     go list -m all > /licenses/backend/dependencies.txt && \
-    GOROOT=$(go env GOROOT) GOTOOLCHAIN=auto go-licenses csv ./cmd/pentagi > /licenses/backend/licenses.csv 2>/dev/null || true
+    GOROOT=$(go env GOROOT) GOTOOLCHAIN=auto go-licenses csv ./cmd/opsagi > /licenses/backend/licenses.csv 2>/dev/null || true
 
 # Compile main application binary with embedded version metadata
 RUN go build -trimpath \
     -ldflags "\
-        -X pentagi/pkg/version.PackageName=pentagi \
-        -X pentagi/pkg/version.PackageVer=${PACKAGE_VER} \
-        -X pentagi/pkg/version.PackageRev=${PACKAGE_REV} \
-        -X pentagi/pkg/version.Edition=${PACKAGE_EDITION}" \
-    -o /pentagi ./cmd/pentagi
+        -X opsagi/pkg/version.PackageName=pentagi \
+        -X opsagi/pkg/version.PackageVer=${PACKAGE_VER} \
+        -X opsagi/pkg/version.PackageRev=${PACKAGE_REV} \
+        -X opsagi/pkg/version.Edition=${PACKAGE_EDITION}" \
+    -o /pentagi ./cmd/opsagi
 
 # Build ctester utility
 RUN go build -trimpath \
     -ldflags "\
-        -X pentagi/pkg/version.PackageName=ctester \
-        -X pentagi/pkg/version.PackageVer=${PACKAGE_VER} \
-        -X pentagi/pkg/version.PackageRev=${PACKAGE_REV} \
-        -X pentagi/pkg/version.Edition=${PACKAGE_EDITION}" \
+        -X opsagi/pkg/version.PackageName=ctester \
+        -X opsagi/pkg/version.PackageVer=${PACKAGE_VER} \
+        -X opsagi/pkg/version.PackageRev=${PACKAGE_REV} \
+        -X opsagi/pkg/version.Edition=${PACKAGE_EDITION}" \
     -o /ctester ./cmd/ctester
 
 # Build ftester utility
 RUN go build -trimpath \
     -ldflags "\
-        -X pentagi/pkg/version.PackageName=ftester \
-        -X pentagi/pkg/version.PackageVer=${PACKAGE_VER} \
-        -X pentagi/pkg/version.PackageRev=${PACKAGE_REV} \
-        -X pentagi/pkg/version.Edition=${PACKAGE_EDITION}" \
+        -X opsagi/pkg/version.PackageName=ftester \
+        -X opsagi/pkg/version.PackageVer=${PACKAGE_VER} \
+        -X opsagi/pkg/version.PackageRev=${PACKAGE_REV} \
+        -X opsagi/pkg/version.Edition=${PACKAGE_EDITION}" \
     -o /ftester ./cmd/ftester
 
 # Build etester utility
 RUN go build -trimpath \
     -ldflags "\
-        -X pentagi/pkg/version.PackageName=etester \
-        -X pentagi/pkg/version.PackageVer=${PACKAGE_VER} \
-        -X pentagi/pkg/version.PackageRev=${PACKAGE_REV} \
-        -X pentagi/pkg/version.Edition=${PACKAGE_EDITION}" \
+        -X opsagi/pkg/version.PackageName=etester \
+        -X opsagi/pkg/version.PackageVer=${PACKAGE_VER} \
+        -X opsagi/pkg/version.PackageRev=${PACKAGE_REV} \
+        -X opsagi/pkg/version.Edition=${PACKAGE_EDITION}" \
     -o /etester ./cmd/etester
 
 # ========================================
@@ -144,64 +144,64 @@ RUN addgroup -g 998 docker && \
 # Install required packages
 RUN apk --no-cache add ca-certificates openssl openssh-keygen shadow
 
-ADD scripts/entrypoint.sh /opt/pentagi/bin/
+ADD scripts/entrypoint.sh /opt/opsagi/bin/
 
-RUN sed -i 's/\r//' /opt/pentagi/bin/entrypoint.sh && \
-    chmod +x /opt/pentagi/bin/entrypoint.sh
+RUN sed -i 's/\r//' /opt/opsagi/bin/entrypoint.sh && \
+    chmod +x /opt/opsagi/bin/entrypoint.sh
 
 RUN mkdir -p \
     /root/.ollama \
-    /opt/pentagi/bin \
-    /opt/pentagi/ssl \
-    /opt/pentagi/fe \
-    /opt/pentagi/logs \
-    /opt/pentagi/data \
-    /opt/pentagi/conf && \
+    /opt/opsagi/bin \
+    /opt/opsagi/ssl \
+    /opt/opsagi/fe \
+    /opt/opsagi/logs \
+    /opt/opsagi/data \
+    /opt/opsagi/conf && \
     chmod 777 /root/.ollama
 
-COPY --from=api-builder /pentagi /opt/pentagi/bin/pentagi
-COPY --from=api-builder /ctester /opt/pentagi/bin/ctester
-COPY --from=api-builder /ftester /opt/pentagi/bin/ftester
-COPY --from=api-builder /etester /opt/pentagi/bin/etester
-COPY --from=frontend-compiler /app/ui/dist /opt/pentagi/fe
-COPY --from=api-builder /licenses/backend /opt/pentagi/licenses/backend
-COPY --from=frontend-compiler /licenses/frontend /opt/pentagi/licenses/frontend
+COPY --from=api-builder /pentagi /opt/opsagi/bin/pentagi
+COPY --from=api-builder /ctester /opt/opsagi/bin/ctester
+COPY --from=api-builder /ftester /opt/opsagi/bin/ftester
+COPY --from=api-builder /etester /opt/opsagi/bin/etester
+COPY --from=frontend-compiler /app/ui/dist /opt/opsagi/fe
+COPY --from=api-builder /licenses/backend /opt/opsagi/licenses/backend
+COPY --from=frontend-compiler /licenses/frontend /opt/opsagi/licenses/frontend
 
 # Copy provider configuration files
-COPY examples/configs/atlas.provider.yml /opt/pentagi/conf/
-COPY examples/configs/azure-openai.provider.yml /opt/pentagi/conf/
-COPY examples/configs/bedrock-glm-flash.provider.yml /opt/pentagi/conf/
-COPY examples/configs/custom-openai.provider.yml /opt/pentagi/conf/
-COPY examples/configs/deepinfra.provider.yml /opt/pentagi/conf/
-COPY examples/configs/deepseek.provider.yml /opt/pentagi/conf/
-COPY examples/configs/hcnsec.provider.yml /opt/pentagi/conf/
-COPY examples/configs/moonshot.provider.yml /opt/pentagi/conf/
-COPY examples/configs/novita.provider.yml /opt/pentagi/conf/
-COPY examples/configs/nvidia-glm-5.1.provider.yml /opt/pentagi/conf/
-COPY examples/configs/ollama-cloud.provider.yml /opt/pentagi/conf/
-COPY examples/configs/ollama-llama318b-instruct.provider.yml /opt/pentagi/conf/
-COPY examples/configs/ollama-llama318b.provider.yml /opt/pentagi/conf/
-COPY examples/configs/ollama-qwen332b-fp16-tc.provider.yml /opt/pentagi/conf/
-COPY examples/configs/ollama-qwq32b-fp16-tc.provider.yml /opt/pentagi/conf/
-COPY examples/configs/opencode.provider.yml /opt/pentagi/conf/
-COPY examples/configs/openrouter.provider.yml /opt/pentagi/conf/
-COPY examples/configs/orcarouter.provider.yml /opt/pentagi/conf/
-COPY examples/configs/vllm-mixed.provider.yml /opt/pentagi/conf/
-COPY examples/configs/vllm-qwen3.5-27b-fp8-no-think.provider.yml /opt/pentagi/conf/
-COPY examples/configs/vllm-qwen3.5-27b-fp8.provider.yml /opt/pentagi/conf/
-COPY examples/configs/vllm-qwen3.6-27b-fp8-no-think.provider.yml /opt/pentagi/conf/
-COPY examples/configs/vllm-qwen3.6-27b-fp8.provider.yml /opt/pentagi/conf/
-COPY examples/configs/vllm-qwen3.8-27b-fp8-no-think.provider.yml /opt/pentagi/conf/
-COPY examples/configs/vllm-qwen3.8-27b-fp8.provider.yml /opt/pentagi/conf/
-COPY examples/configs/vllm-qwen3.6-35b-a3b-fp8-no-think.provider.yml /opt/pentagi/conf/
-COPY examples/configs/vllm-qwen3.6-35b-a3b-fp8.provider.yml /opt/pentagi/conf/
-COPY examples/configs/vllm-qwen332b-fp16.provider.yml /opt/pentagi/conf/
-COPY examples/configs/xai.provider.yml /opt/pentagi/conf/
+COPY examples/configs/atlas.provider.yml /opt/opsagi/conf/
+COPY examples/configs/azure-openai.provider.yml /opt/opsagi/conf/
+COPY examples/configs/bedrock-glm-flash.provider.yml /opt/opsagi/conf/
+COPY examples/configs/custom-openai.provider.yml /opt/opsagi/conf/
+COPY examples/configs/deepinfra.provider.yml /opt/opsagi/conf/
+COPY examples/configs/deepseek.provider.yml /opt/opsagi/conf/
+COPY examples/configs/hcnsec.provider.yml /opt/opsagi/conf/
+COPY examples/configs/moonshot.provider.yml /opt/opsagi/conf/
+COPY examples/configs/novita.provider.yml /opt/opsagi/conf/
+COPY examples/configs/nvidia-glm-5.1.provider.yml /opt/opsagi/conf/
+COPY examples/configs/ollama-cloud.provider.yml /opt/opsagi/conf/
+COPY examples/configs/ollama-llama318b-instruct.provider.yml /opt/opsagi/conf/
+COPY examples/configs/ollama-llama318b.provider.yml /opt/opsagi/conf/
+COPY examples/configs/ollama-qwen332b-fp16-tc.provider.yml /opt/opsagi/conf/
+COPY examples/configs/ollama-qwq32b-fp16-tc.provider.yml /opt/opsagi/conf/
+COPY examples/configs/opencode.provider.yml /opt/opsagi/conf/
+COPY examples/configs/openrouter.provider.yml /opt/opsagi/conf/
+COPY examples/configs/orcarouter.provider.yml /opt/opsagi/conf/
+COPY examples/configs/vllm-mixed.provider.yml /opt/opsagi/conf/
+COPY examples/configs/vllm-qwen3.5-27b-fp8-no-think.provider.yml /opt/opsagi/conf/
+COPY examples/configs/vllm-qwen3.5-27b-fp8.provider.yml /opt/opsagi/conf/
+COPY examples/configs/vllm-qwen3.6-27b-fp8-no-think.provider.yml /opt/opsagi/conf/
+COPY examples/configs/vllm-qwen3.6-27b-fp8.provider.yml /opt/opsagi/conf/
+COPY examples/configs/vllm-qwen3.8-27b-fp8-no-think.provider.yml /opt/opsagi/conf/
+COPY examples/configs/vllm-qwen3.8-27b-fp8.provider.yml /opt/opsagi/conf/
+COPY examples/configs/vllm-qwen3.6-35b-a3b-fp8-no-think.provider.yml /opt/opsagi/conf/
+COPY examples/configs/vllm-qwen3.6-35b-a3b-fp8.provider.yml /opt/opsagi/conf/
+COPY examples/configs/vllm-qwen332b-fp16.provider.yml /opt/opsagi/conf/
+COPY examples/configs/xai.provider.yml /opt/opsagi/conf/
 
-COPY LICENSE /opt/pentagi/LICENSE
-COPY NOTICE /opt/pentagi/NOTICE
-COPY EULA.md /opt/pentagi/EULA
-COPY EULA.md /opt/pentagi/fe/EULA.md
+COPY LICENSE /opt/opsagi/LICENSE
+COPY NOTICE /opt/opsagi/NOTICE
+COPY EULA.md /opt/opsagi/EULA
+COPY EULA.md /opt/opsagi/fe/EULA.md
 
 RUN chown -R pentagi:pentagi /opt/pentagi
 
@@ -209,7 +209,7 @@ WORKDIR /opt/pentagi
 
 USER pentagi
 
-ENTRYPOINT ["/opt/pentagi/bin/entrypoint.sh", "/opt/pentagi/bin/pentagi"]
+ENTRYPOINT ["/opt/opsagi/bin/entrypoint.sh", "/opt/opsagi/bin/pentagi"]
 
 # Mirrors GetBinaryVersion in backend/pkg/version: "<edition>", "<edition>.h<rev>",
 # "<ver>-<edition>" or "<ver>-<edition>.h<rev>". The "h" keeps the revision an

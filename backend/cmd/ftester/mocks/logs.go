@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"pentagi/pkg/database"
-	"pentagi/pkg/graph/model"
-	"pentagi/pkg/terminal"
-	"pentagi/pkg/tools"
+	"opsagi/pkg/database"
+	"opsagi/pkg/graph/model"
+	"opsagi/pkg/terminal"
+	"opsagi/pkg/tools"
 )
 
 type ProxyProviders interface {

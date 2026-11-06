@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/config"
+	"opsagi/pkg/config"
 
 	collogsv1 "go.opentelemetry.io/proto/otlp/collector/logs/v1"
 	colmetricsv1 "go.opentelemetry.io/proto/otlp/collector/metrics/v1"

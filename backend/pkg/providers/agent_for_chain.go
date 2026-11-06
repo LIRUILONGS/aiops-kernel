@@ -1,8 +1,8 @@
 package providers
 
 import (
-	"pentagi/pkg/database"
-	"pentagi/pkg/providers/pconfig"
+	"opsagi/pkg/database"
+	"opsagi/pkg/providers/pconfig"
 )
 
 var agentByChain = map[database.MsgchainType]pconfig.ProviderOptionsType{

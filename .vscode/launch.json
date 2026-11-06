@@ -5,8 +5,8 @@
             "type": "go",
             "request": "launch",
             "name": "Launch Go Backend",
-            "program": "${workspaceFolder}/backend/cmd/pentagi/",
-            "buildFlags": "-ldflags='-X pentagi/pkg/version.PackageName=pentagi -X pentagi/pkg/version.PackageVer=2.1.0 -X pentagi/pkg/version.PackageRev=93e99748'",
+            "program": "${workspaceFolder}/backend/cmd/opsagi/",
+            "buildFlags": "-ldflags='-X opsagi/pkg/version.PackageName=pentagi -X opsagi/pkg/version.PackageVer=2.1.0 -X opsagi/pkg/version.PackageRev=93e99748'",
             "envFile": "${workspaceFolder}/.env",
             "env": {
                 "CORS_ORIGINS": "http://localhost:*,https://localhost:*",

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/database"
+	"opsagi/pkg/database"
 )
 
 func seedMailedUser(t *testing.T, db *sql.DB, mail string) int64 {

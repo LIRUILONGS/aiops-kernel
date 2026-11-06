@@ -16,8 +16,8 @@ import (
 	"sync"
 	"time"
 
-	"pentagi/pkg/config"
-	"pentagi/pkg/database"
+	"opsagi/pkg/config"
+	"opsagi/pkg/database"
 
 	cerrdefs "github.com/containerd/errdefs"
 	"github.com/moby/moby/api/pkg/stdcopy"

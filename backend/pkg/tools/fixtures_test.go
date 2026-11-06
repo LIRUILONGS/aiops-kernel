@@ -23,11 +23,11 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/database"
-	"pentagi/pkg/docker"
-	"pentagi/pkg/graph/model"
-	obs "pentagi/pkg/observability"
-	"pentagi/pkg/providers/embeddings"
+	"opsagi/pkg/database"
+	"opsagi/pkg/docker"
+	"opsagi/pkg/graph/model"
+	obs "opsagi/pkg/observability"
+	"opsagi/pkg/providers/embeddings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"

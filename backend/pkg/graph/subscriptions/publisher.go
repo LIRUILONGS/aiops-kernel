@@ -3,10 +3,10 @@ package subscriptions
 import (
 	"context"
 
-	"pentagi/pkg/database"
-	"pentagi/pkg/database/converter"
-	"pentagi/pkg/graph/model"
-	"pentagi/pkg/providers/pconfig"
+	"opsagi/pkg/database"
+	"opsagi/pkg/database/converter"
+	"opsagi/pkg/graph/model"
+	"opsagi/pkg/providers/pconfig"
 )
 
 type flowPublisher struct {

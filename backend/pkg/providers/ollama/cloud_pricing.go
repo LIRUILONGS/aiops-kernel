@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"strings"
 
-	"pentagi/pkg/providers/pconfig"
+	"opsagi/pkg/providers/pconfig"
 )
 
 const cloudHost = "ollama.com"

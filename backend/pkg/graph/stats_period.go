@@ -3,7 +3,7 @@ package graph
 import (
 	"fmt"
 
-	"pentagi/pkg/graph/model"
+	"opsagi/pkg/graph/model"
 )
 
 func periodDays(period model.UsageStatsPeriod) (int32, error) {

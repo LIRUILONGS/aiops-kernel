@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/config"
-	"pentagi/pkg/database"
+	"opsagi/pkg/config"
+	"opsagi/pkg/database"
 )
 
 const testPerplexityChatBody = `{

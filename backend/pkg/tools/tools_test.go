@@ -22,12 +22,12 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/config"
-	"pentagi/pkg/database"
-	"pentagi/pkg/database/knowledge/limits"
-	"pentagi/pkg/flowfiles"
-	"pentagi/pkg/graphiti"
-	"pentagi/pkg/providers/embeddings"
+	"opsagi/pkg/config"
+	"opsagi/pkg/database"
+	"opsagi/pkg/database/knowledge/limits"
+	"opsagi/pkg/flowfiles"
+	"opsagi/pkg/graphiti"
+	"opsagi/pkg/providers/embeddings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/moby/moby/client"

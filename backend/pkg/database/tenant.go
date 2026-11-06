@@ -8,7 +8,7 @@ import (
 	"hash/crc32"
 	"net/url"
 
-	"pentagi/pkg/config"
+	"opsagi/pkg/config"
 
 	"github.com/lib/pq"
 )

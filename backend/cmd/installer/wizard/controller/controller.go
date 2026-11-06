@@ -9,11 +9,11 @@ import (
 	"sort"
 	"strings"
 
-	"pentagi/cmd/installer/checker"
-	"pentagi/cmd/installer/files"
-	"pentagi/cmd/installer/loader"
-	"pentagi/cmd/installer/state"
-	"pentagi/cmd/installer/wizard/locale"
+	"opsagi/cmd/installer/checker"
+	"opsagi/cmd/installer/files"
+	"opsagi/cmd/installer/loader"
+	"opsagi/cmd/installer/state"
+	"opsagi/cmd/installer/wizard/locale"
 )
 
 const (

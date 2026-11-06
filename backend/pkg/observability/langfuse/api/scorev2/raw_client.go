@@ -3,11 +3,11 @@
 package scorev2
 
 import (
-    internal "pentagi/pkg/observability/langfuse/api/internal"
-    core "pentagi/pkg/observability/langfuse/api/core"
+    internal "opsagi/pkg/observability/langfuse/api/internal"
+    core "opsagi/pkg/observability/langfuse/api/core"
     context "context"
-    api "pentagi/pkg/observability/langfuse/api"
-    option "pentagi/pkg/observability/langfuse/api/option"
+    api "opsagi/pkg/observability/langfuse/api"
+    option "opsagi/pkg/observability/langfuse/api/option"
     http "net/http"
 )
 

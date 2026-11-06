@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/database"
+	"opsagi/pkg/database"
 
 	_ "github.com/lib/pq"
 	"github.com/pressly/goose/v3"

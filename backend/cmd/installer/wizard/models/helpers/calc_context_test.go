@@ -3,7 +3,7 @@ package helpers
 import (
 	"testing"
 
-	"pentagi/pkg/csum"
+	"opsagi/pkg/csum"
 )
 
 // TestConfigBoundaries verifies that boundaries are calculated correctly based on configuration

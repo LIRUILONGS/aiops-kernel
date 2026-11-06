@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/database"
+	"opsagi/pkg/database"
 )
 
 const btreeRowLimit = 2704

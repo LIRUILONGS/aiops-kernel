@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"pentagi/cmd/installer/loader"
+	"opsagi/cmd/installer/loader"
 )
 
 // networkEnv unsets every variable DoSyncNetworkSettings reads, then sets the given ones.

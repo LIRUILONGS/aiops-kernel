@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"pentagi/pkg/database"
-	"pentagi/pkg/graph/subscriptions"
+	"opsagi/pkg/database"
+	"opsagi/pkg/graph/subscriptions"
 )
 
 const defaultMaxMessageLength = 2048

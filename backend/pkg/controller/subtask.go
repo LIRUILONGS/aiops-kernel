@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"pentagi/pkg/database"
-	obs "pentagi/pkg/observability"
-	"pentagi/pkg/providers"
+	"opsagi/pkg/database"
+	obs "opsagi/pkg/observability"
+	"opsagi/pkg/providers"
 
 	"github.com/sirupsen/logrus"
 )

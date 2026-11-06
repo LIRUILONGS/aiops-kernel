@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"pentagi/pkg/database/knowledge/limits"
+	"opsagi/pkg/database/knowledge/limits"
 
 	"github.com/stretchr/testify/assert"
 )

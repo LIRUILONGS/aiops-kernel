@@ -9,7 +9,7 @@ import (
 	"text/template"
 	"text/template/parse"
 
-	"pentagi/pkg/templates"
+	"opsagi/pkg/templates"
 )
 
 // ValidationError represents different types of validation errors

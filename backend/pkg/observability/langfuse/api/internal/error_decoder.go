@@ -8,7 +8,7 @@ import (
 	"io"
 	"net/http"
 
-	"pentagi/pkg/observability/langfuse/api/core"
+	"opsagi/pkg/observability/langfuse/api/core"
 )
 
 // ErrorCodes maps HTTP status codes to error constructors.

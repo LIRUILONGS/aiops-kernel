@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"pentagi/pkg/graphiti"
-	obs "pentagi/pkg/observability"
-	"pentagi/pkg/observability/langfuse"
+	"opsagi/pkg/graphiti"
+	obs "opsagi/pkg/observability"
+	"opsagi/pkg/observability/langfuse"
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"

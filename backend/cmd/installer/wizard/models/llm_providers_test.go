@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"pentagi/pkg/providers/provider"
+	"opsagi/pkg/providers/provider"
 )
 
 func TestLLMProviders_LoadItems_OffersEveryProductDoor(t *testing.T) {

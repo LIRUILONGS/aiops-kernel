@@ -1,22 +1,22 @@
 package providers
 
 import (
-	"pentagi/pkg/config"
-	"pentagi/pkg/providers/anthropic"
-	"pentagi/pkg/providers/bedrock"
-	"pentagi/pkg/providers/custom"
-	"pentagi/pkg/providers/deepseek"
-	"pentagi/pkg/providers/gemini"
-	"pentagi/pkg/providers/glm"
-	"pentagi/pkg/providers/kimi"
-	"pentagi/pkg/providers/minimax"
-	"pentagi/pkg/providers/mistral"
-	"pentagi/pkg/providers/ollama"
-	"pentagi/pkg/providers/openai"
-	"pentagi/pkg/providers/pconfig"
-	"pentagi/pkg/providers/provider"
-	"pentagi/pkg/providers/qwen"
-	"pentagi/pkg/providers/xai"
+	"opsagi/pkg/config"
+	"opsagi/pkg/providers/anthropic"
+	"opsagi/pkg/providers/bedrock"
+	"opsagi/pkg/providers/custom"
+	"opsagi/pkg/providers/deepseek"
+	"opsagi/pkg/providers/gemini"
+	"opsagi/pkg/providers/glm"
+	"opsagi/pkg/providers/kimi"
+	"opsagi/pkg/providers/minimax"
+	"opsagi/pkg/providers/mistral"
+	"opsagi/pkg/providers/ollama"
+	"opsagi/pkg/providers/openai"
+	"opsagi/pkg/providers/pconfig"
+	"opsagi/pkg/providers/provider"
+	"opsagi/pkg/providers/qwen"
+	"opsagi/pkg/providers/xai"
 )
 
 // registryEntry describes how to construct one provider type. It absorbs the

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"pentagi/pkg/config"
-	"pentagi/pkg/database"
+	"opsagi/pkg/config"
+	"opsagi/pkg/database"
 )
 
 func TestSploitus_Handle_PostsTheSearchAndFormatsTheExploits(t *testing.T) {

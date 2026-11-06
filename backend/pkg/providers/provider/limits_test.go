@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"pentagi/pkg/providers/pconfig"
+	"opsagi/pkg/providers/pconfig"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

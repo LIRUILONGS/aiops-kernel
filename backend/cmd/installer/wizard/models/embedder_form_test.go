@@ -7,13 +7,13 @@ import (
 	"slices"
 	"testing"
 
-	"pentagi/cmd/installer/checker"
-	"pentagi/cmd/installer/files"
-	"pentagi/cmd/installer/state"
-	"pentagi/cmd/installer/wizard/controller"
-	"pentagi/cmd/installer/wizard/locale"
-	"pentagi/cmd/installer/wizard/styles"
-	"pentagi/cmd/installer/wizard/window"
+	"opsagi/cmd/installer/checker"
+	"opsagi/cmd/installer/files"
+	"opsagi/cmd/installer/state"
+	"opsagi/cmd/installer/wizard/controller"
+	"opsagi/cmd/installer/wizard/locale"
+	"opsagi/cmd/installer/wizard/styles"
+	"opsagi/cmd/installer/wizard/window"
 )
 
 func embedderFormOver(t *testing.T, vars map[string]string) (*EmbedderFormModel, controller.Controller) {

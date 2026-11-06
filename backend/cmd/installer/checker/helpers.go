@@ -18,7 +18,7 @@ import (
 	"syscall"
 	"time"
 
-	"pentagi/cmd/installer/state"
+	"opsagi/cmd/installer/state"
 
 	"github.com/moby/moby/client"
 )

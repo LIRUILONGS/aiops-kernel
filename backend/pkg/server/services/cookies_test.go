@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/server/oauth"
+	"opsagi/pkg/server/oauth"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"

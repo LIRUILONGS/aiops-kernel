@@ -8,8 +8,8 @@ import (
 	"runtime"
 	"sync"
 
-	"pentagi/cmd/installer/state"
-	"pentagi/pkg/version"
+	"opsagi/cmd/installer/state"
+	"opsagi/pkg/version"
 
 	"github.com/moby/moby/client"
 )

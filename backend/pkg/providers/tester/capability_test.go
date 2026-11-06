@@ -3,10 +3,10 @@ package tester
 import (
 	"testing"
 
-	"pentagi/pkg/providers/pconfig"
-	"pentagi/pkg/providers/provider"
-	"pentagi/pkg/providers/tester/cases"
-	"pentagi/pkg/providers/tester/mock"
+	"opsagi/pkg/providers/pconfig"
+	"opsagi/pkg/providers/provider"
+	"opsagi/pkg/providers/tester/cases"
+	"opsagi/pkg/providers/tester/mock"
 
 	"github.com/vxcontrol/langchaingo/llms"
 	"github.com/vxcontrol/langchaingo/llms/reasoning"

@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"testing"
 
-	"pentagi/cmd/installer/loader"
+	"opsagi/cmd/installer/loader"
 
 	"github.com/moby/moby/client"
 )

@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"pentagi/pkg/password"
+	"opsagi/pkg/password"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/go-playground/validator/v10/non-standard/validators"

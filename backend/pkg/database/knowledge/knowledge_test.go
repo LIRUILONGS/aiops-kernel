@@ -6,10 +6,10 @@ import (
 	"errors"
 	"testing"
 
-	"pentagi/pkg/database"
-	"pentagi/pkg/graph/model"
-	"pentagi/pkg/graph/subscriptions"
-	"pentagi/pkg/providers/embeddings"
+	"opsagi/pkg/database"
+	"opsagi/pkg/graph/model"
+	"opsagi/pkg/graph/subscriptions"
+	"opsagi/pkg/providers/embeddings"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"pentagi/pkg/providers/pconfig"
-	"pentagi/pkg/providers/provider"
+	"opsagi/pkg/providers/pconfig"
+	"opsagi/pkg/providers/provider"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

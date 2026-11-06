@@ -12,11 +12,11 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"pentagi/pkg/cast"
-	"pentagi/pkg/database"
-	obs "pentagi/pkg/observability"
-	"pentagi/pkg/observability/langfuse"
-	"pentagi/pkg/schema"
+	"opsagi/pkg/cast"
+	"opsagi/pkg/database"
+	obs "opsagi/pkg/observability"
+	"opsagi/pkg/observability/langfuse"
+	"opsagi/pkg/schema"
 
 	"github.com/sirupsen/logrus"
 	"github.com/vxcontrol/cloud/anonymizer"

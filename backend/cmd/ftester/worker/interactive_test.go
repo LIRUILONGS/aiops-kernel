@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"pentagi/pkg/tools"
+	"opsagi/pkg/tools"
 )
 
 func TestFillStructFromMap_StringsField_FromSlice(t *testing.T) {

@@ -3,7 +3,7 @@ package models
 import (
 	"testing"
 
-	"pentagi/cmd/installer/checker"
+	"opsagi/cmd/installer/checker"
 )
 
 func TestUpdateOverview_OverviewDocument_TellsWhatTheUpdateChanges(t *testing.T) {

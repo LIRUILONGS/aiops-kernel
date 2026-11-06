@@ -6,10 +6,10 @@ import (
 	"regexp"
 	"testing"
 
-	"pentagi/cmd/installer/checker"
-	"pentagi/cmd/installer/files"
-	"pentagi/cmd/installer/state"
-	"pentagi/pkg/providers/provider"
+	"opsagi/cmd/installer/checker"
+	"opsagi/cmd/installer/files"
+	"opsagi/cmd/installer/state"
+	"opsagi/pkg/providers/provider"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

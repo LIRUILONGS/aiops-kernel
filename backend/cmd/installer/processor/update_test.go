@@ -8,7 +8,7 @@ import (
 	"sync"
 	"testing"
 
-	"pentagi/cmd/installer/checker"
+	"opsagi/cmd/installer/checker"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

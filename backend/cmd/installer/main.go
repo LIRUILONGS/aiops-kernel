@@ -11,12 +11,12 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"pentagi/cmd/installer/checker"
-	"pentagi/cmd/installer/files"
-	"pentagi/cmd/installer/hardening"
-	"pentagi/cmd/installer/state"
-	"pentagi/cmd/installer/wizard"
-	"pentagi/pkg/version"
+	"opsagi/cmd/installer/checker"
+	"opsagi/cmd/installer/files"
+	"opsagi/cmd/installer/hardening"
+	"opsagi/cmd/installer/state"
+	"opsagi/cmd/installer/wizard"
+	"opsagi/pkg/version"
 )
 
 type Config struct {

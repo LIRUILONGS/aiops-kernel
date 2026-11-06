@@ -14,9 +14,9 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/config"
-	"pentagi/pkg/database"
-	"pentagi/pkg/server/services"
+	"opsagi/pkg/config"
+	"opsagi/pkg/database"
+	"opsagi/pkg/server/services"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"

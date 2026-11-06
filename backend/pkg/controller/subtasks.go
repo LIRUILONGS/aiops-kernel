@@ -7,9 +7,9 @@ import (
 	"sort"
 	"sync"
 
-	"pentagi/pkg/database"
-	"pentagi/pkg/providers"
-	"pentagi/pkg/tools"
+	"opsagi/pkg/database"
+	"opsagi/pkg/providers"
+	"opsagi/pkg/tools"
 
 	"github.com/sirupsen/logrus"
 )

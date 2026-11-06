@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	"pentagi/pkg/database"
-	"pentagi/pkg/graph/subscriptions"
+	"opsagi/pkg/database"
+	"opsagi/pkg/graph/subscriptions"
 )
 
 type MsgLogController interface {

@@ -17,10 +17,10 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/graph/model"
-	"pentagi/pkg/graph/subscriptions"
-	"pentagi/pkg/resources"
-	"pentagi/pkg/server/models"
+	"opsagi/pkg/graph/model"
+	"opsagi/pkg/graph/subscriptions"
+	"opsagi/pkg/resources"
+	"opsagi/pkg/server/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"

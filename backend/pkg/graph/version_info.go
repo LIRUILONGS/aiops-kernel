@@ -1,9 +1,9 @@
 package graph
 
 import (
-	"pentagi/pkg/graph/model"
-	"pentagi/pkg/server/update"
-	"pentagi/pkg/version"
+	"opsagi/pkg/graph/model"
+	"opsagi/pkg/server/update"
+	"opsagi/pkg/version"
 )
 
 // versionInfoFromStatus is the GraphQL shape of what the update service knows.

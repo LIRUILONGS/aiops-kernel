@@ -3,10 +3,10 @@ package navigator
 import (
 	"strings"
 
-	"pentagi/cmd/installer/checker"
-	"pentagi/cmd/installer/state"
-	"pentagi/cmd/installer/wizard/logger"
-	"pentagi/cmd/installer/wizard/models"
+	"opsagi/cmd/installer/checker"
+	"opsagi/cmd/installer/state"
+	"opsagi/cmd/installer/wizard/logger"
+	"opsagi/cmd/installer/wizard/models"
 )
 
 type Navigator interface {

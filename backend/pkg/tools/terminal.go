@@ -14,10 +14,10 @@ import (
 	"strings"
 	"time"
 
-	"pentagi/pkg/database"
-	"pentagi/pkg/docker"
-	obs "pentagi/pkg/observability"
-	"pentagi/pkg/observability/langfuse"
+	"opsagi/pkg/database"
+	"opsagi/pkg/docker"
+	obs "opsagi/pkg/observability"
+	"opsagi/pkg/observability/langfuse"
 
 	"github.com/moby/moby/client"
 	"github.com/sirupsen/logrus"

@@ -12,10 +12,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"pentagi/pkg/config"
-	"pentagi/pkg/database/converter"
-	"pentagi/pkg/providers/pconfig"
-	"pentagi/pkg/providers/provider"
+	"opsagi/pkg/config"
+	"opsagi/pkg/database/converter"
+	"opsagi/pkg/providers/pconfig"
+	"opsagi/pkg/providers/provider"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

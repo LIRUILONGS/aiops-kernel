@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/database"
-	"pentagi/pkg/graph/subscriptions"
-	"pentagi/pkg/server/auth"
-	"pentagi/pkg/server/models"
+	"opsagi/pkg/database"
+	"opsagi/pkg/graph/subscriptions"
+	"opsagi/pkg/server/auth"
+	"opsagi/pkg/server/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"

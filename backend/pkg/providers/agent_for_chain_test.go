@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"testing"
 
-	"pentagi/pkg/database"
-	"pentagi/pkg/providers/pconfig"
+	"opsagi/pkg/database"
+	"opsagi/pkg/providers/pconfig"
 )
 
 // Read from models.go, since a hardcoded list would miss a chain type added without a mapping.

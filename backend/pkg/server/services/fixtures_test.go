@@ -18,9 +18,9 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/resources"
-	"pentagi/pkg/server/models"
-	"pentagi/pkg/server/oauth"
+	"opsagi/pkg/resources"
+	"opsagi/pkg/server/models"
+	"opsagi/pkg/server/oauth"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"

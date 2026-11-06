@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	gqlmodel "pentagi/pkg/graph/model"
+	gqlmodel "opsagi/pkg/graph/model"
 )
 
 // knowledgeRawMeta mirrors the flat JSON stored in langchain_pg_embedding.cmetadata.

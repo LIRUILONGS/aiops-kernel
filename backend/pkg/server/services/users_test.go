@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"pentagi/pkg/server/auth"
-	"pentagi/pkg/server/models"
-	"pentagi/pkg/server/oauth"
+	"opsagi/pkg/server/auth"
+	"opsagi/pkg/server/models"
+	"opsagi/pkg/server/oauth"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"

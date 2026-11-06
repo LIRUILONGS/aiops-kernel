@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/config"
+	"opsagi/pkg/config"
 )
 
 // testCerts holds generated test certificates

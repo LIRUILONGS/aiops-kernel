@@ -9,7 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"pentagi/pkg/graph/model"
+	"opsagi/pkg/graph/model"
 	"strconv"
 	"sync"
 	"sync/atomic"

@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"pentagi/pkg/server/models"
+	"opsagi/pkg/server/models"
 
 	"github.com/jinzhu/gorm"
 )

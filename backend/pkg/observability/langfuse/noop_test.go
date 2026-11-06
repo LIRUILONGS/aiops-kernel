@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"pentagi/pkg/observability/langfuse/api"
+	"opsagi/pkg/observability/langfuse/api"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

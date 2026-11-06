@@ -11,7 +11,7 @@ import (
 	"sync"
 	"testing"
 
-	"pentagi/pkg/version"
+	"opsagi/pkg/version"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/vxcontrol/cloud/models"

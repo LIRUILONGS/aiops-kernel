@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"pentagi/pkg/config"
-	"pentagi/pkg/database"
+	"opsagi/pkg/config"
+	"opsagi/pkg/database"
 )
 
 // searchersDuckduckgoPage renders n result blocks the way html.duckduckgo.com lays them out.

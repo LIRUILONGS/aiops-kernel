@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/database"
+	"opsagi/pkg/database"
 
 	cerrdefs "github.com/containerd/errdefs"
 	"github.com/moby/moby/api/types/container"

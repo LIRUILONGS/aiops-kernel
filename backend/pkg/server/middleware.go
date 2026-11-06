@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"pentagi/pkg/server/models"
-	"pentagi/pkg/server/response"
+	"opsagi/pkg/server/models"
+	"opsagi/pkg/server/response"
 
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-contrib/sessions"

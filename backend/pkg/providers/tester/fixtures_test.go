@@ -3,7 +3,7 @@ package tester
 import (
 	"encoding/json"
 
-	"pentagi/pkg/tools"
+	"opsagi/pkg/tools"
 
 	"github.com/vxcontrol/langchaingo/llms"
 )

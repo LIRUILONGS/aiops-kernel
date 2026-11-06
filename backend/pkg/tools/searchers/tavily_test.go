@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"pentagi/pkg/config"
-	"pentagi/pkg/database"
+	"opsagi/pkg/config"
+	"opsagi/pkg/database"
 )
 
 func TestTavily_Handle_PostsTheSearchAndReturnsItsOutcome(t *testing.T) {

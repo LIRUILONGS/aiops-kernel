@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"slices"
 
-	"pentagi/pkg/server/auth"
-	"pentagi/pkg/server/logger"
-	"pentagi/pkg/server/models"
-	"pentagi/pkg/server/rdb"
-	"pentagi/pkg/server/response"
+	"opsagi/pkg/server/auth"
+	"opsagi/pkg/server/logger"
+	"opsagi/pkg/server/models"
+	"opsagi/pkg/server/rdb"
+	"opsagi/pkg/server/response"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"

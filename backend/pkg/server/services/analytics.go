@@ -6,12 +6,12 @@ import (
 	"strconv"
 	"time"
 
-	"pentagi/pkg/database"
-	"pentagi/pkg/server/logger"
-	"pentagi/pkg/server/models"
-	"pentagi/pkg/server/response"
-	"pentagi/pkg/timezone"
-	"pentagi/pkg/tools"
+	"opsagi/pkg/database"
+	"opsagi/pkg/server/logger"
+	"opsagi/pkg/server/models"
+	"opsagi/pkg/server/response"
+	"opsagi/pkg/timezone"
+	"opsagi/pkg/tools"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"

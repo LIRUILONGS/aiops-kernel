@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"pentagi/pkg/server/models"
+	"opsagi/pkg/server/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"

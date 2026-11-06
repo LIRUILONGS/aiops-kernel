@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"pentagi/cmd/installer/checker"
-	"pentagi/cmd/installer/files"
+	"opsagi/cmd/installer/checker"
+	"opsagi/cmd/installer/files"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

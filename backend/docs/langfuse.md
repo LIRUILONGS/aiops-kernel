@@ -264,8 +264,8 @@ To initialize the Langfuse integration in your code:
 ```go
 // Import the necessary packages
 import (
-    "pentagi/pkg/observability/langfuse"
-    "pentagi/pkg/config"
+    "opsagi/pkg/observability/langfuse"
+    "opsagi/pkg/config"
 )
 
 // Create a Langfuse client

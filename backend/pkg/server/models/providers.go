@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"pentagi/pkg/providers/provider"
+	"opsagi/pkg/providers/provider"
 
 	"github.com/jinzhu/gorm"
 )

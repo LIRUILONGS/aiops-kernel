@@ -3,7 +3,7 @@ package worker
 import (
 	"testing"
 
-	"pentagi/pkg/tools"
+	"opsagi/pkg/tools"
 )
 
 // TestParseFunctionArgs_SearchInMemory_QuestionsArray verifies the CLI-args mode

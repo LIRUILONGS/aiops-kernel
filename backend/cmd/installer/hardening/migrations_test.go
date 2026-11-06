@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"pentagi/cmd/installer/loader"
+	"opsagi/cmd/installer/loader"
 )
 
 func TestMigrations_DoMigrateSettings_MovesAHostPathToItsPentagiVar(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	obs "pentagi/pkg/observability"
+	obs "opsagi/pkg/observability"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/errcode"

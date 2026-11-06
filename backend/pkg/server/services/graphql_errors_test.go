@@ -15,11 +15,11 @@ import (
 	"strconv"
 	"testing"
 
-	"pentagi/pkg/controller"
-	"pentagi/pkg/database"
-	"pentagi/pkg/database/knowledge"
-	"pentagi/pkg/graph"
-	"pentagi/pkg/version"
+	"opsagi/pkg/controller"
+	"opsagi/pkg/database"
+	"opsagi/pkg/database/knowledge"
+	"opsagi/pkg/graph"
+	"opsagi/pkg/version"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/gin-gonic/gin"

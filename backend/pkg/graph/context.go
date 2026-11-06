@@ -10,10 +10,10 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"pentagi/pkg/database"
-	"pentagi/pkg/database/knowledge/limits"
-	"pentagi/pkg/flowfiles"
-	"pentagi/pkg/graph/model"
+	"opsagi/pkg/database"
+	"opsagi/pkg/database/knowledge/limits"
+	"opsagi/pkg/flowfiles"
+	"opsagi/pkg/graph/model"
 )
 
 // This file will not be regenerated automatically.

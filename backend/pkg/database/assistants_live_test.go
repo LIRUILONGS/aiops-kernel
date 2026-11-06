@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/database"
+	"opsagi/pkg/database"
 )
 
 func TestAssistants_UpdateAssistantStatus_LeavesADeletedAssistantAlone(t *testing.T) {

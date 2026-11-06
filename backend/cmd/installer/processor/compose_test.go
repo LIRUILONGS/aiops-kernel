@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"pentagi/cmd/installer/state"
+	"opsagi/cmd/installer/state"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

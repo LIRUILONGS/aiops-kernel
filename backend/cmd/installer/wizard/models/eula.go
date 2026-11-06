@@ -3,12 +3,12 @@ package models
 import (
 	"fmt"
 
-	"pentagi/cmd/installer/files"
-	"pentagi/cmd/installer/wizard/controller"
-	"pentagi/cmd/installer/wizard/locale"
-	"pentagi/cmd/installer/wizard/logger"
-	"pentagi/cmd/installer/wizard/styles"
-	"pentagi/cmd/installer/wizard/window"
+	"opsagi/cmd/installer/files"
+	"opsagi/cmd/installer/wizard/controller"
+	"opsagi/cmd/installer/wizard/locale"
+	"opsagi/cmd/installer/wizard/logger"
+	"opsagi/cmd/installer/wizard/styles"
+	"opsagi/cmd/installer/wizard/window"
 
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"

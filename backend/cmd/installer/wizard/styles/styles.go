@@ -6,8 +6,8 @@ import (
 	"strings"
 	"sync"
 
-	"pentagi/cmd/installer/wizard/locale"
-	"pentagi/cmd/installer/wizard/logger"
+	"opsagi/cmd/installer/wizard/locale"
+	"opsagi/cmd/installer/wizard/logger"
 
 	"github.com/charmbracelet/glamour"
 	glamourstyles "github.com/charmbracelet/glamour/styles"

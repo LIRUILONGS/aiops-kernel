@@ -7,9 +7,9 @@ import (
 	"sync"
 	"testing"
 
-	"pentagi/pkg/database"
-	"pentagi/pkg/providers"
-	"pentagi/pkg/tools"
+	"opsagi/pkg/database"
+	"opsagi/pkg/providers"
+	"opsagi/pkg/tools"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

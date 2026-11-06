@@ -1,4 +1,4 @@
-module pentagi
+module opsagi
 
 go 1.26.5
 

@@ -11,7 +11,7 @@ import (
 	"testing/synctest"
 	"time"
 
-	"pentagi/pkg/database"
+	"opsagi/pkg/database"
 )
 
 // flowManagerDB stands in for the five Querier reads of the flow_manager tools; a read sequence repeats its last entry.

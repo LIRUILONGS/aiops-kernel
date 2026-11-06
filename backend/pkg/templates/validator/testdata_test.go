@@ -4,7 +4,7 @@ import (
 	"sort"
 	"testing"
 
-	"pentagi/pkg/templates"
+	"opsagi/pkg/templates"
 )
 
 func TestTestdata_CreateDummyTemplateData_CoversEveryPromptVariable(t *testing.T) {

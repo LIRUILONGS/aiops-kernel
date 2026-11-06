@@ -12,9 +12,9 @@ import (
 	"strings"
 	"testing"
 
-	"pentagi/pkg/config"
-	"pentagi/pkg/providers/pconfig"
-	"pentagi/pkg/providers/provider"
+	"opsagi/pkg/config"
+	"opsagi/pkg/providers/pconfig"
+	"opsagi/pkg/providers/provider"
 
 	"github.com/invopop/jsonschema"
 	"github.com/stretchr/testify/assert"

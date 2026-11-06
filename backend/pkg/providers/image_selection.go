@@ -3,7 +3,7 @@ package providers
 import (
 	"strings"
 
-	"pentagi/pkg/config"
+	"opsagi/pkg/config"
 
 	"github.com/distribution/reference"
 )

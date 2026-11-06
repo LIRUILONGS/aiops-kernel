@@ -1,7 +1,7 @@
 package terminal
 
 import (
-	"pentagi/cmd/installer/wizard/terminal/vt"
+	"opsagi/cmd/installer/wizard/terminal/vt"
 
 	tea "github.com/charmbracelet/bubbletea"
 	uv "github.com/charmbracelet/ultraviolet"

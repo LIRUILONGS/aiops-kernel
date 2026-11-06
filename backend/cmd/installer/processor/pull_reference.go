@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"pentagi/cmd/installer/checker"
-	"pentagi/cmd/installer/wizard/logger"
+	"opsagi/cmd/installer/checker"
+	"opsagi/cmd/installer/wizard/logger"
 )
 
 // Every `image:` in the compose files is `${<COMPONENT>_IMAGE:-<default>}`, and

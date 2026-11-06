@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	"pentagi/pkg/config"
-	"pentagi/pkg/database"
-	"pentagi/pkg/password"
+	"opsagi/pkg/config"
+	"opsagi/pkg/database"
+	"opsagi/pkg/password"
 
 	_ "github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"

@@ -10,12 +10,12 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/config"
-	"pentagi/pkg/database"
-	"pentagi/pkg/docker"
-	obs "pentagi/pkg/observability"
-	"pentagi/pkg/providers"
-	"pentagi/pkg/providers/provider"
+	"opsagi/pkg/config"
+	"opsagi/pkg/database"
+	"opsagi/pkg/docker"
+	obs "opsagi/pkg/observability"
+	"opsagi/pkg/providers"
+	"opsagi/pkg/providers/provider"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"

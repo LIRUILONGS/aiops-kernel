@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/server/models"
+	"opsagi/pkg/server/models"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"

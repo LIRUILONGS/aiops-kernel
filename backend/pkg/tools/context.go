@@ -3,7 +3,7 @@ package tools
 import (
 	"context"
 
-	"pentagi/pkg/database"
+	"opsagi/pkg/database"
 )
 
 type AgentContextKey int

@@ -4,8 +4,8 @@ import (
 	"context"
 	"maps"
 
-	obs "pentagi/pkg/observability"
-	"pentagi/pkg/observability/langfuse"
+	obs "opsagi/pkg/observability"
+	"opsagi/pkg/observability/langfuse"
 
 	"github.com/vxcontrol/langchaingo/embeddings"
 )

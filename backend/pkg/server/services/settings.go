@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"slices"
 
-	"pentagi/pkg/config"
-	"pentagi/pkg/server/logger"
-	"pentagi/pkg/server/models"
-	"pentagi/pkg/server/response"
-	"pentagi/pkg/version"
+	"opsagi/pkg/config"
+	"opsagi/pkg/server/logger"
+	"opsagi/pkg/server/models"
+	"opsagi/pkg/server/response"
+	"opsagi/pkg/version"
 
 	"github.com/gin-gonic/gin"
 )

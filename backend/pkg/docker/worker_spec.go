@@ -1,7 +1,7 @@
 package docker
 
 import (
-	"pentagi/pkg/config"
+	"opsagi/pkg/config"
 
 	"github.com/moby/moby/api/types/container"
 )

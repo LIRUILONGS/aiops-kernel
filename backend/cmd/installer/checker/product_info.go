@@ -7,7 +7,7 @@ import (
 	"io"
 	"time"
 
-	"pentagi/cmd/installer/wizard/logger"
+	"opsagi/cmd/installer/wizard/logger"
 
 	"github.com/moby/moby/api/pkg/stdcopy"
 	"github.com/moby/moby/client"

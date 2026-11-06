@@ -5,8 +5,8 @@ import (
 	"io"
 	"testing"
 
-	"pentagi/pkg/database"
-	"pentagi/pkg/tools"
+	"opsagi/pkg/database"
+	"opsagi/pkg/tools"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"

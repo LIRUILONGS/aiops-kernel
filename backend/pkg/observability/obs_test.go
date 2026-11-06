@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/config"
-	"pentagi/pkg/observability/langfuse"
+	"opsagi/pkg/config"
+	"opsagi/pkg/observability/langfuse"
 
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"

@@ -1,7 +1,7 @@
 package tester
 
 import (
-	"pentagi/pkg/providers/tester/cases"
+	"opsagi/pkg/providers/tester/cases"
 )
 
 type AgentTestResults []cases.TestResult

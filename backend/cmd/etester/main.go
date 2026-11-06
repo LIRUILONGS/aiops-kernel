@@ -10,11 +10,11 @@ import (
 	"syscall"
 	"time"
 
-	"pentagi/pkg/config"
-	"pentagi/pkg/database"
-	"pentagi/pkg/providers/embeddings"
-	"pentagi/pkg/terminal"
-	"pentagi/pkg/version"
+	"opsagi/pkg/config"
+	"opsagi/pkg/database"
+	"opsagi/pkg/providers/embeddings"
+	"opsagi/pkg/terminal"
+	"opsagi/pkg/version"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"

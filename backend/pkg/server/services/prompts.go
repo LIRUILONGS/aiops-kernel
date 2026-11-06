@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"slices"
 
-	"pentagi/pkg/server/logger"
-	"pentagi/pkg/server/models"
-	"pentagi/pkg/server/rdb"
-	"pentagi/pkg/server/response"
-	"pentagi/pkg/templates"
-	"pentagi/pkg/templates/validator"
+	"opsagi/pkg/server/logger"
+	"opsagi/pkg/server/models"
+	"opsagi/pkg/server/rdb"
+	"opsagi/pkg/server/response"
+	"opsagi/pkg/templates"
+	"opsagi/pkg/templates/validator"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"

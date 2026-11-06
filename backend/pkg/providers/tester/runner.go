@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"pentagi/pkg/providers/pconfig"
-	"pentagi/pkg/providers/provider"
-	"pentagi/pkg/providers/tester/cases"
-	"pentagi/pkg/templates"
+	"opsagi/pkg/providers/pconfig"
+	"opsagi/pkg/providers/provider"
+	"opsagi/pkg/providers/tester/cases"
+	"opsagi/pkg/templates"
 
 	"github.com/vxcontrol/langchaingo/llms"
 )

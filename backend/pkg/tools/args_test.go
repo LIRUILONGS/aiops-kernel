@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"pentagi/pkg/graph/model"
+	"opsagi/pkg/graph/model"
 )
 
 func boolPtr(b bool) *Bool {

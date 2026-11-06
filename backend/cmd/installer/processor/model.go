@@ -2,9 +2,9 @@ package processor
 
 import (
 	"context"
-	"pentagi/cmd/installer/checker"
-	"pentagi/cmd/installer/files"
-	"pentagi/cmd/installer/state"
+	"opsagi/cmd/installer/checker"
+	"opsagi/cmd/installer/files"
+	"opsagi/cmd/installer/state"
 	"sync"
 	"time"
 

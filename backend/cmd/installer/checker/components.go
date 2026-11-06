@@ -10,8 +10,8 @@ import (
 	"runtime"
 	"strings"
 
-	"pentagi/cmd/installer/cloud"
-	"pentagi/cmd/installer/wizard/logger"
+	"opsagi/cmd/installer/cloud"
+	"opsagi/cmd/installer/wizard/logger"
 
 	"github.com/moby/moby/client"
 	"github.com/vxcontrol/cloud/models"

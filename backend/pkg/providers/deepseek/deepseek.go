@@ -3,11 +3,11 @@ package deepseek
 import (
 	"embed"
 
-	"pentagi/pkg/config"
-	"pentagi/pkg/providers/openaicompat"
-	"pentagi/pkg/providers/pconfig"
-	"pentagi/pkg/providers/provider"
-	"pentagi/pkg/system"
+	"opsagi/pkg/config"
+	"opsagi/pkg/providers/openaicompat"
+	"opsagi/pkg/providers/pconfig"
+	"opsagi/pkg/providers/provider"
+	"opsagi/pkg/system"
 
 	"github.com/vxcontrol/langchaingo/llms"
 )

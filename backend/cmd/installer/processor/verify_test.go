@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"pentagi/cmd/installer/checker"
+	"opsagi/cmd/installer/checker"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -39,7 +39,7 @@ func TestVerify_CaptureStackTargets_RecordsWhatEachComponentShouldBecome(t *test
 				{Stack: "pentagi", HasUpdate: true, Components: []checker.ComponentUpdate{tc.component}},
 			}}
 
-			assert.Equal(t, []componentTarget{{name: "pentagi/linux/amd64", digest: tc.want}},
+			assert.Equal(t, []componentTarget{{name: "opsagi/linux/amd64", digest: tc.want}},
 				captureStackTargets(before, "pentagi"))
 		})
 	}
@@ -82,18 +82,18 @@ func TestVerify_VerifyStackUpdate_TellsAMatchANewerBuildAMismatchAndTheUnverifia
 		wantNot      string
 	}{
 		{name: "the registry moved ahead", installed: arrived,
-			targets: []componentTarget{{name: "pentagi/linux/amd64", digest: offered}},
-			want:    []string{"pentagi/linux/amd64: newer than the offered build"}},
+			targets: []componentTarget{{name: "opsagi/linux/amd64", digest: offered}},
+			want:    []string{"opsagi/linux/amd64: newer than the offered build"}},
 		{name: "the update did not take", stillOffered: true, installed: arrived,
-			targets: []componentTarget{{name: "pentagi/linux/amd64", digest: offered}},
-			want:    []string{"pentagi/linux/amd64: expected " + offered + ", got " + arrived}},
+			targets: []componentTarget{{name: "opsagi/linux/amd64", digest: offered}},
+			want:    []string{"opsagi/linux/amd64: expected " + offered + ", got " + arrived}},
 		{name: "a match and an unverifiable component", installed: offered,
 			targets: []componentTarget{
-				{name: "pentagi/linux/amd64", digest: offered},
+				{name: "opsagi/linux/amd64", digest: offered},
 				{name: "scraper/linux/amd64", digest: ""},
 			},
 			want: []string{
-				"pentagi/linux/amd64: matches the published build",
+				"opsagi/linux/amd64: matches the published build",
 				"scraper/linux/amd64: no published digest",
 			},
 			wantNot: "do not match"},

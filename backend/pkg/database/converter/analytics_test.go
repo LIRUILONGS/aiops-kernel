@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"pentagi/pkg/database"
-	"pentagi/pkg/graph/model"
+	"opsagi/pkg/database"
+	"opsagi/pkg/graph/model"
 
 	"github.com/stretchr/testify/assert"
 )

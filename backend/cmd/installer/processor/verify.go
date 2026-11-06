@@ -3,7 +3,7 @@ package processor
 import (
 	"fmt"
 
-	"pentagi/cmd/installer/checker"
+	"opsagi/cmd/installer/checker"
 )
 
 // Verifying an update means answering one question: did the artefacts that are now
