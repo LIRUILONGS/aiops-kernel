@@ -148,6 +148,11 @@ type Config struct {
 	// === Metrics: Prometheus-compatible HTTP API behind the prom_query tool ===
 	PrometheusURL string `env:"PROMETHEUS_URL"`
 
+	// === Cluster: a kubeconfig or a bare API server behind the k8s_get tool ===
+	K8sKubeconfig            string `env:"K8S_KUBECONFIG"`
+	K8sAPIURL                string `env:"K8S_API_URL"`
+	K8sInsecureSkipTLSVerify bool   `env:"K8S_INSECURE_SKIP_TLS_VERIFY"`
+
 	// === LLM Provider: Ollama (Local/Remote) ===
 	OllamaServerURL               string `env:"OLLAMA_SERVER_URL"`
 	OllamaServerAPIKey            string `env:"OLLAMA_SERVER_API_KEY"`

@@ -16,6 +16,11 @@
 - ops_baseline / ops_diff：采集一次指纹，变更后再采一次，用代码算出的差值判断是否有可测量的变化。
 - ops_exec：按 ID 执行一条预置的只读命令，补上面几个工具没覆盖到的角度——谁占着 3306、inode 是不是满的、某个 systemd 单元的状态、某个容器的退出码与 OOMKilled、内核日志里有没有被 OOM 杀过的痕迹。命令目录是固定的，你选 ID 和参数，选不了命令文本。
 
+如果这次配置了集群，还会有两个只读的旁路工具；它们直接问 Prometheus 和 kube-apiserver，不经过目标主机的 shell，所以主机上看到的"容器"和集群里看到的"pod"是两套事实，不要混着说：
+
+- prom_query：PromQL 时间序列。问"拐点在哪、斜率多大、窗口内有没有数据"用它，比反复 adj 采样准。
+- k8s_get：pods / events / deployments / nodes。pod 起不来时先看 events 的 message 和 pod 的 waiting 原因——调度失败、镜像拉不到、探针不过，三种原因的证据都在那一行里。
+
 先取证，再推理。每一条结论都要能指回一次工具返回。
 </capabilities>
 

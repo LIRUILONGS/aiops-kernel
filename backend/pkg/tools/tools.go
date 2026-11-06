@@ -355,10 +355,10 @@ type AnalystExecutorConfig struct {
 // definition: an analyst that can read everything stops being an analyst, and
 // the commander stays the only one that sees the whole picture.
 var analystToolset = map[string][]string{
-	TriageToolName:         {OpsContainersToolName, OpsSystemToolName, OpsLogsToolName, OpsExecToolName},
-	LogAnalystToolName:     {OpsLogsToolName, OpsContainersToolName},
-	MetricsAnalystToolName: {OpsSystemToolName, OpsContainersToolName, PromQueryToolName},
-	ChangeAnalystToolName:  {OpsContainersToolName, OpsSystemToolName, OpsExecToolName},
+	TriageToolName:         {OpsContainersToolName, OpsSystemToolName, OpsLogsToolName, OpsExecToolName, K8sGetToolName},
+	LogAnalystToolName:     {OpsLogsToolName, OpsContainersToolName, K8sGetToolName},
+	MetricsAnalystToolName: {OpsSystemToolName, OpsContainersToolName, PromQueryToolName, K8sGetToolName},
+	ChangeAnalystToolName:  {OpsContainersToolName, OpsSystemToolName, OpsExecToolName, K8sGetToolName},
 }
 
 type FlowToolsExecutor interface {
@@ -1091,6 +1091,10 @@ func (fte *flowToolsExecutor) GetCommanderExecutor(cfg CommanderExecutorConfig) 
 		definitions = append(definitions, registryDefinitions[PromQueryToolName])
 		handlers[PromQueryToolName] = prom.HandleQuery
 	}
+	if k8s := NewK8sTools(fte.cfg); k8s.IsAvailable() {
+		definitions = append(definitions, registryDefinitions[K8sGetToolName])
+		handlers[K8sGetToolName] = k8s.HandleGet
+	}
 	barriers := map[string]struct{}{
 		DiagnosisToolName:          {},
 		OptimizationResultToolName: {},
@@ -1174,6 +1178,9 @@ func (fte *flowToolsExecutor) GetAnalystExecutor(cfg AnalystExecutorConfig) (Con
 	if prom := NewPromTools(fte.cfg); prom.IsAvailable() {
 		opsHandlers[PromQueryToolName] = prom.HandleQuery
 	}
+	if k8s := NewK8sTools(fte.cfg); k8s.IsAvailable() {
+		opsHandlers[K8sGetToolName] = k8s.HandleGet
+	}
 
 	definitions := make([]llms.FunctionDefinition, 0, len(roleTools)+2)
 	handlers := make(map[string]ExecutorHandler, len(roleTools)+2)
@@ -1182,7 +1189,7 @@ func (fte *flowToolsExecutor) GetAnalystExecutor(cfg AnalystExecutorConfig) (Con
 		if !ok {
 			// A missing metrics backend narrows the analyst rather than failing the
 			// chain: the same role still has the host and container faces.
-			if name == PromQueryToolName {
+			if name == PromQueryToolName || name == K8sGetToolName {
 				continue
 			}
 			return nil, fmt.Errorf("analyst role %q wants an unknown evidence tool %q", cfg.Role, name)

@@ -2167,6 +2167,9 @@ The commander and the four analysts read a target host over SSH and, optionally,
 |-------|--------------|---------|-------------|
 | OpsTargets | `OPSAGI_TARGETS` | *(none)* | JSON array of `{"id","host","port","user","password"}` targets. Empty means the AIOps executors refuse to start rather than failing mid-flow. The password is a secret: keep it out of logs and transcripts. |
 | PrometheusURL | `PROMETHEUS_URL` | *(none)* | Base URL of a Prometheus-compatible query API, e.g. `http://prometheus:9090`. When empty the `prom_query` tool is not offered to any agent at all, rather than offered and failing when called. |
+| K8sKubeconfig | `K8S_KUBECONFIG` | `~/.kube/config` when it exists | Path to a kubeconfig. The first cluster and the first user of the file are used, so a single-cluster file needs no context selection; embedded `*-data` fields and file paths are both read. Empty and no `K8S_API_URL` means `k8s_get` is not offered. |
+| K8sAPIURL | `K8S_API_URL` | *(none)* | A bare API server URL, used when no kubeconfig is available (typically a tunnel). |
+| K8sInsecureSkipTLSVerify | `K8S_INSECURE_SKIP_TLS_VERIFY` | `false` | Accept a self-signed certificate. Intended for a cluster reached over an SSH tunnel. |
 
 ## Observability Settings
 

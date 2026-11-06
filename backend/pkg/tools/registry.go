@@ -58,6 +58,7 @@ const (
 	OpsDiffToolName            = "ops_diff"
 	OpsExecToolName            = "ops_exec"
 	PromQueryToolName          = "prom_query"
+	K8sGetToolName             = "k8s_get"
 	DiagnosisToolName          = "diagnosis"
 	TriageResultToolName       = "triage_result"
 	LogFindingToolName         = "log_finding"
@@ -167,6 +168,7 @@ var toolsTypeMapping = map[string]ToolType{
 	OpsDiffToolName:            EnvironmentToolType,
 	OpsExecToolName:            EnvironmentToolType,
 	PromQueryToolName:          EnvironmentToolType,
+	K8sGetToolName:             EnvironmentToolType,
 	DiagnosisToolName:          BarrierToolType,
 	TriageResultToolName:       StoreAgentResultToolType,
 	LogFindingToolName:         StoreAgentResultToolType,
@@ -539,6 +541,13 @@ var registryDefinitions = map[string]llms.FunctionDefinition{
 			"参数只允许字母、数字与 . _ - /，含空格或 shell 元字符会被拒绝。" +
 			"返回结果会带上真实执行的命令原文，写证据时直接引用它。",
 		Parameters: reflector.Reflect(&OpsExecArgs{}),
+	},
+	K8sGetToolName: {
+		Name: K8sGetToolName,
+		Description: "从集群里读一类只读对象：pods（含重启次数与卡住的原因）、events（控制面说过的话）、deployments、nodes。" +
+			"k8s 里的故障证据几乎都在 events 和 pod 的 waiting 原因里，先读这两样再下结论。" +
+			"读的是配置好的那个集群，不经过目标主机的 shell；没有配集群时这个工具不会出现。",
+		Parameters: reflector.Reflect(&K8sGetArgs{}),
 	},
 	PromQueryToolName: {
 		Name: PromQueryToolName,
