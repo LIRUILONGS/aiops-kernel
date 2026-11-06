@@ -10,6 +10,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -27,6 +28,12 @@ func main() {
 		logs     = flag.String("logs", "", "also dump the tail of this container's logs")
 		baseline = flag.String("baseline", "", "collect a named baseline fingerprint and print it as one JSON line")
 		diff     = flag.String("diff", "", "compare two fingerprint files: -diff before.json,after.json")
+		command  = flag.String("command", "", "run one entry of the read-only catalogue and print it: -command listen_ports")
+		list     = flag.Bool("list", false, "print the read-only catalogue and exit")
+		argUnit  = flag.String("unit", "", "unit name for -command unit_status / unit_logs")
+		argBox   = flag.String("container", "", "container name for -command docker_inspect")
+		argPath  = flag.String("path", "", "absolute path for -command file_stat")
+		argLines = flag.Int("lines", 0, "line count for the commands that accept one")
 		asJSON   = flag.Bool("json", false, "print the raw JSON report")
 		timeout  = flag.Duration("timeout", 60*time.Second, "overall deadline")
 	)
@@ -34,6 +41,11 @@ func main() {
 
 	if *diff != "" {
 		runDiff(*diff)
+		return
+	}
+
+	if *list {
+		printCatalogue()
 		return
 	}
 
@@ -58,6 +70,16 @@ func main() {
 		fatal("connect: " + err.Error())
 	}
 	defer func() { _ = client.Close() }()
+
+	if *command != "" {
+		runCommand(ctx, client, *command, map[string]string{
+			"Unit":      *argUnit,
+			"Container": *argBox,
+			"Path":      *argPath,
+			"Lines":     strconv.Itoa(*argLines),
+		})
+		return
+	}
 
 	report := client.Collect(ctx)
 
@@ -218,4 +240,50 @@ func envInt(key string, def int) int {
 func fatal(msg string) {
 	fmt.Fprintln(os.Stderr, "opsagi-probe: "+msg)
 	os.Exit(1)
+}
+
+// runCommand proves one catalogue entry against a real host: it prints the
+// command that would run and then what came back, which is what the agent's
+// evidence will quote. A rejected argument is reported as the model would see
+// it, not as a stack trace.
+func runCommand(ctx context.Context, client *opsremote.Client, id string, args map[string]string) {
+	rendered, err := opsremote.Render(id, args)
+	if err != nil {
+		fatal(err.Error())
+	}
+
+	res, err := client.RunCtx(ctx, rendered)
+	if err != nil {
+		fatal("run: " + err.Error())
+	}
+
+	fmt.Printf("catalogue: %s\ncommand:   %s\nexit:      %d\nduration:  %s\n\n", id, rendered, res.ExitCode, res.Duration.Round(time.Millisecond))
+	if res.Stdout != "" {
+		fmt.Println(strings.TrimRight(res.Stdout, "\n"))
+	}
+	if res.Stderr != "" {
+		fmt.Println("--- stderr ---")
+		fmt.Println(strings.TrimRight(res.Stderr, "\n"))
+	}
+}
+
+// printCatalogue answers a bare invocation with the entries the agent may name,
+// so the CLI documents itself the same way the tool description does.
+func printCatalogue() {
+	fmt.Println("read-only catalogue (-command):")
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	for _, command := range opsremote.Commands() {
+		params := ""
+		for _, param := range command.Params {
+			if params != "" {
+				params += ", "
+			}
+			params += strings.ToLower(param.Template)
+		}
+		if params == "" {
+			params = "-"
+		}
+		fmt.Fprintf(w, "  %s\t%s\tparams: %s\n", command.ID, command.Description, params)
+	}
+	_ = w.Flush()
 }

@@ -1205,10 +1205,10 @@ func TestTools_GetAnalystExecutor_GivesEachRoleItsOwnEvidenceFaceAndOneExit(t *t
 		evidence []string
 		exit     string
 	}{
-		{TriageToolName, []string{OpsContainersToolName, OpsSystemToolName, OpsLogsToolName}, TriageResultToolName},
+		{TriageToolName, []string{OpsContainersToolName, OpsSystemToolName, OpsLogsToolName, OpsExecToolName}, TriageResultToolName},
 		{LogAnalystToolName, []string{OpsLogsToolName, OpsContainersToolName}, LogFindingToolName},
 		{MetricsAnalystToolName, []string{OpsSystemToolName, OpsContainersToolName}, MetricFindingToolName},
-		{ChangeAnalystToolName, []string{OpsContainersToolName, OpsSystemToolName}, ChangeFindingToolName},
+		{ChangeAnalystToolName, []string{OpsContainersToolName, OpsSystemToolName, OpsExecToolName}, ChangeFindingToolName},
 	}
 
 	fte := &flowToolsExecutor{
@@ -1309,6 +1309,11 @@ func TestTools_GetCommanderExecutor_AdvertisesOnlyTheExitOfItsMode(t *testing.T)
 			assert.NotContains(t, advertised, tc.wantAbsent, "the other chain's exit must not be reachable")
 			assert.NotContains(t, ce.barriers, tc.wantAbsent)
 			assert.NotContains(t, ce.handlers, tc.wantAbsent)
+
+			// The catalogue is the only escape hatch the chain has, so it must be
+			// advertised by name and wired to a handler like every other probe.
+			assert.Contains(t, advertised, OpsExecToolName)
+			assert.Contains(t, ce.handlers, OpsExecToolName)
 		})
 	}
 }

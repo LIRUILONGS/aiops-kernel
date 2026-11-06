@@ -178,6 +178,63 @@ func (o *opsTools) HandleLogs(ctx context.Context, name string, args json.RawMes
 	return formatLogs(target, "容器 "+parsed.Source+" 日志", res), nil
 }
 
+// OpsExecArgs runs one entry of the read-only command catalogue. The agent picks
+// the entry and its arguments; the command line itself comes from the catalogue.
+type OpsExecArgs struct {
+	Target    string `json:"target,omitempty" jsonschema:"description=目标主机 ID，留空使用默认主机,example=lab"`
+	Command   string `json:"command" jsonschema:"description=只读命令 ID，取值见工具描述；不接受自由文本,example=listen_ports"`
+	Unit      string `json:"unit,omitempty" jsonschema:"description=systemd 单元名，unit_status 与 unit_logs 必填,example=nginx.service"`
+	Container string `json:"container,omitempty" jsonschema:"description=容器名，docker_inspect 必填,example=opslab-broken"`
+	Path      string `json:"path,omitempty" jsonschema:"description=绝对路径，file_stat 必填,example=/etc/nginx/nginx.conf"`
+	Lines     int    `json:"lines,omitempty" jsonschema:"description=行数，见各命令允许的范围,example=100"`
+}
+
+func (o *opsTools) HandleExec(ctx context.Context, name string, args json.RawMessage) (string, error) {
+	var parsed OpsExecArgs
+	if err := json.Unmarshal(args, &parsed); err != nil {
+		return "", fmt.Errorf("解析参数失败：%w", err)
+	}
+	if parsed.Command == "" {
+		return "", fmt.Errorf("缺少 command：必须是只读命令 ID 之一（%s）", strings.Join(opsremote.CommandIDs(), ", "))
+	}
+
+	execArgs := map[string]string{
+		"Unit":      parsed.Unit,
+		"Container": parsed.Container,
+		"Path":      parsed.Path,
+	}
+	if parsed.Lines > 0 {
+		execArgs["Lines"] = fmt.Sprintf("%d", parsed.Lines)
+	}
+
+	// Rendered before dialing: an unknown id or a value carrying a shell is a
+	// mistake the model can fix, and a 20s connection timeout teaches it nothing.
+	command, err := opsremote.Render(parsed.Command, execArgs)
+	if err != nil {
+		return "", err
+	}
+
+	client, target, err := o.dial(ctx, args)
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = client.Close() }()
+
+	ctx, cancel := context.WithTimeout(ctx, o.timeout)
+	defer cancel()
+
+	res, err := client.RunCtx(ctx, command)
+	if err != nil {
+		return "", fmt.Errorf("执行 %s 失败：%w", parsed.Command, err)
+	}
+
+	label := parsed.Command
+	if entry, ok := opsremote.Lookup(parsed.Command); ok {
+		label = entry.Description
+	}
+	return formatExec(target, label, res), nil
+}
+
 // OpsBaselineArgs captures a named sample of a host for later comparison.
 type OpsBaselineArgs struct {
 	Target string `json:"target,omitempty" jsonschema:"description=目标主机 ID，留空使用默认主机"`
@@ -360,6 +417,31 @@ func formatLogs(target opsremote.Target, label string, res opsremote.Result) str
 	const maxBody = 8000
 	if len(body) > maxBody {
 		body = "…（已截断，仅保留末尾内容）\n" + body[len(body)-maxBody:]
+	}
+
+	return b.String() + body
+}
+
+// formatExec prints what was run before what came back, so a conclusion can name
+// the command that produced its evidence instead of describing it from memory.
+func formatExec(target opsremote.Target, label string, res opsremote.Result) string {
+	var b strings.Builder
+
+	fmt.Fprintf(&b, "目标主机：%s (%s:%d)\n", target.ID, target.Host, target.Port)
+	fmt.Fprintf(&b, "命令：%s（退出码 %d，耗时 %s）\n", label, res.ExitCode, res.Duration.Round(time.Millisecond))
+	fmt.Fprintf(&b, "原始命令：%s\n\n", res.Command)
+
+	body := strings.TrimSpace(res.Stdout)
+	if body == "" {
+		if trimmed := strings.TrimSpace(res.Stderr); trimmed != "" {
+			return b.String() + "（无标准输出，以下是标准错误）\n" + trimmed
+		}
+		return b.String() + "（没有任何输出，说明该命令在这台主机上没有可读的数据）"
+	}
+
+	const maxBody = 8000
+	if len(body) > maxBody {
+		body = body[:maxBody] + "\n…（已截断）"
 	}
 
 	return b.String() + body

@@ -56,6 +56,7 @@ const (
 	OpsLogsToolName            = "ops_logs"
 	OpsBaselineToolName        = "ops_baseline"
 	OpsDiffToolName            = "ops_diff"
+	OpsExecToolName            = "ops_exec"
 	DiagnosisToolName          = "diagnosis"
 	TriageResultToolName       = "triage_result"
 	LogFindingToolName         = "log_finding"
@@ -163,6 +164,7 @@ var toolsTypeMapping = map[string]ToolType{
 	OpsLogsToolName:            EnvironmentToolType,
 	OpsBaselineToolName:        EnvironmentToolType,
 	OpsDiffToolName:            EnvironmentToolType,
+	OpsExecToolName:            EnvironmentToolType,
 	DiagnosisToolName:          BarrierToolType,
 	TriageResultToolName:       StoreAgentResultToolType,
 	LogFindingToolName:         StoreAgentResultToolType,
@@ -523,6 +525,16 @@ var registryDefinitions = map[string]llms.FunctionDefinition{
 			"差值与百分比由代码计算，不要自己心算：直接把两次指纹原样传入即可。" +
 			"没有显著变化时结论应当是「本次变更未产生可测量效果」，而不是勉强找一条改善。",
 		Parameters: reflector.Reflect(&OpsDiffArgs{}),
+	},
+	OpsExecToolName: {
+		Name: OpsExecToolName,
+		Description: "按名称执行一条预置的只读诊断命令，用于其他取证工具没覆盖到的角度。command 只能取下列 ID 之一，命令文本本身来自代码里的目录，不接受自由命令：" +
+			"listen_ports（监听端口与进程）、established（已建立连接）、disk_usage（容量）、inode_usage（inode）、memory（内存与 Swap）、load（平均负载与核数）、" +
+			"top_cpu / top_mem（按 CPU 或内存排序的进程，可传 lines）、unit_status / unit_logs（systemd 单元状态与日志，需 unit）、kernel_log（内核日志，可传 lines）、" +
+			"docker_inspect（容器状态、退出码、OOMKilled、重启次数，需 container）、docker_stats（一次性资源采样）、file_stat（绝对路径的元数据，需 path）。" +
+			"参数只允许字母、数字与 . _ - /，含空格或 shell 元字符会被拒绝。" +
+			"返回结果会带上真实执行的命令原文，写证据时直接引用它。",
+		Parameters: reflector.Reflect(&OpsExecArgs{}),
 	},
 	DiagnosisToolName: {
 		Name: DiagnosisToolName,

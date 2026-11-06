@@ -355,10 +355,10 @@ type AnalystExecutorConfig struct {
 // definition: an analyst that can read everything stops being an analyst, and
 // the commander stays the only one that sees the whole picture.
 var analystToolset = map[string][]string{
-	TriageToolName:         {OpsContainersToolName, OpsSystemToolName, OpsLogsToolName},
+	TriageToolName:         {OpsContainersToolName, OpsSystemToolName, OpsLogsToolName, OpsExecToolName},
 	LogAnalystToolName:     {OpsLogsToolName, OpsContainersToolName},
 	MetricsAnalystToolName: {OpsSystemToolName, OpsContainersToolName},
-	ChangeAnalystToolName:  {OpsContainersToolName, OpsSystemToolName},
+	ChangeAnalystToolName:  {OpsContainersToolName, OpsSystemToolName, OpsExecToolName},
 }
 
 type FlowToolsExecutor interface {
@@ -1073,6 +1073,7 @@ func (fte *flowToolsExecutor) GetCommanderExecutor(cfg CommanderExecutorConfig) 
 		registryDefinitions[OpsSystemToolName],
 		registryDefinitions[OpsBaselineToolName],
 		registryDefinitions[OpsDiffToolName],
+		registryDefinitions[OpsExecToolName],
 		registryDefinitions[DiagnosisToolName],
 		registryDefinitions[OptimizationResultToolName],
 	}
@@ -1082,6 +1083,7 @@ func (fte *flowToolsExecutor) GetCommanderExecutor(cfg CommanderExecutorConfig) 
 		OpsSystemToolName:          ops.HandleSystem,
 		OpsBaselineToolName:        ops.HandleBaseline,
 		OpsDiffToolName:            ops.HandleDiff,
+		OpsExecToolName:            ops.HandleExec,
 		DiagnosisToolName:          cfg.Diagnosis,
 		OptimizationResultToolName: cfg.Optimization,
 	}
@@ -1163,6 +1165,7 @@ func (fte *flowToolsExecutor) GetAnalystExecutor(cfg AnalystExecutorConfig) (Con
 		OpsContainersToolName: ops.HandleContainers,
 		OpsLogsToolName:       ops.HandleLogs,
 		OpsSystemToolName:     ops.HandleSystem,
+		OpsExecToolName:       ops.HandleExec,
 	}
 
 	definitions := make([]llms.FunctionDefinition, 0, len(roleTools)+2)
