@@ -147,6 +147,11 @@ jobs:
       - name: Scripts - Runner CLI tests
         run: python3 scripts/test_opsagi_run.py
 
+      # The smoke run itself needs a backend and a model; only the checks it
+      # applies are unit-tested here.
+      - name: Scripts - Smoke check tests
+        run: python3 scripts/test_opsagi_smoke.py
+
       - name: Backend - Test Build
         working-directory: backend
         env:
