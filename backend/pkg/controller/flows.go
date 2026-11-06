@@ -31,6 +31,7 @@ type FlowController interface {
 		ctx context.Context,
 		userID int64,
 		input string,
+		flowType string,
 		prvname provider.ProviderName,
 		prvtype provider.ProviderType,
 		functions *tools.Functions,
@@ -277,6 +278,7 @@ func (fc *flowController) CreateFlow(
 	ctx context.Context,
 	userID int64,
 	input string,
+	flowType string,
 	prvname provider.ProviderName,
 	prvtype provider.ProviderType,
 	functions *tools.Functions,
@@ -285,6 +287,7 @@ func (fc *flowController) CreateFlow(
 	fwc := newFlowWorkerCtx{
 		userID:        userID,
 		input:         input,
+		flowType:      flowType,
 		prvname:       prvname,
 		prvtype:       prvtype,
 		functions:     functions,

@@ -3,6 +3,12 @@ scalar JSON
 scalar Map
 
 # Core execution status for flows, tasks and agents
+enum FlowType {
+  auto
+  diagnosis
+  optimization
+}
+
 enum StatusType {
   created
   running
@@ -288,6 +294,7 @@ type Flow {
   userId: ID!
   title: String!
   status: StatusType!
+  type: FlowType!
   terminals: [Terminal!]
   provider: Provider!
   createdAt: Time!
@@ -1079,7 +1086,7 @@ type Query {
 
 type Mutation {
   # Flow management
-  createFlow(modelProvider: String!, input: String!, resourceIds: [ID!]): Flow!
+  createFlow(modelProvider: String!, input: String!, flowType: FlowType, resourceIds: [ID!]): Flow!
   putUserInput(flowId: ID!, input: String!, modelProvider: String, resourceIds: [ID!]): ResultType!
   stopFlow(flowId: ID!): ResultType!
   finishFlow(flowId: ID!): ResultType!

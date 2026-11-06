@@ -669,7 +669,7 @@ func (fp *flowProvider) PrepareAgentChain(ctx context.Context, taskID, subtaskID
 		return 0, fmt.Errorf("failed to update subtask context: %w", err)
 	}
 
-	optimizationMode := tools.PlanModeOf(subtask.Description) == tools.PlanModeOptimization
+	optimizationMode := fp.subtaskMode(ctx, subtask) == tools.PlanModeOptimization
 
 	systemAgentTmpl, err := fp.prompter.RenderTemplate(templates.PromptTypeCommander, map[string]any{
 		"DiagnosisToolName":      tools.DiagnosisToolName,
@@ -876,7 +876,7 @@ func (fp *flowProvider) PerformAgentChain(ctx context.Context, taskID, subtaskID
 	// The exit follows the plan entry's mode, not the model's mood: a
 	// performance task has no diagnosis tool and an incident has no
 	// optimisation tool, so the wrong conclusion cannot be filed.
-	optimizationMode := tools.PlanModeOf(subtask.Description) == tools.PlanModeOptimization
+	optimizationMode := fp.subtaskMode(ctx, subtask) == tools.PlanModeOptimization
 
 	cfg := tools.CommanderExecutorConfig{
 		TaskID:     taskID,
@@ -1018,4 +1018,22 @@ func (fp *flowProvider) putAgentLog(
 	}
 
 	return agentLog.PutLog(ctx, initiator, executor, task, result, taskID, subtaskID)
+}
+
+// subtaskMode resolves which chain a subtask belongs to. An explicit flow type
+// outranks the plan's own label: someone who asked for a performance
+// investigation should not be handed an incident conclusion because the planner
+// guessed otherwise.
+func (fp *flowProvider) subtaskMode(ctx context.Context, subtask database.Subtask) string {
+	task, err := fp.db.GetTask(ctx, subtask.TaskID)
+	if err != nil {
+		return tools.PlanModeOf(subtask.Description)
+	}
+
+	flow, err := fp.db.GetFlow(ctx, task.FlowID)
+	if err != nil || flow.FlowType == "" || flow.FlowType == tools.FlowTypeAuto {
+		return tools.PlanModeOf(subtask.Description)
+	}
+
+	return flow.FlowType
 }

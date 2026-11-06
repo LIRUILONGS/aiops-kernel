@@ -81,6 +81,7 @@ type flowWorker struct {
 type newFlowWorkerCtx struct {
 	userID    int64
 	input     string
+	flowType  string
 	dryRun    bool
 	prvname   provider.ProviderName
 	prvtype   provider.ProviderType
@@ -153,6 +154,7 @@ func reserveFlow(ctx context.Context, fwc newFlowWorkerCtx) (database.Flow, erro
 		ToolCallIDTemplate: cast.ToolCallIDTemplate,
 		Functions:          []byte("{}"),
 		UserID:             fwc.userID,
+		FlowType:           fwc.flowType,
 	})
 	if err != nil {
 		obs.LogErrorOrCancel(logrus.WithContext(ctx), err, "failed to create flow in DB")

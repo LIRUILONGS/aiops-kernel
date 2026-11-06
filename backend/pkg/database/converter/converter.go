@@ -41,6 +41,7 @@ func ConvertFlow(flow database.Flow, containers []database.Container) *model.Flo
 		UserID:    flow.UserID,
 		Title:     flow.Title,
 		Status:    model.StatusType(flow.Status),
+		Type:      model.FlowType(flow.FlowType),
 		Terminals: ConvertContainers(containers),
 		Provider:  provider,
 		CreatedAt: flow.CreatedAt.Time,

@@ -32,7 +32,7 @@ import (
 )
 
 // CreateFlow is the resolver for the createFlow field.
-func (r *mutationResolver) CreateFlow(ctx context.Context, modelProvider string, input string, resourceIds []int64) (*model.Flow, error) {
+func (r *mutationResolver) CreateFlow(ctx context.Context, modelProvider string, input string, flowType *model.FlowType, resourceIds []int64) (*model.Flow, error) {
 	uid, _, err := validatePermission(ctx, "flows.create")
 	if err != nil {
 		return nil, err
@@ -67,7 +67,7 @@ func (r *mutationResolver) CreateFlow(ctx context.Context, modelProvider string,
 	}
 	prvtype := prv.Type()
 
-	flowID, err := r.Controller.CreateFlow(ctx, uid, input, prvname, prvtype, nil, dbResources)
+	flowID, err := r.Controller.CreateFlow(ctx, uid, input, convertFlowType(flowType), prvname, prvtype, nil, dbResources)
 	if err != nil {
 		return nil, err
 	}
@@ -3123,3 +3123,15 @@ func (r *Resolver) Subscription() SubscriptionResolver { return &subscriptionRes
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
+
+// An absent type keeps the behaviour every existing flow has: the planner decides
+// per plan entry whether a subtask is an incident or a performance task.
+const flowTypeAuto = "auto"
+
+func convertFlowType(flowType *model.FlowType) string {
+	if flowType == nil {
+		return flowTypeAuto
+	}
+
+	return string(*flowType)
+}

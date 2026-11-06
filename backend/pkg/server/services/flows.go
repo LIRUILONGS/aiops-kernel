@@ -370,7 +370,9 @@ func (s *FlowService) CreateFlow(c *gin.Context) {
 		return
 	}
 
-	flowID, err := s.fc.CreateFlow(c, int64(uid), createFlow.Input, prvname, prvtype, createFlow.Functions, dbResources)
+	// This endpoint predates the flow type; callers that need to choose it use the
+	// GraphQL mutation, so the REST path keeps the planner-decided behaviour.
+	flowID, err := s.fc.CreateFlow(c, int64(uid), createFlow.Input, "auto", prvname, prvtype, createFlow.Functions, dbResources)
 	if err != nil {
 		logger.FromContext(c).WithError(err).Errorf("error creating flow")
 		response.Error(c, response.ErrInternal, err)

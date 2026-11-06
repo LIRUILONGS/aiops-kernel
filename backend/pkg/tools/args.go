@@ -446,6 +446,9 @@ type AnalystQuestion struct {
 const (
 	PlanModeDiagnosis    = "diagnosis"
 	PlanModeOptimization = "optimization"
+	// FlowTypeAuto leaves the choice to the plan, which is what every flow
+	// created before the flow type existed gets.
+	FlowTypeAuto = "auto"
 )
 
 // aiopsSpecialists is the set of subtask owners the planner may name. It is a

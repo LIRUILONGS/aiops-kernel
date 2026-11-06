@@ -6,6 +6,7 @@ import (
 	"sync"
 	"testing"
 
+	"opsagi/pkg/database"
 	"opsagi/pkg/providers/provider"
 	"opsagi/pkg/providers/tester/mock"
 	"opsagi/pkg/templates"
@@ -102,6 +103,73 @@ func TestProvider_SetProvider_SwitchesOnlyWhenTheNameOrConfigurationChanges(t *t
 			assert.Equal(t, tt.wantTemplate, template, "the reported template")
 			assert.Same(t, installed, fp.Provider, "the installed provider")
 			assert.Equal(t, stored, fp.ToolCallIDTemplate(), "the stored template")
+		})
+	}
+}
+
+type modeQuerier struct {
+	database.Querier
+
+	flow    database.Flow
+	flowErr error
+}
+
+func (q modeQuerier) GetTask(context.Context, int64) (database.Task, error) {
+	return database.Task{ID: 7, FlowID: 3}, nil
+}
+
+func (q modeQuerier) GetFlow(context.Context, int64) (database.Flow, error) {
+	return q.flow, q.flowErr
+}
+
+func TestProvider_SubtaskMode_LetsAnExplicitFlowTypeOutrankThePlan(t *testing.T) {
+	const (
+		incidentPlan = "【目标类型：故障诊断】\n\n看日志"
+		perfPlan     = "【目标类型：性能优化】\n\n看瓶颈"
+	)
+
+	tests := []struct {
+		name     string
+		flowType string
+		flowErr  error
+		plan     string
+		want     string
+	}{
+		{
+			name:     "the flow asked for performance, the plan assumed an incident",
+			flowType: "optimization",
+			plan:     incidentPlan,
+			want:     "optimization",
+		},
+		{
+			name:     "the flow asked for an incident, the plan assumed performance",
+			flowType: "diagnosis",
+			plan:     perfPlan,
+			want:     "diagnosis",
+		},
+		{
+			name:     "an automatic flow is left to the plan",
+			flowType: "auto",
+			plan:     perfPlan,
+			want:     "optimization",
+		},
+		{
+			name:    "a flow that cannot be read is left to the plan",
+			flowErr: errors.New("gone"),
+			plan:    perfPlan,
+			want:    "optimization",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			fp := &flowProvider{
+				db: modeQuerier{flow: database.Flow{ID: 3, FlowType: tc.flowType}, flowErr: tc.flowErr},
+			}
+
+			got := fp.subtaskMode(context.Background(), database.Subtask{TaskID: 7, Description: tc.plan})
+
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }

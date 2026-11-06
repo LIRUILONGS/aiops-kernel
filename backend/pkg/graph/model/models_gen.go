@@ -209,6 +209,7 @@ type Flow struct {
 	UserID    int64       `json:"userId"`
 	Title     string      `json:"title"`
 	Status    StatusType  `json:"status"`
+	Type      FlowType    `json:"type"`
 	Terminals []*Terminal `json:"terminals,omitempty"`
 	Provider  *Provider   `json:"provider"`
 	CreatedAt time.Time   `json:"createdAt"`
@@ -806,6 +807,49 @@ func (e *AgentType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e AgentType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type FlowType string
+
+const (
+	FlowTypeAuto         FlowType = "auto"
+	FlowTypeDiagnosis    FlowType = "diagnosis"
+	FlowTypeOptimization FlowType = "optimization"
+)
+
+var AllFlowType = []FlowType{
+	FlowTypeAuto,
+	FlowTypeDiagnosis,
+	FlowTypeOptimization,
+}
+
+func (e FlowType) IsValid() bool {
+	switch e {
+	case FlowTypeAuto, FlowTypeDiagnosis, FlowTypeOptimization:
+		return true
+	}
+	return false
+}
+
+func (e FlowType) String() string {
+	return string(e)
+}
+
+func (e *FlowType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = FlowType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid FlowType", str)
+	}
+	return nil
+}
+
+func (e FlowType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
