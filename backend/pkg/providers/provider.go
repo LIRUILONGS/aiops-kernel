@@ -670,11 +670,15 @@ func (fp *flowProvider) PrepareAgentChain(ctx context.Context, taskID, subtaskID
 	}
 
 	systemAgentTmpl, err := fp.prompter.RenderTemplate(templates.PromptTypeCommander, map[string]any{
-		"DiagnosisToolName": tools.DiagnosisToolName,
-		"AskToolName":       tools.AskUserToolName,
-		"AskUserEnabled":    fp.askUser,
-		"ExecutionContext":  executionContext,
-		"Lang":              fp.language,
+		"DiagnosisToolName":      tools.DiagnosisToolName,
+		"AskToolName":            tools.AskUserToolName,
+		"AskUserEnabled":         fp.askUser,
+		"TriageToolName":         tools.TriageToolName,
+		"LogAnalystToolName":     tools.LogAnalystToolName,
+		"MetricsAnalystToolName": tools.MetricsAnalystToolName,
+		"ChangeAnalystToolName":  tools.ChangeAnalystToolName,
+		"ExecutionContext":       executionContext,
+		"Lang":                   fp.language,
 	})
 	if err != nil {
 		logger.WithError(err).Error("failed to get system prompt for commander template")
@@ -845,6 +849,27 @@ func (fp *flowProvider) PerformAgentChain(ctx context.Context, taskID, subtaskID
 	}
 	if fp.askUser {
 		cfg.AskUser = barrier
+	}
+
+	// Delegation is recursion: each handler runs a full specialist chain whose
+	// result comes back as the tool's return value, so the commander keeps one
+	// transcript and the specialist keeps its own.
+	for _, d := range []struct {
+		name    string
+		handler func(context.Context, *int64, *int64) (tools.ExecutorHandler, error)
+		assign  func(tools.ExecutorHandler)
+	}{
+		{tools.TriageToolName, fp.GetTriageHandler, func(h tools.ExecutorHandler) { cfg.Triage = h }},
+		{tools.LogAnalystToolName, fp.GetLogAnalystHandler, func(h tools.ExecutorHandler) { cfg.LogAnalyst = h }},
+		{tools.MetricsAnalystToolName, fp.GetMetricsAnalystHandler, func(h tools.ExecutorHandler) { cfg.MetricsAnalyst = h }},
+		{tools.ChangeAnalystToolName, fp.GetChangeAnalystHandler, func(h tools.ExecutorHandler) { cfg.ChangeAnalyst = h }},
+	} {
+		handler, err := d.handler(ctx, &taskID, &subtaskID)
+		if err != nil {
+			logger.WithError(err).WithField("role", d.name).Warn("delegation handler is unavailable")
+			continue
+		}
+		d.assign(handler)
 	}
 
 	executor, err := fp.executor.GetCommanderExecutor(cfg)

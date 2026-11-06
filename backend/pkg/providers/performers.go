@@ -109,21 +109,9 @@ func (fp *flowProvider) performSubtasksGenerator(
 		llms.TextParts(llms.ChatMessageTypeHuman, userGeneratorTmpl),
 	}
 
-	memorist, err := fp.GetMemoristHandler(ctx, &taskID, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get memorist handler: %w", err)
-	}
-
-	searcher, err := fp.GetTaskSearcherHandler(ctx, taskID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get searcher handler: %w", err)
-	}
-
 	ctx = tools.PutAgentContext(ctx, msgChainType)
 	cfg := tools.GeneratorExecutorConfig{
-		TaskID:   taskID,
-		Memorist: memorist,
-		Searcher: searcher,
+		TaskID: taskID,
 		SubtaskList: func(ctx context.Context, name string, args json.RawMessage) (string, error) {
 			decoded, err := decodeGeneratorSubtaskList(args)
 			if err != nil {
@@ -182,6 +170,9 @@ func decodeGeneratorSubtaskList(args json.RawMessage) (tools.SubtaskList, error)
 	}
 	if list.Subtasks == nil {
 		return list, fmt.Errorf("failed to unmarshal subtask list: subtasks array is missing")
+	}
+	if err := list.Validate(); err != nil {
+		return list, fmt.Errorf("计划不完整: %w", err)
 	}
 	return list, nil
 }
@@ -283,21 +274,9 @@ func (fp *flowProvider) performSubtasksRefiner(
 		}
 	}
 
-	memorist, err := fp.GetMemoristHandler(ctx, &taskID, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get memorist handler: %w", err)
-	}
-
-	searcher, err := fp.GetTaskSearcherHandler(ctx, taskID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get searcher handler: %w", err)
-	}
-
 	ctx = tools.PutAgentContext(ctx, msgChainType)
 	cfg := tools.RefinerExecutorConfig{
-		TaskID:   taskID,
-		Memorist: memorist,
-		Searcher: searcher,
+		TaskID: taskID,
 		SubtaskPatch: func(ctx context.Context, name string, args json.RawMessage) (string, error) {
 			logger.WithField("args_len", len(args)).Debug("received subtask patch")
 			if err := json.Unmarshal(args, &subtaskPatch); err != nil {

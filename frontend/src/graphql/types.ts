@@ -42,11 +42,15 @@ export enum AgentConfigType {
 export enum AgentType {
     Adviser = 'adviser',
     Assistant = 'assistant',
+    ChangeAnalyst = 'change_analyst',
     Coder = 'coder',
+    Commander = 'commander',
     Enricher = 'enricher',
     Generator = 'generator',
     Installer = 'installer',
+    LogAnalyst = 'log_analyst',
     Memorist = 'memorist',
+    MetricsAnalyst = 'metrics_analyst',
     Pentester = 'pentester',
     PrimaryAgent = 'primary_agent',
     Refiner = 'refiner',
@@ -55,6 +59,7 @@ export enum AgentType {
     Searcher = 'searcher',
     Summarizer = 'summarizer',
     ToolCallFixer = 'tool_call_fixer',
+    Triage = 'triage',
 }
 
 export type AgentsConfigInput = {

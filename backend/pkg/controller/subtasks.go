@@ -89,18 +89,22 @@ func (stc *subtaskController) GenerateSubtasks(ctx context.Context) error {
 
 	// TODO: change it to insert subtasks in transaction
 	for _, info := range plan {
-		_, err := stc.taskCtx.DB.CreateSubtask(ctx, database.CreateSubtaskParams{
-			Status:      database.SubtaskStatusCreated,
-			TaskID:      stc.taskCtx.TaskID,
-			Title:       info.Title,
-			Description: info.Description,
-		})
-		if err != nil {
+		if err := stc.createPlannedSubtask(ctx, info); err != nil {
 			return fmt.Errorf("failed to create subtask for task %d: %w", stc.taskCtx.TaskID, err)
 		}
 	}
 
 	return nil
+}
+
+func (stc *subtaskController) createPlannedSubtask(ctx context.Context, info tools.SubtaskInfo) error {
+	_, err := stc.taskCtx.DB.CreateSubtask(ctx, database.CreateSubtaskParams{
+		Status:      database.SubtaskStatusCreated,
+		TaskID:      stc.taskCtx.TaskID,
+		Title:       info.Title,
+		Description: info.PlanDescription(),
+	})
+	return err
 }
 
 func (stc *subtaskController) RefineSubtasks(ctx context.Context) error {
@@ -145,13 +149,7 @@ func (stc *subtaskController) RefineSubtasks(ctx context.Context) error {
 
 	// TODO: change it to insert subtasks in transaction and union it with delete ones
 	for _, info := range plan {
-		_, err := stc.taskCtx.DB.CreateSubtask(ctx, database.CreateSubtaskParams{
-			Status:      database.SubtaskStatusCreated,
-			TaskID:      stc.taskCtx.TaskID,
-			Title:       info.Title,
-			Description: info.Description,
-		})
-		if err != nil {
+		if err := stc.createPlannedSubtask(ctx, info); err != nil {
 			return fmt.Errorf("failed to create subtask for task %d: %w", stc.taskCtx.TaskID, err)
 		}
 	}

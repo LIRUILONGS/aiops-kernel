@@ -246,3 +246,67 @@ func (d Diagnosis) Render() (string, error) {
 
 	return b.String(), nil
 }
+
+// renderFinding is the shape every specialist delegation returns: a headline
+// field, the report, and the evidence the commander can quote into the final
+// diagnosis without re-running anything.
+func renderFinding(title, headline, label, onset, result, message string, evidence []EvidenceItem) string {
+	var b strings.Builder
+
+	fmt.Fprintf(&b, "## %s\n\n", title)
+	fmt.Fprintf(&b, "**%s**：%s\n\n", label, headline)
+	if onset != "" {
+		fmt.Fprintf(&b, "**时间点**：%s\n\n", onset)
+	}
+	b.WriteString(result)
+	b.WriteString("\n")
+
+	if len(evidence) > 0 {
+		b.WriteString("\n### 证据\n\n")
+		for i, item := range evidence {
+			fmt.Fprintf(&b, "%d. **%s** · %s · `%s`\n\n", i+1, item.Source, item.Timestamp, item.Query)
+			for _, line := range strings.Split(item.Excerpt, "\n") {
+				fmt.Fprintf(&b, "   > %s\n", strings.TrimRight(line, "\r"))
+			}
+			b.WriteString("\n")
+		}
+	}
+
+	if message != "" {
+		fmt.Fprintf(&b, "### 交给事故指挥\n\n%s\n", message)
+	}
+
+	return b.String()
+}
+
+func (r TriageResult) Render() (string, error) {
+	if err := r.Validate(); err != nil {
+		return "", err
+	}
+	known := "未命中已知模式"
+	if r.KnownPattern.Bool() {
+		known = "命中已知模式"
+	}
+	return renderFinding("分诊结论", r.Severity+" · "+r.BlastRadius, "分级与影响面", known+"；"+r.BlastRadius, r.Result, r.Message, r.Evidence), nil
+}
+
+func (f LogFinding) Render() (string, error) {
+	if err := f.Validate(); err != nil {
+		return "", err
+	}
+	return renderFinding("日志分析结论", f.Pattern, "错误模式", f.Onset, f.Result, f.Message, f.Evidence), nil
+}
+
+func (f MetricFinding) Render() (string, error) {
+	if err := f.Validate(); err != nil {
+		return "", err
+	}
+	return renderFinding("指标分析结论", f.Metric, "指标", f.Onset, f.Result, f.Message, f.Evidence), nil
+}
+
+func (f ChangeFinding) Render() (string, error) {
+	if err := f.Validate(); err != nil {
+		return "", err
+	}
+	return renderFinding("变更分析结论", f.Change, "变更", f.Onset, f.Result, f.Message, f.Evidence), nil
+}

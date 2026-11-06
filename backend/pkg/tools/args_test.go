@@ -251,12 +251,12 @@ func TestArgs_SubtaskPatch_NamesTheOperationItRefusesAndWhy(t *testing.T) {
 		{
 			name:    "add missing title",
 			ops:     []SubtaskOperation{{Op: SubtaskOpAdd, Description: "d"}},
-			wantErr: "operation 0: add requires title",
+			wantErr: "operation 0: 缺少 title",
 		},
 		{
 			name:    "add missing description",
 			ops:     []SubtaskOperation{{Op: SubtaskOpAdd, Title: "t"}},
-			wantErr: "operation 0: add requires description",
+			wantErr: "operation 0: 缺少 description",
 		},
 		{
 			name: "remove with id",
@@ -1342,5 +1342,96 @@ func TestArgs_TaskResult_RequiresAnExplicitSuccessFlag(t *testing.T) {
 				t.Error("an omitted flag must decode to nil, not to a boolean")
 			}
 		})
+	}
+}
+
+func TestArgs_SubtaskInfo_PlanDescriptionKeepsTheHypothesisAndAppendsTheSignal(t *testing.T) {
+	info := SubtaskInfo{
+		Title:          "验证是否为 nginx 配置错误",
+		Description:    "如果是配置错误，nginx 会在启动时以 emerg 退出。",
+		AssignedTo:     "log_analyst",
+		ExpectedSignal: "[emerg] unknown directive",
+	}
+
+	got := info.PlanDescription()
+
+	want := "如果是配置错误，nginx 会在启动时以 emerg 退出。\n\n期望信号：[emerg] unknown directive\n\n建议执行者：log_analyst"
+	if got != want {
+		t.Fatalf("plan description = %q, want %q", got, want)
+	}
+
+	bare := SubtaskInfo{Title: "t", Description: "d"}
+	if got := bare.PlanDescription(); got != "d" {
+		t.Errorf("a plan entry with no signal must render only the description, got %q", got)
+	}
+}
+
+func TestArgs_SubtaskList_ValidateRefusesAPlanWithoutAnExecutableHypothesis(t *testing.T) {
+	tests := []struct {
+		name     string
+		subtasks []SubtaskInfo
+		wantErr  string
+	}{
+		{
+			name: "a complete plan",
+			subtasks: []SubtaskInfo{
+				{Title: "a", Description: "b", AssignedTo: "log_analyst", ExpectedSignal: "c"},
+				{Title: "d", Description: "e"},
+			},
+		},
+		{
+			name:     "no subtasks at all",
+			subtasks: []SubtaskInfo{},
+		},
+		{
+			name:     "a subtask without a title",
+			subtasks: []SubtaskInfo{{Description: "b"}},
+			wantErr:  "缺少 title",
+		},
+		{
+			name:     "a subtask without a description",
+			subtasks: []SubtaskInfo{{Title: "a"}},
+			wantErr:  "缺少 description",
+		},
+		{
+			name:     "an owner that has no agent behind it",
+			subtasks: []SubtaskInfo{{Title: "a", Description: "b", AssignedTo: "log-analyzer"}},
+			wantErr:  "不是可用的执行者",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := SubtaskList{Subtasks: tc.subtasks}.Validate()
+			if tc.wantErr == "" {
+				if err != nil {
+					t.Fatalf("refused a valid plan: %v", err)
+				}
+				return
+			}
+			if err == nil {
+				t.Fatal("accepted a plan that is not executable")
+			}
+			if !strings.Contains(err.Error(), tc.wantErr) {
+				t.Errorf("refusal %q does not say %q", err, tc.wantErr)
+			}
+		})
+	}
+}
+
+func TestArgs_SubtaskPatch_ValidateRefusesAnAddedEntryWithAnUnknownOwner(t *testing.T) {
+	patch := SubtaskPatch{Operations: SubtaskOperations{{
+		Op:          SubtaskOpAdd,
+		Title:       "t",
+		Description: "d",
+		AssignedTo:  "triage_v2",
+	}}}
+
+	err := patch.Validate()
+	if err == nil {
+		t.Fatal("accepted an added subtask whose owner does not exist")
+	}
+	if !strings.Contains(err.Error(), "operation 0") {
+		t.Errorf("refusal %q does not name the operation", err)
 	}
 }

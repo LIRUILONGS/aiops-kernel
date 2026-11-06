@@ -10,10 +10,13 @@ import {
     HelpCircle,
     LayoutList,
     MessagesSquare,
+    Radio,
     RefreshCw,
+    ScrollText,
     Search,
     Settings,
     Sigma,
+    Siren,
     Skull,
     Wrench,
 } from 'lucide-react';
@@ -32,11 +35,15 @@ interface FlowAgentIconProps {
 const icons: Record<AgentType, LucideIcon> = {
     [AgentType.Adviser]: HelpCircle,
     [AgentType.Assistant]: Bot,
+    [AgentType.ChangeAnalyst]: RefreshCw,
     [AgentType.Coder]: Code2,
+    [AgentType.Commander]: Siren,
     [AgentType.Enricher]: HardDriveDownload,
     [AgentType.Generator]: LayoutList,
     [AgentType.Installer]: Settings,
+    [AgentType.LogAnalyst]: ScrollText,
     [AgentType.Memorist]: HardDrive,
+    [AgentType.MetricsAnalyst]: Sigma,
     [AgentType.Pentester]: Skull,
     [AgentType.PrimaryAgent]: Brain,
     [AgentType.Refiner]: RefreshCw,
@@ -45,6 +52,7 @@ const icons: Record<AgentType, LucideIcon> = {
     [AgentType.Searcher]: Search,
     [AgentType.Summarizer]: Sigma,
     [AgentType.ToolCallFixer]: Wrench,
+    [AgentType.Triage]: Radio,
 };
 const defaultIcon = HelpCircle;
 

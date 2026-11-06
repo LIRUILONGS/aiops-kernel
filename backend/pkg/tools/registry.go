@@ -61,6 +61,15 @@ const (
 	LogFindingToolName         = "log_finding"
 	MetricFindingToolName      = "metric_finding"
 	ChangeFindingToolName      = "change_finding"
+
+	// The four analysts are reached through delegation tools rather than through
+	// the executor: the commander decides which evidence face the next probe
+	// belongs to, and each tool runs that analyst's own chain and returns its
+	// finding as the tool result.
+	TriageToolName         = "triage"
+	LogAnalystToolName     = "log_analyst"
+	MetricsAnalystToolName = "metrics_analyst"
+	ChangeAnalystToolName  = "change_analyst"
 )
 
 type ToolType int
@@ -156,6 +165,10 @@ var toolsTypeMapping = map[string]ToolType{
 	DiagnosisToolName:          BarrierToolType,
 	TriageResultToolName:       StoreAgentResultToolType,
 	LogFindingToolName:         StoreAgentResultToolType,
+	TriageToolName:             StoreAgentResultToolType,
+	LogAnalystToolName:         StoreAgentResultToolType,
+	MetricsAnalystToolName:     StoreAgentResultToolType,
+	ChangeAnalystToolName:      StoreAgentResultToolType,
 	MetricFindingToolName:      StoreAgentResultToolType,
 	ChangeFindingToolName:      StoreAgentResultToolType,
 }
@@ -533,6 +546,34 @@ var registryDefinitions = map[string]llms.FunctionDefinition{
 		Description: "交回指标分析结论：哪些指标、拐点时刻、拐点前后的数值变化。" +
 			"onset 是数值开始异常的那一刻，不是发现异常的时刻。",
 		Parameters: reflector.Reflect(&MetricFinding{}),
+	},
+	TriageToolName: {
+		Name: TriageToolName,
+		Description: "把定级与影响面的判断交给分诊员。" +
+			"它只回答三个问题：多严重、影响谁、像不像见过的某个故障。" +
+			"question 要写清告警原文与已知现象，不要只写「看看严重吗」。",
+		Parameters: reflector.Reflect(&AnalystQuestion{}),
+	},
+	LogAnalystToolName: {
+		Name: LogAnalystToolName,
+		Description: "把日志面的取证交给日志分析员。" +
+			"它会在事故时间窗内找第一个错误模板、首次出现时刻、实例分布，以及之前十秒发生了什么。" +
+			"question 里带上受影响容器名与时间窗。",
+		Parameters: reflector.Reflect(&AnalystQuestion{}),
+	},
+	MetricsAnalystToolName: {
+		Name: MetricsAnalystToolName,
+		Description: "把指标面的取证交给指标分析员。" +
+			"它找拐点而不是均值：哪条序列先动、动多少、哪些序列没动。" +
+			"question 里带上受影响的指标面（主机负载、内存、磁盘、容器资源）与时间窗。",
+		Parameters: reflector.Reflect(&AnalystQuestion{}),
+	},
+	ChangeAnalystToolName: {
+		Name: ChangeAnalystToolName,
+		Description: "把变更面的取证交给变更分析员。" +
+			"它构建事故起始点前后的变更时间线，并算出每条变更离起始点多远。" +
+			"question 里带上起始点时间与受影响组件。",
+		Parameters: reflector.Reflect(&AnalystQuestion{}),
 	},
 	ChangeFindingToolName: {
 		Name: ChangeFindingToolName,

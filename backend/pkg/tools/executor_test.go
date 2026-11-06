@@ -632,22 +632,6 @@ func TestExecutor_Execute_AnonymizesWhatEveryAgentStoresInMemory(t *testing.T) {
 				})
 			},
 		},
-		"generator": {
-			agent: database.MsgchainTypeGenerator,
-			build: func(fte *flowToolsExecutor) (ContextToolsExecutor, error) {
-				return fte.GetGeneratorExecutor(GeneratorExecutorConfig{
-					TaskID: 1, Memorist: handler, Searcher: handler, SubtaskList: handler,
-				})
-			},
-		},
-		"refiner": {
-			agent: database.MsgchainTypeRefiner,
-			build: func(fte *flowToolsExecutor) (ContextToolsExecutor, error) {
-				return fte.GetRefinerExecutor(RefinerExecutorConfig{
-					TaskID: 1, Memorist: handler, Searcher: handler, SubtaskPatch: handler,
-				})
-			},
-		},
 		"memorist": {
 			agent: database.MsgchainTypeMemorist,
 			build: func(fte *flowToolsExecutor) (ContextToolsExecutor, error) {

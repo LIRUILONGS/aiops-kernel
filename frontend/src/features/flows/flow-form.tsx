@@ -79,7 +79,7 @@ export function FlowForm({
     isSubmitting,
     onCancel,
     onSubmit,
-    placeholder = 'Describe what you would like PentAGI to test...',
+    placeholder = 'Describe the incident to diagnose, or the service to optimise...',
     type,
 }: FlowFormProps) {
     const { providers, setSelectedProvider } = useProviders();

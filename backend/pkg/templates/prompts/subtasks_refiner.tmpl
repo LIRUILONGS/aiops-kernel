@@ -1,16 +1,12 @@
 <refinement_context>
   <instruction>
-  Your goal is to optimize the remaining subtasks to accomplish the PRIMARY USER REQUEST provided in the <user_task><input> field below.
-  
-  The <user_task><input> contains the MAIN OBJECTIVE that the user requested - this is the ultimate goal you must achieve.
-  Based on completed subtask results, refine the remaining plan to accomplish this exact user request more efficiently.
-  All modifications (add/remove/modify) must be focused on achieving what the user asked for in <user_task><input>.
-  Remove subtasks that don't contribute to the user's goal, add subtasks that fill critical gaps toward the goal.
+  下面这条告警已经有若干假设跑完了。读它们的结论，修订剩下的计划：删除已被覆盖的、修正方向不对的、补上结论打开的新方向。
+  整体目标仍然是这条告警的根因，不是"把清单跑完"。
   </instruction>
 
-  <user_task>
+  <alert>
     <input>{{.Task.Input}}</input>
-  </user_task>
+  </alert>
 
   {{if .Tasks}}
   <previous_tasks>
@@ -52,7 +48,7 @@
   {{else}}
   <planned_subtasks>
     <status>empty</status>
-    <message>All subtasks have been completed. Review their statuses and results.</message>
+    <message>所有子任务都已结束。如果结论已经足够，不要再新增假设。</message>
   </planned_subtasks>
   {{end}}
 

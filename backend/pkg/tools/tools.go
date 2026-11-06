@@ -287,17 +287,18 @@ type SearcherExecutorConfig struct {
 	Summarizer   SummarizeHandler
 }
 
+// GeneratorExecutorConfig is the planner. It has no other tool on purpose: a
+// planner that can run commands investigates instead of planning, and the plan
+// is the one artefact this step produces.
 type GeneratorExecutorConfig struct {
 	TaskID      int64
-	Memorist    ExecutorHandler
-	Searcher    ExecutorHandler
 	SubtaskList ExecutorHandler
 }
 
+// RefinerExecutorConfig is the planner again, after a subtask landed: it may
+// only edit the remaining plan.
 type RefinerExecutorConfig struct {
 	TaskID       int64
-	Memorist     ExecutorHandler
-	Searcher     ExecutorHandler
 	SubtaskPatch ExecutorHandler
 }
 
@@ -326,11 +327,37 @@ type ReporterExecutorConfig struct {
 // ask-user disabled, and a commander that offers a tool its prompt has no rule
 // for would only invite an invalid call.
 type CommanderExecutorConfig struct {
-	TaskID     int64
-	SubtaskID  int64
-	Diagnosis  ExecutorHandler
+	TaskID         int64
+	SubtaskID      int64
+	Diagnosis      ExecutorHandler
+	AskUser        ExecutorHandler
+	Triage         ExecutorHandler
+	LogAnalyst     ExecutorHandler
+	MetricsAnalyst ExecutorHandler
+	ChangeAnalyst  ExecutorHandler
+	Summarizer     SummarizeHandler
+}
+
+// AnalystExecutorConfig is one specialist: the evidence face its role owns and
+// the single exit that turns the probe into a finding. Role names the tool the
+// commander used to reach it, which is what selects the tool set below.
+type AnalystExecutorConfig struct {
+	TaskID     *int64
+	SubtaskID  *int64
+	Role       string
+	Finding    ExecutorHandler
 	AskUser    ExecutorHandler
 	Summarizer SummarizeHandler
+}
+
+// analystToolset is the evidence a role may read. The split is the role's
+// definition: an analyst that can read everything stops being an analyst, and
+// the commander stays the only one that sees the whole picture.
+var analystToolset = map[string][]string{
+	TriageToolName:         {OpsContainersToolName, OpsSystemToolName, OpsLogsToolName},
+	LogAnalystToolName:     {OpsLogsToolName, OpsContainersToolName},
+	MetricsAnalystToolName: {OpsSystemToolName, OpsContainersToolName},
+	ChangeAnalystToolName:  {OpsContainersToolName, OpsSystemToolName},
 }
 
 type FlowToolsExecutor interface {
@@ -355,6 +382,7 @@ type FlowToolsExecutor interface {
 	GetAssistantExecutor(cfg AssistantExecutorConfig) (ContextToolsExecutor, error)
 	GetPrimaryExecutor(cfg PrimaryExecutorConfig) (ContextToolsExecutor, error)
 	GetCommanderExecutor(cfg CommanderExecutorConfig) (ContextToolsExecutor, error)
+	GetAnalystExecutor(cfg AnalystExecutorConfig) (ContextToolsExecutor, error)
 	GetInstallerExecutor(cfg InstallerExecutorConfig) (ContextToolsExecutor, error)
 	GetCoderExecutor(cfg CoderExecutorConfig) (ContextToolsExecutor, error)
 	GetPentesterExecutor(cfg PentesterExecutorConfig) (ContextToolsExecutor, error)
@@ -1056,6 +1084,22 @@ func (fte *flowToolsExecutor) GetCommanderExecutor(cfg CommanderExecutorConfig) 
 	}
 	barriers := map[string]struct{}{DiagnosisToolName: {}}
 
+	for _, d := range []struct {
+		name    string
+		handler ExecutorHandler
+	}{
+		{TriageToolName, cfg.Triage},
+		{LogAnalystToolName, cfg.LogAnalyst},
+		{MetricsAnalystToolName, cfg.MetricsAnalyst},
+		{ChangeAnalystToolName, cfg.ChangeAnalyst},
+	} {
+		if d.handler == nil {
+			continue
+		}
+		definitions = append(definitions, registryDefinitions[d.name])
+		handlers[d.name] = d.handler
+	}
+
 	if cfg.AskUser != nil {
 		definitions = append(definitions, registryDefinitions[AskUserToolName])
 		handlers[AskUserToolName] = cfg.AskUser
@@ -1078,6 +1122,84 @@ func (fte *flowToolsExecutor) GetCommanderExecutor(cfg CommanderExecutorConfig) 
 		barriers:    barriers,
 		summarizer:  cfg.Summarizer,
 	}, nil
+}
+
+func (fte *flowToolsExecutor) GetAnalystExecutor(cfg AnalystExecutorConfig) (ContextToolsExecutor, error) {
+	if cfg.Finding == nil {
+		return nil, fmt.Errorf("finding handler is required")
+	}
+
+	roleTools, ok := analystToolset[cfg.Role]
+	if !ok {
+		return nil, fmt.Errorf("unknown analyst role %q", cfg.Role)
+	}
+
+	ops := NewOpsTools(fte.cfg)
+	if !ops.IsAvailable() {
+		return nil, fmt.Errorf("no ops targets configured: OPSAGI_TARGETS is empty, %s has nothing to read", cfg.Role)
+	}
+
+	opsHandlers := map[string]ExecutorHandler{
+		OpsContainersToolName: ops.HandleContainers,
+		OpsLogsToolName:       ops.HandleLogs,
+		OpsSystemToolName:     ops.HandleSystem,
+	}
+
+	definitions := make([]llms.FunctionDefinition, 0, len(roleTools)+2)
+	handlers := make(map[string]ExecutorHandler, len(roleTools)+2)
+	for _, name := range roleTools {
+		handler, ok := opsHandlers[name]
+		if !ok {
+			return nil, fmt.Errorf("analyst role %q wants an unknown evidence tool %q", cfg.Role, name)
+		}
+		definitions = append(definitions, registryDefinitions[name])
+		handlers[name] = handler
+	}
+
+	findingTool := findingToolForRole(cfg.Role)
+	definitions = append(definitions, registryDefinitions[findingTool])
+	handlers[findingTool] = cfg.Finding
+	barriers := map[string]struct{}{findingTool: {}}
+
+	if cfg.AskUser != nil {
+		definitions = append(definitions, registryDefinitions[AskUserToolName])
+		handlers[AskUserToolName] = cfg.AskUser
+		barriers[AskUserToolName] = struct{}{}
+	}
+
+	return &customExecutor{
+		userID:      fte.userID,
+		flowID:      fte.flowID,
+		taskID:      cfg.TaskID,
+		subtaskID:   cfg.SubtaskID,
+		mlp:         fte.mlp,
+		tclp:        fte.tclp,
+		replacer:    fte.replacer,
+		vslp:        fte.vslp,
+		db:          fte.db,
+		store:       fte.store,
+		definitions: definitions,
+		handlers:    handlers,
+		barriers:    barriers,
+		summarizer:  cfg.Summarizer,
+	}, nil
+}
+
+// findingToolForRole is the exit each analyst must end with. It is the only way
+// its chain can return a result, so the two have to stay in step.
+func findingToolForRole(role string) string {
+	switch role {
+	case TriageToolName:
+		return TriageResultToolName
+	case LogAnalystToolName:
+		return LogFindingToolName
+	case MetricsAnalystToolName:
+		return MetricFindingToolName
+	case ChangeAnalystToolName:
+		return ChangeFindingToolName
+	default:
+		return DiagnosisToolName
+	}
 }
 
 func (fte *flowToolsExecutor) GetPrimaryExecutor(cfg PrimaryExecutorConfig) (ContextToolsExecutor, error) {
@@ -1595,28 +1717,7 @@ func (fte *flowToolsExecutor) GetGeneratorExecutor(cfg GeneratorExecutorConfig) 
 		return nil, fmt.Errorf("subtask list handler is required")
 	}
 
-	if cfg.Memorist == nil {
-		return nil, fmt.Errorf("memorist handler is required")
-	}
-
-	container, err := fte.db.GetFlowPrimaryContainer(context.Background(), fte.flowID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get container %d: %w", fte.flowID, err)
-	}
-
-	term := NewTerminalTool(
-		fte.flowID,
-		&cfg.TaskID,
-		nil,
-		container.ID,
-		container.LocalID.String,
-		fte.cfg.TenantPrefix(),
-		fte.docker,
-		fte.tlp,
-		time.Duration(fte.cfg.TerminalToolTimeout)*time.Second,
-	)
-
-	ce := &customExecutor{
+	return &customExecutor{
 		userID:   fte.userID,
 		flowID:   fte.flowID,
 		taskID:   &cfg.TaskID,
@@ -1627,37 +1728,13 @@ func (fte *flowToolsExecutor) GetGeneratorExecutor(cfg GeneratorExecutorConfig) 
 		db:       fte.db,
 		store:    fte.store,
 		definitions: []llms.FunctionDefinition{
-			registryDefinitions[MemoristToolName],
-			registryDefinitions[SearchToolName],
 			registryDefinitions[SubtaskListToolName],
-			registryDefinitions[TerminalToolName],
-			registryDefinitions[FileToolName],
 		},
 		handlers: map[string]ExecutorHandler{
-			MemoristToolName:    cfg.Memorist,
-			SearchToolName:      cfg.Searcher,
 			SubtaskListToolName: cfg.SubtaskList,
-			TerminalToolName:    term.Handle,
-			FileToolName:        term.Handle,
 		},
 		barriers: map[string]struct{}{SubtaskListToolName: {}},
-	}
-
-	browser := NewBrowserTool(
-		fte.flowID,
-		&cfg.TaskID,
-		nil,
-		fte.cfg.DataDir,
-		fte.cfg.ScraperPrivateURL,
-		fte.cfg.ScraperPublicURL,
-		fte.scp,
-	)
-	if browser.IsAvailable() {
-		ce.definitions = append(ce.definitions, registryDefinitions[BrowserToolName])
-		ce.handlers[BrowserToolName] = browser.Handle
-	}
-
-	return ce, nil
+	}, nil
 }
 
 func (fte *flowToolsExecutor) GetRefinerExecutor(cfg RefinerExecutorConfig) (ContextToolsExecutor, error) {
@@ -1665,28 +1742,7 @@ func (fte *flowToolsExecutor) GetRefinerExecutor(cfg RefinerExecutorConfig) (Con
 		return nil, fmt.Errorf("subtask patch handler is required")
 	}
 
-	if cfg.Memorist == nil {
-		return nil, fmt.Errorf("memorist handler is required")
-	}
-
-	container, err := fte.db.GetFlowPrimaryContainer(context.Background(), fte.flowID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get container %d: %w", fte.flowID, err)
-	}
-
-	term := NewTerminalTool(
-		fte.flowID,
-		&cfg.TaskID,
-		nil,
-		container.ID,
-		container.LocalID.String,
-		fte.cfg.TenantPrefix(),
-		fte.docker,
-		fte.tlp,
-		time.Duration(fte.cfg.TerminalToolTimeout)*time.Second,
-	)
-
-	ce := &customExecutor{
+	return &customExecutor{
 		userID:   fte.userID,
 		flowID:   fte.flowID,
 		taskID:   &cfg.TaskID,
@@ -1697,37 +1753,13 @@ func (fte *flowToolsExecutor) GetRefinerExecutor(cfg RefinerExecutorConfig) (Con
 		db:       fte.db,
 		store:    fte.store,
 		definitions: []llms.FunctionDefinition{
-			registryDefinitions[MemoristToolName],
-			registryDefinitions[SearchToolName],
 			registryDefinitions[SubtaskPatchToolName],
-			registryDefinitions[TerminalToolName],
-			registryDefinitions[FileToolName],
 		},
 		handlers: map[string]ExecutorHandler{
-			MemoristToolName:     cfg.Memorist,
-			SearchToolName:       cfg.Searcher,
 			SubtaskPatchToolName: cfg.SubtaskPatch,
-			TerminalToolName:     term.Handle,
-			FileToolName:         term.Handle,
 		},
 		barriers: map[string]struct{}{SubtaskPatchToolName: {}},
-	}
-
-	browser := NewBrowserTool(
-		fte.flowID,
-		&cfg.TaskID,
-		nil,
-		fte.cfg.DataDir,
-		fte.cfg.ScraperPrivateURL,
-		fte.cfg.ScraperPublicURL,
-		fte.scp,
-	)
-	if browser.IsAvailable() {
-		ce.definitions = append(ce.definitions, registryDefinitions[BrowserToolName])
-		ce.handlers[BrowserToolName] = browser.Handle
-	}
-
-	return ce, nil
+	}, nil
 }
 
 func (fte *flowToolsExecutor) GetMemoristExecutor(cfg MemoristExecutorConfig) (ContextToolsExecutor, error) {

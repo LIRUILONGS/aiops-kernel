@@ -716,36 +716,26 @@ func toolsAgentExecutorCases() ([]toolsAgentExecutorCase, func(ExecutorHandler) 
 			factory: "GetGeneratorExecutor",
 			build: func(fte *flowToolsExecutor, _ bool, without string) (ContextToolsExecutor, error) {
 				return fte.GetGeneratorExecutor(toolsWithout(GeneratorExecutorConfig{
-					TaskID:      task,
-					SubtaskList: h("SubtaskList"), Memorist: h("Memorist"), Searcher: h("Searcher"),
+					TaskID: task, SubtaskList: h("SubtaskList"),
 				}, without))
 			},
-			tools: map[string]string{
-				"subtask_list": "SubtaskList", "memorist": "Memorist", "search": "Searcher",
-				"terminal": "", "file": "", "browser": "",
-			},
-			optional: []string{"browser"},
+			tools:    map[string]string{"subtask_list": "SubtaskList"},
+			optional: []string{},
 			barriers: []string{"subtask_list"},
-			required: []string{"SubtaskList", "Memorist"},
-			sandbox:  true,
+			required: []string{"SubtaskList"},
 			task:     task,
 		},
 		{
 			factory: "GetRefinerExecutor",
 			build: func(fte *flowToolsExecutor, _ bool, without string) (ContextToolsExecutor, error) {
 				return fte.GetRefinerExecutor(toolsWithout(RefinerExecutorConfig{
-					TaskID:       task,
-					SubtaskPatch: h("SubtaskPatch"), Memorist: h("Memorist"), Searcher: h("Searcher"),
+					TaskID: task, SubtaskPatch: h("SubtaskPatch"),
 				}, without))
 			},
-			tools: map[string]string{
-				"subtask_patch": "SubtaskPatch", "memorist": "Memorist", "search": "Searcher",
-				"terminal": "", "file": "", "browser": "",
-			},
-			optional: []string{"browser"},
+			tools:    map[string]string{"subtask_patch": "SubtaskPatch"},
+			optional: []string{},
 			barriers: []string{"subtask_patch"},
-			required: []string{"SubtaskPatch", "Memorist"},
-			sandbox:  true,
+			required: []string{"SubtaskPatch"},
 			task:     task,
 		},
 		{
@@ -1205,4 +1195,69 @@ func anonymizes(expression ast.Expr) bool {
 	})
 
 	return found
+}
+
+func TestTools_GetAnalystExecutor_GivesEachRoleItsOwnEvidenceFaceAndOneExit(t *testing.T) {
+	handler := func(context.Context, string, json.RawMessage) (string, error) { return "", nil }
+
+	cases := []struct {
+		role     string
+		evidence []string
+		exit     string
+	}{
+		{TriageToolName, []string{OpsContainersToolName, OpsSystemToolName, OpsLogsToolName}, TriageResultToolName},
+		{LogAnalystToolName, []string{OpsLogsToolName, OpsContainersToolName}, LogFindingToolName},
+		{MetricsAnalystToolName, []string{OpsSystemToolName, OpsContainersToolName}, MetricFindingToolName},
+		{ChangeAnalystToolName, []string{OpsContainersToolName, OpsSystemToolName}, ChangeFindingToolName},
+	}
+
+	fte := &flowToolsExecutor{
+		flowID: 42,
+		cfg: &config.Config{
+			OpsTargets: `[{"id":"lab","host":"127.0.0.1","port":22,"user":"root","password":"x"}]`,
+		},
+		db:     &fakeContainerDB{row: toolsSandboxRow(database.ContainerStatusRunning, "primary")},
+		docker: &fakeDockerClient{},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.role, func(t *testing.T) {
+			executor, err := fte.GetAnalystExecutor(AnalystExecutorConfig{Role: tc.role, Finding: handler})
+			require.NoError(t, err)
+			ce := executor.(*customExecutor)
+
+			var advertised []string
+			for _, def := range ce.definitions {
+				advertised = append(advertised, def.Name)
+			}
+
+			want := append(slices.Clone(tc.evidence), tc.exit)
+			assert.ElementsMatch(t, want, advertised, "the evidence face this role owns, plus its exit")
+
+			assert.Equal(t, map[string]struct{}{tc.exit: {}}, ce.barriers,
+				"a probe ends at its own finding, not at a diagnosis")
+			assert.ElementsMatch(t, advertised, slices.Collect(maps.Keys(ce.handlers)),
+				"every tool offered has a handler")
+			assert.NotNil(t, ce.handlers[tc.exit], "the exit must be served by the caller's finding handler")
+		})
+	}
+
+	t.Run("an unknown role is refused", func(t *testing.T) {
+		_, err := fte.GetAnalystExecutor(AnalystExecutorConfig{Role: "root_cause_analyst", Finding: handler})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "unknown analyst role")
+	})
+
+	t.Run("no configured target means no analyst", func(t *testing.T) {
+		bare := &flowToolsExecutor{flowID: 42, cfg: &config.Config{}}
+		_, err := bare.GetAnalystExecutor(AnalystExecutorConfig{Role: TriageToolName, Finding: handler})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "OPSAGI_TARGETS")
+	})
+
+	t.Run("a finding handler is required", func(t *testing.T) {
+		_, err := fte.GetAnalystExecutor(AnalystExecutorConfig{Role: TriageToolName})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "finding handler is required")
+	})
 }

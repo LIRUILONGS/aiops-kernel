@@ -54,13 +54,18 @@ type Browser struct {
 }
 
 type SubtaskInfo struct {
-	Title       string `json:"title" jsonschema:"required,title=Subtask title" jsonschema_description:"Engagement-log plan entry — short title of this subtask capturing its main goal as it appears in the engagement plan. Written in the engagement language declared by your system prompt."`
-	Description string `json:"description" jsonschema:"required,title=Subtask to complete" jsonschema_description:"Engagement-log plan entry — full description of this subtask (instructions, rules, requirements, success criteria) as it appears in the engagement plan. Written in the engagement language declared by your system prompt."`
+	Title       string `json:"title" jsonschema:"required,title=Subtask title" jsonschema_description:"计划条目——这条子任务要验证哪条假设，一句话动宾结构。用系统提示声明的语言书写。"`
+	Description string `json:"description" jsonschema:"required,title=Subtask to complete" jsonschema_description:"计划条目——假设、验证方式、期望信号与排除条件。写清“如果 X 成立，则 Y 处应能观察到 Z”，不要只写动作。"`
+	// AssignedTo and ExpectedSignal are what make the plan machine-readable: the
+	// record keeps them apart from the prose, so a later reader can group work by
+	// specialist and check a finding against what the plan promised to look for.
+	AssignedTo     string `json:"assigned_to,omitempty" jsonschema:"title=Assigned specialist" jsonschema_description:"建议由谁执行：commander / triage / log_analyst / metrics_analyst / change_analyst。留空表示交给主 agent 自己判断。"`
+	ExpectedSignal string `json:"expected_signal,omitempty" jsonschema:"title=Expected signal" jsonschema_description:"如果假设成立，具体应看到什么：一条日志模板、一个指标形态、一个容器状态。写不出期望信号的假设不要提交。"`
 }
 
 type SubtaskList struct {
-	Subtasks SubtaskInfos `json:"subtasks" jsonschema:"required,title=Subtasks to complete" jsonschema_description:"Ordered list of subtasks produced by decomposing the task. Each subtask's title and description are engagement-log plan entries (see SubtaskInfo) — written in the engagement language declared by your system prompt."`
-	Message  string       `json:"message" jsonschema:"required,title=Subtask generation result" jsonschema_description:"Engagement-log entry — a 1-2 short sentence running commentary on the generation result and the main goal of the plan. Written in the engagement language declared by your system prompt."`
+	Subtasks SubtaskInfos `json:"subtasks" jsonschema:"required,title=Subtasks to complete" jsonschema_description:"按信息量排序的假设列表，每条都是可证伪的（见 SubtaskInfo）。用系统提示声明的语言书写。"`
+	Message  string       `json:"message" jsonschema:"required,title=Subtask generation result" jsonschema_description:"计划说明——一句话交代这份计划打算先排除什么、为什么这样排序。用系统提示声明的语言书写。"`
 }
 
 // SubtaskOperationType defines the type of operation to perform on a subtask.
@@ -76,11 +81,13 @@ const (
 
 // SubtaskOperation defines a single operation on the subtask list for delta-based refinement
 type SubtaskOperation struct {
-	Op          SubtaskOperationType `json:"op" jsonschema:"required,type=string,enum=add,enum=remove,enum=modify,enum=reorder" jsonschema_description:"Operation type: 'add' creates a new subtask, 'remove' deletes a subtask by ID, 'modify' updates title/description of existing subtask, 'reorder' moves a subtask to a different position"`
-	ID          *int64               `json:"id,omitempty" jsonschema:"title=Subtask ID" jsonschema_description:"ID of existing subtask (required for remove/modify/reorder operations)"`
-	AfterID     *int64               `json:"after_id,omitempty" jsonschema:"title=Insert after ID" jsonschema_description:"For add/reorder: insert after this subtask ID (null/0 = insert at beginning)"`
-	Title       string               `json:"title,omitempty" jsonschema:"title=New title" jsonschema_description:"Engagement-log plan entry — new subtask title (required for add, optional for modify). Written in the engagement language declared by your system prompt."`
-	Description string               `json:"description,omitempty" jsonschema:"title=New description" jsonschema_description:"Engagement-log plan entry — new subtask description (required for add, optional for modify). Written in the engagement language declared by your system prompt."`
+	Op             SubtaskOperationType `json:"op" jsonschema:"required,type=string,enum=add,enum=remove,enum=modify,enum=reorder" jsonschema_description:"操作类型：add 新增、remove 删除、modify 修改标题与描述、reorder 调整顺序"`
+	ID             *int64               `json:"id,omitempty" jsonschema:"title=Subtask ID" jsonschema_description:"已存在的子任务 ID（remove/modify/reorder 必填）"`
+	AfterID        *int64               `json:"after_id,omitempty" jsonschema:"title=Insert after ID" jsonschema_description:"add/reorder：插到这条子任务之后（null/0 表示插到最前）"`
+	Title          string               `json:"title,omitempty" jsonschema:"title=New title" jsonschema_description:"计划条目——新的子任务标题（add 必填，modify 选填）。用系统提示声明的语言书写。"`
+	Description    string               `json:"description,omitempty" jsonschema:"title=New description" jsonschema_description:"计划条目——新的子任务描述（add 必填，modify 选填）。用系统提示声明的语言书写。"`
+	AssignedTo     string               `json:"assigned_to,omitempty" jsonschema:"title=Assigned specialist" jsonschema_description:"建议由谁执行：commander / triage / log_analyst / metrics_analyst / change_analyst。"`
+	ExpectedSignal string               `json:"expected_signal,omitempty" jsonschema:"title=Expected signal" jsonschema_description:"如果假设成立，具体应看到什么。"`
 }
 
 type SubtaskInfoPatch struct {
@@ -411,15 +418,79 @@ func (d Done) Validate() error {
 	return nil
 }
 
+// PlanDescription is what the executing agent reads. The hypothesis fields are
+// appended rather than folded into the prose so the model that writes the
+// description cannot drop the signal the plan will be judged against.
+func (i SubtaskInfo) PlanDescription() string {
+	lines := []string{i.Description}
+	if i.ExpectedSignal != "" {
+		lines = append(lines, "期望信号："+i.ExpectedSignal)
+	}
+	if i.AssignedTo != "" {
+		lines = append(lines, "建议执行者："+i.AssignedTo)
+	}
+	return strings.Join(lines, "\n\n")
+}
+
+// AnalystQuestion is the payload of every delegation: the commander says what
+// to check and why, the analyst runs its own chain and answers with a finding.
+type AnalystQuestion struct {
+	Question string `json:"question" jsonschema:"required,title=Question for the analyst" jsonschema_description:"要它验什么：告警原文、已知现象、时间窗、受影响的负载。写得越具体，回来的报告越短。用系统提示声明的语言书写。"`
+	Context  string `json:"context,omitempty" jsonschema:"title=Additional context" jsonschema_description:"可选：已经确认的事实（已排除的方向、已知的时间点），避免它重复取证。"`
+}
+
+// aiopsSpecialists is the set of subtask owners the planner may name. It is a
+// closed set rather than free text so a typo reaches the model as a refusal
+// instead of becoming a specialist that does not exist.
+var aiopsSpecialists = map[string]struct{}{
+	"commander":       {},
+	"triage":          {},
+	"log_analyst":     {},
+	"metrics_analyst": {},
+	"change_analyst":  {},
+}
+
+func validateSubtaskInfo(info SubtaskInfo, where string) error {
+	if info.Title == "" {
+		return fmt.Errorf("%s: 缺少 title", where)
+	}
+	if info.Description == "" {
+		return fmt.Errorf("%s: 缺少 description", where)
+	}
+	if info.AssignedTo != "" {
+		if _, ok := aiopsSpecialists[info.AssignedTo]; !ok {
+			return fmt.Errorf(
+				"%s: assigned_to=%q 不是可用的执行者，只能是 commander / triage / log_analyst / metrics_analyst / change_analyst，或留空",
+				where, info.AssignedTo,
+			)
+		}
+	}
+	return nil
+}
+
+// Validate refuses a plan whose entries cannot be executed: an empty hypothesis
+// is not a subtask, and an unknown owner has no agent behind it.
+func (sl SubtaskList) Validate() error {
+	for i, info := range sl.Subtasks {
+		if err := validateSubtaskInfo(info, fmt.Sprintf("第 %d 条子任务", i+1)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (sp SubtaskPatch) Validate() error {
 	for i, op := range sp.Operations {
 		switch op.Op {
 		case SubtaskOpAdd:
-			if op.Title == "" {
-				return fmt.Errorf("operation %d: add requires title", i)
+			info := SubtaskInfo{
+				Title:          op.Title,
+				Description:    op.Description,
+				AssignedTo:     op.AssignedTo,
+				ExpectedSignal: op.ExpectedSignal,
 			}
-			if op.Description == "" {
-				return fmt.Errorf("operation %d: add requires description", i)
+			if err := validateSubtaskInfo(info, fmt.Sprintf("operation %d", i)); err != nil {
+				return err
 			}
 		case SubtaskOpRemove:
 			if op.ID == nil {
