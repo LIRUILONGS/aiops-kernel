@@ -1,5 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FlowDashboardOverview } from '@/features/flows/dashboard/flow-dashboard-overview';
+import FlowPerformance from '@/features/flows/performance/flow-performance';
 import { useFlow } from '@/providers/flow-provider';
 
 function FlowDashboard() {
@@ -20,7 +21,10 @@ function FlowDashboard() {
             </TabsList>
 
             <TabsContent value="overview">
-                <FlowDashboardOverview flowId={flowId} />
+                <div className="flex flex-col gap-4">
+                    <FlowDashboardOverview flowId={flowId} />
+                    <FlowPerformance flowId={flowId} />
+                </div>
             </TabsContent>
         </Tabs>
     );
