@@ -6,9 +6,39 @@ const WIDTH = 320;
 const HEIGHT = 96;
 const PAD = 6;
 
+// Several series are usually the answer to one query -- a `sum by (mode)` yields
+// one per mode -- so the query is stated once above them instead of beside every
+// chart. The grouping key includes the window: the same expression over a
+// different range is a different picture.
+export interface MetricGroup {
+    key: string;
+    query: string;
+    range: string;
+    series: MetricSeries[];
+    step: string;
+}
+
 interface Point {
     x: number;
     y: number;
+}
+
+export function groupByQuery(series: MetricSeries[]): MetricGroup[] {
+    const groups: MetricGroup[] = [];
+
+    for (const item of series) {
+        const key = `${item.query}|${item.range}|${item.step}`;
+        const existing = groups.find((group) => group.key === key);
+
+        if (existing) {
+            existing.series.push(item);
+            continue;
+        }
+
+        groups.push({ key, query: item.query, range: item.range, series: [item], step: item.step });
+    }
+
+    return groups;
 }
 
 // A curve is here to answer one question the tables cannot: was there a moment
@@ -32,9 +62,6 @@ export function MetricChart({ series }: { series: MetricSeries }) {
         <figure className="flex flex-col gap-2" data-testid="metric-chart">
             <figcaption className="flex flex-wrap items-baseline justify-between gap-2">
                 <code className="text-xs break-all">{series.name}</code>
-                <span className="text-muted-foreground text-xs tabular-nums">
-                    {series.query} · {series.range} · step {series.step}
-                </span>
             </figcaption>
             <svg
                 aria-label={`${series.name} over ${series.range}`}
@@ -73,6 +100,24 @@ export function MetricChart({ series }: { series: MetricSeries }) {
                 </span>
             </div>
         </figure>
+    );
+}
+
+export function MetricGroupSection({ group }: { group: MetricGroup }) {
+    return (
+        <section className="flex flex-col gap-3" data-testid="metric-group">
+            <header className="flex flex-wrap items-baseline justify-between gap-2 border-b pb-1">
+                <code className="text-xs break-all">{group.query}</code>
+                <span className="text-muted-foreground text-xs tabular-nums">
+                    {group.series.length} series · {group.range} · step {group.step}
+                </span>
+            </header>
+            <div className="grid gap-4 sm:grid-cols-2">
+                {group.series.map((item, index) => (
+                    <MetricChart key={`${item.name}-${index}`} series={item} />
+                ))}
+            </div>
+        </section>
     );
 }
 

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { MetricChart } from '@/features/flows/performance/metric-chart';
+import { groupByQuery, MetricGroupSection } from '@/features/flows/performance/metric-chart';
 import { type MetricSeries, parseMetricSeries } from '@/features/flows/performance/metric-series';
 import {
     type BaselineSample,
@@ -137,6 +137,7 @@ function FlowPerformance({ flowId }: { flowId: string }) {
     const samples = useMemo(() => samplesOf(calls), [calls]);
     const diffs = useMemo(() => diffsOf(calls), [calls]);
     const series = useMemo(() => seriesOf(calls), [calls]);
+    const groups = useMemo(() => groupByQuery(series), [series]);
 
     // A flow that never measured anything gets no panel: an empty card would read
     // as "measured, found nothing".
@@ -163,11 +164,11 @@ function FlowPerformance({ flowId }: { flowId: string }) {
                         Could not read the measurements: {error}
                     </div>
                 )}
-                {series.length > 0 && (
+                {groups.length > 0 && (
                     <div className="flex flex-col gap-4">
                         <h3 className="text-sm font-medium">Metrics over time</h3>
-                        {series.map((sery, index) => (
-                            <MetricChart key={`${sery.name}-${index}`} series={sery} />
+                        {groups.map((group) => (
+                            <MetricGroupSection group={group} key={group.key} />
                         ))}
                     </div>
                 )}

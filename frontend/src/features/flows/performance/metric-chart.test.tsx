@@ -3,7 +3,13 @@ import { describe, expect, it } from 'vitest';
 
 import type { MetricSeries } from '@/features/flows/performance/metric-series';
 
-import { MetricChart, pathOf } from '@/features/flows/performance/metric-chart';
+import {
+    groupByQuery,
+    MetricChart,
+    type MetricGroup,
+    MetricGroupSection,
+    pathOf,
+} from '@/features/flows/performance/metric-chart';
 
 const series: MetricSeries = {
     end: 1793976145,
@@ -40,12 +46,51 @@ describe('pathOf', () => {
     });
 });
 
+describe('groupByQuery', () => {
+    const idle = { ...series, name: '{mode="idle"}', query: 'sum by (mode) (rate(cpu[1m]))' };
+    const iowait = { ...series, name: '{mode="iowait"}', query: 'sum by (mode) (rate(cpu[1m]))' };
+
+    it('puts the series of one query under one group', () => {
+        const groups = groupByQuery([series, idle, iowait]);
+
+        expect(groups).toHaveLength(2);
+        expect(groups[0]?.query).toBe('node_load1');
+        expect(groups[1]?.series.map((item) => item.name)).toEqual(['{mode="idle"}', '{mode="iowait"}']);
+    });
+
+    it('treats the same query over another window as another group', () => {
+        const groups = groupByQuery([series, { ...series, range: '1h0m0s' }]);
+
+        expect(groups).toHaveLength(2);
+    });
+
+    it('has nothing to group when the flow queried nothing', () => {
+        expect(groupByQuery([])).toEqual([]);
+    });
+});
+
+describe('MetricGroupSection', () => {
+    it('states the query once and draws every series under it', () => {
+        const group = groupByQuery([
+            { ...series, name: '{mode="idle"}', query: 'sum by (mode) (rate(cpu[1m]))' },
+            { ...series, name: '{mode="iowait"}', query: 'sum by (mode) (rate(cpu[1m]))' },
+        ])[0];
+
+        expect(group).toBeDefined();
+
+        const { container } = render(<MetricGroupSection group={group as MetricGroup} />);
+
+        expect(screen.getByText('sum by (mode) (rate(cpu[1m]))')).toBeInTheDocument();
+        expect(screen.getByText(/2 series · 5m0s · step 30s/)).toBeInTheDocument();
+        expect(container.querySelectorAll('[data-testid="metric-chart"]')).toHaveLength(2);
+    });
+});
+
 describe('MetricChart', () => {
-    it('renders the selector, the query and the value range', () => {
+    it('renders the selector and the value range', () => {
         render(<MetricChart series={series} />);
 
         expect(screen.getByText('node_load1{instance="lab:9100"}')).toBeInTheDocument();
-        expect(screen.getByText(/node_load1 · 5m0s · step 30s/)).toBeInTheDocument();
         expect(screen.getByText(/0\.5 – 4\.1/)).toBeInTheDocument();
     });
 
