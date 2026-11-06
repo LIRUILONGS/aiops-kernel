@@ -53,7 +53,7 @@ type OptimizationResult struct {
 	Baseline     string         `json:"baseline" jsonschema:"required" jsonschema_description:"变更前的测量结果：ops_baseline 或监控给出的关键数值与采集时刻；没有基线就不要提出改动"`
 	Proposal     string         `json:"proposal" jsonschema:"required" jsonschema_description:"具体改动：改哪个文件、哪个参数、改成什么值。写清楚到别人能照着执行"`
 	ExpectedGain string         `json:"expected_gain" jsonschema:"required" jsonschema_description:"预期改善哪个指标、改善多少、依据是什么"`
-	ObservedGain string         `json:"observed_gain,omitempty" jsonschema_description:"变更后用 ops_diff 复测到的实际变化；没有执行或没有复测就留空，不要填预期值"`
+	ObservedGain string         `json:"observed_gain,omitempty" jsonschema_description:"变更后用 ops_diff 复测到的实际变化。verdict 不是 unverified 时必填（那三个判定都表示已经复测），verdict=unverified 时必须留空"`
 	Verdict      string         `json:"verdict" jsonschema:"required,type=string" jsonschema_description:"结论：improved=有可测量改善，no_measurable_effect=测过但没变化（这是合法结论），degraded=变差了，unverified=没有复测条件"`
 	Rollback     string         `json:"rollback" jsonschema:"required" jsonschema_description:"怎么把这次改动改回去；无需回滚也要写「无需回滚」"`
 	Evidence     []EvidenceItem `json:"evidence" jsonschema:"required,type=array" jsonschema_description:"至少两条能靠 query 复现的证据：基线一条、结论一条"`
@@ -280,8 +280,11 @@ func (o OptimizationResult) Validate() error {
 	if err := validateEnum("verdict", o.Verdict, []string{"improved", "no_measurable_effect", "degraded", "unverified"}); err != nil {
 		return err
 	}
-	if o.Verdict == "improved" && strings.TrimSpace(o.ObservedGain) == "" {
-		return fmt.Errorf("verdict=improved 但 observed_gain 为空：没有复测就不能算改善，改判 unverified 或补上复测结果")
+	// The verdict claims whether a measurement happened, and observed_gain is that
+	// measurement. The two can disagree in both directions, and either way the
+	// report would read as a result it does not have.
+	if err := validateObservedGain(o.Verdict, o.ObservedGain); err != nil {
+		return err
 	}
 	if strings.TrimSpace(o.Rollback) == "" {
 		return fmt.Errorf("rollback 为空：写清怎么改回去；无需回滚也要写「无需回滚」")
@@ -295,6 +298,32 @@ func (o OptimizationResult) Validate() error {
 	if c := *o.Confidence; c < 0 || c > 1 {
 		return fmt.Errorf("confidence=%v 超出 0 到 1 的范围", c)
 	}
+	return nil
+}
+
+// validateObservedGain keeps a claim of measurement and the measurement itself in
+// agreement. Every verdict except unverified asserts that the change was measured,
+// so each needs the numbers; unverified asserts the opposite, so it must not carry
+// any.
+func validateObservedGain(verdict, observed string) error {
+	measured := strings.TrimSpace(observed) != ""
+
+	if verdict == "unverified" {
+		if measured {
+			return fmt.Errorf("verdict=unverified 但 observed_gain 有内容：这个判定表示没有复测条件，就把 observed_gain 留空；如果你确实复测过，把 verdict 改成 improved / degraded / no_measurable_effect 并保留这段实测值")
+		}
+
+		return nil
+	}
+
+	if !measured {
+		if verdict == "improved" {
+			return fmt.Errorf("verdict=improved 但 observed_gain 为空：没有复测就不能算改善，改判 unverified 或补上复测结果")
+		}
+
+		return fmt.Errorf("verdict=%s 但 observed_gain 为空：这个判定表示已经复测过，把 ops_diff 的实际变化写进 observed_gain；没有复测条件就把 verdict 改成 unverified", verdict)
+	}
+
 	return nil
 }
 

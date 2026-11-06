@@ -439,6 +439,34 @@ func TestAIOps_Optimization_RefusesAConclusionThatWasNeverMeasured(t *testing.T)
 				o.Verdict = "no_measurable_effect"
 				o.ObservedGain = ""
 			},
+			wantErr: "表示已经复测过",
+		},
+		{
+			name: "a measured verdict that carries no numbers",
+			mutate: func(o *OptimizationResult) {
+				o.Verdict = "degraded"
+				o.ObservedGain = ""
+			},
+			wantErr: "verdict=degraded",
+		},
+		{
+			name: "degraded with its measurement",
+			mutate: func(o *OptimizationResult) {
+				o.Verdict = "degraded"
+			},
+		},
+		{
+			name: "no measurable effect with its measurement",
+			mutate: func(o *OptimizationResult) {
+				o.Verdict = "no_measurable_effect"
+			},
+		},
+		{
+			name: "unverified carrying a measured value",
+			mutate: func(o *OptimizationResult) {
+				o.Verdict = "unverified"
+			},
+			wantErr: "verdict=unverified 但 observed_gain 有内容",
 		},
 		{
 			name:    "no confidence",

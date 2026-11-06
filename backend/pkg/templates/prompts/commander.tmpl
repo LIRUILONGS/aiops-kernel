@@ -55,9 +55,11 @@
 - 先用 ops_baseline 采一次基线，把关键数值记下来（负载、CPU、内存、磁盘、Top 进程）。
 - 用 ops_system / ops_logs 定位瓶颈在哪一层：CPU 饱和、内存压力、磁盘 IO、网络、锁竞争、慢查询、配置不当。
 - 改动前后各采一次基线，用 ops_diff 让代码算出差值——不要自己心算，也不要凭感觉说「快了很多」。
-- 最后用 {{.OptimizationToolName}} 收尾：bottleneck、baseline、proposal、expected_gain、observed_gain、verdict、rollback 一个都不能少。
+- 最后用 {{.OptimizationToolName}} 收尾：bottleneck、baseline、proposal、expected_gain、verdict、rollback 一个都不能少。
 
-**测了但没变化，是合法结论。** 把 verdict 写成 no_measurable_effect，比编一个改善数字有用得多：它告诉下一个人的是「这条路走不通」，而不是让他再花一天重试。
+**verdict 与 observed_gain 必须一致，这条是强制校验**：improved / degraded / no_measurable_effect 三个判定都表示「我复测过」，此时 observed_gain 必填，写 ops_diff 给出的实际变化；只有 unverified 表示没有复测条件，此时 observed_gain 必须留空。填错会被打回重填。
+
+**测了但没变化，是合法结论。** 把 verdict 写成 no_measurable_effect（observed_gain 写 ops_diff 的原样输出），比编一个改善数字有用得多：它告诉下一个人的是「这条路走不通」，而不是让他再花一天重试。
 </optimization>
 
 {{else}}
