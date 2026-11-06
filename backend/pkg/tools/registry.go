@@ -57,6 +57,7 @@ const (
 	OpsBaselineToolName        = "ops_baseline"
 	OpsDiffToolName            = "ops_diff"
 	OpsExecToolName            = "ops_exec"
+	PromQueryToolName          = "prom_query"
 	DiagnosisToolName          = "diagnosis"
 	TriageResultToolName       = "triage_result"
 	LogFindingToolName         = "log_finding"
@@ -165,6 +166,7 @@ var toolsTypeMapping = map[string]ToolType{
 	OpsBaselineToolName:        EnvironmentToolType,
 	OpsDiffToolName:            EnvironmentToolType,
 	OpsExecToolName:            EnvironmentToolType,
+	PromQueryToolName:          EnvironmentToolType,
 	DiagnosisToolName:          BarrierToolType,
 	TriageResultToolName:       StoreAgentResultToolType,
 	LogFindingToolName:         StoreAgentResultToolType,
@@ -537,6 +539,14 @@ var registryDefinitions = map[string]llms.FunctionDefinition{
 			"参数只允许字母、数字与 . _ - /，含空格或 shell 元字符会被拒绝。" +
 			"返回结果会带上真实执行的命令原文，写证据时直接引用它。",
 		Parameters: reflector.Reflect(&OpsExecArgs{}),
+	},
+	PromQueryToolName: {
+		Name: PromQueryToolName,
+		Description: "对指标后端执行一条 PromQL 范围查询，返回每条序列的首值、末值、极值与「最大跳变」的时刻。" +
+			"这是唯一能看到指标随时间怎么变的工具：ops_baseline 只给一瞬间的快照，判断「拐点在哪一刻」必须用这里的跳变行。" +
+			"窗口默认往回 15m，用 range 调大（1m~24h）；step 决定采样密度。查询走 HTTP，不经过目标主机的 shell。" +
+			"返回「窗口内没有数据」说明选择器或采集有问题，换更宽的窗口或去掉标签再试，不要当作结论。",
+		Parameters: reflector.Reflect(&PromQueryArgs{}),
 	},
 	DiagnosisToolName: {
 		Name: DiagnosisToolName,

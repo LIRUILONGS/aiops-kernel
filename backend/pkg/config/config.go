@@ -145,6 +145,9 @@ type Config struct {
 	// === Ops targets: JSON array of opsremote.Target, read-only SSH probes ===
 	OpsTargets string `env:"OPSAGI_TARGETS"`
 
+	// === Metrics: Prometheus-compatible HTTP API behind the prom_query tool ===
+	PrometheusURL string `env:"PROMETHEUS_URL"`
+
 	// === LLM Provider: Ollama (Local/Remote) ===
 	OllamaServerURL               string `env:"OLLAMA_SERVER_URL"`
 	OllamaServerAPIKey            string `env:"OLLAMA_SERVER_API_KEY"`

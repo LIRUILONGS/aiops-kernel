@@ -357,7 +357,7 @@ type AnalystExecutorConfig struct {
 var analystToolset = map[string][]string{
 	TriageToolName:         {OpsContainersToolName, OpsSystemToolName, OpsLogsToolName, OpsExecToolName},
 	LogAnalystToolName:     {OpsLogsToolName, OpsContainersToolName},
-	MetricsAnalystToolName: {OpsSystemToolName, OpsContainersToolName},
+	MetricsAnalystToolName: {OpsSystemToolName, OpsContainersToolName, PromQueryToolName},
 	ChangeAnalystToolName:  {OpsContainersToolName, OpsSystemToolName, OpsExecToolName},
 }
 
@@ -1087,6 +1087,10 @@ func (fte *flowToolsExecutor) GetCommanderExecutor(cfg CommanderExecutorConfig) 
 		DiagnosisToolName:          cfg.Diagnosis,
 		OptimizationResultToolName: cfg.Optimization,
 	}
+	if prom := NewPromTools(fte.cfg); prom.IsAvailable() {
+		definitions = append(definitions, registryDefinitions[PromQueryToolName])
+		handlers[PromQueryToolName] = prom.HandleQuery
+	}
 	barriers := map[string]struct{}{
 		DiagnosisToolName:          {},
 		OptimizationResultToolName: {},
@@ -1167,12 +1171,20 @@ func (fte *flowToolsExecutor) GetAnalystExecutor(cfg AnalystExecutorConfig) (Con
 		OpsSystemToolName:     ops.HandleSystem,
 		OpsExecToolName:       ops.HandleExec,
 	}
+	if prom := NewPromTools(fte.cfg); prom.IsAvailable() {
+		opsHandlers[PromQueryToolName] = prom.HandleQuery
+	}
 
 	definitions := make([]llms.FunctionDefinition, 0, len(roleTools)+2)
 	handlers := make(map[string]ExecutorHandler, len(roleTools)+2)
 	for _, name := range roleTools {
 		handler, ok := opsHandlers[name]
 		if !ok {
+			// A missing metrics backend narrows the analyst rather than failing the
+			// chain: the same role still has the host and container faces.
+			if name == PromQueryToolName {
+				continue
+			}
 			return nil, fmt.Errorf("analyst role %q wants an unknown evidence tool %q", cfg.Role, name)
 		}
 		definitions = append(definitions, registryDefinitions[name])

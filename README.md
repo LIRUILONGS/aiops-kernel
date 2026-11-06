@@ -6,7 +6,7 @@ OpsAGI is a fork of [PentAGI](https://github.com/vxcontrol/pentagi) (MIT). The u
 
 What that means in practice:
 
-- **Read-only by construction.** The `commander` and the four analysts get `ops_system`, `ops_containers`, `ops_logs`, `ops_baseline`, `ops_diff` and nothing else — no terminal, no file writes, no browser. The permission boundary is the tool table, not a sentence in a prompt.
+- **Read-only by construction.** The `commander` and the four analysts get `ops_system`, `ops_containers`, `ops_logs`, `ops_baseline`, `ops_diff` and `ops_exec` (a catalogue of read-only commands), plus `prom_query` when `PROMETHEUS_URL` is set — and nothing else: no terminal, no file writes, no browser. The permission boundary is the tool table, not a sentence in a prompt.
 - **Evidence or silence.** Every conclusion carries the queries that produced it, so a report can be replayed by hand. A diagnosis without evidence fails validation and the agent is asked again.
 - **Measured, not claimed.** A performance result closes on one of `improved`, `no_measurable_effect`, `degraded` or `unverified`, and `improved` is refused without an observed gain. "I changed something" is not a result.
 - **Plan as data.** The planner emits a structured list with a target type per entry (`diagnosis` or `optimization`), and that type decides which exit tool the executing agent can even see.
@@ -20,6 +20,8 @@ cd backend
 go build -o opsagi ./cmd/opsagi
 OPSAGI_TARGETS='[{"id":"lab","host":"10.0.0.5","port":22,"user":"root","password":"..."}]' ./opsagi
 ```
+
+Add `PROMETHEUS_URL=http://prometheus:9090` to give the agents a time series. Without it `prom_query` is not offered at all, rather than offered and failing when called.
 
 Then open the UI on `http://localhost:8443`, create the first administrator with `go run ./cmd/opsagi-seed -mail ops@example.com -name "On Call" -password-stdin`, start a flow, and read the conclusion either in the UI card or with `python scripts/opsagi_run.py "<request>"`.
 

@@ -2159,6 +2159,15 @@ The supervision settings work together as a comprehensive system:
    ```
    Disabled supervision for debugging to observe natural agent behavior.
 
+## AIOps Evidence Surfaces
+
+The commander and the four analysts read a target host over SSH and, optionally, a metrics backend over HTTP. Both are read-only: nothing under this heading can modify a machine it reads.
+
+| Field | Env Variable | Default | Description |
+|-------|--------------|---------|-------------|
+| OpsTargets | `OPSAGI_TARGETS` | *(none)* | JSON array of `{"id","host","port","user","password"}` targets. Empty means the AIOps executors refuse to start rather than failing mid-flow. The password is a secret: keep it out of logs and transcripts. |
+| PrometheusURL | `PROMETHEUS_URL` | *(none)* | Base URL of a Prometheus-compatible query API, e.g. `http://prometheus:9090`. When empty the `prom_query` tool is not offered to any agent at all, rather than offered and failing when called. |
+
 ## Observability Settings
 
 These settings control the observability and monitoring capabilities, including telemetry and trace collection for system performance and debugging.
