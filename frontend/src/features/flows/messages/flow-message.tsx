@@ -12,6 +12,7 @@ import { matchesSearchTerm } from '@/lib/text-filter';
 import { cn } from '@/lib/utils';
 import { formatDate } from '@/lib/utils/format';
 
+import FlowMessageConclusion, { parseConclusion } from './flow-message-conclusion';
 import FlowMessageTypeIcon from './flow-message-type-icon';
 
 interface FlowMessageProps {
@@ -85,6 +86,14 @@ function FlowMessage({ log, searchValue = '' }: FlowMessageProps) {
         });
     }, [thinking, message, result, resultFormat]);
 
+    // A report carries the conclusion the chain ended with. The agents write it
+    // as prose plus a fenced JSON block, so the block is read back into fields
+    // here instead of asking the reader to scan the prose for them.
+    const conclusion = useMemo(
+        () => (isReportMessage && result ? parseConclusion(result) : null),
+        [isReportMessage, result],
+    );
+
     const shouldShowThinking = thinking && (!message || isThinkingVisible);
 
     const shouldShowThinkingToggle = thinking && message;
@@ -93,6 +102,19 @@ function FlowMessage({ log, searchValue = '' }: FlowMessageProps) {
     const renderDetailsContent = () => {
         if (!isDetailsVisible) {
             return null;
+        }
+
+        if (conclusion && result) {
+            return (
+                <>
+                    <div className="my-3 border-t" />
+                    <FlowMessageConclusion
+                        conclusion={conclusion}
+                        raw={result}
+                        searchValue={searchValue}
+                    />
+                </>
+            );
         }
 
         return (
