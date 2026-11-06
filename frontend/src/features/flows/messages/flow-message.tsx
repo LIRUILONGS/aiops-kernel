@@ -6,6 +6,7 @@ import type { AssistantLogFragmentFragment, MessageLogFragmentFragment } from '@
 import Markdown from '@/components/shared/markdown';
 import Terminal from '@/components/shared/terminal';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import RetryMeasurement from '@/features/flows/performance/retry-measurement';
 import { MessageLogType, ResultFormat } from '@/graphql/types';
 import { copyMessageToClipboard } from '@/lib/clipboard';
 import { matchesSearchTerm } from '@/lib/text-filter';
@@ -110,6 +111,11 @@ function FlowMessage({ log, searchValue = '' }: FlowMessageProps) {
                     <div className="my-3 border-t" />
                     <FlowMessageConclusion
                         conclusion={conclusion}
+                        footer={
+                            conclusion.kind === 'optimization' ? (
+                                <RetryMeasurement verdict={conclusion.verdict} />
+                            ) : undefined
+                        }
                         raw={result}
                         searchValue={searchValue}
                     />

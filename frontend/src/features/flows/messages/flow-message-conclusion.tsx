@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from 'react';
+import { memo, type ReactNode, useMemo, useState } from 'react';
 
 import Markdown from '@/components/shared/markdown';
 import { Badge, type BadgeProps } from '@/components/ui/badge';
@@ -144,6 +144,8 @@ const VERDICT_VARIANTS: Record<string, BadgeProps['variant']> = {
 
 interface FlowMessageConclusionProps {
     conclusion: Conclusion;
+    // Rendered inside the card so an action on the conclusion reads as part of it.
+    footer?: ReactNode;
     raw: string;
     searchValue?: string;
 }
@@ -164,14 +166,10 @@ function EvidenceList({ items }: { items: EvidenceItem[] }) {
                     >
                         <div className="flex flex-wrap items-center gap-2">
                             {item.source && <Badge variant="secondary">{item.source}</Badge>}
-                            {item.timestamp && (
-                                <span className="text-muted-foreground">{item.timestamp}</span>
-                            )}
+                            {item.timestamp && <span className="text-muted-foreground">{item.timestamp}</span>}
                         </div>
                         {item.query && (
-                            <code className="text-muted-foreground mt-1 block font-mono break-all">
-                                {item.query}
-                            </code>
+                            <code className="text-muted-foreground mt-1 block font-mono break-all">{item.query}</code>
                         )}
                         {item.excerpt && (
                             <blockquote className="border-muted-foreground/30 mt-1 border-l-2 pl-2 whitespace-pre-wrap">
@@ -185,7 +183,7 @@ function EvidenceList({ items }: { items: EvidenceItem[] }) {
     );
 }
 
-function FlowMessageConclusion({ conclusion, raw, searchValue = '' }: FlowMessageConclusionProps) {
+function FlowMessageConclusion({ conclusion, footer, raw, searchValue = '' }: FlowMessageConclusionProps) {
     const [isRawVisible, setIsRawVisible] = useState(false);
 
     const confidence = useMemo(() => {
@@ -286,6 +284,7 @@ function FlowMessageConclusion({ conclusion, raw, searchValue = '' }: FlowMessag
                     <EvidenceList items={conclusion.evidence} />
                 </>
             )}
+            {footer}
         </div>
     );
 }

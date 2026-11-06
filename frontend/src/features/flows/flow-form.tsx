@@ -30,6 +30,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import {
     InputGroup,
     InputGroupAddon,
@@ -55,7 +56,20 @@ const TARGET_TYPES = [
     { hint: 'Find a bottleneck and measure the change', label: 'Performance', value: 'optimization' as const },
 ];
 
+const GOAL_FIELDS = [
+    {
+        label: 'Metric',
+        name: 'goalMetric' as const,
+        placeholder: 'p99 latency, restart count…',
+    },
+    { label: 'Target', name: 'goalTarget' as const, placeholder: '< 200ms, 0 restarts…' },
+    { label: 'Constraint', name: 'goalConstraint' as const, placeholder: 'do not restart caddy…' },
+];
+
 const formSchema = z.object({
+    goalConstraint: z.string().optional(),
+    goalMetric: z.string().optional(),
+    goalTarget: z.string().optional(),
     message: z.string().trim().min(1, { message: 'Message cannot be empty' }),
     providerName: z.string().trim().min(1, { message: 'Provider must be selected' }),
     resourceIds: z.array(z.string()),
@@ -155,11 +169,14 @@ export function FlowForm({
 
     const form = useAppForm<FlowFormValues>({
         defaultValues: {
+            goalConstraint: defaultValues?.goalConstraint ?? '',
+            goalMetric: defaultValues?.goalMetric ?? '',
+            goalTarget: defaultValues?.goalTarget ?? '',
             message: defaultValues?.message ?? '',
             providerName: defaultValues?.providerName ?? '',
             resourceIds: defaultValues?.resourceIds ?? [],
             targetType: defaultValues?.targetType ?? 'auto',
-        useAgents: defaultValues?.useAgents ?? false,
+            useAgents: defaultValues?.useAgents ?? false,
         },
         schema: formSchema,
     });
@@ -678,6 +695,47 @@ export function FlowForm({
                                                 </DropdownMenu>
                                             );
                                         }}
+                                    />
+
+                                    <FormField
+                                        control={control}
+                                        name="targetType"
+                                        render={({ field: modeField }) =>
+                                            modeField.value === 'optimization' ? (
+                                                <div className="border-muted-foreground/20 rounded-md border p-2">
+                                                    <div className="text-muted-foreground mb-2 text-xs">
+                                                        What this performance goal measures — appended to the message so
+                                                        the planner can turn it into a hypothesis
+                                                    </div>
+                                                    <div className="grid gap-2 sm:grid-cols-3">
+                                                        {GOAL_FIELDS.map((goal) => (
+                                                            <FormField
+                                                                control={control}
+                                                                key={goal.name}
+                                                                name={goal.name}
+                                                                render={({ field }) => (
+                                                                    <FormItem>
+                                                                        <FormLabel className="text-xs">
+                                                                            {goal.label}
+                                                                        </FormLabel>
+                                                                        <FormControl>
+                                                                            <Input
+                                                                                {...field}
+                                                                                disabled={isFormDisabled}
+                                                                                placeholder={goal.placeholder}
+                                                                                value={field.value ?? ''}
+                                                                            />
+                                                                        </FormControl>
+                                                                    </FormItem>
+                                                                )}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <></>
+                                            )
+                                        }
                                     />
 
                                     {type === 'assistant' && (

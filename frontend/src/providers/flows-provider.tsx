@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import type { FlowFormValues } from '@/features/flows/flow-form';
 import type { FlowFragmentFragment, FlowsQuery } from '@/graphql/types';
 
+import { composeFlowInput } from '@/features/flows/performance/compose-input';
 import {
     CreateAssistantDocument,
     CreateFlowDocument,
@@ -65,9 +66,9 @@ export function FlowsProvider({ children }: FlowsProviderProps) {
 
     const createFlow = useCallback(
         async (values: FlowFormValues) => {
-            const { message, providerName, resourceIds, targetType } = values;
+            const { providerName, resourceIds, targetType } = values;
 
-            const input = message.trim();
+            const input = composeFlowInput(values);
             const modelProvider = providerName.trim();
 
             if (!input || !modelProvider) {
@@ -104,9 +105,9 @@ export function FlowsProvider({ children }: FlowsProviderProps) {
 
     const createFlowWithAssistant = useCallback(
         async (values: FlowFormValues) => {
-            const { message, providerName, resourceIds, useAgents } = values;
+            const { providerName, resourceIds, useAgents } = values;
 
-            const input = message.trim();
+            const input = composeFlowInput(values);
             const modelProvider = providerName.trim();
 
             if (!input || !modelProvider) {
