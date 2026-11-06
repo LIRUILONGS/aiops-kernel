@@ -58,7 +58,24 @@ MIT 允许商用与闭源分发，保留版权声明即可。
 
 判据只有一条：**读这段文字的是模型还是人？** 两者都用中文；只有机器解析的部分（字段名、工具名、枚举值）保持英文。
 
-## 6. M0 明确不做的事
+## 6. 开发环境（本机）
+
+Go 工具链装在 `C:\Users\Administrator\Documents\GitHub\_tools\go`，没有加入 PATH。
+
+**必须用 `GOTOOLCHAIN=go1.26.5` 跑代码生成。** 仓库自带的 gqlgen v0.17.57 依赖的 `x/tools` 读不懂 Go 1.27 的导出数据（`export data version 5 is greater than maximum supported version 4`），会生成语法残缺的 `models_gen.go`。用 1.26.5 时 `gqlgen` 与 `go build` 都正常。
+
+```powershell
+$env:PATH = "C:\Users\Administrator\Documents\GitHub\_tools\go\bin;" + $env:PATH
+$env:GOTOOLCHAIN = "go1.26.5"
+cd backend
+go run github.com/99designs/gqlgen --config ./gqlgen/gqlgen.yml
+go build ./...
+go test ./pkg/templates/... -count=1
+```
+
+首次克隆后还需要 `go generate ./cmd/installer/files/`，否则 `cmd/installer` 编译不过（生成文件被 gitignore）。
+
+## 7. M0 明确不做的事
 
 - 不执行任何写操作（重启、扩容、回滚、改配置）
 - 不改造沙箱（终端工具仍走 Docker，但 M0 的诊断不需要它）

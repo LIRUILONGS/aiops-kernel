@@ -735,21 +735,26 @@ func (e AgentConfigType) MarshalGQL(w io.Writer) {
 type AgentType string
 
 const (
-	AgentTypePrimaryAgent  AgentType = "primary_agent"
-	AgentTypeReporter      AgentType = "reporter"
-	AgentTypeGenerator     AgentType = "generator"
-	AgentTypeRefiner       AgentType = "refiner"
-	AgentTypeReflector     AgentType = "reflector"
-	AgentTypeEnricher      AgentType = "enricher"
-	AgentTypeAdviser       AgentType = "adviser"
-	AgentTypeCoder         AgentType = "coder"
-	AgentTypeMemorist      AgentType = "memorist"
-	AgentTypeSearcher      AgentType = "searcher"
-	AgentTypeInstaller     AgentType = "installer"
-	AgentTypePentester     AgentType = "pentester"
-	AgentTypeSummarizer    AgentType = "summarizer"
-	AgentTypeToolCallFixer AgentType = "tool_call_fixer"
-	AgentTypeAssistant     AgentType = "assistant"
+	AgentTypePrimaryAgent   AgentType = "primary_agent"
+	AgentTypeReporter       AgentType = "reporter"
+	AgentTypeGenerator      AgentType = "generator"
+	AgentTypeRefiner        AgentType = "refiner"
+	AgentTypeReflector      AgentType = "reflector"
+	AgentTypeEnricher       AgentType = "enricher"
+	AgentTypeAdviser        AgentType = "adviser"
+	AgentTypeCoder          AgentType = "coder"
+	AgentTypeMemorist       AgentType = "memorist"
+	AgentTypeSearcher       AgentType = "searcher"
+	AgentTypeInstaller      AgentType = "installer"
+	AgentTypePentester      AgentType = "pentester"
+	AgentTypeSummarizer     AgentType = "summarizer"
+	AgentTypeToolCallFixer  AgentType = "tool_call_fixer"
+	AgentTypeAssistant      AgentType = "assistant"
+	AgentTypeCommander      AgentType = "commander"
+	AgentTypeTriage         AgentType = "triage"
+	AgentTypeLogAnalyst     AgentType = "log_analyst"
+	AgentTypeMetricsAnalyst AgentType = "metrics_analyst"
+	AgentTypeChangeAnalyst  AgentType = "change_analyst"
 )
 
 var AllAgentType = []AgentType{
@@ -768,11 +773,16 @@ var AllAgentType = []AgentType{
 	AgentTypeSummarizer,
 	AgentTypeToolCallFixer,
 	AgentTypeAssistant,
+	AgentTypeCommander,
+	AgentTypeTriage,
+	AgentTypeLogAnalyst,
+	AgentTypeMetricsAnalyst,
+	AgentTypeChangeAnalyst,
 }
 
 func (e AgentType) IsValid() bool {
 	switch e {
-	case AgentTypePrimaryAgent, AgentTypeReporter, AgentTypeGenerator, AgentTypeRefiner, AgentTypeReflector, AgentTypeEnricher, AgentTypeAdviser, AgentTypeCoder, AgentTypeMemorist, AgentTypeSearcher, AgentTypeInstaller, AgentTypePentester, AgentTypeSummarizer, AgentTypeToolCallFixer, AgentTypeAssistant:
+	case AgentTypePrimaryAgent, AgentTypeReporter, AgentTypeGenerator, AgentTypeRefiner, AgentTypeReflector, AgentTypeEnricher, AgentTypeAdviser, AgentTypeCoder, AgentTypeMemorist, AgentTypeSearcher, AgentTypeInstaller, AgentTypePentester, AgentTypeSummarizer, AgentTypeToolCallFixer, AgentTypeAssistant, AgentTypeCommander, AgentTypeTriage, AgentTypeLogAnalyst, AgentTypeMetricsAnalyst, AgentTypeChangeAnalyst:
 		return true
 	}
 	return false

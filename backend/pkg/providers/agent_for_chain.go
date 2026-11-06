@@ -21,4 +21,9 @@ var agentByChain = map[database.MsgchainType]pconfig.ProviderOptionsType{
 	database.MsgchainTypeSearcher:      pconfig.OptionsTypeSearcher,
 	database.MsgchainTypeSummarizer:    pconfig.OptionsTypeSimple,
 	database.MsgchainTypeToolCallFixer: pconfig.OptionsTypeSimpleJSON,
+	database.MsgchainTypeCommander:     pconfig.OptionsTypePrimaryAgent,
+	database.MsgchainTypeTriage:        pconfig.OptionsTypeSimple,
+	database.MsgchainTypeLogAnalyst:    pconfig.OptionsTypeSearcher,
+	database.MsgchainTypeMetricsAnalyst: pconfig.OptionsTypeSearcher,
+	database.MsgchainTypeChangeAnalyst:  pconfig.OptionsTypeSearcher,
 }

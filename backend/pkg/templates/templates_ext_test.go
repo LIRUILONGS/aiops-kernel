@@ -67,7 +67,7 @@ func TestTemplates_GetDefaultPrompts_DeclaresExactlyTheVariablesEachPromptUses(t
 		})
 	}
 
-	assert.Equal(t, 27, agents, "agent prompts")
+	assert.Equal(t, 32, agents, "agent prompts")
 	assert.Equal(t, 12, tools, "tool prompts")
 	for promptType := range templates.PromptVariables {
 		assert.True(t, shipped[promptType], "PromptVariables holds %s, which no shipped prompt has", promptType)

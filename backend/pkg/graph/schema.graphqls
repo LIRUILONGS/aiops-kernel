@@ -106,7 +106,7 @@ enum PromptType {
   task_assignment_wrapper
 }
 
-# AI agent types for autonomous penetration testing
+# AI agent types
 enum AgentType {
   primary_agent
   reporter
@@ -123,6 +123,11 @@ enum AgentType {
   summarizer
   tool_call_fixer
   assistant
+  commander
+  triage
+  log_analyst
+  metrics_analyst
+  change_analyst
 }
 
 # AI agent type for provider configuration

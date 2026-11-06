@@ -29,6 +29,11 @@ type PromptType string
 
 const (
 	PromptTypePrimaryAgent             PromptType = "primary_agent"              // orchestrates subtask execution using AI agents
+	PromptTypeCommander                PromptType = "commander"                  // leads an incident diagnosis and states the conclusion
+	PromptTypeTriage                   PromptType = "triage"                     // rates severity, blast radius and known patterns
+	PromptTypeLogAnalyst               PromptType = "log_analyst"                // finds error patterns and their onset in logs
+	PromptTypeMetricsAnalyst           PromptType = "metrics_analyst"            // locates the inflection point in metric series
+	PromptTypeChangeAnalyst            PromptType = "change_analyst"             // builds the change timeline around the onset
 	PromptTypeAssistant                PromptType = "assistant"                  // interactive AI assistant for user conversations
 	PromptTypePentester                PromptType = "pentester"                  // executes security tests and vulnerability scanning
 	PromptTypeQuestionPentester        PromptType = "question_pentester"         // human input requesting penetration testing
@@ -363,6 +368,21 @@ var PromptVariables = map[PromptType][]string{
 		"Output",
 	},
 	PromptTypeToolCallFixer: {},
+	PromptTypeCommander: {
+		"Lang",
+	},
+	PromptTypeTriage: {
+		"Lang",
+	},
+	PromptTypeLogAnalyst: {
+		"Lang",
+	},
+	PromptTypeMetricsAnalyst: {
+		"Lang",
+	},
+	PromptTypeChangeAnalyst: {
+		"Lang",
+	},
 	PromptTypeInputToolCallFixer: {
 		"ToolCallName",
 		"ToolCallArgs",
@@ -472,6 +492,11 @@ type AgentsPrompts struct {
 	Enricher      AgentPrompts
 	ToolCallFixer AgentPrompts
 	Summarizer    AgentPrompt
+	Commander     AgentPrompt
+	Triage        AgentPrompt
+	LogAnalyst    AgentPrompt
+	MetricsAnalyst AgentPrompt
+	ChangeAnalyst  AgentPrompt
 }
 
 type ToolsPrompts struct {
@@ -577,6 +602,21 @@ func GetDefaultPrompts() (*DefaultPrompts, error) {
 			},
 			Summarizer: AgentPrompt{
 				System: getPrompt(PromptTypeSummarizer),
+			},
+			Commander: AgentPrompt{
+				System: getPrompt(PromptTypeCommander),
+			},
+			Triage: AgentPrompt{
+				System: getPrompt(PromptTypeTriage),
+			},
+			LogAnalyst: AgentPrompt{
+				System: getPrompt(PromptTypeLogAnalyst),
+			},
+			MetricsAnalyst: AgentPrompt{
+				System: getPrompt(PromptTypeMetricsAnalyst),
+			},
+			ChangeAnalyst: AgentPrompt{
+				System: getPrompt(PromptTypeChangeAnalyst),
 			},
 		},
 		ToolsPrompts: ToolsPrompts{
