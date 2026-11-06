@@ -98,6 +98,12 @@ export type CreateKnowledgeDocumentInput = {
     question: string;
 };
 
+export enum FlowType {
+    Auto = 'auto',
+    Diagnosis = 'diagnosis',
+    Optimization = 'optimization',
+}
+
 export enum KnowledgeAnswerType {
     Code = 'code',
     Guide = 'guide',
@@ -1089,6 +1095,7 @@ export type DeleteFlowTemplateMutation = { deleteFlowTemplate: ResultType };
 export type CreateFlowMutationVariables = Exact<{
     modelProvider: string;
     input: string;
+    flowType?: FlowType | null | undefined;
     resourceIds?: Array<string | number> | string | number | null | undefined;
 }>;
 
@@ -7899,6 +7906,11 @@ export const CreateFlowDocument = {
                 },
                 {
                     kind: 'VariableDefinition',
+                    variable: { kind: 'Variable', name: { kind: 'Name', value: 'flowType' } },
+                    type: { kind: 'NamedType', name: { kind: 'Name', value: 'FlowType' } },
+                },
+                {
+                    kind: 'VariableDefinition',
                     variable: { kind: 'Variable', name: { kind: 'Name', value: 'resourceIds' } },
                     type: {
                         kind: 'ListType',
@@ -7922,6 +7934,11 @@ export const CreateFlowDocument = {
                                 kind: 'Argument',
                                 name: { kind: 'Name', value: 'input' },
                                 value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+                            },
+                            {
+                                kind: 'Argument',
+                                name: { kind: 'Name', value: 'flowType' },
+                                value: { kind: 'Variable', name: { kind: 'Name', value: 'flowType' } },
                             },
                             {
                                 kind: 'Argument',

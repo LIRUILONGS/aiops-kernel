@@ -43,15 +43,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useResourcesUpload } from '@/features/resources/use-resources-upload';
 import { useAppForm } from '@/hooks/use-app-form';
+import { cn } from '@/lib/utils';
 import { getProviderDisplayName } from '@/models/provider';
 import { useProviders } from '@/providers/providers-provider';
 import { useResources } from '@/providers/resources-provider';
 import { type Template, useTemplates } from '@/providers/templates-provider';
 
+const TARGET_TYPES = [
+    { hint: 'Let the planner decide from the text', label: 'Auto', value: 'auto' as const },
+    { hint: 'Find the root cause of a failure', label: 'Incident', value: 'diagnosis' as const },
+    { hint: 'Find a bottleneck and measure the change', label: 'Performance', value: 'optimization' as const },
+];
+
 const formSchema = z.object({
     message: z.string().trim().min(1, { message: 'Message cannot be empty' }),
     providerName: z.string().trim().min(1, { message: 'Provider must be selected' }),
     resourceIds: z.array(z.string()),
+    targetType: z.enum(['auto', 'diagnosis', 'optimization']),
     useAgents: z.boolean(),
 });
 
@@ -150,7 +158,8 @@ export function FlowForm({
             message: defaultValues?.message ?? '',
             providerName: defaultValues?.providerName ?? '',
             resourceIds: defaultValues?.resourceIds ?? [],
-            useAgents: defaultValues?.useAgents ?? false,
+            targetType: defaultValues?.targetType ?? 'auto',
+        useAgents: defaultValues?.useAgents ?? false,
         },
         schema: formSchema,
     });
@@ -526,6 +535,32 @@ export function FlowForm({
                                         })}
                                     </InputGroupAddon>
                                 )}
+                                <InputGroupAddon align="block-start">
+                                    <FormField
+                                        control={control}
+                                        name="targetType"
+                                        render={({ field: targetField }) => (
+                                            <div className="flex items-center gap-1">
+                                                {TARGET_TYPES.map((option) => (
+                                                    <InputGroupButton
+                                                        aria-pressed={targetField.value === option.value}
+                                                        className={cn(
+                                                            'text-xs',
+                                                            targetField.value === option.value && 'bg-accent',
+                                                        )}
+                                                        disabled={isFormDisabled}
+                                                        key={option.value}
+                                                        onClick={() => targetField.onChange(option.value)}
+                                                        title={option.hint}
+                                                        variant="ghost"
+                                                    >
+                                                        {option.label}
+                                                    </InputGroupButton>
+                                                ))}
+                                            </div>
+                                        )}
+                                    />
+                                </InputGroupAddon>
                                 <InputGroupTextareaAutosize
                                     {...field}
                                     autoFocus

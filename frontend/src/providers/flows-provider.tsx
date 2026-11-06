@@ -13,6 +13,7 @@ import {
     FlowCreatedDocument,
     FlowDeletedDocument,
     FlowsDocument,
+    FlowType,
     FlowUpdatedDocument,
 } from '@/graphql/types';
 import { Log } from '@/lib/log';
@@ -64,7 +65,7 @@ export function FlowsProvider({ children }: FlowsProviderProps) {
 
     const createFlow = useCallback(
         async (values: FlowFormValues) => {
-            const { message, providerName, resourceIds } = values;
+            const { message, providerName, resourceIds, targetType } = values;
 
             const input = message.trim();
             const modelProvider = providerName.trim();
@@ -76,6 +77,7 @@ export function FlowsProvider({ children }: FlowsProviderProps) {
             try {
                 const { data } = await createFlowMutation({
                     variables: {
+                        flowType: targetType === 'auto' ? undefined : (targetType as FlowType),
                         input,
                         modelProvider,
                         resourceIds: resourceIds?.length ? resourceIds : undefined,
