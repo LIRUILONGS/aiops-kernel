@@ -61,6 +61,7 @@ const (
 	LogFindingToolName         = "log_finding"
 	MetricFindingToolName      = "metric_finding"
 	ChangeFindingToolName      = "change_finding"
+	OptimizationResultToolName = "optimization_result"
 
 	// The four analysts are reached through delegation tools rather than through
 	// the executor: the commander decides which evidence face the next probe
@@ -171,6 +172,7 @@ var toolsTypeMapping = map[string]ToolType{
 	ChangeAnalystToolName:      StoreAgentResultToolType,
 	MetricFindingToolName:      StoreAgentResultToolType,
 	ChangeFindingToolName:      StoreAgentResultToolType,
+	OptimizationResultToolName: BarrierToolType,
 }
 
 var reflector = &jsonschema.Reflector{
@@ -575,6 +577,13 @@ var registryDefinitions = map[string]llms.FunctionDefinition{
 			"question 里带上起始点时间与受影响组件。",
 		Parameters: reflector.Reflect(&AnalystQuestion{}),
 	},
+	OptimizationResultToolName: {
+		Name: OptimizationResultToolName,
+		Description: "提交性能优化的最终结论，并结束当前任务。这是性能类目标唯一的正常出口。" +
+			"baseline 必须是变更前真实采集到的数值，observed_gain 必须是变更后复测到的数值。" +
+			"测过但没有变化，就把 verdict 写 no_measurable_effect —— 这是一个合法结论，不要为了交差编造改善。",
+		Parameters: reflector.Reflect(&OptimizationResult{}),
+	},
 	ChangeFindingToolName: {
 		Name: ChangeFindingToolName,
 		Description: "交回变更分析结论：谁在什么时候改了什么、变更什么时候生效、与告警的间隔。" +
@@ -601,7 +610,7 @@ func getMessageType(name string) database.MsglogType {
 		return database.MsglogTypeAsk
 	case FinalyToolName:
 		return database.MsglogTypeDone
-	case DiagnosisToolName:
+	case DiagnosisToolName, OptimizationResultToolName:
 		return database.MsglogTypeDone
 	default:
 		return database.MsglogTypeThoughts

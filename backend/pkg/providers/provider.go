@@ -669,6 +669,8 @@ func (fp *flowProvider) PrepareAgentChain(ctx context.Context, taskID, subtaskID
 		return 0, fmt.Errorf("failed to update subtask context: %w", err)
 	}
 
+	optimizationMode := tools.PlanModeOf(subtask.Description) == tools.PlanModeOptimization
+
 	systemAgentTmpl, err := fp.prompter.RenderTemplate(templates.PromptTypeCommander, map[string]any{
 		"DiagnosisToolName":      tools.DiagnosisToolName,
 		"AskToolName":            tools.AskUserToolName,
@@ -677,6 +679,8 @@ func (fp *flowProvider) PrepareAgentChain(ctx context.Context, taskID, subtaskID
 		"LogAnalystToolName":     tools.LogAnalystToolName,
 		"MetricsAnalystToolName": tools.MetricsAnalystToolName,
 		"ChangeAnalystToolName":  tools.ChangeAnalystToolName,
+		"OptimizationToolName":   tools.OptimizationResultToolName,
+		"OptimizationMode":       optimizationMode,
 		"ExecutionContext":       executionContext,
 		"Lang":                   fp.language,
 	})
@@ -757,24 +761,10 @@ func (fp *flowProvider) PerformAgentChain(ctx context.Context, taskID, subtaskID
 			"args": string(args),
 		})
 
-		switch name {
-		case tools.DiagnosisToolName:
-			var diagnosis tools.Diagnosis
-			if err := json.Unmarshal(args, &diagnosis); err != nil {
-				loggerFunc.WithError(err).Error("failed to unmarshal diagnosis")
-				return "", fmt.Errorf("failed to unmarshal diagnosis: %w", err)
-			}
-			if err := diagnosis.Validate(); err != nil {
-				loggerFunc.WithError(err).Warn("diagnosis is incomplete")
-				return "", fmt.Errorf("diagnosis is incomplete: %w", err)
-			}
-
-			report, err := diagnosis.Render()
-			if err != nil {
-				loggerFunc.WithError(err).Error("failed to render diagnosis")
-				return "", fmt.Errorf("failed to render diagnosis: %w", err)
-			}
-
+		// finish records an accepted conclusion: it becomes the subtask result and
+		// the report message, which is the only place the evidence survives once
+		// the chain is compacted.
+		finish := func(report, status string) (string, error) {
 			performResult = PerformResultDone
 
 			// TODO: here need to call SetResult from SubtaskWorker interface
@@ -820,8 +810,50 @@ func (fp *flowProvider) PerformAgentChain(ctx context.Context, taskID, subtaskID
 
 			executorAgent.End(
 				langfuse.WithAgentOutput(report),
-				langfuse.WithAgentStatus("diagnosis: accepted"),
+				langfuse.WithAgentStatus(status),
 			)
+
+			return fmt.Sprintf("function %s successfully processed arguments", name), nil
+		}
+
+		switch name {
+		case tools.DiagnosisToolName:
+			var diagnosis tools.Diagnosis
+			if err := json.Unmarshal(args, &diagnosis); err != nil {
+				loggerFunc.WithError(err).Error("failed to unmarshal diagnosis")
+				return "", fmt.Errorf("failed to unmarshal diagnosis: %w", err)
+			}
+			if err := diagnosis.Validate(); err != nil {
+				loggerFunc.WithError(err).Warn("diagnosis is incomplete")
+				return "", fmt.Errorf("诊断不完整: %w", err)
+			}
+
+			report, err := diagnosis.Render()
+			if err != nil {
+				loggerFunc.WithError(err).Error("failed to render diagnosis")
+				return "", fmt.Errorf("failed to render diagnosis: %w", err)
+			}
+
+			return finish(report, "diagnosis: accepted")
+
+		case tools.OptimizationResultToolName:
+			var result tools.OptimizationResult
+			if err := json.Unmarshal(args, &result); err != nil {
+				loggerFunc.WithError(err).Error("failed to unmarshal optimization result")
+				return "", fmt.Errorf("failed to unmarshal optimization result: %w", err)
+			}
+			if err := result.Validate(); err != nil {
+				loggerFunc.WithError(err).Warn("optimization result is incomplete")
+				return "", fmt.Errorf("优化结论不完整: %w", err)
+			}
+
+			report, err := result.Render()
+			if err != nil {
+				loggerFunc.WithError(err).Error("failed to render optimization result")
+				return "", fmt.Errorf("failed to render optimization result: %w", err)
+			}
+
+			return finish(report, "optimization: accepted")
 
 		case tools.AskUserToolName:
 			performResult = PerformResultWaiting
@@ -841,11 +873,20 @@ func (fp *flowProvider) PerformAgentChain(ctx context.Context, taskID, subtaskID
 		return fmt.Sprintf("function %s successfully processed arguments", name), nil
 	}
 
+	// The exit follows the plan entry's mode, not the model's mood: a
+	// performance task has no diagnosis tool and an incident has no
+	// optimisation tool, so the wrong conclusion cannot be filed.
+	optimizationMode := tools.PlanModeOf(subtask.Description) == tools.PlanModeOptimization
+
 	cfg := tools.CommanderExecutorConfig{
 		TaskID:     taskID,
 		SubtaskID:  subtaskID,
-		Diagnosis:  barrier,
 		Summarizer: fp.GetSummarizeResultHandler(&taskID, &subtaskID),
+	}
+	if optimizationMode {
+		cfg.Optimization = barrier
+	} else {
+		cfg.Diagnosis = barrier
 	}
 	if fp.askUser {
 		cfg.AskUser = barrier

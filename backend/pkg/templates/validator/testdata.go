@@ -63,6 +63,8 @@ func CreateDummyTemplateData() map[string]any {
 		"LogAnalystToolName":         tools.LogAnalystToolName,
 		"MetricsAnalystToolName":     tools.MetricsAnalystToolName,
 		"ChangeAnalystToolName":      tools.ChangeAnalystToolName,
+		"OptimizationToolName":       tools.OptimizationResultToolName,
+		"OptimizationMode":           false,
 		"AskToolName":                tools.AskUserToolName,
 		"GetFlowStatusToolName":      tools.GetFlowStatusToolName,
 		"StopFlowToolName":           tools.StopFlowToolName,

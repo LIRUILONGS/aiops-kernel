@@ -44,6 +44,23 @@ type Diagnosis struct {
 	Message        string                  `json:"message,omitempty" jsonschema_description:"一句话交代这次诊断的结论走向，写入事故记录"`
 }
 
+// OptimizationResult is the exit of a performance task. It exists because an
+// optimisation that is not measured is a guess: baseline and observed_gain are
+// required fields, and "no measurable effect" is a legal verdict rather than a
+// failure the model has to talk its way out of.
+type OptimizationResult struct {
+	Bottleneck   string         `json:"bottleneck" jsonschema:"required" jsonschema_description:"瓶颈是什么，靠哪条证据定位：CPU 饱和、内存压力、磁盘 IO、网络、锁竞争、GC、慢查询、串行化，还是配置不当"`
+	Baseline     string         `json:"baseline" jsonschema:"required" jsonschema_description:"变更前的测量结果：ops_baseline 或监控给出的关键数值与采集时刻；没有基线就不要提出改动"`
+	Proposal     string         `json:"proposal" jsonschema:"required" jsonschema_description:"具体改动：改哪个文件、哪个参数、改成什么值。写清楚到别人能照着执行"`
+	ExpectedGain string         `json:"expected_gain" jsonschema:"required" jsonschema_description:"预期改善哪个指标、改善多少、依据是什么"`
+	ObservedGain string         `json:"observed_gain,omitempty" jsonschema_description:"变更后用 ops_diff 复测到的实际变化；没有执行或没有复测就留空，不要填预期值"`
+	Verdict      string         `json:"verdict" jsonschema:"required,type=string" jsonschema_description:"结论：improved=有可测量改善，no_measurable_effect=测过但没变化（这是合法结论），degraded=变差了，unverified=没有复测条件"`
+	Rollback     string         `json:"rollback" jsonschema:"required" jsonschema_description:"怎么把这次改动改回去；无需回滚也要写「无需回滚」"`
+	Evidence     []EvidenceItem `json:"evidence" jsonschema:"required,type=array" jsonschema_description:"至少两条能靠 query 复现的证据：基线一条、结论一条"`
+	Confidence   *float64       `json:"confidence" jsonschema:"type=number" jsonschema_description:"0 到 1 之间的置信度，按基线与复测的可信度给，不要按改动的自信程度给"`
+	Message      string         `json:"message,omitempty" jsonschema_description:"一句话交代这次优化的结论走向，写入性能记录"`
+}
+
 type TriageResult struct {
 	Severity     string         `json:"severity" jsonschema:"required,type=string" jsonschema_description:"分级：critical / high / medium / low / info"`
 	BlastRadius  string         `json:"blast_radius" jsonschema:"required" jsonschema_description:"影响谁、多大范围、从哪一刻开始"`
@@ -239,6 +256,84 @@ func (d Diagnosis) Render() (string, error) {
 	payload, err := json.Marshal(d)
 	if err != nil {
 		return "", fmt.Errorf("序列化诊断失败：%w", err)
+	}
+	b.WriteString("### 结构化结果\n\n```json\n")
+	b.Write(payload)
+	b.WriteString("\n```\n")
+
+	return b.String(), nil
+}
+
+func (o OptimizationResult) Validate() error {
+	if strings.TrimSpace(o.Bottleneck) == "" {
+		return fmt.Errorf("bottleneck 为空：写清瓶颈是哪个资源或哪段代码，而不是「系统有点慢」")
+	}
+	if strings.TrimSpace(o.Baseline) == "" {
+		return fmt.Errorf("baseline 为空：没有变更前的测量结果，这次优化无法被验证")
+	}
+	if strings.TrimSpace(o.Proposal) == "" {
+		return fmt.Errorf("proposal 为空：写清改哪个参数、改成什么值")
+	}
+	if strings.TrimSpace(o.ExpectedGain) == "" {
+		return fmt.Errorf("expected_gain 为空：写清预期改善哪个指标、改善多少")
+	}
+	if err := validateEnum("verdict", o.Verdict, []string{"improved", "no_measurable_effect", "degraded", "unverified"}); err != nil {
+		return err
+	}
+	if o.Verdict == "improved" && strings.TrimSpace(o.ObservedGain) == "" {
+		return fmt.Errorf("verdict=improved 但 observed_gain 为空：没有复测就不能算改善，改判 unverified 或补上复测结果")
+	}
+	if strings.TrimSpace(o.Rollback) == "" {
+		return fmt.Errorf("rollback 为空：写清怎么改回去；无需回滚也要写「无需回滚」")
+	}
+	if err := validateEvidence(o.Evidence, 2); err != nil {
+		return err
+	}
+	if o.Confidence == nil {
+		return fmt.Errorf("confidence 缺失：填 0 到 1 之间的数值")
+	}
+	if c := *o.Confidence; c < 0 || c > 1 {
+		return fmt.Errorf("confidence=%v 超出 0 到 1 的范围", c)
+	}
+	return nil
+}
+
+// Render is the text an optimisation becomes once accepted. The verdict is the
+// headline: an operator needs to know whether the change worked before reading
+// why.
+func (o OptimizationResult) Render() (string, error) {
+	if err := o.Validate(); err != nil {
+		return "", err
+	}
+
+	var b strings.Builder
+
+	b.WriteString("## 性能优化结论\n\n")
+	fmt.Fprintf(&b, "**结论**：%s\n\n", o.Verdict)
+	fmt.Fprintf(&b, "**瓶颈**：%s\n\n", o.Bottleneck)
+	fmt.Fprintf(&b, "**置信度**：%.2f\n\n", *o.Confidence)
+	fmt.Fprintf(&b, "**变更前**：%s\n\n", o.Baseline)
+	fmt.Fprintf(&b, "**建议改动**：%s\n\n", o.Proposal)
+	fmt.Fprintf(&b, "**预期收益**：%s\n\n", o.ExpectedGain)
+	if o.ObservedGain != "" {
+		fmt.Fprintf(&b, "**实测收益**：%s\n\n", o.ObservedGain)
+	} else {
+		b.WriteString("**实测收益**：未复测\n\n")
+	}
+	fmt.Fprintf(&b, "**回滚**：%s\n\n", o.Rollback)
+
+	b.WriteString("### 证据\n\n")
+	for i, item := range o.Evidence {
+		fmt.Fprintf(&b, "%d. **%s** · %s · `%s`\n\n", i+1, item.Source, item.Timestamp, item.Query)
+		for _, line := range strings.Split(item.Excerpt, "\n") {
+			fmt.Fprintf(&b, "   > %s\n", strings.TrimRight(line, "\r"))
+		}
+		b.WriteString("\n")
+	}
+
+	payload, err := json.Marshal(o)
+	if err != nil {
+		return "", fmt.Errorf("序列化优化结论失败：%w", err)
 	}
 	b.WriteString("### 结构化结果\n\n```json\n")
 	b.Write(payload)

@@ -1261,3 +1261,54 @@ func TestTools_GetAnalystExecutor_GivesEachRoleItsOwnEvidenceFaceAndOneExit(t *t
 		assert.Contains(t, err.Error(), "finding handler is required")
 	})
 }
+
+func TestTools_GetCommanderExecutor_AdvertisesOnlyTheExitOfItsMode(t *testing.T) {
+	handler := func(context.Context, string, json.RawMessage) (string, error) { return "", nil }
+
+	fte := &flowToolsExecutor{
+		flowID: 42,
+		cfg: &config.Config{
+			OpsTargets: `[{"id":"lab","host":"127.0.0.1","port":22,"user":"root","password":"x"}]`,
+		},
+		db:     &fakeContainerDB{row: toolsSandboxRow(database.ContainerStatusRunning, "primary")},
+		docker: &fakeDockerClient{},
+	}
+
+	tests := []struct {
+		name        string
+		cfg         CommanderExecutorConfig
+		wantPresent string
+		wantAbsent  string
+	}{
+		{
+			name:        "an incident subtask can only conclude with a diagnosis",
+			cfg:         CommanderExecutorConfig{Diagnosis: handler},
+			wantPresent: DiagnosisToolName,
+			wantAbsent:  OptimizationResultToolName,
+		},
+		{
+			name:        "an optimisation subtask can only conclude with a measurement",
+			cfg:         CommanderExecutorConfig{Optimization: handler},
+			wantPresent: OptimizationResultToolName,
+			wantAbsent:  DiagnosisToolName,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			executor, err := fte.GetCommanderExecutor(tc.cfg)
+			require.NoError(t, err)
+			ce := executor.(*customExecutor)
+
+			var advertised []string
+			for _, def := range ce.definitions {
+				advertised = append(advertised, def.Name)
+			}
+
+			assert.Contains(t, advertised, tc.wantPresent)
+			assert.NotContains(t, advertised, tc.wantAbsent, "the other chain's exit must not be reachable")
+			assert.NotContains(t, ce.barriers, tc.wantAbsent)
+			assert.NotContains(t, ce.handlers, tc.wantAbsent)
+		})
+	}
+}

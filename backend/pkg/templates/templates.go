@@ -356,6 +356,8 @@ var PromptVariables = map[PromptType][]string{
 		"LogAnalystToolName",
 		"MetricsAnalystToolName",
 		"ChangeAnalystToolName",
+		"OptimizationToolName",
+		"OptimizationMode",
 		"ExecutionContext",
 		"Lang",
 	},

@@ -59,6 +59,7 @@ type SubtaskInfo struct {
 	// AssignedTo and ExpectedSignal are what make the plan machine-readable: the
 	// record keeps them apart from the prose, so a later reader can group work by
 	// specialist and check a finding against what the plan promised to look for.
+	Mode           string `json:"mode" jsonschema:"required,type=string" jsonschema_description:"这条子任务属于哪条链路：diagnosis=故障定位，optimization=性能优化。它决定执行者最后用哪个出口收尾，必须选一个，不能留空。"`
 	AssignedTo     string `json:"assigned_to,omitempty" jsonschema:"title=Assigned specialist" jsonschema_description:"建议由谁执行：commander / triage / log_analyst / metrics_analyst / change_analyst。留空表示交给主 agent 自己判断。"`
 	ExpectedSignal string `json:"expected_signal,omitempty" jsonschema:"title=Expected signal" jsonschema_description:"如果假设成立，具体应看到什么：一条日志模板、一个指标形态、一个容器状态。写不出期望信号的假设不要提交。"`
 }
@@ -86,6 +87,7 @@ type SubtaskOperation struct {
 	AfterID        *int64               `json:"after_id,omitempty" jsonschema:"title=Insert after ID" jsonschema_description:"add/reorder：插到这条子任务之后（null/0 表示插到最前）"`
 	Title          string               `json:"title,omitempty" jsonschema:"title=New title" jsonschema_description:"计划条目——新的子任务标题（add 必填，modify 选填）。用系统提示声明的语言书写。"`
 	Description    string               `json:"description,omitempty" jsonschema:"title=New description" jsonschema_description:"计划条目——新的子任务描述（add 必填，modify 选填）。用系统提示声明的语言书写。"`
+	Mode           string               `json:"mode,omitempty" jsonschema:"type=string" jsonschema_description:"新增子任务属于哪条链路：diagnosis / optimization。与现有计划保持一致。"`
 	AssignedTo     string               `json:"assigned_to,omitempty" jsonschema:"title=Assigned specialist" jsonschema_description:"建议由谁执行：commander / triage / log_analyst / metrics_analyst / change_analyst。"`
 	ExpectedSignal string               `json:"expected_signal,omitempty" jsonschema:"title=Expected signal" jsonschema_description:"如果假设成立，具体应看到什么。"`
 }
@@ -422,7 +424,7 @@ func (d Done) Validate() error {
 // appended rather than folded into the prose so the model that writes the
 // description cannot drop the signal the plan will be judged against.
 func (i SubtaskInfo) PlanDescription() string {
-	lines := []string{i.Description}
+	lines := []string{planModeLabel(i.Mode), i.Description}
 	if i.ExpectedSignal != "" {
 		lines = append(lines, "期望信号："+i.ExpectedSignal)
 	}
@@ -439,6 +441,13 @@ type AnalystQuestion struct {
 	Context  string `json:"context,omitempty" jsonschema:"title=Additional context" jsonschema_description:"可选：已经确认的事实（已排除的方向、已知的时间点），避免它重复取证。"`
 }
 
+// The two chains a plan entry can belong to. Each has its own exit in the
+// commander's tool table, so the mode is a permission boundary and not a hint.
+const (
+	PlanModeDiagnosis    = "diagnosis"
+	PlanModeOptimization = "optimization"
+)
+
 // aiopsSpecialists is the set of subtask owners the planner may name. It is a
 // closed set rather than free text so a typo reaches the model as a refusal
 // instead of becoming a specialist that does not exist.
@@ -450,7 +459,36 @@ var aiopsSpecialists = map[string]struct{}{
 	"change_analyst":  {},
 }
 
-func validateSubtaskInfo(info SubtaskInfo, where string) error {
+// planModePrefix marks the line PlanDescription puts first. It is the only
+// channel the execution side reads the mode from, so it is written once here
+// and read once in the provider rather than re-derived from prose.
+const planModePrefix = "【目标类型："
+
+func planModeLabel(mode string) string {
+	if mode == PlanModeOptimization {
+		return planModePrefix + "性能优化】"
+	}
+	return planModePrefix + "故障诊断】"
+}
+
+// PlanModeOf reads the label back. An unrecognised description is an incident
+// by default: that exit at worst wastes a probe, while the performance exit
+// would accept a conclusion nobody measured.
+func PlanModeOf(description string) string {
+	if strings.HasPrefix(description, planModePrefix+"性能优化】") {
+		return PlanModeOptimization
+	}
+	return PlanModeDiagnosis
+}
+
+func validateSubtaskInfo(info SubtaskInfo, where string, requireMode bool) error {
+	if info.Mode == "" {
+		if requireMode {
+			return fmt.Errorf("%s: 缺少 mode：必须声明它属于 diagnosis（故障定位）还是 optimization（性能优化）", where)
+		}
+	} else if err := validateEnum("mode", info.Mode, []string{PlanModeDiagnosis, PlanModeOptimization}); err != nil {
+		return fmt.Errorf("%s: %w", where, err)
+	}
 	if info.Title == "" {
 		return fmt.Errorf("%s: 缺少 title", where)
 	}
@@ -472,7 +510,7 @@ func validateSubtaskInfo(info SubtaskInfo, where string) error {
 // is not a subtask, and an unknown owner has no agent behind it.
 func (sl SubtaskList) Validate() error {
 	for i, info := range sl.Subtasks {
-		if err := validateSubtaskInfo(info, fmt.Sprintf("第 %d 条子任务", i+1)); err != nil {
+		if err := validateSubtaskInfo(info, fmt.Sprintf("第 %d 条子任务", i+1), true); err != nil {
 			return err
 		}
 	}
@@ -489,7 +527,7 @@ func (sp SubtaskPatch) Validate() error {
 				AssignedTo:     op.AssignedTo,
 				ExpectedSignal: op.ExpectedSignal,
 			}
-			if err := validateSubtaskInfo(info, fmt.Sprintf("operation %d", i)); err != nil {
+			if err := validateSubtaskInfo(info, fmt.Sprintf("operation %d", i), false); err != nil {
 				return err
 			}
 		case SubtaskOpRemove:

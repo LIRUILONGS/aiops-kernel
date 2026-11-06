@@ -330,6 +330,7 @@ type CommanderExecutorConfig struct {
 	TaskID         int64
 	SubtaskID      int64
 	Diagnosis      ExecutorHandler
+	Optimization   ExecutorHandler
 	AskUser        ExecutorHandler
 	Triage         ExecutorHandler
 	LogAnalyst     ExecutorHandler
@@ -1057,8 +1058,8 @@ func (fte *flowToolsExecutor) GetAssistantExecutor(cfg AssistantExecutorConfig) 
 // its tool list, and M0 allows reading only. The barrier set is what lets the
 // chain end normally instead of running out of iterations.
 func (fte *flowToolsExecutor) GetCommanderExecutor(cfg CommanderExecutorConfig) (ContextToolsExecutor, error) {
-	if cfg.Diagnosis == nil {
-		return nil, fmt.Errorf("diagnosis handler is required")
+	if cfg.Diagnosis == nil && cfg.Optimization == nil {
+		return nil, fmt.Errorf("a conclusion handler is required: diagnosis for an incident, optimization for a performance task")
 	}
 
 	ops := NewOpsTools(fte.cfg)
@@ -1073,16 +1074,35 @@ func (fte *flowToolsExecutor) GetCommanderExecutor(cfg CommanderExecutorConfig) 
 		registryDefinitions[OpsBaselineToolName],
 		registryDefinitions[OpsDiffToolName],
 		registryDefinitions[DiagnosisToolName],
+		registryDefinitions[OptimizationResultToolName],
 	}
 	handlers := map[string]ExecutorHandler{
-		OpsContainersToolName: ops.HandleContainers,
-		OpsLogsToolName:       ops.HandleLogs,
-		OpsSystemToolName:     ops.HandleSystem,
-		OpsBaselineToolName:   ops.HandleBaseline,
-		OpsDiffToolName:       ops.HandleDiff,
-		DiagnosisToolName:     cfg.Diagnosis,
+		OpsContainersToolName:      ops.HandleContainers,
+		OpsLogsToolName:            ops.HandleLogs,
+		OpsSystemToolName:          ops.HandleSystem,
+		OpsBaselineToolName:        ops.HandleBaseline,
+		OpsDiffToolName:            ops.HandleDiff,
+		DiagnosisToolName:          cfg.Diagnosis,
+		OptimizationResultToolName: cfg.Optimization,
 	}
-	barriers := map[string]struct{}{DiagnosisToolName: {}}
+	barriers := map[string]struct{}{
+		DiagnosisToolName:          {},
+		OptimizationResultToolName: {},
+	}
+
+	// The chain has exactly one exit. An executor that advertised both would let
+	// a performance task file an incident diagnosis and the reverse.
+	for name, handler := range map[string]ExecutorHandler{
+		DiagnosisToolName:          cfg.Diagnosis,
+		OptimizationResultToolName: cfg.Optimization,
+	} {
+		if handler != nil {
+			continue
+		}
+		definitions = removeDefinition(definitions, name)
+		delete(handlers, name)
+		delete(barriers, name)
+	}
 
 	for _, d := range []struct {
 		name    string
@@ -1183,6 +1203,18 @@ func (fte *flowToolsExecutor) GetAnalystExecutor(cfg AnalystExecutorConfig) (Con
 		barriers:    barriers,
 		summarizer:  cfg.Summarizer,
 	}, nil
+}
+
+// removeDefinition drops a tool the caller did not provide, so an executor never
+// advertises an exit nobody handles.
+func removeDefinition(definitions []llms.FunctionDefinition, name string) []llms.FunctionDefinition {
+	kept := definitions[:0]
+	for _, def := range definitions {
+		if def.Name != name {
+			kept = append(kept, def)
+		}
+	}
+	return kept
 }
 
 // findingToolForRole is the exit each analyst must end with. It is the only way

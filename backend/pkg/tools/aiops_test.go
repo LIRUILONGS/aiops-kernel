@@ -376,3 +376,120 @@ func TestAIOps_Diagnosis_EvidenceSchemaNamesItsFourFields(t *testing.T) {
 		}
 	}
 }
+
+func validOptimization() OptimizationResult {
+	confidence := 0.7
+
+	return OptimizationResult{
+		Bottleneck:   "opslab-slow 的单请求串行处理把 CPU 压在 3% 但延迟 2s：瓶颈是 sleep 而不是算力",
+		Baseline:     "ops_baseline 2026-11-06T18:20:00+08:00：负载 0.00/0.02/0.04，CPU 3%，内存 31%，被压测的容器 opslab-slow 平均响应 2043ms",
+		Proposal:     "把 opslab-slow 的 WORKER_COUNT 从 1 改为 4，改完重建容器再压一轮",
+		ExpectedGain: "吞吐提升到约 4 倍，P95 从 2.1s 降到 0.6s 以内",
+		ObservedGain: "ops_diff 显示平均响应 2043ms -> 559ms，负载 0.04 -> 0.09",
+		Verdict:      "improved",
+		Rollback:     "把 WORKER_COUNT 改回 1 并重建容器",
+		Evidence: []EvidenceItem{
+			{Source: "host", Query: "ops_baseline", Timestamp: "2026-11-06T18:20:00+08:00", Excerpt: "load 0.00 0.02 0.04, cpu 3%"},
+			{Source: "metrics", Query: "ops_diff", Timestamp: "2026-11-06T18:41:00+08:00", Excerpt: "avg_latency_ms 2043 -> 559 (improved)"},
+		},
+		Confidence: &confidence,
+	}
+}
+
+func TestAIOps_Optimization_RefusesAConclusionThatWasNeverMeasured(t *testing.T) {
+	tests := []struct {
+		name    string
+		mutate  func(*OptimizationResult)
+		wantErr string
+	}{
+		{
+			name:   "a measured improvement",
+			mutate: func(*OptimizationResult) {},
+		},
+		{
+			name:    "no bottleneck",
+			mutate:  func(o *OptimizationResult) { o.Bottleneck = "" },
+			wantErr: "bottleneck 为空",
+		},
+		{
+			name:    "no baseline",
+			mutate:  func(o *OptimizationResult) { o.Baseline = "" },
+			wantErr: "baseline 为空",
+		},
+		{
+			name:    "no rollback",
+			mutate:  func(o *OptimizationResult) { o.Rollback = "" },
+			wantErr: "rollback 为空",
+		},
+		{
+			name:    "an unknown verdict",
+			mutate:  func(o *OptimizationResult) { o.Verdict = "faster" },
+			wantErr: "verdict",
+		},
+		{
+			name: "improved without a measurement",
+			mutate: func(o *OptimizationResult) {
+				o.ObservedGain = ""
+			},
+			wantErr: "没有复测就不能算改善",
+		},
+		{
+			name: "no measurable effect with no observed value",
+			mutate: func(o *OptimizationResult) {
+				o.Verdict = "no_measurable_effect"
+				o.ObservedGain = ""
+			},
+		},
+		{
+			name:    "no confidence",
+			mutate:  func(o *OptimizationResult) { o.Confidence = nil },
+			wantErr: "confidence 缺失",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result := validOptimization()
+			tc.mutate(&result)
+
+			err := result.Validate()
+			if tc.wantErr == "" {
+				if err != nil {
+					t.Fatalf("refused a valid optimisation: %v", err)
+				}
+				return
+			}
+			if err == nil {
+				t.Fatalf("accepted an optimisation that cannot be verified")
+			}
+			if !strings.Contains(err.Error(), tc.wantErr) {
+				t.Errorf("refusal %q does not say %q", err, tc.wantErr)
+			}
+		})
+	}
+}
+
+func TestAIOps_Optimization_RenderLeadsWithTheVerdict(t *testing.T) {
+	report, err := validOptimization().Render()
+	if err != nil {
+		t.Fatalf("Render() refused a valid optimisation: %v", err)
+	}
+
+	for _, want := range []string{"## 性能优化结论", "**结论**：improved", "**变更前**：", "**实测收益**：ops_diff 显示平均响应", "```json"} {
+		if !strings.Contains(report, want) {
+			t.Errorf("report is missing %q:\n%s", want, report)
+		}
+	}
+
+	unverified := validOptimization()
+	unverified.Verdict = "unverified"
+	unverified.ObservedGain = ""
+
+	report, err = unverified.Render()
+	if err != nil {
+		t.Fatalf("Render() refused an unverified optimisation: %v", err)
+	}
+	if !strings.Contains(report, "**实测收益**：未复测") {
+		t.Errorf("an unverified optimisation must say it was not re-measured:\n%s", report)
+	}
+}

@@ -1347,6 +1347,7 @@ func TestArgs_TaskResult_RequiresAnExplicitSuccessFlag(t *testing.T) {
 
 func TestArgs_SubtaskInfo_PlanDescriptionKeepsTheHypothesisAndAppendsTheSignal(t *testing.T) {
 	info := SubtaskInfo{
+		Mode:           PlanModeOptimization,
 		Title:          "验证是否为 nginx 配置错误",
 		Description:    "如果是配置错误，nginx 会在启动时以 emerg 退出。",
 		AssignedTo:     "log_analyst",
@@ -1355,14 +1356,18 @@ func TestArgs_SubtaskInfo_PlanDescriptionKeepsTheHypothesisAndAppendsTheSignal(t
 
 	got := info.PlanDescription()
 
-	want := "如果是配置错误，nginx 会在启动时以 emerg 退出。\n\n期望信号：[emerg] unknown directive\n\n建议执行者：log_analyst"
+	want := "【目标类型：性能优化】\n\n如果是配置错误，nginx 会在启动时以 emerg 退出。\n\n期望信号：[emerg] unknown directive\n\n建议执行者：log_analyst"
 	if got != want {
 		t.Fatalf("plan description = %q, want %q", got, want)
 	}
 
+	if mode := PlanModeOf(got); mode != PlanModeOptimization {
+		t.Errorf("the label PlanDescription writes is not the one PlanModeOf reads: %q", mode)
+	}
+
 	bare := SubtaskInfo{Title: "t", Description: "d"}
-	if got := bare.PlanDescription(); got != "d" {
-		t.Errorf("a plan entry with no signal must render only the description, got %q", got)
+	if got := bare.PlanDescription(); got != "【目标类型：故障诊断】\n\nd" {
+		t.Errorf("an unlabelled entry must default to an incident, got %q", got)
 	}
 }
 
@@ -1375,9 +1380,14 @@ func TestArgs_SubtaskList_ValidateRefusesAPlanWithoutAnExecutableHypothesis(t *t
 		{
 			name: "a complete plan",
 			subtasks: []SubtaskInfo{
-				{Title: "a", Description: "b", AssignedTo: "log_analyst", ExpectedSignal: "c"},
-				{Title: "d", Description: "e"},
+				{Mode: PlanModeDiagnosis, Title: "a", Description: "b", AssignedTo: "log_analyst", ExpectedSignal: "c"},
+				{Mode: PlanModeOptimization, Title: "d", Description: "e"},
 			},
+		},
+		{
+			name:     "an entry that does not say which chain it belongs to",
+			subtasks: []SubtaskInfo{{Title: "a", Description: "b"}},
+			wantErr:  "缺少 mode",
 		},
 		{
 			name:     "no subtasks at all",
@@ -1385,17 +1395,22 @@ func TestArgs_SubtaskList_ValidateRefusesAPlanWithoutAnExecutableHypothesis(t *t
 		},
 		{
 			name:     "a subtask without a title",
-			subtasks: []SubtaskInfo{{Description: "b"}},
+			subtasks: []SubtaskInfo{{Mode: PlanModeDiagnosis, Description: "b"}},
 			wantErr:  "缺少 title",
 		},
 		{
 			name:     "a subtask without a description",
-			subtasks: []SubtaskInfo{{Title: "a"}},
+			subtasks: []SubtaskInfo{{Mode: PlanModeDiagnosis, Title: "a"}},
 			wantErr:  "缺少 description",
 		},
 		{
+			name:     "a mode that is neither chain",
+			subtasks: []SubtaskInfo{{Mode: "tuning", Title: "a", Description: "b"}},
+			wantErr:  "mode",
+		},
+		{
 			name:     "an owner that has no agent behind it",
-			subtasks: []SubtaskInfo{{Title: "a", Description: "b", AssignedTo: "log-analyzer"}},
+			subtasks: []SubtaskInfo{{Mode: PlanModeDiagnosis, Title: "a", Description: "b", AssignedTo: "log-analyzer"}},
 			wantErr:  "不是可用的执行者",
 		},
 	}
