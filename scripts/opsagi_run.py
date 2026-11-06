@@ -21,8 +21,8 @@ import urllib.error
 import urllib.request
 
 CREATE_FLOW = """
-mutation CreateFlow($input: String!, $provider: String!) {
-  createFlow(modelProvider: $provider, input: $input) { id status }
+mutation CreateFlow($input: String!, $provider: String!, $target: FlowType) {
+  createFlow(modelProvider: $provider, input: $input, flowType: $target) { id status }
 }
 """
 
@@ -75,8 +75,10 @@ class Client:
             raise SystemExit("graphql refused the call: " + json.dumps(envelope["errors"], ensure_ascii=False))
         return envelope.get("data") or {}
 
-    def create_flow(self, intent, provider):
-        data = self.graphql(CREATE_FLOW, {"input": intent, "provider": provider})
+    def create_flow(self, intent, provider, target=None):
+        data = self.graphql(
+            CREATE_FLOW, {"input": intent, "provider": provider, "target": target}
+        )
         return data["createFlow"]
 
     def flow_status(self, flow_id):
@@ -110,6 +112,13 @@ def main(argv):
     parser.add_argument("--password", default=os.environ.get("OPSAGI_PASSWORD", ""))
     parser.add_argument("--token", default=os.environ.get("OPSAGI_TOKEN", ""))
     parser.add_argument("--provider", default=os.environ.get("OPSAGI_PROVIDER", "custom"))
+    parser.add_argument(
+        "--target",
+        choices=("diagnosis", "optimization"),
+        default=os.environ.get("OPSAGI_TARGET_TYPE") or None,
+        help="declare the flow's target type; the plan may label a subtask differently, "
+        "but an explicit type outranks the label",
+    )
     parser.add_argument("--timeout", type=int, default=1800, help="seconds to wait for the flow")
     parser.add_argument("--interval", type=float, default=5.0, help="seconds between polls")
     parser.add_argument("--flow", type=int, default=0, help="watch an existing flow instead of creating one")
@@ -129,7 +138,7 @@ def main(argv):
         intent = " ".join(args.intent).strip() or sys.stdin.read().strip()
         if not intent:
             raise SystemExit("nothing to diagnose: pass the alert as an argument or on stdin")
-        flow = client.create_flow(intent, args.provider)
+        flow = client.create_flow(intent, args.provider, args.target)
         flow_id, status = flow["id"], flow["status"]
         print("flow {} created ({})".format(flow_id, status), flush=True)
 
