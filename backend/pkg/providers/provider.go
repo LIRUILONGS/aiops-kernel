@@ -676,6 +676,7 @@ func (fp *flowProvider) PrepareAgentChain(ctx context.Context, taskID, subtaskID
 		"AskToolName":            tools.AskUserToolName,
 		"AskUserEnabled":         fp.askUser,
 		"TriageToolName":         tools.TriageToolName,
+		"SandboxToolName":        tools.OpsSandboxToolName,
 		"LogAnalystToolName":     tools.LogAnalystToolName,
 		"MetricsAnalystToolName": tools.MetricsAnalystToolName,
 		"ChangeAnalystToolName":  tools.ChangeAnalystToolName,

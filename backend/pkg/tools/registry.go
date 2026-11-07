@@ -57,6 +57,7 @@ const (
 	OpsBaselineToolName        = "ops_baseline"
 	OpsDiffToolName            = "ops_diff"
 	OpsExecToolName            = "ops_exec"
+	OpsSandboxToolName         = "ops_sandbox"
 	PromQueryToolName          = "prom_query"
 	K8sGetToolName             = "k8s_get"
 	DiagnosisToolName          = "diagnosis"
@@ -167,6 +168,7 @@ var toolsTypeMapping = map[string]ToolType{
 	OpsBaselineToolName:        EnvironmentToolType,
 	OpsDiffToolName:            EnvironmentToolType,
 	OpsExecToolName:            EnvironmentToolType,
+	OpsSandboxToolName:         EnvironmentToolType,
 	PromQueryToolName:          EnvironmentToolType,
 	K8sGetToolName:             EnvironmentToolType,
 	DiagnosisToolName:          BarrierToolType,
@@ -542,6 +544,17 @@ var registryDefinitions = map[string]llms.FunctionDefinition{
 			"参数只允许字母、数字与 . _ - /，含空格或 shell 元字符会被拒绝。" +
 			"返回结果会带上真实执行的命令原文，写证据时直接引用它。",
 		Parameters: reflector.Reflect(&OpsExecArgs{}),
+	},
+	OpsSandboxToolName: {
+		Name: OpsSandboxToolName,
+		Description: "在目标主机上起一个一次性采集容器，在里面执行你写的只读脚本——这是你在目标机上唯一的自由命令通道。" +
+			"容器的形状由代码固定：只读根文件系统、无网络、丢弃全部 capability、不加入宿主机 PID 命名空间、256MB / 1 CPU / 256 进程上限；" +
+			"宿主机的 /proc 与 /sys 以只读方式挂在 /host/proc 与 /host/sys。" +
+			"因此你可以读任何东西，改不了任何东西：写文件会失败，kill 宿主进程会失败（那些 PID 不在容器里），联网会失败。" +
+			"看宿主机进程要用 /host/proc/<pid>，看宿主机监听端口要读 /host/proc/1/net/tcp（容器自己的网络命名空间是空的，ss 只能看到空的）。" +
+			"image 留空用默认镜像；只有操作员在 OPSAGI_SANDBOX_IMAGES 里列过的镜像才能用，因为拉镜像会写目标机。" +
+			"需要 eBPF、perf 这类要特权的工具，或需要联网取证时，不要自己想办法：用 ask 请操作员批准，写清镜像、参数、要采什么、怎么删。",
+		Parameters: reflector.Reflect(&OpsSandboxArgs{}),
 	},
 	K8sGetToolName: {
 		Name: K8sGetToolName,

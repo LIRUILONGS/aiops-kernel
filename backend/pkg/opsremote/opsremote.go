@@ -183,6 +183,54 @@ func (c *Client) Run(ctx context.Context, command string) (Result, error) {
 	return res, nil
 }
 
+// RunStdin executes one command with stdin attached, for the callers that pass
+// data rather than only a command line: the sandbox ships the agent's script this
+// way so it never becomes part of the ssh command string. A non-zero exit status
+// lands in Result.ExitCode, as in Run.
+func (c *Client) RunStdin(ctx context.Context, command, stdin string) (Result, error) {
+	started := time.Now()
+	res := Result{Command: command}
+
+	session, err := c.client.NewSession()
+	if err != nil {
+		return res, fmt.Errorf("open session: %w", err)
+	}
+	defer func() { _ = session.Close() }()
+
+	var stdout, stderr bytes.Buffer
+	session.Stdin = strings.NewReader(stdin)
+	session.Stdout = &limitedWriter{buf: &stdout, remaining: MaxOutputBytes}
+	session.Stderr = &limitedWriter{buf: &stderr, remaining: MaxOutputBytes / 8}
+
+	done := make(chan error, 1)
+	go func() { done <- session.Run(command) }()
+
+	select {
+	case err = <-done:
+	case <-ctx.Done():
+		_ = session.Signal(ssh.SIGKILL)
+		_ = session.Close()
+		return res, fmt.Errorf("command timed out: %w", ctx.Err())
+	}
+
+	res.Stdout = stdout.String()
+	res.Stderr = stderr.String()
+	res.Duration = time.Since(started)
+	res.Truncated = stdout.Len() >= MaxOutputBytes
+
+	var exitErr *ssh.ExitError
+	switch {
+	case err == nil:
+		res.ExitCode = 0
+	case errors.As(err, &exitErr):
+		res.ExitCode = exitErr.ExitStatus()
+	default:
+		return res, fmt.Errorf("run command: %w", err)
+	}
+
+	return res, nil
+}
+
 // RunCtx runs a command with the default timeout.
 func (c *Client) RunCtx(parent context.Context, command string) (Result, error) {
 	ctx, cancel := context.WithTimeout(parent, c.timeout)

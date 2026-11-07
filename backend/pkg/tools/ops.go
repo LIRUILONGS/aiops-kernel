@@ -30,6 +30,8 @@ type opsTools struct {
 	targets map[string]opsremote.Target
 	order   []string
 	timeout time.Duration
+
+	sandboxAllowed []string
 }
 
 // NewOpsTools builds the read-only probe toolset from configuration. No targets
@@ -58,8 +60,22 @@ func NewOpsTools(cfg *config.Config) *opsTools {
 		tools.order = append(tools.order, target.ID)
 	}
 	sort.Strings(tools.order)
+	tools.sandboxAllowed = splitImages(cfg.OpsSandboxImages)
 
 	return tools
+}
+
+// splitImages reads the operator's allowlist, which is the only place an image
+// name enters the sandbox command line.
+func splitImages(raw string) []string {
+	images := make([]string, 0, 4)
+	for _, candidate := range strings.Split(raw, ",") {
+		if trimmed := strings.TrimSpace(candidate); trimmed != "" {
+			images = append(images, trimmed)
+		}
+	}
+
+	return images
 }
 
 func (o *opsTools) IsAvailable() bool { return len(o.targets) > 0 }
@@ -228,6 +244,69 @@ func (o *opsTools) HandleExec(ctx context.Context, name string, args json.RawMes
 		label = entry.Description
 	}
 	return formatExec(target, label, res), nil
+}
+
+// OpsSandboxArgs runs a shell script inside the probe box on the target. The
+// script is free text: the guarantee is the container it runs in, not a list of
+// permitted commands.
+type OpsSandboxArgs struct {
+	Target  string `json:"target,omitempty" jsonschema:"description=目标主机 ID，留空使用默认主机,example=lab"`
+	Script  string `json:"script" jsonschema:"description=在采集容器里执行的 shell 脚本。容器只读、无网络、无特权；宿主机的进程与网络要通过 /host/proc/<pid> 读，例如 /host/proc/1/net/tcp。脚本走 stdin，不经过目标机的 shell,example=cat /host/proc/pressure/io"`
+	Image   string `json:"image,omitempty" jsonschema:"description=采集容器镜像，留空用默认镜像；不在允许列表内会被拒绝,example=debian:latest"`
+	Timeout int    `json:"timeout_seconds,omitempty" jsonschema:"description=脚本超时秒数，默认 60，上限 300,example=60"`
+}
+
+func (o *opsTools) HandleSandbox(ctx context.Context, name string, args json.RawMessage) (string, error) {
+	var parsed OpsSandboxArgs
+	if err := json.Unmarshal(args, &parsed); err != nil {
+		return "", fmt.Errorf("解析参数失败：%w", err)
+	}
+	if strings.TrimSpace(parsed.Script) == "" {
+		return "", fmt.Errorf("缺少 script：要执行的只读脚本")
+	}
+
+	image, err := opsremote.ValidateSandboxImage(parsed.Image, o.sandboxImages())
+	if err != nil {
+		return "", err
+	}
+
+	client, target, err := o.dial(ctx, args)
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = client.Close() }()
+
+	timeout := time.Duration(parsed.Timeout) * time.Second
+	if timeout <= 0 {
+		timeout = o.timeout
+	}
+	if timeout > maxSandboxTimeout {
+		timeout = maxSandboxTimeout
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	res, err := client.RunSandbox(ctx, image, parsed.Script)
+	if err != nil {
+		return "", fmt.Errorf("采集容器执行失败：%w", err)
+	}
+
+	return formatExec(target, "采集容器（只读 / 无网络 / 无特权）", res), nil
+}
+
+// maxSandboxTimeout caps one probe run: a script that outlives it is a script
+// that is watching, and watching is what ops_baseline and ops_diff are for.
+const maxSandboxTimeout = 300 * time.Second
+
+// sandboxImages is the operator's allowlist. Pulling an image writes to the
+// target, so an image the operator never named is refused rather than fetched.
+func (o *opsTools) sandboxImages() []string {
+	if len(o.sandboxAllowed) == 0 {
+		return []string{opsremote.SandboxImageDefault}
+	}
+
+	return o.sandboxAllowed
 }
 
 // OpsBaselineArgs captures a named sample of a host for later comparison.
