@@ -136,8 +136,8 @@ var (
 		},
 		"docker_inspect": {
 			ID:          "docker_inspect",
-			Description: "一个容器的运行状态：状态、退出码、重启次数、OOMKilled、启动与结束时刻、重启策略",
-			Template:    `docker inspect %Container% --format '{"status":"{{.State.Status}}","running":{{.State.Running}},"exit_code":{{.State.ExitCode}},"oom_killed":{{.State.OOMKilled}},"restart_count":{{.RestartCount}},"started_at":"{{.State.StartedAt}}","finished_at":"{{.State.FinishedAt}}","restart_policy":"{{.HostConfig.RestartPolicy.Name}}","pid":{{.State.Pid}}}' 2>&1`,
+			Description: "一个容器的运行状态：状态、退出码、重启次数、OOMKilled、启动与结束时刻、重启策略、挂载（bind 的宿主机源路径与读写属性）",
+			Template:    `docker inspect %Container% --format '{"status":"{{.State.Status}}","running":{{.State.Running}},"exit_code":{{.State.ExitCode}},"oom_killed":{{.State.OOMKilled}},"restart_count":{{.RestartCount}},"started_at":"{{.State.StartedAt}}","finished_at":"{{.State.FinishedAt}}","restart_policy":"{{.HostConfig.RestartPolicy.Name}}","pid":{{.State.Pid}},"mounts":{{json .Mounts}}}' 2>&1`,
 			Params:      []Param{{Template: "Container", Kind: ParamName}},
 		},
 		"docker_stats": {
