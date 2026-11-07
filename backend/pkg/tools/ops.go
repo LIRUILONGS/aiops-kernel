@@ -278,7 +278,7 @@ func (o *opsTools) HandleSandbox(ctx context.Context, name string, args json.Raw
 
 	timeout := time.Duration(parsed.Timeout) * time.Second
 	if timeout <= 0 {
-		timeout = o.timeout
+		timeout = defaultSandboxTimeout
 	}
 	if timeout > maxSandboxTimeout {
 		timeout = maxSandboxTimeout
@@ -294,6 +294,11 @@ func (o *opsTools) HandleSandbox(ctx context.Context, name string, args json.Raw
 
 	return formatExec(target, "采集容器（只读 / 无网络 / 无特权）", res), nil
 }
+
+// defaultSandboxTimeout is what the tool description promises when the model
+// gives no timeout: long enough for a sampling window, short enough that a
+// forgotten loop does not hold the host.
+const defaultSandboxTimeout = 60 * time.Second
 
 // maxSandboxTimeout caps one probe run: a script that outlives it is a script
 // that is watching, and watching is what ops_baseline and ops_diff are for.

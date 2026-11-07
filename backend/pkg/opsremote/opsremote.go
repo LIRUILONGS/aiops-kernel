@@ -162,6 +162,12 @@ func (c *Client) Run(ctx context.Context, command string) (Result, error) {
 	case <-ctx.Done():
 		_ = session.Signal(ssh.SIGKILL)
 		_ = session.Close()
+		// What the command managed to print before it hung is usually the reason
+		// it hung, so a timeout keeps it rather than throwing the evidence away.
+		res.Stdout = stdout.String()
+		res.Stderr = stderr.String()
+		res.Duration = time.Since(started)
+		res.Truncated = stdout.Len() >= MaxOutputBytes
 		return res, fmt.Errorf("command timed out: %w", ctx.Err())
 	}
 
@@ -210,6 +216,12 @@ func (c *Client) RunStdin(ctx context.Context, command, stdin string) (Result, e
 	case <-ctx.Done():
 		_ = session.Signal(ssh.SIGKILL)
 		_ = session.Close()
+		// What the command managed to print before it hung is usually the reason
+		// it hung, so a timeout keeps it rather than throwing the evidence away.
+		res.Stdout = stdout.String()
+		res.Stderr = stderr.String()
+		res.Duration = time.Since(started)
+		res.Truncated = stdout.Len() >= MaxOutputBytes
 		return res, fmt.Errorf("command timed out: %w", ctx.Err())
 	}
 
