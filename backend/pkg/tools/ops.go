@@ -32,6 +32,7 @@ type opsTools struct {
 	timeout time.Duration
 
 	sandboxAllowed []string
+	sandboxNetwork bool
 }
 
 // NewOpsTools builds the read-only probe toolset from configuration. No targets
@@ -61,6 +62,7 @@ func NewOpsTools(cfg *config.Config) *opsTools {
 	}
 	sort.Strings(tools.order)
 	tools.sandboxAllowed = splitImages(cfg.OpsSandboxImages)
+	tools.sandboxNetwork = cfg.OpsSandboxNetwork
 
 	return tools
 }
@@ -252,7 +254,8 @@ func (o *opsTools) HandleExec(ctx context.Context, name string, args json.RawMes
 type OpsSandboxArgs struct {
 	Target  string `json:"target,omitempty" jsonschema:"description=目标主机 ID，留空使用默认主机,example=lab"`
 	Script  string `json:"script" jsonschema:"description=在采集容器里执行的 shell 脚本。容器只读、无网络、无特权；宿主机的进程与网络要通过 /host/proc/<pid> 读，例如 /host/proc/1/net/tcp。脚本走 stdin，不经过目标机的 shell,example=cat /host/proc/pressure/io"`
-	Image   string `json:"image,omitempty" jsonschema:"description=采集容器镜像，留空用默认镜像；不在允许列表内会被拒绝,example=debian:latest"`
+	Image   string `json:"image,omitempty" jsonschema:"description=容器镜像，留空用默认镜像；不在允许列表内会被拒绝,example=debian:latest"`
+	Mode    string `json:"mode,omitempty" jsonschema:"description=容器形状：probe（默认，无网络且只读根文件系统，只能读）或 workshop（可写自己的容器层、允许出网，用来装你要的工具——宿主机仍然只读）。workshop 需要操作员放开出网,example=probe"`
 	Timeout int    `json:"timeout_seconds,omitempty" jsonschema:"description=脚本超时秒数，默认 60，上限 300,example=60"`
 }
 
@@ -268,6 +271,11 @@ func (o *opsTools) HandleSandbox(ctx context.Context, name string, args json.Raw
 	image, err := opsremote.ValidateSandboxImage(parsed.Image, o.sandboxImages())
 	if err != nil {
 		return "", err
+	}
+
+	mode := opsremote.SandboxMode(parsed.Mode)
+	if mode == opsremote.SandboxModeWorkshop && !o.sandboxNetwork {
+		return "", fmt.Errorf("作业形状需要出网，而操作员没有放开（OPSAGI_SANDBOX_NETWORK=false）：用 ask 申请安装，或继续用 probe 形状")
 	}
 
 	client, target, err := o.dial(ctx, args)
@@ -287,12 +295,17 @@ func (o *opsTools) HandleSandbox(ctx context.Context, name string, args json.Raw
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	res, err := client.RunSandbox(ctx, image, parsed.Script)
+	res, err := client.RunSandbox(ctx, image, parsed.Script, mode)
 	if err != nil {
 		return "", fmt.Errorf("采集容器执行失败：%w", err)
 	}
 
-	return formatExec(target, "采集容器（只读 / 无网络 / 无特权）", res), nil
+	label := "采集容器（只读 / 无网络 / 无特权）"
+	if mode == opsremote.SandboxModeWorkshop {
+		label = "作业容器（可写容器层 / 可出网 / 宿主机只读无特权）"
+	}
+
+	return formatExec(target, label, res), nil
 }
 
 // defaultSandboxTimeout is what the tool description promises when the model

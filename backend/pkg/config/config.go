@@ -150,6 +150,12 @@ type Config struct {
 	// listed here is refused rather than fetched.
 	OpsSandboxImages string `env:"OPSAGI_SANDBOX_IMAGES"`
 
+	// OpsSandboxNetwork lets the probe container take the workshop shape, which
+	// has egress and a writable layer so the agent installs the tooling it chose.
+	// The host stays read-only mounted either way; this only decides whether the
+	// box itself may reach out.
+	OpsSandboxNetwork bool `env:"OPSAGI_SANDBOX_NETWORK" envDefault:"false"`
+
 	// SubtaskConcurrency is how many subtasks of one task may run at the same
 	// time. Subtasks are independent by construction, so the default is the
 	// serial value only to keep the ordering of a plan observable.

@@ -5,37 +5,64 @@ import (
 	"testing"
 )
 
-func TestSandboxCommand_SpendsTheGuaranteeOnFlagsAndNotOnTheScript(t *testing.T) {
+func TestSandboxCommand_TakesAShapeAndKeepsTheHostReadOnlyInBoth(t *testing.T) {
 	t.Parallel()
 
-	command := SandboxCommand(SandboxImageDefault)
+	probe, err := SandboxCommand(SandboxImageDefault, SandboxModeProbe)
+	if err != nil {
+		t.Fatalf("probe shape: %v", err)
+	}
 
-	required := []string{
-		"--network=none",
-		"--read-only",
+	workshop, err := SandboxCommand(SandboxImageDefault, SandboxModeWorkshop)
+	if err != nil {
+		t.Fatalf("workshop shape: %v", err)
+	}
+
+	shared := []string{
 		"--cap-drop=ALL",
 		"--security-opt=no-new-privileges",
 		"--pids-limit=256",
-		"--memory=256m",
-		"--cpus=1",
 		"-v /proc:/host/proc:ro",
 		"-v /sys:/host/sys:ro",
 	}
-	for _, flag := range required {
-		if !strings.Contains(command, flag) {
-			t.Errorf("command is missing %q, so the box is not read-only: %s", flag, command)
+	neverAllowed := []string{"--privileged", "--pid=host", "docker.sock", "-v /proc:/host/proc "}
+	hostWritable := []string{"-v /proc:/host/proc:rw", "-v /sys:/host/sys:rw", "/:/host"}
+
+	for _, command := range []string{probe, workshop} {
+		for _, flag := range shared {
+			if !strings.Contains(command, flag) {
+				t.Errorf("shape is missing %q, so the host is not read-only: %s", flag, command)
+			}
+		}
+		for _, flag := range append(neverAllowed, hostWritable...) {
+			if strings.Contains(command, flag) {
+				t.Errorf("shape carries %q, which hands the host to the script: %s", flag, command)
+			}
+		}
+		if !strings.HasSuffix(command, " "+SandboxImageDefault+" sh -s") {
+			t.Errorf("the script must arrive on stdin, command ends with %q", command)
 		}
 	}
 
-	forbidden := []string{"--privileged", "--pid=host", "docker.sock", "--network=host"}
-	for _, flag := range forbidden {
-		if strings.Contains(command, flag) {
-			t.Errorf("command carries %q, which hands the host back to the script: %s", flag, command)
+	for _, flag := range []string{"--network=none", "--read-only"} {
+		if !strings.Contains(probe, flag) {
+			t.Errorf("the probe shape must carry %q: %s", flag, probe)
+		}
+		if strings.Contains(workshop, flag) {
+			t.Errorf("the workshop shape must not carry %q, or nothing can be installed: %s", flag, workshop)
 		}
 	}
+}
 
-	if !strings.HasSuffix(command, " "+SandboxImageDefault+" sh -s") {
-		t.Errorf("the script must arrive on stdin, command ends with %q", command)
+func TestSandboxCommand_RefusesAShapeItDoesNotKnow(t *testing.T) {
+	t.Parallel()
+
+	command, err := SandboxCommand(SandboxImageDefault, SandboxMode("root"))
+	if err == nil {
+		t.Fatalf("got command %q and no error, want a refusal", command)
+	}
+	if !strings.Contains(err.Error(), "未知的采集容器形状") {
+		t.Errorf("got error %q, want it to name the unknown shape", err)
 	}
 }
 
