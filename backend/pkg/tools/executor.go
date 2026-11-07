@@ -345,6 +345,12 @@ func (ce *customExecutor) Execute(
 
 		if err != nil {
 			durationDelta := time.Since(startTime).Seconds()
+			if reason, refused := refusalText(err); refused {
+				_ = ce.tclp.UpdateLogFailed(persistCtx, tcID, reason, durationDelta)
+
+				return reason, resultFormat, nil
+			}
+
 			failureResult := fmt.Sprintf("failed to execute handler: %s", err.Error())
 			_ = ce.tclp.UpdateLogFailed(persistCtx, tcID, failureResult, durationDelta)
 			return "", resultFormat, fmt.Errorf("failed to execute handler: %w", err)

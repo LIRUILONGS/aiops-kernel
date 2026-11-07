@@ -270,12 +270,12 @@ func (o *opsTools) HandleSandbox(ctx context.Context, name string, args json.Raw
 
 	image, err := opsremote.ValidateSandboxImage(parsed.Image)
 	if err != nil {
-		return "", err
+		return "", Refuse("%s", err.Error())
 	}
 
 	mode := opsremote.SandboxMode(parsed.Mode)
 	if mode == opsremote.SandboxModeWorkshop && !o.sandboxNetwork {
-		return "", fmt.Errorf("作业形状需要出网，而操作员没有放开（OPSAGI_SANDBOX_NETWORK=false）：用 ask 申请安装，或继续用 probe 形状")
+		return "", Refuse("作业形状需要出网，而操作员没有放开（OPSAGI_SANDBOX_NETWORK=false）：用 ask 申请安装，或继续用 probe 形状")
 	}
 
 	client, target, err := o.dial(ctx, args)
@@ -285,7 +285,7 @@ func (o *opsTools) HandleSandbox(ctx context.Context, name string, args json.Raw
 	defer func() { _ = client.Close() }()
 
 	if err := client.EnsureSandboxImage(ctx, image, o.sandboxPull); err != nil {
-		return "", err
+		return "", Refuse("%s", err.Error())
 	}
 
 	timeout := time.Duration(parsed.Timeout) * time.Second
