@@ -57,6 +57,40 @@ func TestOpsTools_HandleExec_RefusesAnArgumentCarryingAShellBeforeItDials(t *tes
 	}
 }
 
+func TestOpsTools_HandleSandbox_RefusesWorkshopWithoutEgressAsAnAnswer(t *testing.T) {
+	tools := &opsTools{
+		targets:        map[string]opsremote.Target{"lab": {ID: "lab", Host: "192.0.2.10"}},
+		sandboxNetwork: false,
+	}
+
+	result, err := tools.HandleSandbox(t.Context(), OpsSandboxToolName, []byte(`{"target":"lab","script":"echo hi","mode":"workshop"}`))
+	if err == nil {
+		t.Fatalf("workshop without egress was allowed, result = %q", result)
+	}
+
+	reason, refused := refusalText(err)
+	if !refused {
+		t.Fatalf("error %q is not a refusal, so the model reads it as a broken tool", err)
+	}
+	for _, want := range []string{"OPSAGI_SANDBOX_NETWORK", "ask"} {
+		if !strings.Contains(reason, want) {
+			t.Errorf("refusal %q does not mention %q", reason, want)
+		}
+	}
+}
+
+func TestOpsTools_HandleSandbox_RefusesAnImageNameCarryingShellAsAnAnswer(t *testing.T) {
+	tools := &opsTools{targets: map[string]opsremote.Target{"lab": {ID: "lab", Host: "192.0.2.10"}}, sandboxNetwork: true}
+
+	_, err := tools.HandleSandbox(t.Context(), OpsSandboxToolName, []byte(`{"target":"lab","script":"echo hi","image":"debian;reboot"}`))
+	if err == nil {
+		t.Fatal("an image name carrying a shell was accepted")
+	}
+	if _, refused := refusalText(err); !refused {
+		t.Fatalf("error %q is not a refusal", err)
+	}
+}
+
 func TestOpsTools_HandleExec_AnswersAnEmptyCommandWithTheCatalogue(t *testing.T) {
 	tools := &opsTools{}
 
