@@ -98,10 +98,10 @@ func sandboxName() string {
 	return "opsagi-probe-" + hex.EncodeToString(suffix)
 }
 
-// ValidateSandboxImage keeps the image name from carrying anything but a name.
-// The allowlist is the operator's: an image the box has never run may pull
-// layers, and pulling is a write on the target.
-func ValidateSandboxImage(image string, allowed []string) (string, error) {
+// ValidateSandboxImage refuses a name that is not a name. Which image to run is
+// the agent's decision, so this checks the shape and nothing else: whether the
+// image exists, and whether pulling it is allowed, is a question about the host.
+func ValidateSandboxImage(image string) (string, error) {
 	if image == "" {
 		image = SandboxImageDefault
 	}
@@ -110,13 +110,51 @@ func ValidateSandboxImage(image string, allowed []string) (string, error) {
 		return "", fmt.Errorf("镜像名 %q 含不允许的字符", image)
 	}
 
-	for _, candidate := range allowed {
-		if candidate == image {
-			return image, nil
+	return image, nil
+}
+
+// imageRefusal decides whether an image may be used on this host. Pulling writes
+// to the target, so it is the operator's call; when pulling is not allowed the
+// image has to be there already, and the refusal names what is.
+func imageRefusal(image string, present, pull bool, available []string) error {
+	if present || pull {
+		return nil
+	}
+
+	if len(available) == 0 {
+		return fmt.Errorf("镜像 %s 不在目标机上，而操作员没有放开拉取（OPSAGI_SANDBOX_PULL=false）；目标机上也没有可用的镜像", image)
+	}
+
+	return fmt.Errorf("镜像 %s 不在目标机上，而操作员没有放开拉取（OPSAGI_SANDBOX_PULL=false）；目标机上可用的是：%s",
+		image, strings.Join(available, ", "))
+}
+
+// EnsureSandboxImage is imageRefusal with the host asked first, so the agent
+// learns what it may use instead of guessing until one works.
+func (c *Client) EnsureSandboxImage(ctx context.Context, image string, pull bool) error {
+	probe := "docker image inspect " + image + " --format '{{.Id}}' >/dev/null 2>&1 && echo present || echo absent"
+	res, err := c.Run(ctx, probe)
+	if err != nil {
+		return fmt.Errorf("检查镜像 %s 失败：%w", image, err)
+	}
+
+	if strings.Contains(res.Stdout, "present") {
+		return nil
+	}
+
+	listed, err := c.Run(ctx, "docker images --format '{{.Repository}}:{{.Tag}}' | head -8")
+	if err != nil {
+		return imageRefusal(image, false, pull, nil)
+	}
+
+	available := make([]string, 0, 8)
+	for _, line := range strings.Split(listed.Stdout, "\n") {
+		if trimmed := strings.TrimSpace(line); trimmed != "" && trimmed != "<none>:<none>" {
+			available = append(available, trimmed)
 		}
 	}
 
-	return "", fmt.Errorf("镜像 %q 不在允许列表（%s）", image, strings.Join(allowed, ", "))
+	return imageRefusal(image, false, pull, available)
 }
 
 // RunSandbox runs one script inside the box on the target. A run that outlives

@@ -66,48 +66,69 @@ func TestSandboxCommand_RefusesAShapeItDoesNotKnow(t *testing.T) {
 	}
 }
 
-func TestValidateSandboxImage_RefusesWhatTheOperatorNeverAllowed(t *testing.T) {
+func TestValidateSandboxImage_RefusesWhatIsNotAnImageName(t *testing.T) {
 	t.Parallel()
 
-	allowed := []string{SandboxImageDefault, "quay.io/iovisor/bcc:latest"}
-
-	tests := []struct {
-		name    string
-		image   string
-		want    string
-		wantErr string
+	cases := []struct {
+		name  string
+		image string
+		ok    bool
 	}{
-		{"the default is always allowed", SandboxImageDefault, SandboxImageDefault, ""},
-		{"an empty name falls back to the default", "", SandboxImageDefault, ""},
-		{"an allowlisted image passes", "quay.io/iovisor/bcc:latest", "quay.io/iovisor/bcc:latest", ""},
-		{"an image outside the list is refused", "alpine:3.19", "", "不在允许列表"},
-		{"a name with a space is refused", "debian:latest ; rm -rf /", "", "含不允许的字符"},
-		{"a name with a dollar is refused", "$(id)", "", "含不允许的字符"},
-		{"a name with a newline is refused", "debian\n:latest", "", "含不允许的字符"},
+		{name: "default", image: "", ok: true},
+		{name: "debian", image: "debian:latest", ok: true},
+		{name: "registry with port", image: "registry.local:5000/tools/probe:1", ok: true},
+		{name: "flag injection", image: "debian --privileged", ok: false},
+		{name: "command substitution", image: "debian:$(id)", ok: false},
+		{name: "newline", image: "debian:latest\nsh -c", ok: false},
+		{name: "leading dash", image: "-v/:/host", ok: false},
+		{name: "semicolon", image: "debian;reboot", ok: false},
 	}
 
-	for _, tc := range tests {
+	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := ValidateSandboxImage(tc.image, allowed)
-			if tc.wantErr != "" {
-				if err == nil {
-					t.Fatalf("got %q and no error, want an error containing %q", got, tc.wantErr)
+			got, err := ValidateSandboxImage(tc.image)
+			if tc.ok {
+				if err != nil {
+					t.Fatalf("image %q refused: %v", tc.image, err)
 				}
-				if !strings.Contains(err.Error(), tc.wantErr) {
-					t.Fatalf("got error %q, want it to contain %q", err, tc.wantErr)
+				if got == "" {
+					t.Fatalf("image %q accepted but came back empty", tc.image)
 				}
-
 				return
 			}
 
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			if got != tc.want {
-				t.Errorf("got %q, want %q", got, tc.want)
+			if err == nil {
+				t.Fatalf("image %q accepted as %q, want a refusal", tc.image, got)
 			}
 		})
 	}
 }
+
+func TestImageRefusal_LetsTheAgentSeeWhatTheHostAlreadyHas(t *testing.T) {
+	t.Parallel()
+
+	if err := imageRefusal("debian:latest", true, false, nil); err != nil {
+		t.Fatalf("an image that is present was refused: %v", err)
+	}
+	if err := imageRefusal("debian:latest", false, true, nil); err != nil {
+		t.Fatalf("pulling is allowed but the image was refused: %v", err)
+	}
+
+	err := imageRefusal("alpine:latest", false, false, []string{"debian:latest", "postgres:16"})
+	if err == nil {
+		t.Fatal("an image that is absent without pull rights was accepted")
+	}
+	for _, want := range []string{"alpine:latest", "OPSAGI_SANDBOX_PULL", "debian:latest", "postgres:16"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("refusal %q does not mention %q", err.Error(), want)
+		}
+	}
+
+	empty := imageRefusal("alpine:latest", false, false, nil)
+	if empty == nil || !strings.Contains(empty.Error(), "没有可用的镜像") {
+		t.Errorf("refusal %v does not say the host has nothing to offer", empty)
+	}
+}
+

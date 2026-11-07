@@ -31,7 +31,7 @@ type opsTools struct {
 	order   []string
 	timeout time.Duration
 
-	sandboxAllowed []string
+	sandboxPull    bool
 	sandboxNetwork bool
 }
 
@@ -61,7 +61,7 @@ func NewOpsTools(cfg *config.Config) *opsTools {
 		tools.order = append(tools.order, target.ID)
 	}
 	sort.Strings(tools.order)
-	tools.sandboxAllowed = splitImages(cfg.OpsSandboxImages)
+	tools.sandboxPull = cfg.OpsSandboxPull
 	tools.sandboxNetwork = cfg.OpsSandboxNetwork
 
 	return tools
@@ -254,7 +254,7 @@ func (o *opsTools) HandleExec(ctx context.Context, name string, args json.RawMes
 type OpsSandboxArgs struct {
 	Target  string `json:"target,omitempty" jsonschema:"description=目标主机 ID，留空使用默认主机,example=lab"`
 	Script  string `json:"script" jsonschema:"description=在采集容器里执行的 shell 脚本。容器只读、无网络、无特权；宿主机的进程与网络要通过 /host/proc/<pid> 读，例如 /host/proc/1/net/tcp。脚本走 stdin，不经过目标机的 shell,example=cat /host/proc/pressure/io"`
-	Image   string `json:"image,omitempty" jsonschema:"description=容器镜像，留空用默认镜像；不在允许列表内会被拒绝,example=debian:latest"`
+	Image   string `json:"image,omitempty" jsonschema:"description=容器镜像，由你决定：要装工具就选一个有包管理器的（debian/ubuntu 用 apt、alpine 用 apk）。留空用 debian:latest；目标机上没有而操作员没放开拉取时，报错里会列出目标机上已有的镜像,example=alpine:latest"`
 	Mode    string `json:"mode,omitempty" jsonschema:"description=容器形状：probe（默认，无网络且只读根文件系统，只能读）或 workshop（可写自己的容器层、允许出网，用来装你要的工具——宿主机仍然只读）。workshop 需要操作员放开出网,example=probe"`
 	Timeout int    `json:"timeout_seconds,omitempty" jsonschema:"description=脚本超时秒数，默认 60，上限 300,example=60"`
 }
@@ -268,7 +268,7 @@ func (o *opsTools) HandleSandbox(ctx context.Context, name string, args json.Raw
 		return "", fmt.Errorf("缺少 script：要执行的只读脚本")
 	}
 
-	image, err := opsremote.ValidateSandboxImage(parsed.Image, o.sandboxImages())
+	image, err := opsremote.ValidateSandboxImage(parsed.Image)
 	if err != nil {
 		return "", err
 	}
@@ -283,6 +283,10 @@ func (o *opsTools) HandleSandbox(ctx context.Context, name string, args json.Raw
 		return "", err
 	}
 	defer func() { _ = client.Close() }()
+
+	if err := client.EnsureSandboxImage(ctx, image, o.sandboxPull); err != nil {
+		return "", err
+	}
 
 	timeout := time.Duration(parsed.Timeout) * time.Second
 	if timeout <= 0 {
@@ -316,16 +320,6 @@ const defaultSandboxTimeout = 60 * time.Second
 // maxSandboxTimeout caps one probe run: a script that outlives it is a script
 // that is watching, and watching is what ops_baseline and ops_diff are for.
 const maxSandboxTimeout = 300 * time.Second
-
-// sandboxImages is the operator's allowlist. Pulling an image writes to the
-// target, so an image the operator never named is refused rather than fetched.
-func (o *opsTools) sandboxImages() []string {
-	if len(o.sandboxAllowed) == 0 {
-		return []string{opsremote.SandboxImageDefault}
-	}
-
-	return o.sandboxAllowed
-}
 
 // OpsBaselineArgs captures a named sample of a host for later comparison.
 type OpsBaselineArgs struct {

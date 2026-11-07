@@ -148,7 +148,7 @@ type Config struct {
 	// OpsSandboxImages is the comma-separated list of images the probe container
 	// may run. Pulling an image writes to the target, so an image that is not
 	// listed here is refused rather than fetched.
-	OpsSandboxImages string `env:"OPSAGI_SANDBOX_IMAGES"`
+	OpsSandboxPull bool `env:"OPSAGI_SANDBOX_PULL" envDefault:"false"`
 
 	// OpsSandboxNetwork lets the probe container take the workshop shape, which
 	// has egress and a writable layer so the agent installs the tooling it chose.

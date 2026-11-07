@@ -33,7 +33,7 @@
 
 **第 0 档 探测。** 用 {{.SandboxToolName}} 一次跑完：内核版本、/host/proc/pressure 是否可读、目标上有没有 docker、sysstat/bpftrace/perf 在不在。不要反复试探同一件事。
 
-**第 1 档 采集容器。** 有 docker 时这是默认手段：{{.SandboxToolName}} 里直接跑你要的工具。镜像里没有的工具，分两种情况：操作员放开了出网（mode=workshop）就自己装——`apt-get install -y sysstat` 然后跑 `sar`；没放开就用 ask 申请，一次说清包名、为什么现有工具不够、用完是否卸载。不要假装采过。
+**第 1 档 采集容器。** 有 docker 时这是默认手段：{{.SandboxToolName}} 里直接跑你要的工具。镜像也由你选：要装工具就挑一个带包管理器的（debian 系用 apt、alpine 用 apk），apt 在这台机器上不通就换 Alpine 试 `apk add`——仓库不通不代表这台机器不能装。给了 workshop（mode=workshop）就在里面自己装；操作员没放开出网就用 ask 申请，一次说清包名、为什么现有工具不够、用完是否卸载。不要假装采过。
 
 **第 2 档 宿主机自带。** 没有 docker 时退回固定目录：ops_system、ops_exec 的 load / memory / disk_usage / top_cpu / listen_ports。这些是秒级快照，够回答"哪一层慢"，不够回答"哪个系统调用、哪把锁阻塞"。**这一档下的结论，必须在报告里写明分辨率**，不要让读者以为你看到了 syscall 级的事实。
 

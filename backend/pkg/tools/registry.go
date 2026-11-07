@@ -552,7 +552,7 @@ var registryDefinitions = map[string]llms.FunctionDefinition{
 			"宿主机的 /proc 与 /sys 以只读方式挂在 /host/proc 与 /host/sys。" +
 			"因此你可以读任何东西，改不了任何东西：写文件会失败，kill 宿主进程会失败（那些 PID 不在容器里），联网会失败。" +
 			"看宿主机进程要用 /host/proc/<pid>，看宿主机监听端口要读 /host/proc/1/net/tcp（容器自己的网络命名空间是空的，ss 只能看到空的）。" +
-			"image 留空用默认镜像；只有操作员在 OPSAGI_SANDBOX_IMAGES 里列过的镜像才能用，因为拉镜像会写目标机。" +
+			"image 由你决定：要装工具就选一个有包管理器的（debian/ubuntu 用 apt、alpine 用 apk），留空用 debian:latest；拉镜像会写目标机，操作员没放开（OPSAGI_SANDBOX_PULL）时只能用目标机上已有的镜像，报错会列出它们。" +
 			"需要 eBPF、perf 这类要特权的工具，或需要联网取证时，不要自己想办法：用 ask 请操作员批准，写清镜像、参数、要采什么、怎么删。",
 		Parameters: reflector.Reflect(&OpsSandboxArgs{}),
 	},
