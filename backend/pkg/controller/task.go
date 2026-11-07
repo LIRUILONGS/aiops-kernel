@@ -355,6 +355,23 @@ func (tw *taskWorker) Run(ctx context.Context) error {
 
 		if err := tw.runBatch(ctx, batch); err != nil {
 			tw.handleInterrupting(err)
+
+			// A batch that broke without a cancellation closes the task. Leaving it
+			// running over a flow that has already settled is a state nobody can act
+			// on: the subtask says failed, the task says running, and no restart
+			// revisits it.
+			if status, close := taskStatusAfterBatchError(err); close && !tw.IsCompleted() {
+				writeCtx := ctx
+				var cancel context.CancelFunc
+				if ctx.Err() != nil {
+					writeCtx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
+				}
+				_ = tw.SetStatus(writeCtx, status)
+				if cancel != nil {
+					cancel()
+				}
+			}
+
 			return err
 		}
 
@@ -373,6 +390,17 @@ func (tw *taskWorker) Run(ctx context.Context) error {
 	}
 
 	return tw.writeResult(ctx)
+}
+
+// taskStatusAfterBatchError reports the status a task takes when a batch broke and
+// whether the task should be closed at all. A cancellation is not closed: the run
+// was interrupted from outside and the flow may be resumed.
+func taskStatusAfterBatchError(err error) (database.TaskStatus, bool) {
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return database.TaskStatusWaiting, false
+	}
+
+	return database.TaskStatusFailed, true
 }
 
 // maxSubtasksInFlight caps what an operator may ask for. Every subtask in flight

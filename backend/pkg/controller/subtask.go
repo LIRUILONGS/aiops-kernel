@@ -325,7 +325,26 @@ func (stw *subtaskWorker) Run(ctx context.Context) error {
 		if errChainConsistency != nil {
 			err = errors.Join(err, errChainConsistency)
 		}
-		_ = stw.SetStatus(ctx, database.SubtaskStatusWaiting)
+
+		writeCtx := ctx
+		if ctx.Err() != nil {
+			var cancel context.CancelFunc
+			writeCtx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+		}
+
+		// A cancelled chain is a pause a restart can pick up. Anything else broke,
+		// and parking it as waiting hides the failure behind a state that asks the
+		// operator for an answer nobody posed -- flow 55 sat like that for an hour
+		// after the model endpoint answered 401.
+		status := subtaskStatusAfterChainError(err)
+		if status == database.SubtaskStatusFailed {
+			_ = stw.SetResult(writeCtx, "运行失败："+err.Error())
+		}
+		if errStatus := stw.SetStatus(writeCtx, status); errStatus != nil {
+			stw.handleInterrupting(errStatus)
+		}
+
 		return fmt.Errorf("failed to perform agent chain for subtask %d: %w", subtaskID, err)
 	}
 
@@ -350,6 +369,18 @@ func (stw *subtaskWorker) Run(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// subtaskStatusAfterChainError decides whether a broken chain is a pause or a failure.
+// Only a cancellation is resumable: the run was stopped from outside and the chain
+// can be continued with input, while a model or consistency error means the chain
+// itself is gone and no input will revive it.
+func subtaskStatusAfterChainError(err error) database.SubtaskStatus {
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return database.SubtaskStatusWaiting
+	}
+
+	return database.SubtaskStatusFailed
 }
 
 // handleInterrupting sets this subtask (and task/flow via SetStatus back-propagation)

@@ -387,3 +387,29 @@ func TestTaskWorker_subtaskConcurrency_KeepsTheLoopSerialUnlessAsked(t *testing.
 		})
 	}
 }
+
+func TestTaskStatusAfterBatchError_ClosesOnABreakAndNotOnACancellation(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		err       error
+		want      database.TaskStatus
+		wantClose bool
+	}{
+		{"a break closes the task as failed", errors.New("failed to perform agent chain"), database.TaskStatusFailed, true},
+		{"an interrupted run is left open", context.Canceled, database.TaskStatusWaiting, false},
+		{"a timed-out run is left open", context.DeadlineExceeded, database.TaskStatusWaiting, false},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			status, close := taskStatusAfterBatchError(tc.err)
+			if status != tc.want || close != tc.wantClose {
+				t.Errorf("got (%q, %v), want (%q, %v)", status, close, tc.want, tc.wantClose)
+			}
+		})
+	}
+}
