@@ -1085,6 +1085,7 @@ func (fte *flowToolsExecutor) GetCommanderExecutor(cfg CommanderExecutorConfig) 
 		OpsBaselineToolName:        ops.HandleBaseline,
 		OpsDiffToolName:            ops.HandleDiff,
 		OpsExecToolName:            ops.HandleExec,
+		OpsWatchToolName:           ops.HandleWatch,
 		OpsSandboxToolName:         ops.HandleSandbox,
 		DiagnosisToolName:          cfg.Diagnosis,
 		OptimizationResultToolName: cfg.Optimization,
@@ -1176,6 +1177,7 @@ func (fte *flowToolsExecutor) GetAnalystExecutor(cfg AnalystExecutorConfig) (Con
 		OpsLogsToolName:       ops.HandleLogs,
 		OpsSystemToolName:     ops.HandleSystem,
 		OpsExecToolName:       ops.HandleExec,
+		OpsWatchToolName:      ops.HandleWatch,
 		OpsSandboxToolName:    ops.HandleSandbox,
 	}
 	if prom := NewPromTools(fte.cfg); prom.IsAvailable() {

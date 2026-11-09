@@ -269,6 +269,47 @@ func Render(id string, args map[string]string) (string, error) {
 	return rendered, nil
 }
 
+// Watch bounds: a watch is a short window, not a monitor. The upper end is what
+// one agent turn can wait for without the host being sampled by a process nobody
+// is watching any more.
+const (
+	WatchMaxSamples  = 30
+	WatchMaxInterval = 30
+	WatchMaxSeconds  = 300
+)
+
+// RenderWatch wraps a catalogue command in a sampling loop that runs on the host,
+// so one round trip covers the whole window. The loop text is fixed and the inner
+// command comes from Render, so nothing caller-supplied reaches the shell.
+func RenderWatch(id string, args map[string]string, samples, interval int) (string, error) {
+	if samples < 2 {
+		return "", fmt.Errorf("采样次数至少 2 次，收到 %d", samples)
+	}
+	if samples > WatchMaxSamples {
+		return "", fmt.Errorf("采样次数最多 %d 次，收到 %d", WatchMaxSamples, samples)
+	}
+	if interval < 1 {
+		return "", fmt.Errorf("采样间隔至少 1 秒，收到 %d", interval)
+	}
+	if interval > WatchMaxInterval {
+		return "", fmt.Errorf("采样间隔最多 %d 秒，收到 %d", WatchMaxInterval, interval)
+	}
+	if seconds := (samples - 1) * interval; seconds > WatchMaxSeconds {
+		return "", fmt.Errorf("采样窗口 %d 秒超过上限 %d 秒：减少次数或间隔", seconds, WatchMaxSeconds)
+	}
+
+	command, err := Render(id, args)
+	if err != nil {
+		return "", err
+	}
+
+	step := strconv.Itoa(interval)
+
+	return "for i in $(seq 1 " + strconv.Itoa(samples) + "); do " +
+		"echo \"== sample $i t=$(date +%s)\"; " + command + "; " +
+		"if [ $i -lt " + strconv.Itoa(samples) + " ]; then sleep " + step + "; fi; done", nil
+}
+
 func renderParam(param Param, raw string) (string, error) {
 	switch param.Kind {
 	case ParamName:

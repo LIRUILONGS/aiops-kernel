@@ -198,3 +198,59 @@ func TestExec_Catalogue_DescribesEveryEntryAndKeepsTheOrder(t *testing.T) {
 		}
 	}
 }
+
+func TestRenderWatch_RepeatsOneCatalogueCommandAcrossTheWindow(t *testing.T) {
+	t.Parallel()
+
+	rendered, err := RenderWatch("mysql_connections", map[string]string{"Container": "wp-db"}, 5, 3)
+	if err != nil {
+		t.Fatalf("watch refused: %v", err)
+	}
+
+	for _, want := range []string{"seq 1 5", "sleep 3", "show variables like", "docker exec wp-db"} {
+		if !strings.Contains(rendered, want) {
+			t.Errorf("watch %q does not carry %q", rendered, want)
+		}
+	}
+	if strings.Contains(rendered, "%Container%") {
+		t.Errorf("watch %q still carries an unrendered placeholder", rendered)
+	}
+	if got := strings.Count(rendered, "docker exec"); got != 1 {
+		t.Errorf("the loop body appears %d times, want the command once inside the loop", got)
+	}
+}
+
+func TestRenderWatch_RefusesAWindowNobodyIsWatching(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name     string
+		samples  int
+		interval int
+		want     string
+	}{
+		{name: "one sample is not a series", samples: 1, interval: 1, want: "至少 2 次"},
+		{name: "too many samples", samples: 31, interval: 1, want: "最多 30 次"},
+		{name: "zero interval", samples: 2, interval: 0, want: "至少 1 秒"},
+		{name: "interval too long", samples: 2, interval: 31, want: "最多 30 秒"},
+		{name: "window too long", samples: 30, interval: 30, want: "超过上限 300 秒"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			if _, err := RenderWatch("load", nil, tc.samples, tc.interval); err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("error = %v, want it to say %q", err, tc.want)
+			}
+		})
+	}
+}
+
+func TestRenderWatch_RefusesACommandThatIsNotInTheCatalogue(t *testing.T) {
+	t.Parallel()
+
+	if _, err := RenderWatch("run_rm_rf", nil, 3, 1); err == nil || !strings.Contains(err.Error(), "未知的只读命令") {
+		t.Fatalf("error = %v, want the catalogue refusal", err)
+	}
+}

@@ -321,6 +321,81 @@ const defaultSandboxTimeout = 60 * time.Second
 // that is watching, and watching is what ops_baseline and ops_diff are for.
 const maxSandboxTimeout = 300 * time.Second
 
+// OpsWatchArgs samples one catalogue command across a short window. The command
+// is a catalogue id, not a shell line: what the model chooses is which evidence
+// and how often, never what gets executed.
+type OpsWatchArgs struct {
+	Target    string `json:"target,omitempty" jsonschema:"description=目标主机 ID，留空使用默认主机,example=lab"`
+	Command   string `json:"command" jsonschema:"description=要重复采样的只读命令 ID（与 ops_exec 同一套目录）,example=mysql_connections"`
+	Container string `json:"container,omitempty" jsonschema:"description=命令需要的容器名,example=wp-db"`
+	Database  string `json:"database,omitempty" jsonschema:"description=命令需要的库名（Postgres 命令用）,example=orders"`
+	Unit      string `json:"unit,omitempty" jsonschema:"description=命令需要的 systemd 单元名,example=nginx.service"`
+	Path      string `json:"path,omitempty" jsonschema:"description=命令需要的绝对路径,example=/etc/nginx/nginx.conf"`
+	Image     string `json:"image,omitempty" jsonschema:"description=命令需要的镜像名,example=nginx:latest"`
+	Lines     int    `json:"lines,omitempty" jsonschema:"description=命令需要输出的行数上限,example=20"`
+	Samples   int    `json:"samples" jsonschema:"description=采样次数，2 到 30,example=10"`
+	Interval  int    `json:"interval_seconds" jsonschema:"description=相邻两次采样的间隔秒数，1 到 30,example=3"`
+	Timeout   int    `json:"timeout_seconds,omitempty" jsonschema:"description=整个采样窗口的超时秒数，默认按次数与间隔推算，上限 300,example=60"`
+}
+
+func (o *opsTools) HandleWatch(ctx context.Context, name string, args json.RawMessage) (string, error) {
+	var parsed OpsWatchArgs
+	if err := json.Unmarshal(args, &parsed); err != nil {
+		return "", fmt.Errorf("解析参数失败：%w", err)
+	}
+
+	command, err := opsremote.RenderWatch(parsed.Command, catalogueArgsOf(parsed), parsed.Samples, parsed.Interval)
+	if err != nil {
+		return "", Refuse("%s", err.Error())
+	}
+
+	client, target, err := o.dial(ctx, args)
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = client.Close() }()
+
+	timeout := time.Duration(parsed.Timeout) * time.Second
+	if timeout <= 0 {
+		timeout = time.Duration(parsed.Samples*parsed.Interval)*time.Second + o.timeout
+	}
+	if timeout > maxSandboxTimeout {
+		timeout = maxSandboxTimeout
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	res, err := client.Run(ctx, command)
+	if err != nil {
+		return "", fmt.Errorf("采样执行失败：%w", err)
+	}
+
+	label := fmt.Sprintf("采样 %s（%d 次 / 间隔 %d 秒）", parsed.Command, parsed.Samples, parsed.Interval)
+
+	return formatExec(target, label, res), nil
+}
+
+func catalogueArgsOf(args OpsWatchArgs) map[string]string {
+	out := map[string]string{}
+	for key, value := range map[string]string{
+		"Container": args.Container,
+		"Database":  args.Database,
+		"Unit":      args.Unit,
+		"Path":      args.Path,
+		"Image":     args.Image,
+	} {
+		if value != "" {
+			out[key] = value
+		}
+	}
+	if args.Lines > 0 {
+		out["Lines"] = fmt.Sprintf("%d", args.Lines)
+	}
+
+	return out
+}
+
 // OpsBaselineArgs captures a named sample of a host for later comparison.
 type OpsBaselineArgs struct {
 	Target string `json:"target,omitempty" jsonschema:"description=目标主机 ID，留空使用默认主机"`

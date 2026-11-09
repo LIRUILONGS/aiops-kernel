@@ -57,6 +57,7 @@ const (
 	OpsBaselineToolName        = "ops_baseline"
 	OpsDiffToolName            = "ops_diff"
 	OpsExecToolName            = "ops_exec"
+	OpsWatchToolName           = "ops_watch"
 	OpsSandboxToolName         = "ops_sandbox"
 	PromQueryToolName          = "prom_query"
 	K8sGetToolName             = "k8s_get"
@@ -168,6 +169,7 @@ var toolsTypeMapping = map[string]ToolType{
 	OpsBaselineToolName:        EnvironmentToolType,
 	OpsDiffToolName:            EnvironmentToolType,
 	OpsExecToolName:            EnvironmentToolType,
+	OpsWatchToolName:           EnvironmentToolType,
 	OpsSandboxToolName:         EnvironmentToolType,
 	PromQueryToolName:          EnvironmentToolType,
 	K8sGetToolName:             EnvironmentToolType,
@@ -544,6 +546,14 @@ var registryDefinitions = map[string]llms.FunctionDefinition{
 			"参数只允许字母、数字与 . _ - /，含空格或 shell 元字符会被拒绝。" +
 			"返回结果会带上真实执行的命令原文，写证据时直接引用它。",
 		Parameters: reflector.Reflect(&OpsExecArgs{}),
+	},
+	OpsWatchToolName: {
+		Name: OpsWatchToolName,
+		Description: "把一条只读命令在短时间内重复采样，返回带时间戳的序列——用来抓“正在发生”的东西：连接数、进程数、OOM 计数、负载、队列深度。" +
+			"command 与 ops_exec 用同一套目录 ID；samples 取 2–30，interval_seconds 取 1–30，窗口最长 300 秒。" +
+			"它比两次离散快照有用，是因为拐点、锯齿和“某个值在窗口里持续上升”只有在序列里才看得出来；写 evidence 时引用序列里真正变化的那几行。" +
+			"要采样宿主上看不到的东西（某个容器内部的计数、短命进程），用 ops_sandbox 在里面写循环，而不是这个工具。",
+		Parameters: reflector.Reflect(&OpsWatchArgs{}),
 	},
 	OpsSandboxToolName: {
 		Name: OpsSandboxToolName,
