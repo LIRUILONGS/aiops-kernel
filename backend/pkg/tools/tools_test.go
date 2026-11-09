@@ -1248,11 +1248,18 @@ func TestTools_GetAnalystExecutor_GivesEachRoleItsOwnEvidenceFaceAndOneExit(t *t
 		assert.Contains(t, err.Error(), "unknown analyst role")
 	})
 
-	t.Run("no configured target means no analyst", func(t *testing.T) {
+	t.Run("no configured target narrows the analyst to its finding", func(t *testing.T) {
 		bare := &flowToolsExecutor{flowID: 42, cfg: &config.Config{}}
-		_, err := bare.GetAnalystExecutor(AnalystExecutorConfig{Role: TriageToolName, Finding: handler})
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "OPSAGI_TARGETS")
+		executor, err := bare.GetAnalystExecutor(AnalystExecutorConfig{Role: TriageToolName, Finding: handler})
+		require.NoError(t, err)
+
+		ce := executor.(*customExecutor)
+		var advertised []string
+		for _, def := range ce.definitions {
+			advertised = append(advertised, def.Name)
+		}
+		assert.Equal(t, []string{TriageResultToolName}, advertised,
+			"with nothing to read, the role keeps only the way to report what it already knows")
 	})
 
 	t.Run("a finding handler is required", func(t *testing.T) {

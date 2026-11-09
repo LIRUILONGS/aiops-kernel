@@ -8,6 +8,7 @@ import (
 	"maps"
 	"slices"
 	"strings"
+	"sync"
 	"text/template"
 	"time"
 	"unicode/utf8"
@@ -148,13 +149,77 @@ type customExecutor struct {
 	mlp      MsgLogProvider
 	replacer anonymizer.Replacer
 	tclp     ToolCallLogProvider
+	tlp      TermLogProvider
 	store    *pgvector.Store
 	vslp     VectorStoreLogProvider
+
+	containerOnce sync.Once
+	containerID   int64
 
 	definitions []llms.FunctionDefinition
 	handlers    map[string]ExecutorHandler
 	barriers    map[string]struct{}
 	summarizer  SummarizeHandler
+}
+
+// recordExecutedCommand mirrors a remote probe into the flow's terminal log. The
+// terminal tab is the one view that shows what actually ran against a machine,
+// and the ops tools are the only thing this product runs -- without this the tab
+// is empty for every flow that diagnoses a host.
+func (ce *customExecutor) recordExecutedCommand(ctx context.Context, name string, args json.RawMessage, result string) {
+	if ce.tlp == nil {
+		return
+	}
+
+	containerID, ok := ce.terminalContainer(ctx)
+	if !ok {
+		return
+	}
+
+	command := strings.Join(strings.Fields(string(args)), " ")
+	if len(command) > 400 {
+		command = command[:400] + "..."
+	}
+
+	text := fmt.Sprintf("$ %s %s\n%s\n", name, command, result)
+	if _, err := ce.tlp.PutMsg(ctx, database.TermlogTypeStdout, text, containerID, ce.taskID, ce.subtaskID); err != nil {
+		logrus.WithContext(ctx).WithError(err).Debug("failed to mirror the command into the terminal log")
+	}
+}
+
+// flowContainers is the one lookup the mirror needs. It is an interface rather
+// than the full querier so an executor built over a partial fake cannot panic
+// here: a test double that does not carry containers simply records nothing.
+type flowContainers interface {
+	GetFlowContainers(ctx context.Context, flowID int64) ([]database.Container, error)
+}
+
+func (ce *customExecutor) terminalContainer(ctx context.Context) (int64, bool) {
+	ce.containerOnce.Do(func() {
+		lookup, ok := ce.db.(flowContainers)
+		if !ok {
+			return
+		}
+		containers, err := lookup.GetFlowContainers(ctx, ce.flowID)
+		if err != nil || len(containers) == 0 {
+			return
+		}
+		ce.containerID = containers[0].ID
+	})
+
+	return ce.containerID, ce.containerID != 0
+}
+
+// telemetryName reports whether a tool is an executed probe rather than a
+// conclusion, so only the commands land in the terminal log.
+func telemetryName(name string) bool {
+	switch name {
+	case OpsContainersToolName, OpsLogsToolName, OpsSystemToolName,
+		OpsBaselineToolName, OpsDiffToolName, OpsExecToolName,
+		OpsWatchToolName, OpsSandboxToolName, K8sGetToolName, PromQueryToolName:
+		return true
+	}
+	return false
 }
 
 func (ce *customExecutor) Tools() []llms.Tool {
@@ -380,6 +445,9 @@ func (ce *customExecutor) Execute(
 		durationDelta := time.Since(startTime).Seconds()
 		if err := ce.tclp.UpdateLogSuccess(persistCtx, tcID, result, durationDelta); err != nil {
 			obs.LogErrorOrCancel(logger, err, "failed to update toolcall result")
+		}
+		if telemetryName(name) {
+			ce.recordExecutedCommand(persistCtx, name, args, result)
 		}
 
 		return result, resultFormat, nil

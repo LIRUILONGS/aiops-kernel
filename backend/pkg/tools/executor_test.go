@@ -23,6 +23,7 @@ import (
 	"opsagi/pkg/observability/langfuse"
 
 	"github.com/moby/moby/client"
+	"github.com/stretchr/testify/require"
 	"github.com/sirupsen/logrus"
 	"github.com/vxcontrol/langchaingo/llms"
 )
@@ -1275,5 +1276,52 @@ func TestExecutor_Execute_WritesTheMessageResultEvenAfterTheFlowStops(t *testing
 	}
 	if mlp.result != "uid=0(root)" {
 		t.Errorf("the message log holds %q, want the same result the tool call log has", mlp.result)
+	}
+}
+
+type containerLookupStub struct {
+	database.Querier
+
+	containers []database.Container
+}
+
+func (s containerLookupStub) GetFlowContainers(context.Context, int64) ([]database.Container, error) {
+	return s.containers, nil
+}
+
+func TestExecutor_RecordExecutedCommand_MirrorsTheProbeIntoTheTerminalLog(t *testing.T) {
+	t.Parallel()
+
+	logs := &recordingTermLog{}
+	ce := &customExecutor{
+		flowID: 7,
+		db:     containerLookupStub{containers: []database.Container{{ID: 42}}},
+		tlp:    logs,
+	}
+
+	ce.recordExecutedCommand(context.Background(), OpsExecToolName,
+		json.RawMessage(`{"command":"docker_inspect","container":"wp-db"}`),
+		"status=running exit=0 restarts=3")
+
+	entries := logs.all()
+	require.Len(t, entries, 1)
+	require.Equal(t, int64(42), entries[0].containerID)
+	require.Contains(t, entries[0].msg, "$ ops_exec")
+	require.Contains(t, entries[0].msg, "docker_inspect")
+	require.Contains(t, entries[0].msg, "restarts=3")
+}
+
+func TestExecutor_RecordExecutedCommand_KeepsConclusionsOutOfTheTerminalLog(t *testing.T) {
+	t.Parallel()
+
+	for _, name := range []string{DiagnosisToolName, OptimizationResultToolName, MemoristToolName, TriageResultToolName} {
+		if telemetryName(name) {
+			t.Errorf("%s is a conclusion, not something that ran on a machine", name)
+		}
+	}
+	for _, name := range []string{OpsContainersToolName, OpsLogsToolName, OpsExecToolName, OpsSandboxToolName, OpsWatchToolName, K8sGetToolName, PromQueryToolName} {
+		if !telemetryName(name) {
+			t.Errorf("%s executes against a machine and belongs in the terminal log", name)
+		}
 	}
 }
