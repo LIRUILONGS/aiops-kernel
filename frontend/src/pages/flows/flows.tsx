@@ -143,11 +143,11 @@ function Flows() {
             });
 
             if (data?.renameFlow === ResultType.Success) {
-                toast.success('Flow renamed successfully');
+                toast.success('已重命名');
                 setEditingFlowId(null);
             }
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Failed to rename flow';
+            const errorMessage = error instanceof Error ? error.message : '重命名失败';
             toast.error(errorMessage);
         }
     }, [editingFlowId, renameFlowMutation]);
@@ -208,7 +208,7 @@ function Flows() {
                                     inputRef={editingInputRef}
                                     onCancel={handleFlowRenameCancel}
                                     onSave={handleFlowRenameSave}
-                                    placeholder="Flow title"
+                                    placeholder="会话标题"
                                 />
                             </div>
                         );
@@ -297,7 +297,7 @@ function Flows() {
                     const terminals = flow.terminals || [];
 
                     if (terminals.length === 0) {
-                        return <span className="text-muted-foreground text-sm">No terminals</span>;
+                        return <span className="text-muted-foreground text-sm">无终端</span>;
                     }
 
                     const isAnyConnected = terminals.some((t: TerminalFragmentFragment) => t.connected);
@@ -408,7 +408,7 @@ function Flows() {
                         <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                             {canToggleFavorite(flow) && (
                                 <Toggle
-                                    aria-label="Toggle favorite"
+                                    aria-label="切换收藏"
                                     className="border-none data-[state=on]:bg-transparent data-[state=on]:*:[svg]:fill-yellow-500 data-[state=on]:*:[svg]:stroke-yellow-500"
                                     onClick={async (event) => {
                                         event.stopPropagation();
@@ -424,7 +424,7 @@ function Flows() {
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button
-                                        aria-label="Open menu"
+                                        aria-label="打开菜单"
                                         className="size-8 p-0"
                                         onClick={(e) => e.stopPropagation()}
                                         variant="ghost"
@@ -523,7 +523,7 @@ function Flows() {
                         <>
                             <ContextMenuItem onClick={async () => toggleFavoriteFlow(flow.id)}>
                                 <Star />
-                                {isFavoriteFlow(flow.id) ? 'Remove from favorites' : 'Add to favorites'}
+                                {isFavoriteFlow(flow.id) ? '取消收藏' : '加入收藏'}
                             </ContextMenuItem>
                             <ContextMenuSeparator />
                         </>
@@ -582,7 +582,7 @@ function Flows() {
     const pageHeader = (
         <AppHeader>
             <AppHeaderContent>
-                <AppHeaderTitle icon={<GitFork className="size-4 shrink-0" />}>Flows</AppHeaderTitle>
+                <AppHeaderTitle icon={<GitFork className="size-4 shrink-0" />}>会话</AppHeaderTitle>
             </AppHeaderContent>
             <AppHeaderActions>
                 <AppHeaderAction
@@ -601,8 +601,8 @@ function Flows() {
                 {pageHeader}
                 <div className="flex flex-1 flex-col gap-4 p-4">
                     <LoadingState
-                        description="Please wait while we fetch your conversation flows"
-                        title="Loading flows..."
+                        description="正在读取会话列表"
+                        title="加载中…"
                     />
                 </div>
             </>
@@ -618,7 +618,7 @@ function Flows() {
                     <ErrorState
                         message={flowsError.message}
                         onRetry={refetch}
-                        title="Error loading flows"
+                        title="会话加载失败"
                     />
                 </div>
             </>
@@ -635,8 +635,8 @@ function Flows() {
                             <EmptyMedia variant="icon">
                                 <GitFork />
                             </EmptyMedia>
-                            <EmptyTitle>No flows found</EmptyTitle>
-                            <EmptyDescription>Get started by creating your first conversation flow</EmptyDescription>
+                            <EmptyTitle>还没有会话</EmptyTitle>
+                            <EmptyDescription>从新建第一个会话开始</EmptyDescription>
                         </EmptyHeader>
                         <EmptyContent>
                             <Button
@@ -661,7 +661,7 @@ function Flows() {
                     columns={columns}
                     data={flows}
                     empty={{ entityName: 'flows' }}
-                    filterPlaceholder="Filter flows..."
+                    filterPlaceholder="筛选会话…"
                     filterValue={filter}
                     isVirtualized
                     label="Flows"

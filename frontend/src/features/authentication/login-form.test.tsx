@@ -29,8 +29,8 @@ const renderLogin = () =>
     );
 
 const fillCredentials = async (user: ReturnType<typeof userEvent.setup>) => {
-    await user.type(screen.getByPlaceholderText('Enter your email'), 'admin@example.com');
-    await user.type(screen.getByPlaceholderText('Enter your password'), 'secret-pass');
+    await user.type(screen.getByPlaceholderText('请输入邮箱'), 'admin@example.com');
+    await user.type(screen.getByPlaceholderText('请输入密码'), 'secret-pass');
 };
 
 beforeEach(() => {
@@ -48,7 +48,7 @@ describe('LoginForm validation convention', () => {
         expect(screen.queryByText('Login is required')).not.toBeInTheDocument();
         expect(screen.queryByText('Password is required')).not.toBeInTheDocument();
 
-        await user.type(screen.getByPlaceholderText('Enter your email'), 'x');
+        await user.type(screen.getByPlaceholderText('请输入邮箱'), 'x');
         await user.tab();
 
         expect(screen.queryByText('Invalid login')).not.toBeInTheDocument();
@@ -59,10 +59,10 @@ describe('LoginForm validation convention', () => {
         const user = userEvent.setup();
         renderLogin();
 
-        await user.click(screen.getByRole('button', { name: 'Sign in' }));
+        await user.click(screen.getByRole('button', { name: '登录' }));
 
-        expect(await screen.findByText('Login is required')).toBeInTheDocument();
-        expect(screen.getByText('Password is required')).toBeInTheDocument();
+        expect(await screen.findByText('请填写登录名')).toBeInTheDocument();
+        expect(screen.getByText('请填写密码')).toBeInTheDocument();
         expect(userApi.login).not.toHaveBeenCalled();
     });
 
@@ -70,10 +70,10 @@ describe('LoginForm validation convention', () => {
         const user = userEvent.setup();
         renderLogin();
 
-        await user.click(screen.getByRole('button', { name: 'Sign in' }));
-        expect(await screen.findByText('Login is required')).toBeInTheDocument();
+        await user.click(screen.getByRole('button', { name: '登录' }));
+        expect(await screen.findByText('请填写登录名')).toBeInTheDocument();
 
-        await user.type(screen.getByPlaceholderText('Enter your email'), 'admin@example.com');
+        await user.type(screen.getByPlaceholderText('请输入邮箱'), 'admin@example.com');
 
         await waitFor(() => expect(screen.queryByText('Login is required')).not.toBeInTheDocument());
     });
@@ -83,7 +83,7 @@ describe('LoginForm validation convention', () => {
         renderLogin();
 
         await fillCredentials(user);
-        await user.click(screen.getByRole('button', { name: 'Sign in' }));
+        await user.click(screen.getByRole('button', { name: '登录' }));
 
         await waitFor(() =>
             expect(userApi.login).toHaveBeenCalledWith({ mail: 'admin@example.com', password: 'secret-pass' }),
@@ -97,7 +97,7 @@ describe('LoginForm validation convention', () => {
         renderLogin();
 
         await fillCredentials(user);
-        await user.click(screen.getByRole('button', { name: 'Sign in' }));
+        await user.click(screen.getByRole('button', { name: '登录' }));
 
         expect(await screen.findByText('Account locked')).toBeInTheDocument();
         expect(navigate).not.toHaveBeenCalled();

@@ -26,7 +26,7 @@ export const ThemeProviderContext = createContext<ThemeProviderState>(initialSta
 
 export function ThemeProvider({
     children,
-    defaultTheme = 'system',
+    defaultTheme = 'dark',
     storageKey = 'theme',
     ...props
 }: ThemeProviderProps) {
@@ -34,7 +34,7 @@ export function ThemeProvider({
         const storedTheme = localStorage.getItem(storageKey);
 
         if (!storedTheme) {
-            return 'system';
+            return defaultTheme;
         }
 
         return isThemeValid(storedTheme) ? storedTheme : defaultTheme;

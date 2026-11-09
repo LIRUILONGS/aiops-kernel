@@ -21,21 +21,21 @@ const formSchema = z.object({
     mail: z
         .string()
         .min(1, {
-            message: 'Login is required',
+            message: '请填写登录名',
         })
         .refine(
             (value) => z.string().email().safeParse(value).success || ['admin', 'demo'].includes(value.toLowerCase()),
             {
-                message: 'Invalid login',
+                message: '登录名格式不正确',
             },
         ),
     password: z.string().min(1, {
-        message: 'Password is required',
+        message: '请填写密码',
     }),
 });
 
-const errorMessage = 'Invalid login or password';
-const errorProviderMessage = 'Authentication failed';
+const errorMessage = '登录名或密码错误';
+const errorProviderMessage = '认证失败';
 
 interface AuthProviderAction {
     icon: React.ReactNode;
@@ -47,12 +47,12 @@ const providerActions: AuthProviderAction[] = [
     {
         icon: <Google className="size-5" />,
         id: 'google',
-        name: 'Continue with Google',
+        name: '使用 Google 登录',
     },
     {
         icon: <Github className="size-5" />,
         id: 'github',
-        name: 'Continue with GitHub',
+        name: '使用 GitHub 登录',
     },
 ];
 
@@ -154,7 +154,7 @@ function LoginForm({ providers, returnUrl = routes.newFlow }: LoginFormProps) {
     if (shouldShowPasswordChange) {
         return (
             <div className="mx-auto flex w-[350px] flex-col gap-6">
-                <h1 className="text-center text-3xl font-bold">Update Password</h1>
+                <h1 className="text-center text-3xl font-bold">更新密码</h1>
                 <p className="text-muted-foreground text-center text-sm">
                     You need to change your password before continuing.
                 </p>
@@ -212,12 +212,12 @@ function LoginForm({ providers, returnUrl = routes.newFlow }: LoginFormProps) {
                         name="mail"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Login</FormLabel>
+                                <FormLabel>登录名</FormLabel>
                                 <FormControl>
                                     <Input
                                         {...field}
                                         autoFocus
-                                        placeholder="Enter your email"
+                                        placeholder="请输入邮箱"
                                     />
                                 </FormControl>
                                 <FormMessage />
@@ -230,11 +230,11 @@ function LoginForm({ providers, returnUrl = routes.newFlow }: LoginFormProps) {
                         name="password"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Password</FormLabel>
+                                <FormLabel>密码</FormLabel>
                                 <FormControl>
                                     <InputPassword
                                         {...field}
-                                        placeholder="Enter your password"
+                                        placeholder="请输入密码"
                                     />
                                 </FormControl>
                                 <FormMessage />
@@ -243,7 +243,7 @@ function LoginForm({ providers, returnUrl = routes.newFlow }: LoginFormProps) {
                     />
 
                     <FormSubmitButton className="w-full">
-                        <span>Sign in</span>
+                        <span>登录</span>
                     </FormSubmitButton>
 
                     {error && <FormMessage>{error}</FormMessage>}

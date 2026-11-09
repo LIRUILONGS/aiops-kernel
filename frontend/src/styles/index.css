@@ -281,45 +281,45 @@
         --card-foreground: oklch(0.32 0 0);
         --popover: oklch(1 0 0);
         --popover-foreground: oklch(0.32 0 0);
-        --primary: oklch(0.25 0.14 245);
+        --primary: oklch(0.25 0.14 195);
         --primary-foreground: oklch(1 0 0);
-        --secondary: oklch(0.97 0 240);
-        --secondary-foreground: oklch(0.45 0.03 240);
-        --muted: oklch(0.98 0 240);
-        --muted-foreground: oklch(0.55 0.02 240);
-        --accent: oklch(0.9 0.03 245);
+        --secondary: oklch(0.97 0 200);
+        --secondary-foreground: oklch(0.45 0.03 200);
+        --muted: oklch(0.98 0 200);
+        --muted-foreground: oklch(0.55 0.02 200);
+        --accent: oklch(0.9 0.03 195);
         --accent-foreground: oklch(0.32 0 0);
         --destructive: oklch(0.54 0.21 25);
         --destructive-foreground: oklch(1 0 0);
-        --border: oklch(0.91 0.01 240);
-        --input: oklch(0.91 0.01 240);
-        --ring: oklch(0.25 0.14 245);
-        --chart-1: oklch(0.25 0.14 245);
-        --chart-2: oklch(0.38 0.18 245);
-        --chart-3: oklch(0.5 0.22 245);
-        --chart-4: oklch(0.42 0.1 245);
-        --chart-5: oklch(0.55 0.14 245);
-        --sidebar: oklch(0.98 0 240);
+        --border: oklch(0.91 0.01 200);
+        --input: oklch(0.91 0.01 200);
+        --ring: oklch(0.25 0.14 195);
+        --chart-1: oklch(0.25 0.14 195);
+        --chart-2: oklch(0.38 0.18 195);
+        --chart-3: oklch(0.5 0.22 195);
+        --chart-4: oklch(0.42 0.1 195);
+        --chart-5: oklch(0.55 0.14 195);
+        --sidebar: oklch(0.98 0 200);
         --sidebar-foreground: oklch(0.32 0 0);
-        --sidebar-primary: oklch(0.25 0.14 245);
+        --sidebar-primary: oklch(0.25 0.14 195);
         --sidebar-primary-foreground: oklch(1 0 0);
-        --sidebar-accent: oklch(0.9 0.03 245);
+        --sidebar-accent: oklch(0.9 0.03 195);
         --sidebar-accent-foreground: oklch(0.32 0 0);
-        --sidebar-border: oklch(0.93 0.01 240);
-        --sidebar-ring: oklch(0.25 0.14 245);
+        --sidebar-border: oklch(0.93 0.01 200);
+        --sidebar-ring: oklch(0.25 0.14 195);
         /* Link TEXT. --primary is a fill (paired with white --primary-foreground) and cannot double as
            text: on dark it measures 3.12:1 on --card, and no lightness clears AA in both roles at once. */
-        --link: oklch(0.25 0.14 245);
+        --link: oklch(0.25 0.14 195);
         /* Editor highlight TEXT, tuned for readable contrast on the editor surface (unlike --primary, a fill
            color that fails WCAG AA as text on dark). Four distinct hues so adjacent tokens don't blur:
            link = theme blue 245; variable = green 155 (matches the panel's "used" badge); tag = violet 300;
            inline code = red 25 on a visible chip.
            --editor-code-bg is the opaque inline-code + code-block chip. Don't fold these back into --primary. */
-        --editor-accent: oklch(0.25 0.12 245);
+        --editor-accent: oklch(0.25 0.12 195);
         --editor-variable: oklch(0.4 0.18 155);
         --editor-tag: oklch(0.25 0.12 300);
         --editor-code: oklch(0.5 0.16 25);
-        --editor-code-bg: oklch(0.94 0.006 245);
+        --editor-code-bg: oklch(0.94 0.006 195);
         /* Stock atom-one-light is NOT usable as-is: on this surface it fails AA on 6 of its 8 token colours.
            These hold its hues and chroma but lower lightness until each clears it. */
         --editor-syntax-fg: oklch(0.35 0.014 274.5);
@@ -354,44 +354,44 @@
     }
 
     .dark {
-        --background: oklch(0.15 0.02 245);
+        --background: oklch(0.15 0.02 195);
         --foreground: oklch(0.92 0 0);
-        --card: oklch(0.2 0.03 245);
+        --card: oklch(0.2 0.03 195);
         --card-foreground: oklch(0.92 0 0);
-        --popover: oklch(0.2 0.03 245);
+        --popover: oklch(0.2 0.03 195);
         --popover-foreground: oklch(0.92 0 0);
-        --primary: oklch(0.5 0.16 245);
+        --primary: oklch(0.5 0.16 195);
         --primary-foreground: oklch(1 0 0);
-        --secondary: oklch(0.25 0.04 245);
+        --secondary: oklch(0.25 0.04 195);
         --secondary-foreground: oklch(0.92 0 0);
-        --muted: oklch(0.22 0.03 245);
+        --muted: oklch(0.22 0.03 195);
         --muted-foreground: oklch(0.72 0 0);
-        --accent: oklch(0.24 0.09 245);
-        --accent-foreground: oklch(0.92 0.02 245);
+        --accent: oklch(0.24 0.09 195);
+        --accent-foreground: oklch(0.92 0.02 195);
         --destructive: oklch(0.64 0.21 25);
         --destructive-foreground: oklch(1 0 0);
-        --border: oklch(0.3 0.04 245);
-        --input: oklch(0.3 0.04 245);
-        --ring: oklch(0.5 0.16 245);
-        --chart-1: oklch(0.5 0.16 245);
-        --chart-2: oklch(0.6 0.2 245);
-        --chart-3: oklch(0.7 0.22 245);
-        --chart-4: oklch(0.58 0.1 245);
-        --chart-5: oklch(0.74 0.14 245);
-        --sidebar: oklch(0.15 0.02 245);
+        --border: oklch(0.3 0.04 195);
+        --input: oklch(0.3 0.04 195);
+        --ring: oklch(0.5 0.16 195);
+        --chart-1: oklch(0.5 0.16 195);
+        --chart-2: oklch(0.6 0.2 195);
+        --chart-3: oklch(0.7 0.22 195);
+        --chart-4: oklch(0.58 0.1 195);
+        --chart-5: oklch(0.74 0.14 195);
+        --sidebar: oklch(0.15 0.02 195);
         --sidebar-foreground: oklch(0.92 0 0);
-        --sidebar-primary: oklch(0.5 0.16 245);
+        --sidebar-primary: oklch(0.5 0.16 195);
         --sidebar-primary-foreground: oklch(1 0 0);
-        --sidebar-accent: oklch(0.24 0.09 245);
-        --sidebar-accent-foreground: oklch(0.92 0.02 245);
-        --sidebar-border: oklch(0.3 0.04 245);
-        --sidebar-ring: oklch(0.5 0.16 245);
-        --link: oklch(0.68 0.13 245);
-        --editor-accent: oklch(0.68 0.13 245);
+        --sidebar-accent: oklch(0.24 0.09 195);
+        --sidebar-accent-foreground: oklch(0.92 0.02 195);
+        --sidebar-border: oklch(0.3 0.04 195);
+        --sidebar-ring: oklch(0.5 0.16 195);
+        --link: oklch(0.68 0.13 195);
+        --editor-accent: oklch(0.68 0.13 195);
         --editor-variable: oklch(0.72 0.12 155);
         --editor-tag: oklch(0.68 0.13 300);
         --editor-code: oklch(0.7 0.15 25);
-        --editor-code-bg: oklch(0.27 0.03 245);
+        --editor-code-bg: oklch(0.27 0.03 195);
         /* atom-one-dark's hues, which already clear AA here — except comment and entity, tuned because
            stock measures 2.49 and 4.70. */
         --editor-syntax-fg: oklch(0.762 0.02 263);
