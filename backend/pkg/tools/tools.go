@@ -1062,33 +1062,37 @@ func (fte *flowToolsExecutor) GetCommanderExecutor(cfg CommanderExecutorConfig) 
 		return nil, fmt.Errorf("a conclusion handler is required: diagnosis for an incident, optimization for a performance task")
 	}
 
-	ops := NewOpsTools(fte.cfg)
-	if !ops.IsAvailable() {
-		return nil, fmt.Errorf("no ops targets configured: OPSAGI_TARGETS is empty, the commander has nothing to read")
-	}
-
 	definitions := []llms.FunctionDefinition{
-		registryDefinitions[OpsContainersToolName],
-		registryDefinitions[OpsLogsToolName],
-		registryDefinitions[OpsSystemToolName],
-		registryDefinitions[OpsBaselineToolName],
-		registryDefinitions[OpsDiffToolName],
-		registryDefinitions[OpsExecToolName],
-		registryDefinitions[OpsSandboxToolName],
 		registryDefinitions[DiagnosisToolName],
 		registryDefinitions[OptimizationResultToolName],
 	}
 	handlers := map[string]ExecutorHandler{
-		OpsContainersToolName:      ops.HandleContainers,
-		OpsLogsToolName:            ops.HandleLogs,
-		OpsSystemToolName:          ops.HandleSystem,
-		OpsBaselineToolName:        ops.HandleBaseline,
-		OpsDiffToolName:            ops.HandleDiff,
-		OpsExecToolName:            ops.HandleExec,
-		OpsWatchToolName:           ops.HandleWatch,
-		OpsSandboxToolName:         ops.HandleSandbox,
 		DiagnosisToolName:          cfg.Diagnosis,
 		OptimizationResultToolName: cfg.Optimization,
+	}
+
+	// A host is optional. Without one the commander still has a conclusion to
+	// reach -- the evidence it was given is in the conversation -- so it builds
+	// with the tools that do not need a shell instead of refusing to start.
+	if ops := NewOpsTools(fte.cfg); ops.IsAvailable() {
+		definitions = append(definitions,
+			registryDefinitions[OpsContainersToolName],
+			registryDefinitions[OpsLogsToolName],
+			registryDefinitions[OpsSystemToolName],
+			registryDefinitions[OpsBaselineToolName],
+			registryDefinitions[OpsDiffToolName],
+			registryDefinitions[OpsExecToolName],
+			registryDefinitions[OpsWatchToolName],
+			registryDefinitions[OpsSandboxToolName],
+		)
+		handlers[OpsContainersToolName] = ops.HandleContainers
+		handlers[OpsLogsToolName] = ops.HandleLogs
+		handlers[OpsSystemToolName] = ops.HandleSystem
+		handlers[OpsBaselineToolName] = ops.HandleBaseline
+		handlers[OpsDiffToolName] = ops.HandleDiff
+		handlers[OpsExecToolName] = ops.HandleExec
+		handlers[OpsWatchToolName] = ops.HandleWatch
+		handlers[OpsSandboxToolName] = ops.HandleSandbox
 	}
 	if prom := NewPromTools(fte.cfg); prom.IsAvailable() {
 		definitions = append(definitions, registryDefinitions[PromQueryToolName])
@@ -1167,18 +1171,14 @@ func (fte *flowToolsExecutor) GetAnalystExecutor(cfg AnalystExecutorConfig) (Con
 		return nil, fmt.Errorf("unknown analyst role %q", cfg.Role)
 	}
 
-	ops := NewOpsTools(fte.cfg)
-	if !ops.IsAvailable() {
-		return nil, fmt.Errorf("no ops targets configured: OPSAGI_TARGETS is empty, %s has nothing to read", cfg.Role)
-	}
-
-	opsHandlers := map[string]ExecutorHandler{
-		OpsContainersToolName: ops.HandleContainers,
-		OpsLogsToolName:       ops.HandleLogs,
-		OpsSystemToolName:     ops.HandleSystem,
-		OpsExecToolName:       ops.HandleExec,
-		OpsWatchToolName:      ops.HandleWatch,
-		OpsSandboxToolName:    ops.HandleSandbox,
+	opsHandlers := map[string]ExecutorHandler{}
+	if ops := NewOpsTools(fte.cfg); ops.IsAvailable() {
+		opsHandlers[OpsContainersToolName] = ops.HandleContainers
+		opsHandlers[OpsLogsToolName] = ops.HandleLogs
+		opsHandlers[OpsSystemToolName] = ops.HandleSystem
+		opsHandlers[OpsExecToolName] = ops.HandleExec
+		opsHandlers[OpsWatchToolName] = ops.HandleWatch
+		opsHandlers[OpsSandboxToolName] = ops.HandleSandbox
 	}
 	if prom := NewPromTools(fte.cfg); prom.IsAvailable() {
 		opsHandlers[PromQueryToolName] = prom.HandleQuery
@@ -1192,9 +1192,9 @@ func (fte *flowToolsExecutor) GetAnalystExecutor(cfg AnalystExecutorConfig) (Con
 	for _, name := range roleTools {
 		handler, ok := opsHandlers[name]
 		if !ok {
-			// A missing metrics backend narrows the analyst rather than failing the
-			// chain: the same role still has the host and container faces.
-			if name == PromQueryToolName || name == K8sGetToolName {
+			// A missing backend narrows the analyst rather than failing the chain:
+			// what it loses is one face of the evidence, not its role.
+			if optionalEvidenceTool(name) {
 				continue
 			}
 			return nil, fmt.Errorf("analyst role %q wants an unknown evidence tool %q", cfg.Role, name)
@@ -1230,6 +1230,18 @@ func (fte *flowToolsExecutor) GetAnalystExecutor(cfg AnalystExecutorConfig) (Con
 		barriers:    barriers,
 		summarizer:  cfg.Summarizer,
 	}, nil
+}
+
+// optionalEvidenceTool reports whether a tool the analyst wants is one a
+// deployment can simply not have.
+func optionalEvidenceTool(name string) bool {
+	switch name {
+	case PromQueryToolName, K8sGetToolName,
+		OpsContainersToolName, OpsLogsToolName, OpsSystemToolName,
+		OpsExecToolName, OpsWatchToolName, OpsSandboxToolName:
+		return true
+	}
+	return false
 }
 
 // removeDefinition drops a tool the caller did not provide, so an executor never

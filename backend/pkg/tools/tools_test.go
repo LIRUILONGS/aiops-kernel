@@ -1317,3 +1317,30 @@ func TestTools_GetCommanderExecutor_AdvertisesOnlyTheExitOfItsMode(t *testing.T)
 		})
 	}
 }
+
+func TestTools_GetCommanderExecutor_KeepsTheConclusionWhenThereIsNoHostToRead(t *testing.T) {
+	handler := func(context.Context, string, json.RawMessage) (string, error) { return "", nil }
+
+	fte := &flowToolsExecutor{
+		flowID: 42,
+		cfg:    &config.Config{},
+		db:     &fakeContainerDB{row: toolsSandboxRow(database.ContainerStatusRunning, "primary")},
+		docker: &fakeDockerClient{},
+	}
+
+	executor, err := fte.GetCommanderExecutor(CommanderExecutorConfig{Diagnosis: handler})
+	require.NoError(t, err)
+
+	advertised := map[string]bool{}
+	for _, def := range executor.(*customExecutor).definitions {
+		advertised[def.Name] = true
+	}
+
+	require.True(t, advertised[DiagnosisToolName], "a hostless commander still has to be able to conclude")
+	for _, name := range []string{
+		OpsContainersToolName, OpsLogsToolName, OpsSystemToolName,
+		OpsExecToolName, OpsWatchToolName, OpsSandboxToolName,
+	} {
+		require.False(t, advertised[name], "%s cannot work without a host and must not be advertised", name)
+	}
+}
