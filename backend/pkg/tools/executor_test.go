@@ -1289,7 +1289,7 @@ func (s containerLookupStub) GetFlowContainers(context.Context, int64) ([]databa
 	return s.containers, nil
 }
 
-func TestExecutor_RecordExecutedCommand_MirrorsTheProbeIntoTheTerminalLog(t *testing.T) {
+func TestExecutor_RecordToolActivity_MirrorsTheProbeWithItsTime(t *testing.T) {
 	t.Parallel()
 
 	logs := &recordingTermLog{}
@@ -1299,7 +1299,7 @@ func TestExecutor_RecordExecutedCommand_MirrorsTheProbeIntoTheTerminalLog(t *tes
 		tlp:    logs,
 	}
 
-	ce.recordExecutedCommand(context.Background(), OpsExecToolName,
+	ce.recordToolActivity(context.Background(), OpsExecToolName,
 		json.RawMessage(`{"command":"docker_inspect","container":"wp-db"}`),
 		"status=running exit=0 restarts=3")
 
@@ -1309,6 +1309,29 @@ func TestExecutor_RecordExecutedCommand_MirrorsTheProbeIntoTheTerminalLog(t *tes
 	require.Contains(t, entries[0].msg, "$ ops_exec")
 	require.Contains(t, entries[0].msg, "docker_inspect")
 	require.Contains(t, entries[0].msg, "restarts=3")
+	require.Regexp(t, `^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] `, entries[0].msg,
+		"the entry has to say when it happened")
+}
+
+func TestExecutor_RecordToolActivity_MirrorsAConclusionAsItsHeadline(t *testing.T) {
+	t.Parallel()
+
+	logs := &recordingTermLog{}
+	ce := &customExecutor{
+		flowID: 7,
+		db:     containerLookupStub{containers: []database.Container{{ID: 42}}},
+		tlp:    logs,
+	}
+
+	ce.recordToolActivity(context.Background(), DiagnosisToolName,
+		json.RawMessage(`{"message":"wp-db 被 384MiB limit 卡顶","root_cause":"mysqld 三次 memcg OOM","confidence":0.8}`),
+		"diagnosis recorded")
+
+	entries := logs.all()
+	require.Len(t, entries, 1)
+	require.Contains(t, entries[0].msg, "diagnosis 提交")
+	require.Contains(t, entries[0].msg, "wp-db 被 384MiB limit 卡顶")
+	require.NotContains(t, entries[0].msg, "confidence", "the entry is a headline, not the record")
 }
 
 func TestExecutor_RecordExecutedCommand_KeepsConclusionsOutOfTheTerminalLog(t *testing.T) {

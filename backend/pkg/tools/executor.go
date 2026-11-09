@@ -162,11 +162,12 @@ type customExecutor struct {
 	summarizer  SummarizeHandler
 }
 
-// recordExecutedCommand mirrors a remote probe into the flow's terminal log. The
-// terminal tab is the one view that shows what actually ran against a machine,
-// and the ops tools are the only thing this product runs -- without this the tab
-// is empty for every flow that diagnoses a host.
-func (ce *customExecutor) recordExecutedCommand(ctx context.Context, name string, args json.RawMessage, result string) {
+// recordToolActivity mirrors what an agent did into the flow's terminal log: the
+// probes as command-and-result, the conclusions as the headline they carry. The
+// terminal tab is the only view that shows the work as it happens, and a
+// conclusion is part of the work even though nothing ran on a machine to produce
+// it.
+func (ce *customExecutor) recordToolActivity(ctx context.Context, name string, args json.RawMessage, result string) {
 	if ce.tlp == nil {
 		return
 	}
@@ -176,16 +177,69 @@ func (ce *customExecutor) recordExecutedCommand(ctx context.Context, name string
 		return
 	}
 
-	command := strings.Join(strings.Fields(string(args)), " ")
-	if len(command) > 400 {
-		command = command[:400] + "..."
-	}
-
-	text := fmt.Sprintf("$ %s %s\n%s\n", name, command, result)
+	text := terminalEntry(name, args, result, time.Now())
 	if _, err := ce.tlp.PutMsg(ctx, database.TermlogTypeStdout, text, containerID, ce.taskID, ce.subtaskID); err != nil {
-		logrus.WithContext(ctx).WithError(err).Debug("failed to mirror the command into the terminal log")
+		logrus.WithContext(ctx).WithError(err).Debug("failed to mirror the tool activity into the terminal log")
 	}
 }
+
+// terminalEntry renders one entry: a stamp, then either the command that ran or
+// the conclusion that was filed. The limits keep one entry to a screen; a probe
+// whose output does not fit is a summary waiting to happen, not a wall of text.
+func terminalEntry(name string, args json.RawMessage, result string, now time.Time) string {
+	stamp := now.Format("2006-01-02 15:04:05")
+
+	if conclusionName(name) {
+		return fmt.Sprintf("[%s] %s 提交\n%s\n", stamp, name, headlineOf(args, result))
+	}
+
+	command := strings.Join(strings.Fields(string(args)), " ")
+	if len(command) > terminalCommandLimit {
+		command = command[:terminalCommandLimit] + "..."
+	}
+
+	body := result
+	if len(body) > terminalResultLimit {
+		body = body[:terminalResultLimit] + fmt.Sprintf("\n... (%d bytes truncated)", len(result)-terminalResultLimit)
+	}
+
+	return fmt.Sprintf("[%s] $ %s %s\n%s\n", stamp, name, command, body)
+}
+
+// headlineOf picks the one field a conclusion carries to be read by a human.
+func headlineOf(args json.RawMessage, result string) string {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(args, &fields); err == nil {
+		for _, key := range []string{"message", "root_cause", "result", "pattern", "summary"} {
+			raw, ok := fields[key]
+			if !ok {
+				continue
+			}
+			var value string
+			if err := json.Unmarshal(raw, &value); err == nil && strings.TrimSpace(value) != "" {
+				return truncateHeadline(value)
+			}
+		}
+	}
+
+	return truncateHeadline(result)
+}
+
+func truncateHeadline(text string) string {
+	text = strings.Join(strings.Fields(text), " ")
+	if len(text) > terminalHeadlineLimit {
+		return text[:terminalHeadlineLimit] + "..."
+	}
+
+	return text
+}
+
+// One panel entry is meant to be read, not scrolled.
+const (
+	terminalCommandLimit  = 400
+	terminalResultLimit   = 4000
+	terminalHeadlineLimit = 600
+)
 
 // flowContainers is the one lookup the mirror needs. It is an interface rather
 // than the full querier so an executor built over a partial fake cannot panic
@@ -210,13 +264,23 @@ func (ce *customExecutor) terminalContainer(ctx context.Context) (int64, bool) {
 	return ce.containerID, ce.containerID != 0
 }
 
-// telemetryName reports whether a tool is an executed probe rather than a
-// conclusion, so only the commands land in the terminal log.
+// telemetryName reports whether a tool is an executed probe, so the command and
+// its output land in the terminal log.
 func telemetryName(name string) bool {
 	switch name {
 	case OpsContainersToolName, OpsLogsToolName, OpsSystemToolName,
 		OpsBaselineToolName, OpsDiffToolName, OpsExecToolName,
 		OpsWatchToolName, OpsSandboxToolName, K8sGetToolName, PromQueryToolName:
+		return true
+	}
+	return false
+}
+
+// conclusionName reports whether a tool ends a chain with a finding.
+func conclusionName(name string) bool {
+	switch name {
+	case DiagnosisToolName, OptimizationResultToolName,
+		TriageResultToolName, LogFindingToolName, MetricFindingToolName, ChangeFindingToolName:
 		return true
 	}
 	return false
@@ -412,6 +476,9 @@ func (ce *customExecutor) Execute(
 			durationDelta := time.Since(startTime).Seconds()
 			if reason, refused := refusalText(err); refused {
 				_ = ce.tclp.UpdateLogFailed(persistCtx, tcID, reason, durationDelta)
+				if telemetryName(name) {
+					ce.recordToolActivity(persistCtx, name, args, "被拒绝："+reason)
+				}
 
 				return reason, resultFormat, nil
 			}
@@ -446,8 +513,8 @@ func (ce *customExecutor) Execute(
 		if err := ce.tclp.UpdateLogSuccess(persistCtx, tcID, result, durationDelta); err != nil {
 			obs.LogErrorOrCancel(logger, err, "failed to update toolcall result")
 		}
-		if telemetryName(name) {
-			ce.recordExecutedCommand(persistCtx, name, args, result)
+		if telemetryName(name) || conclusionName(name) {
+			ce.recordToolActivity(persistCtx, name, args, result)
 		}
 
 		return result, resultFormat, nil
