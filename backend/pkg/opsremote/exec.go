@@ -187,6 +187,21 @@ var (
 				{Template: "Database", Kind: ParamName},
 			},
 		},
+		"mysql_connections": {
+			ID:          "mysql_connections",
+			Description: "MySQL 容器的连接与容量：max_connections、Threads_connected、Threads_running、Aborted_connects（连接被拒的次数），用来区分“连不上”是网络问题还是连接数打满",
+			Template:    `docker exec %Container% sh -c 'mysql -u root -p"$MYSQL_ROOT_PASSWORD" -N -e "show variables like \"max_connections\"; show status where Variable_name in (\"Threads_connected\",\"Threads_running\",\"Aborted_connects\",\"Connection_errors_max_connections\")"' 2>&1 | grep -v "Using a password"`,
+			Params:      []Param{{Template: "Container", Kind: ParamName}},
+		},
+		"mysql_processlist": {
+			ID:          "mysql_processlist",
+			Description: "MySQL 容器里此刻的连接清单：来源地址、用户、库、命令、已执行秒数与语句开头（按时间倒序），用来看谁占着连接",
+			Template:    `docker exec %Container% sh -c 'mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "select id, host, user, db, command, time, state, left(replace(info, char(10), \" \"), 90) info from information_schema.processlist order by time desc limit %Lines%"' 2>&1 | grep -v "Using a password"`,
+			Params: []Param{
+				{Template: "Container", Kind: ParamName},
+				{Template: "Lines", Kind: ParamCount, Min: 1, Max: 100, Default: 20},
+			},
+		},
 		"pg_stat_statements": {
 			ID:          "pg_stat_statements",
 			Description: "Postgres 容器里累计耗时最高的 N 条语句：调用次数、总耗时、平均耗时、返回行数与语句开头（需要库名与 pg_stat_statements 扩展）",
