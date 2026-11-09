@@ -38,9 +38,9 @@ describe('SettingsAccount gating', () => {
         authState.value = { user: localUser };
         renderAccount();
 
-        expect(screen.getByText('Local account')).toBeInTheDocument();
-        expect(screen.getByText('Password')).toBeInTheDocument();
-        expect(screen.getAllByRole('button', { name: 'Change' })).toHaveLength(3);
+        expect(screen.getByText('本地账户')).toBeInTheDocument();
+        expect(screen.getByText('密码')).toBeInTheDocument();
+        expect(screen.getAllByRole('button', { name: '修改' })).toHaveLength(3);
     });
 
     it.each([
@@ -62,7 +62,7 @@ describe('SettingsAccount gating', () => {
         expect(screen.getByText('GitHub')).toBeInTheDocument();
         expect(screen.getByText('Linked from your GitHub.')).toBeInTheDocument();
         expect(screen.queryByText('Password')).not.toBeInTheDocument();
-        expect(screen.getAllByRole('button', { name: 'Change' })).toHaveLength(1);
+        expect(screen.getAllByRole('button', { name: '修改' })).toHaveLength(1);
     });
 
     it('labels an unknown provider by its raw name, then a generic fallback', () => {
@@ -73,7 +73,7 @@ describe('SettingsAccount gating', () => {
 
         authState.value = { user: { mail: 'y@e.com', name: 'Y', type: 'oauth' } };
         renderAccount();
-        expect(screen.getByText('OAuth account')).toBeInTheDocument();
+        expect(screen.getByText('OAuth 账户')).toBeInTheDocument();
     });
 
     it('opens the name form on Change for an OAuth user', async () => {
@@ -81,7 +81,7 @@ describe('SettingsAccount gating', () => {
         authState.value = { user: githubUser };
         renderAccount();
 
-        await user.click(screen.getByRole('button', { name: 'Change' }));
+        await user.click(screen.getByRole('button', { name: '修改' }));
 
         expect(screen.getByRole('button', { name: 'Update Name' })).toBeInTheDocument();
     });
@@ -91,7 +91,7 @@ describe('SettingsAccount gating', () => {
         authState.value = { user: localUser };
         renderAccount();
 
-        const [firstChangeButton] = screen.getAllByRole('button', { name: 'Change' });
+        const [firstChangeButton] = screen.getAllByRole('button', { name: '修改' });
 
         if (!firstChangeButton) {
             throw new Error('expected a Change button');
@@ -102,7 +102,7 @@ describe('SettingsAccount gating', () => {
         await user.clear(nameInput);
         await user.type(nameInput, 'Draft Name');
 
-        const [reopenChangeButton] = screen.getAllByRole('button', { name: 'Change' });
+        const [reopenChangeButton] = screen.getAllByRole('button', { name: '修改' });
 
         if (!reopenChangeButton) {
             throw new Error('expected a Change button');

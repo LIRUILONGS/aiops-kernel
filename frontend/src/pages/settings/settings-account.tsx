@@ -38,13 +38,13 @@ function SettingsAccount() {
     const initial = ([...(displayName || '?')][0] ?? '?').toUpperCase();
     const createdAt = user.created_at ? new Date(user.created_at) : null;
     const memberSince = createdAt && isValid(createdAt) ? format(createdAt, 'MMMM yyyy', { locale: enUS }) : null;
-    const accountLabel = isLocal ? 'Local account' : (formatAccountProvider(user.provider) ?? 'OAuth account');
+    const accountLabel = isLocal ? '本地账户' : (formatAccountProvider(user.provider) ?? 'OAuth 账户');
 
     return (
         <>
             <AppHeader>
                 <AppHeaderContent>
-                    <AppHeaderTitle icon={<User className="size-4 shrink-0" />}>Account</AppHeaderTitle>
+                    <AppHeaderTitle icon={<User className="size-4 shrink-0" />}>账户</AppHeaderTitle>
                 </AppHeaderContent>
             </AppHeader>
             <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 p-4">
@@ -56,7 +56,7 @@ function SettingsAccount() {
                         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                             <CardTitle className="truncate">{displayName}</CardTitle>
                             {memberSince && (
-                                <CardDescription className="truncate">Member since {memberSince}</CardDescription>
+                                <CardDescription className="truncate">注册于 {memberSince}</CardDescription>
                             )}
                         </div>
                         <Badge
@@ -71,8 +71,8 @@ function SettingsAccount() {
                 <Card>
                     <CardHeader className="flex-row items-start justify-between gap-4">
                         <div className="grid gap-1.5">
-                            <CardTitle>Display name</CardTitle>
-                            <CardDescription>The name shown across the app.</CardDescription>
+                            <CardTitle>显示名称</CardTitle>
+                            <CardDescription>在界面各处展示的名字。</CardDescription>
                         </div>
                         {!editingSections.has('name') && (
                             <Button
@@ -80,7 +80,7 @@ function SettingsAccount() {
                                 size="sm"
                                 variant="outline"
                             >
-                                Change
+                                修改
                             </Button>
                         )}
                     </CardHeader>
@@ -102,7 +102,7 @@ function SettingsAccount() {
                 <Card>
                     <CardHeader className="flex-row items-start justify-between gap-4">
                         <div className="grid gap-1.5">
-                            <CardTitle>Email address</CardTitle>
+                            <CardTitle>邮箱地址</CardTitle>
                             <CardDescription>
                                 {isLocal ? 'The email you use to sign in.' : `Linked from your ${accountLabel}.`}
                             </CardDescription>
@@ -113,7 +113,7 @@ function SettingsAccount() {
                                 size="sm"
                                 variant="outline"
                             >
-                                Change
+                                修改
                             </Button>
                         )}
                     </CardHeader>
@@ -136,8 +136,8 @@ function SettingsAccount() {
                     <Card>
                         <CardHeader className="flex-row items-start justify-between gap-4">
                             <div className="grid gap-1.5">
-                                <CardTitle>Password</CardTitle>
-                                <CardDescription>Change your account password.</CardDescription>
+                                <CardTitle>密码</CardTitle>
+                                <CardDescription>修改账户密码。</CardDescription>
                             </div>
                             {!editingSections.has('password') && (
                                 <Button
@@ -145,7 +145,7 @@ function SettingsAccount() {
                                     size="sm"
                                     variant="outline"
                                 >
-                                    Change
+                                    修改
                                 </Button>
                             )}
                         </CardHeader>

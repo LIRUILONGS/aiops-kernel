@@ -35,25 +35,25 @@ const menuItems: readonly MenuItem[] = [
         icon: <User className="size-4" />,
         id: 'account',
         path: routes.settings.account,
-        title: 'Account',
+        title: '账户',
     },
     {
         icon: <Plug className="size-4" />,
         id: 'providers',
         path: routes.settings.providers,
-        title: 'Providers',
+        title: '模型提供商',
     },
     {
         icon: <FileText className="size-4" />,
         id: 'prompts',
         path: routes.settings.prompts,
-        title: 'Prompts',
+        title: '提示词',
     },
     {
         icon: <Key className="size-4" />,
         id: 'api-tokens',
         path: routes.settings.apiTokens,
-        title: 'API Tokens',
+        title: 'API 令牌',
     },
 ] as const;
 
@@ -75,7 +75,7 @@ export function SettingsSidebar() {
                                     strokeWidth={4 / 3}
                                 />
                             }
-                            title="Settings"
+                            title="设置"
                         />
                     </SidebarMenuItem>
                 </SidebarMenu>
@@ -98,7 +98,7 @@ export function SettingsSidebar() {
                 <SidebarMenuButton asChild>
                     <NavLink to={returnUrl}>
                         <ArrowLeft />
-                        Back to App
+                        返回应用
                     </NavLink>
                 </SidebarMenuButton>
             </SidebarFooter>
