@@ -32,8 +32,8 @@ export interface UnsavedChangesDialogProps {
 
 function UnsavedChangesDialog({
     canSave,
-    description = 'You have unsaved changes on this page. Would you like to save them before leaving?',
-    discardText = 'Discard',
+    description = '此页面有未保存的更改，离开前要保存吗？',
+    discardText = '放弃',
     handleCancel,
     handleDiscard,
     handleOpenChange,
@@ -42,7 +42,7 @@ function UnsavedChangesDialog({
     isSavingFromDialog,
     saveIcon = <Save />,
     saveText = '保存',
-    title = 'Unsaved changes',
+    title = '未保存的更改',
 }: UnsavedChangesDialogProps) {
     return (
         <Dialog
@@ -72,7 +72,7 @@ function UnsavedChangesDialog({
                         onClick={handleCancel}
                         variant="outline"
                     >
-                        Cancel
+                        取消
                     </Button>
                     <Button
                         disabled={isSavingFromDialog}

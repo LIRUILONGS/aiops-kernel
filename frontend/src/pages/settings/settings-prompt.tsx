@@ -86,14 +86,14 @@ import { useBreakpoint } from '@/hooks/use-breakpoint';
 import { composeRefs } from '@/lib/compose-refs';
 import { formatPromptId } from '@/lib/route-titles/format-prompt-id';
 
-const VARIABLES_TITLE = 'Available variables';
+const VARIABLES_TITLE = '可用变量';
 
 const systemFormSchema = z.object({
-    template: z.string().min(1, 'System template is required'),
+    template: z.string().min(1, '系统提示词模板不能为空'),
 });
 
 const humanFormSchema = z.object({
-    template: z.string().min(1, 'Human template is required'),
+    template: z.string().min(1, '用户提示词模板不能为空'),
 });
 
 interface FormMarkdownItemProps<T extends FieldValues> {
@@ -358,7 +358,7 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
             setResetDialogOpen(false);
         } catch (error) {
             console.error('Reset error:', error);
-            setSubmitError(error instanceof Error ? error.message : 'An error occurred while resetting');
+            setSubmitError(error instanceof Error ? error.message : '重置时出错');
             setResetDialogOpen(false);
         }
     };
@@ -402,7 +402,7 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
             setValidationDialogOpen(true);
         } catch (error) {
             console.error('Validation error:', error);
-            setSubmitError(error instanceof Error ? error.message : 'An error occurred while validating');
+            setSubmitError(error instanceof Error ? error.message : '校验时出错');
         }
     };
 
@@ -595,7 +595,7 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
             const humanPromptType = agentData.human?.type;
 
             if (!humanPromptType) {
-                setSubmitError('Human prompt type not found');
+                setSubmitError('找不到用户提示词类型');
 
                 return false;
             }
@@ -671,14 +671,14 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
     const pageHeader = (
         <AppHeader>
             <AppHeaderContent>
-                <AppHeaderTitle icon={<FileText className="size-4 shrink-0" />}>Edit Prompt</AppHeaderTitle>
+                <AppHeaderTitle icon={<FileText className="size-4 shrink-0" />}>编辑提示词</AppHeaderTitle>
             </AppHeaderContent>
             {promptInfo && (
                 <AppHeaderActions>
                     <AppHeaderAction
                         disabled={isLoading}
                         icon={isValidateLoading ? <Spinner variant="circle" /> : <CheckCircle />}
-                        label={isValidateLoading ? 'Validating...' : 'Validate'}
+                        label={isValidateLoading ? '校验中…' : '校验'}
                         onClick={handleValidate}
                         type="button"
                         variant="outline"
@@ -693,7 +693,7 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button
-                                aria-label="Prompt actions"
+                                aria-label="提示词操作"
                                 className="size-8 p-0"
                                 type="button"
                                 variant="ghost"
@@ -709,14 +709,14 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
                                 <>
                                     <DropdownMenuItem onClick={() => setIsDiffDialogOpen(true)}>
                                         <FileDiff />
-                                        Diff
+                                        差异
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         disabled={isLoading}
                                         onClick={handleReset}
                                     >
                                         {isDeleteLoading ? <Spinner variant="circle" /> : <RotateCcw />}
-                                        {isDeleteLoading ? '正在重置…' : 'Reset'}
+                                        {isDeleteLoading ? '正在重置…' : '重置'}
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                 </>
@@ -725,12 +725,12 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
                                 className="cursor-default gap-4 hover:bg-transparent focus:bg-transparent"
                                 onSelect={(event) => event.preventDefault()}
                             >
-                                View
+                                视图
                                 <EditorViewModeToggle
                                     className="-my-1.5 -mr-2 ml-auto"
                                     mode={viewMode}
                                     onModeChange={setViewMode}
-                                    rawTooltip="Edit the raw prompt template"
+                                    rawTooltip="编辑原始提示词模板"
                                 />
                             </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -746,8 +746,8 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
                 {pageHeader}
                 <div className="flex flex-1 items-center justify-center p-4">
                     <LoadingState
-                        description="Please wait while we fetch prompt information"
-                        title="Loading prompt data..."
+                        description="正在获取提示词信息，请稍候"
+                        title="正在加载提示词…"
                     />
                 </div>
             </>
@@ -762,7 +762,7 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
                     <ErrorState
                         message={error.message}
                         onRetry={refetch}
-                        title="Error loading prompt data"
+                        title="加载提示词失败"
                     />
                 </div>
             </>
@@ -779,8 +779,8 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
                             <EmptyMedia>
                                 <AlertCircle className="text-destructive size-12" />
                             </EmptyMedia>
-                            <EmptyTitle>Prompt not found</EmptyTitle>
-                            <EmptyDescription>{`The prompt "${promptId}" could not be found or is not supported for editing.`}</EmptyDescription>
+                            <EmptyTitle>找不到该提示词</EmptyTitle>
+                            <EmptyDescription>{`找不到提示词「${promptId}」，或该提示词不支持编辑。`}</EmptyDescription>
                         </EmptyHeader>
                     </Empty>
                 </div>
@@ -794,11 +794,11 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
     const promptPanel = (
         <>
             <div className="flex flex-col gap-2 text-center">
-                <h2 className="text-2xl font-semibold">Edit prompt</h2>
+                <h2 className="text-2xl font-semibold">编辑提示词</h2>
                 <p className="text-muted-foreground">
                     {promptInfo.type === 'agent'
-                        ? 'Customize the templates this agent uses'
-                        : 'Customize the template this tool uses'}
+                        ? '自定义该 Agent 使用的提示词模板'
+                        : '自定义该工具使用的提示词模板'}
                 </p>
             </div>
 
@@ -813,8 +813,8 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
                 </h3>
                 <p className="text-muted-foreground text-sm">
                     {promptInfo.type === 'agent'
-                        ? 'Configure prompts for this AI agent'
-                        : 'Configure the prompt for this tool'}
+                        ? '配置该 AI Agent 的提示词'
+                        : '配置该工具的提示词'}
                 </p>
             </div>
 
@@ -824,7 +824,7 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
                     value="system"
                 >
                     <Code className="size-4" />
-                    System Prompt
+                    系统提示词
                 </TabsTrigger>
                 <TabsTrigger
                     className="xl:dark:data-[state=active]:bg-card flex-1"
@@ -832,7 +832,7 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
                     value="human"
                 >
                     <User className="size-4" />
-                    Human Prompt
+                    用户提示词
                 </TabsTrigger>
             </TabsList>
 
@@ -847,7 +847,7 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
     );
 
     const systemPlaceholder =
-        promptInfo.type === 'tool' ? 'Enter the tool template...' : 'Enter the system prompt template...';
+        promptInfo.type === 'tool' ? '输入工具提示词模板…' : '输入系统提示词模板…';
 
     const promptEditor = (
         <>
@@ -863,7 +863,7 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
                         onSubmit={systemForm.handleSubmit(handleSystemSubmit)}
                     >
                         <FormMarkdownItem
-                            aria-label="System prompt template"
+                            aria-label="系统提示词模板"
                             control={systemForm.control}
                             disabled={isLoading}
                             editorRef={editorRef}
@@ -888,13 +888,13 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
                             onSubmit={humanForm.handleSubmit(handleHumanSubmit)}
                         >
                             <FormMarkdownItem
-                                aria-label="Human prompt template"
+                                aria-label="用户提示词模板"
                                 control={humanForm.control}
                                 disabled={isLoading}
                                 editorRef={editorRef}
                                 mode={viewMode}
                                 name="template"
-                                placeholder="Enter the human prompt template..."
+                                placeholder="输入用户提示词模板…"
                             />
                         </form>
                     </Form>
@@ -928,15 +928,15 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
                 cancelText="取消"
                 cancelVariant="outline"
                 confirmIcon={<RotateCcw />}
-                confirmText="Reset"
+                confirmText="重置"
                 confirmVariant="destructive"
-                description="Are you sure you want to reset this prompt to its default value? This action cannot be undone."
+                description="确定要把该提示词还原为默认值吗？此操作无法撤销。"
                 handleConfirm={handleConfirmReset}
                 handleOpenChange={setResetDialogOpen}
                 isOpen={resetDialogOpen}
-                itemName={`${activeTab} prompt`}
-                itemType="template"
-                title="Reset Prompt"
+                itemName={activeTab === 'system' ? '系统提示词' : '用户提示词'}
+                itemType="模板"
+                title="重置提示词"
             />
 
             <UnsavedChangesDialog
@@ -957,10 +957,10 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <AlertCircle className="size-5" />
-                            Validation Results
+                            校验结果
                         </DialogTitle>
                         <DialogDescription>
-                            The validation result for the {activeTab} prompt template.
+                            该{activeTab === 'system' ? '系统' : '用户'}提示词模板的校验结果。
                         </DialogDescription>
                     </DialogHeader>
 
@@ -973,19 +973,19 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
                                     <XCircle className="size-4 text-red-500!" />
                                 )}
                                 <AlertTitle>
-                                    {validationResult.result === 'success' ? 'Valid Template' : 'Validation Error'}
+                                    {validationResult.result === 'success' ? '模板有效' : '校验失败'}
                                 </AlertTitle>
                                 <AlertDescription>
                                     <div className="whitespace-pre-line">
                                         {validationResult.message}
                                         {validationResult.details && (
                                             <div className="mt-2">
-                                                <strong>Details:</strong> {validationResult.details}
+                                                <strong>详情：</strong> {validationResult.details}
                                             </div>
                                         )}
                                         {validationResult.line && (
                                             <div className="mt-1">
-                                                <strong>Line:</strong> {validationResult.line}
+                                                <strong>行号：</strong> {validationResult.line}
                                             </div>
                                         )}
                                     </div>
@@ -993,7 +993,7 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
                             </Alert>
 
                             <div className="flex justify-end">
-                                <Button onClick={() => setValidationDialogOpen(false)}>Close</Button>
+                                <Button onClick={() => setValidationDialogOpen(false)}>关闭</Button>
                             </div>
                         </div>
                     )}
@@ -1008,9 +1008,9 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <FileDiff className="size-5" />
-                            Diff
+                            差异
                         </DialogTitle>
-                        <DialogDescription>Changes between current value and default template.</DialogDescription>
+                        <DialogDescription>当前值与默认模板的差异。</DialogDescription>
                     </DialogHeader>
                     <div className="max-h-[70vh] overflow-auto">
                         <DiffContent
@@ -1054,7 +1054,7 @@ function Variables({ currentTemplate, onVariableClick, variables }: VariablesPro
                         </Badge>
                     </h4>
                     <p className="text-muted-foreground mt-1 text-xs">
-                        Click to insert at the cursor, or cycle through existing uses.
+                        点击插入到光标处，或循环跳转到已有引用。
                     </p>
                 </div>
                 <div className="bg-background">{content}</div>
@@ -1101,8 +1101,8 @@ function VariablesContent({ currentTemplate, onVariableClick, variables }: Varia
                 const count = counts[variable] ?? 0;
                 const isUsed = count > 0;
                 const action = isUsed
-                    ? `Go to next {{.${variable}}} in the template${count > 1 ? ` (${count} uses)` : ''}`
-                    : `Insert {{.${variable}}} at the cursor`;
+                    ? `跳到模板中的下一个 {{.${variable}}}`
+                    : `在光标处插入 {{.${variable}}}`;
 
                 return (
                     // className stays on Badge: Slot only concatenates, so `font-normal` would race
