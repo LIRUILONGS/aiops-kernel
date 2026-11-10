@@ -126,7 +126,7 @@ describe('MainSidebar settings entry points', () => {
         renderSidebar();
 
         await user.click(screen.getByRole('button', { name: /Test User/ }));
-        await user.click(screen.getByRole('menuitem', { name: '账户设置' }));
+        await user.click(screen.getByRole('menuitem', { name: '设置' }));
 
         expect(screen.getByTestId('probe-origin')).toHaveTextContent('/dashboard');
     });

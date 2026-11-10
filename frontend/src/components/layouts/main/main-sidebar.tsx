@@ -382,7 +382,7 @@ export function MainSidebar() {
                                         to={routes.settings.account}
                                     >
                                         <UserIcon className="mr-2 size-4" />
-                                        账户设置
+                                        设置
                                     </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />

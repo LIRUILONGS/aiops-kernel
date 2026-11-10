@@ -47,7 +47,7 @@ const menuItems: readonly MenuItem[] = [
         icon: <FileText className="size-4" />,
         id: 'prompts',
         path: routes.settings.prompts,
-        title: '提示词',
+        title: '提示词模板',
     },
     {
         icon: <Key className="size-4" />,

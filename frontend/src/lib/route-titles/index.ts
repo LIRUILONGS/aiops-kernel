@@ -34,66 +34,66 @@ export type TitleResolver = ((params: RouteParams) => string) | ComponentType<{ 
  * from this registry onto the matching <Route>.
  */
 export const routeTitles = {
-    account: { title: 'Account' },
-    apiTokens: { title: 'API Tokens' },
-    dashboard: { title: 'Dashboard' },
+    account: { title: '账户' },
+    apiTokens: { title: 'API 令牌' },
+    dashboard: { title: '概览' },
     flow: {
         title: apolloTitle({
             document: FlowDocument,
             select: (data, { flowId }) =>
-                data?.flow?.title && flowId ? `Flow #${flowId} — ${data.flow.title}` : 'Flow',
+                data?.flow?.title && flowId ? `会话 #${flowId} — ${data.flow.title}` : '会话',
             variables: ({ flowId }) => (flowId ? { id: flowId } : null),
         }),
     },
-    flowReport: { title: 'Flow report' },
-    flows: { title: 'Flows' },
+    flowReport: { title: '会话报告' },
+    flows: { title: '会话' },
     knowledge: {
         title: apolloTitle({
             document: KnowledgeDocumentDocument,
             select: (data, { knowledgeId }) =>
-                knowledgeId === 'new' ? 'New knowledge' : data?.knowledgeDocument?.question || 'Knowledge',
+                knowledgeId === 'new' ? '新建知识' : data?.knowledgeDocument?.question || '知识',
             variables: ({ knowledgeId }) => (!knowledgeId || knowledgeId === 'new' ? null : { id: knowledgeId }),
         }),
     },
-    knowledges: { title: 'Knowledges' },
-    login: { title: 'Login' },
-    newFlow: { title: 'New flow' },
+    knowledges: { title: '知识库' },
+    login: { title: '登录' },
+    newFlow: { title: '新建会话' },
     oauth: { title: 'OAuth' },
     prompt: {
         title: (params: RouteParams) => (params.promptId ? formatPromptId(params.promptId) : 'Prompt'),
     },
-    prompts: { title: 'Prompts' },
+    prompts: { title: '提示词模板' },
 
     provider: {
         title: apolloTitle({
             document: SettingsProvidersDocument,
             select: (data, { providerId }) => {
                 if (providerId === 'new') {
-                    return 'New provider';
+                    return '新建提供商';
                 }
 
                 const provider = data?.settingsProviders.userDefined?.find(
                     (candidate) => String(candidate.id) === providerId,
                 );
 
-                return provider?.name || 'Provider';
+                return provider?.name || '提供商';
             },
             variables: ({ providerId }) => (providerId === 'new' ? null : {}),
         }),
     },
 
-    providers: { title: 'Providers' },
+    providers: { title: '模型提供商' },
 
-    resources: { title: 'Resources' },
+    resources: { title: '资源' },
 
     template: {
         title: apolloTitle({
             document: FlowTemplateDocument,
             select: (data, { templateId }) =>
-                templateId === 'new' ? 'New template' : data?.flowTemplate?.title || 'Template',
+                templateId === 'new' ? '新建模板' : data?.flowTemplate?.title || '模板',
             variables: ({ templateId }) => (!templateId || templateId === 'new' ? null : { templateId }),
         }),
     },
 
-    templates: { title: 'Templates' },
+    templates: { title: '模板' },
 } as const satisfies Record<string, RouteTitleHandle>;
