@@ -1325,6 +1325,46 @@ func TestTools_GetCommanderExecutor_AdvertisesOnlyTheExitOfItsMode(t *testing.T)
 	}
 }
 
+func TestTools_GetCommanderExecutor_AdvertisesKernelTracingOnlyWhenItIsAllowed(t *testing.T) {
+	handler := func(context.Context, string, json.RawMessage) (string, error) { return "", nil }
+
+	build := func(bpf bool) map[string]bool {
+		fte := &flowToolsExecutor{
+			flowID: 42,
+			cfg: &config.Config{
+				OpsTargets:    `[{"id":"lab","host":"127.0.0.1","port":22,"user":"root","password":"x"}]`,
+				OpsSandboxBPF: bpf,
+			},
+			db:     &fakeContainerDB{row: toolsSandboxRow(database.ContainerStatusRunning, "primary")},
+			docker: &fakeDockerClient{},
+		}
+
+		executor, err := fte.GetCommanderExecutor(CommanderExecutorConfig{Diagnosis: handler})
+		require.NoError(t, err)
+		ce := executor.(*customExecutor)
+
+		advertised := map[string]bool{}
+		for _, def := range ce.definitions {
+			advertised[def.Name] = true
+		}
+		if bpf && !advertised[OpsTraceToolName] {
+			t.Fatal("ops_trace is allowed but not advertised")
+		}
+		if bpf {
+			if _, ok := ce.handlers[OpsTraceToolName]; !ok {
+				t.Fatal("ops_trace is advertised without a handler")
+			}
+		} else if advertised[OpsTraceToolName] {
+			t.Fatal("ops_trace is advertised while the operator kept kernel tracing off")
+		}
+
+		return advertised
+	}
+
+	build(true)
+	build(false)
+}
+
 func TestTools_GetCommanderExecutor_KeepsTheConclusionWhenThereIsNoHostToRead(t *testing.T) {
 	handler := func(context.Context, string, json.RawMessage) (string, error) { return "", nil }
 
