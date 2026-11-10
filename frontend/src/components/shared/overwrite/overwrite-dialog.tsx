@@ -11,7 +11,7 @@ export interface OverwriteConflict {
 interface OverwriteDialogProps {
     /**
      * Overrides the auto-generated confirm button label. Defaults to
-     * `"Replace"` for a single conflict and `"Replace all"` for a batch.
+     * `"替换"` for a single conflict and `"全部替换"` for a batch.
      */
     confirmText?: string;
     /**
@@ -46,7 +46,7 @@ const buildDefaultDescription = (conflicts: OverwriteConflict[]): string | undef
     return undefined;
 };
 
-const buildDefaultConfirmText = (count: number): string => (count > 1 ? 'Replace all' : 'Replace');
+const buildDefaultConfirmText = (count: number): string => (count > 1 ? '全部替换' : '替换');
 
 /**
  * Shared "Replace or cancel" confirmation for destructive overwrite flows
@@ -67,7 +67,7 @@ export function OverwriteDialog({
 }: OverwriteDialogProps) {
     return (
         <ConfirmationDialog
-            cancelText="Cancel"
+            cancelText="取消"
             confirmIcon={<Replace />}
             confirmText={confirmText ?? buildDefaultConfirmText(conflicts.length)}
             confirmVariant="destructive"

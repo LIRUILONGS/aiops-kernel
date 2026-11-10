@@ -186,12 +186,12 @@ function Resources() {
         const wasCopied = await copyToClipboard(file.path);
 
         if (wasCopied) {
-            toast.success('Path copied to clipboard');
+            toast.success('路径已复制');
 
             return;
         }
 
-        toast.error('Failed to copy path');
+        toast.error('复制路径失败');
     }, []);
 
     // Join the selected paths with `\n` so the result pastes as a clean
@@ -209,7 +209,7 @@ function Resources() {
             return;
         }
 
-        toast.error('Failed to copy paths');
+        toast.error('复制路径失败');
     }, []);
 
     /**
@@ -275,7 +275,7 @@ function Resources() {
                 appliesToFiles: false,
                 icon: Upload,
                 id: 'resources-upload-here',
-                label: 'Upload files',
+                label: '上传文件',
                 onSelect: handleUploadHere,
             },
             {
@@ -326,7 +326,7 @@ function Resources() {
             {
                 icon: Upload,
                 id: 'resources-empty-upload',
-                label: 'Upload files',
+                label: '上传文件',
                 onSelect: upload.openFilePicker,
             },
         ],
@@ -356,10 +356,10 @@ function Resources() {
                     variant="outline"
                 />
                 <AppHeaderAction
-                    aria-label={upload.isUploading ? 'Uploading...' : 'Upload files'}
+                    aria-label={upload.isUploading ? '正在上传…' : '上传文件'}
                     disabled={upload.isUploading}
                     icon={upload.isUploading ? <Spinner variant="circle" /> : <Upload />}
-                    label={upload.isUploading ? 'Uploading...' : 'Upload files'}
+                    label={upload.isUploading ? '正在上传…' : '上传文件'}
                     onClick={upload.openFilePicker}
                     variant="secondary"
                 />
@@ -371,7 +371,7 @@ function Resources() {
 
     const noResourcesState = (
         <FileDropZone
-            actionLabel="Upload files"
+            actionLabel="上传文件"
             description="上传文档，OpsAGI 的智能体在会话中可以引用它们。也可以直接把文件拖到面板里。"
             hint="Up to 300 MB per file · 2 GB per upload"
             isDragging={isDragging}
@@ -549,7 +549,7 @@ function Resources() {
                 />
 
                 <ConfirmationDialog
-                    confirmText="Delete"
+                    confirmText="删除"
                     handleConfirm={deletion.confirmDelete}
                     handleOpenChange={handleDeleteDialogOpenChange}
                     isOpen={!!deletion.fileToDelete}

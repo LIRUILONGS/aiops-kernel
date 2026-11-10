@@ -121,7 +121,7 @@ function FlowTask({ searchValue = '', task }: FlowTaskProps) {
                                 className="cursor-pointer"
                                 onClick={() => setIsDetailsVisible(!isDetailsVisible)}
                             >
-                                {isDetailsVisible ? 'Hide details' : 'Show details'}
+                                {isDetailsVisible ? '收起详情' : '展开详情'}
                             </div>
                             {isDetailsVisible && (
                                 <Card className="mt-4">

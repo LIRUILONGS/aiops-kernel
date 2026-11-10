@@ -83,7 +83,7 @@ describe('MainSidebar account badge', () => {
     it('calls a local account local', async () => {
         await openMenu(/Test User/);
 
-        expect(screen.getByText('Local')).toBeInTheDocument();
+        expect(screen.getByText('本地')).toBeInTheDocument();
     });
 
     it('names the provider a federated account came from', async () => {
@@ -126,7 +126,7 @@ describe('MainSidebar settings entry points', () => {
         renderSidebar();
 
         await user.click(screen.getByRole('button', { name: /Test User/ }));
-        await user.click(screen.getByRole('menuitem', { name: 'Profile' }));
+        await user.click(screen.getByRole('menuitem', { name: '账户设置' }));
 
         expect(screen.getByTestId('probe-origin')).toHaveTextContent('/dashboard');
     });
@@ -136,12 +136,12 @@ describe('MainSidebar rows that carry an action', () => {
     it('marks the row so its label keeps clear of the action button', () => {
         renderSidebar();
 
-        expect(screen.getByRole('link', { name: 'Flows' }).closest('li')).toHaveAttribute('data-has-action', 'true');
+        expect(screen.getByRole('link', { name: '会话' }).closest('li')).toHaveAttribute('data-has-action', 'true');
     });
 
     it('leaves a row without an action unmarked, so its label spans the full width', () => {
         renderSidebar();
 
-        expect(screen.getByRole('link', { name: 'Dashboard' }).closest('li')).not.toHaveAttribute('data-has-action');
+        expect(screen.getByRole('link', { name: '概览' }).closest('li')).not.toHaveAttribute('data-has-action');
     });
 });

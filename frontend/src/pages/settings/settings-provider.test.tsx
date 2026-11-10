@@ -296,7 +296,7 @@ describe('SettingsProvider test feedback', () => {
     };
 
     const testControls = () => {
-        const controls = screen.getAllByRole('button', { name: 'Test' });
+        const controls = screen.getAllByRole('button', { name: '测试' });
 
         expect(controls).toHaveLength(2);
 
@@ -859,8 +859,8 @@ describe('SettingsProvider reasoning on the ollama catalogue', () => {
 
     it.each([
         ['创建', () => screen.getByRole('button', { name: '创建' })],
-        ['Test', () => screen.getAllByRole('button', { name: 'Test' })[0]],
-        ['the agent Test', () => screen.getAllByRole('button', { name: 'Test' })[1]],
+        ['测试', () => screen.getAllByRole('button', { name: '测试' })[0]],
+        ['the agent Test', () => screen.getAllByRole('button', { name: '测试' })[1]],
     ])('%s sends no Off the model cannot honour for an agent left collapsed', async (_, button) => {
         setSearch(`?type=${ProviderType.Ollama}`);
         queryResult.data = { settingsProviders: ollamaCatalogue('gpt-oss:120b', 'off') };
@@ -993,12 +993,12 @@ describe('SettingsProvider level refused alongside tools', () => {
         },
     );
 
-    const testButtons = () => screen.getAllByRole('button', { name: 'Test' });
+    const testButtons = () => screen.getAllByRole('button', { name: '测试' });
 
     it.each([
         ['创建', { effort: 'medium' }, () => screen.getByRole('button', { name: '创建' })],
         ['创建', { maxTokens: 2048, mode: 'budget' }, () => screen.getByRole('button', { name: '创建' })],
-        ['Test', { effort: 'medium' }, () => testButtons()[0]],
+        ['测试', { effort: 'medium' }, () => testButtons()[0]],
         ['the agent Test', { effort: 'medium' }, () => testButtons()[1]],
     ])('%s sends no refused level %o for an agent left collapsed', async (_, reasoning, button) => {
         renderWith({ simple: agent('gpt-5.6-sol', reasoning) });

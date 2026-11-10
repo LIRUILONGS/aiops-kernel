@@ -81,7 +81,7 @@ function FlowAgent({ log, searchValue = '' }: FlowAgentProps) {
                             className="cursor-pointer"
                             onClick={() => setIsDetailsVisible(!isDetailsVisible)}
                         >
-                            {isDetailsVisible ? 'Hide details' : 'Show details'}
+                            {isDetailsVisible ? '收起详情' : '展开详情'}
                         </div>
                         {isDetailsVisible && result && (
                             <>

@@ -21,7 +21,7 @@ export const downloadAction = (
         getHrefDownloadAttr: (file) => (file.isDir ? `${file.name}.${archiveExtension}` : file.name),
         icon: Download,
         id: '__builtin_download',
-        label: 'Download',
+        label: '下载',
         onSelect: () => {},
     };
 };
@@ -42,7 +42,7 @@ export const deleteAction = (onDelete: (file: FileNode) => void): FileManagerAct
     appliesToDirs: true,
     icon: Trash2,
     id: '__builtin_delete',
-    label: 'Delete',
+    label: '删除',
     onSelect: onDelete,
     separatorBefore: true,
     variant: 'destructive',
@@ -55,7 +55,7 @@ interface BulkDeleteOptions {
     confirmText?: string;
     /** Confirm-dialog title formatter. Default: "Delete N items". */
     confirmTitle?: (countLabel: string) => string;
-    /** Trigger label in the bar. Default: "Delete". */
+    /** Trigger label in the bar. Default: "删除". */
     label?: string;
 }
 
@@ -68,7 +68,7 @@ export const bulkDeleteAction = (
     onDelete: (files: FileNode[]) => Promise<void> | void,
     options: BulkDeleteOptions = {},
 ): FileManagerBulkAction => {
-    const label = options.label ?? 'Delete';
+    const label = options.label ?? '删除';
 
     return {
         confirm: {
@@ -97,7 +97,7 @@ export const bulkCopyPathsAction = (
 ): FileManagerBulkAction => ({
     icon: ClipboardCopy,
     id: '__builtin_bulk_copy_paths',
-    label: options.label ?? 'Copy paths',
+    label: options.label ?? '复制路径',
     onSelect: (files) => onCopy(files.map((file) => file.path)),
     overflow: options.overflow ?? true,
 });
@@ -142,7 +142,7 @@ export const bulkPromoteAction = (
 ): FileManagerBulkAction => ({
     icon: FolderOutput,
     id: '__builtin_bulk_promote',
-    label: options.label ?? 'Save as resources',
+    label: options.label ?? '存为资源',
     onSelect: onPromote,
     overflow: options.overflow,
 });
@@ -186,7 +186,7 @@ export const bulkDownloadAction = (
 ): FileManagerBulkAction => ({
     icon: Download,
     id: '__builtin_bulk_download',
-    label: options.label ?? 'Download',
+    label: options.label ?? '下载',
     onSelect: (files) => {
         if (files.length === 0) {
             return;

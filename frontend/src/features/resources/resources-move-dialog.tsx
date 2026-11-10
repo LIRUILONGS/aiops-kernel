@@ -185,7 +185,7 @@ function ResourcesMoveDialogForm({ files, onClose }: ResourcesMoveDialogFormProp
                             name="destination"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>{isMulti ? 'Destination directory' : 'New path'}</FormLabel>
+                                    <FormLabel>{isMulti ? '目标目录' : 'New path'}</FormLabel>
                                     <FormControl>
                                         <Input
                                             {...field}

@@ -41,7 +41,7 @@ function UnsavedChangesDialog({
     isOpen,
     isSavingFromDialog,
     saveIcon = <Save />,
-    saveText = 'Save',
+    saveText = '保存',
     title = 'Unsaved changes',
 }: UnsavedChangesDialogProps) {
     return (

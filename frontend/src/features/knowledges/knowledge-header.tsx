@@ -128,7 +128,7 @@ export function KnowledgeHeader({
             // The sibling edit form picks up the new `question` via
             // `useForm({ values })` once the cache updates — no manual sync here.
             await renameKnowledge(knowledge.id, newQuestion);
-            toast.success('Knowledge renamed successfully');
+            toast.success('已重命名');
             handleRenameCancel();
         } catch {
             // Error already handled in provider with toast
@@ -180,14 +180,14 @@ export function KnowledgeHeader({
                                                 className="max-w-64 min-w-0 cursor-text truncate select-none"
                                                 onDoubleClick={handleRenameStart}
                                             >
-                                                {knowledgeName ?? 'Knowledge'}
+                                                {knowledgeName ?? '知识库'}
                                             </BreadcrumbPage>
                                         </TooltipTrigger>
                                         <TooltipContent>双击重命名</TooltipContent>
                                     </Tooltip>
                                 ) : (
                                     <BreadcrumbPage className="min-w-0 truncate">
-                                        {isNew ? 'New knowledge' : (knowledgeName ?? 'Knowledge')}
+                                        {isNew ? 'New knowledge' : (knowledgeName ?? '知识库')}
                                     </BreadcrumbPage>
                                 )}
                             </BreadcrumbItem>
@@ -217,7 +217,7 @@ export function KnowledgeHeader({
                         <AppHeaderAction
                             disabled
                             icon={<Save />}
-                            label={isNew ? 'Create' : 'Save'}
+                            label={isNew ? '创建' : '保存'}
                             type="button"
                         />
                     )}
@@ -338,8 +338,8 @@ export function KnowledgeHeader({
                 />
             )}
             <ConfirmationDialog
-                cancelText="Cancel"
-                confirmText="Delete"
+                cancelText="取消"
+                confirmText="删除"
                 handleConfirm={handleDelete}
                 handleOpenChange={setIsDeleteDialogOpen}
                 isOpen={isDeleteDialogOpen}

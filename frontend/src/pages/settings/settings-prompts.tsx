@@ -49,11 +49,11 @@ type AgentPromptTableData = {
     displayName: string;
     hasHuman: boolean;
     hasSystem: boolean;
-    humanStatus: 'Custom' | 'Default' | 'N/A';
+    humanStatus: 'Custom' | '默认' | 'N/A';
     humanTemplate?: string;
     humanType?: PromptType;
     name: string;
-    systemStatus: 'Custom' | 'Default' | 'N/A';
+    systemStatus: 'Custom' | '默认' | 'N/A';
     systemTemplate: string;
     systemType?: PromptType;
 };
@@ -62,7 +62,7 @@ type ToolPromptTableData = {
     displayName: string;
     name: string;
     promptType?: PromptType;
-    status: 'Custom' | 'Default' | 'N/A';
+    status: 'Custom' | '默认' | 'N/A';
     template: string;
 };
 
@@ -261,11 +261,11 @@ function SettingsPrompts() {
                 displayName: formatPromptId(key),
                 hasHuman: !!(prompts as AgentPrompts)?.human,
                 hasSystem: !!(prompts as AgentPrompts)?.system,
-                humanStatus: (prompts as AgentPrompts)?.human ? (hasCustomHuman ? 'Custom' : 'Default') : 'N/A',
+                humanStatus: (prompts as AgentPrompts)?.human ? (hasCustomHuman ? 'Custom' : '默认') : 'N/A',
                 humanTemplate: (prompts as AgentPrompts)?.human?.template,
                 humanType,
                 name: key,
-                systemStatus: (prompts as AgentPrompts)?.system ? (hasCustomSystem ? 'Custom' : 'Default') : 'N/A',
+                systemStatus: (prompts as AgentPrompts)?.system ? (hasCustomSystem ? 'Custom' : '默认') : 'N/A',
                 systemTemplate: (prompts as AgentPrompts)?.system?.template || '',
                 systemType,
             };
@@ -297,7 +297,7 @@ function SettingsPrompts() {
                 displayName: formatPromptId(key),
                 name: key,
                 promptType: toolType,
-                status: (prompt as DefaultPrompt)?.template ? (hasCustomTool ? 'Custom' : 'Default') : 'N/A',
+                status: (prompt as DefaultPrompt)?.template ? (hasCustomTool ? 'Custom' : '默认') : 'N/A',
                 template: (prompt as DefaultPrompt)?.template || '',
             };
 
@@ -338,7 +338,7 @@ function SettingsPrompts() {
                 const status = row.getValue('systemStatus') as string;
 
                 return (
-                    <Badge variant={status === 'Custom' ? 'default' : status === 'Default' ? 'secondary' : 'outline'}>
+                    <Badge variant={status === 'Custom' ? 'default' : status === '默认' ? 'secondary' : 'outline'}>
                         {status}
                     </Badge>
                 );
@@ -353,7 +353,7 @@ function SettingsPrompts() {
                 const status = row.getValue('humanStatus') as string;
 
                 return (
-                    <Badge variant={status === 'Custom' ? 'default' : status === 'Default' ? 'secondary' : 'outline'}>
+                    <Badge variant={status === 'Custom' ? 'default' : status === '默认' ? 'secondary' : 'outline'}>
                         {status}
                     </Badge>
                 );
@@ -514,7 +514,7 @@ function SettingsPrompts() {
                 const status = row.getValue('status') as string;
 
                 return (
-                    <Badge variant={status === 'Custom' ? 'default' : status === 'Default' ? 'secondary' : 'outline'}>
+                    <Badge variant={status === 'Custom' ? 'default' : status === '默认' ? 'secondary' : 'outline'}>
                         {status}
                     </Badge>
                 );
@@ -702,7 +702,7 @@ function SettingsPrompts() {
                         {isDeleteLoading &&
                         resetOperation?.promptName === agent.name &&
                         resetOperation?.type === 'system'
-                            ? 'Resetting...'
+                            ? '正在重置…'
                             : 'Reset System'}
                     </ContextMenuItem>
                 )}
@@ -719,7 +719,7 @@ function SettingsPrompts() {
                         {isDeleteLoading &&
                         resetOperation?.promptName === agent.name &&
                         resetOperation?.type === 'human'
-                            ? 'Resetting...'
+                            ? '正在重置…'
                             : 'Reset Human'}
                     </ContextMenuItem>
                 )}
@@ -734,7 +734,7 @@ function SettingsPrompts() {
                     >
                         <Trash2 className="size-3" />
                         {isDeleteLoading && resetOperation?.promptName === agent.name && resetOperation?.type === 'all'
-                            ? 'Resetting...'
+                            ? '正在重置…'
                             : 'Reset All'}
                     </ContextMenuItem>
                 )}
@@ -761,7 +761,7 @@ function SettingsPrompts() {
                     >
                         <RotateCcw />
                         {isDeleteLoading && resetOperation?.promptName === tool.name && resetOperation?.type === 'tool'
-                            ? 'Resetting...'
+                            ? '正在重置…'
                             : 'Reset'}
                     </ContextMenuItem>
                 </>
@@ -884,7 +884,7 @@ function SettingsPrompts() {
             </div>
 
             <ConfirmationDialog
-                cancelText="Cancel"
+                cancelText="取消"
                 cancelVariant="outline"
                 confirmIcon={<RotateCcw />}
                 confirmText="Reset"

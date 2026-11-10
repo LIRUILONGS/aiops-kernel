@@ -350,7 +350,7 @@ function TemplateForm({ templateId }: { templateId?: string }) {
             // Send the server's current `text`, not the form's, so renaming the title never persists the
             // user's unsaved body edits — those stay dirty in the form (kept by `keepDirtyValues`) until they save.
             await updateTemplate(templateId, { text: template.text, title: newTitle });
-            toast.success('Template renamed successfully');
+            toast.success('已重命名');
             handleTemplateRenameCancel();
         } catch {
             // Error already handled in provider with toast
@@ -482,14 +482,14 @@ function TemplateForm({ templateId }: { templateId?: string }) {
                                                 className="max-w-64 min-w-0 cursor-text truncate select-none"
                                                 onDoubleClick={handleTemplateRenameStart}
                                             >
-                                                {templateName ?? 'Template'}
+                                                {templateName ?? '模板'}
                                             </BreadcrumbPage>
                                         </TooltipTrigger>
                                         <TooltipContent>双击重命名</TooltipContent>
                                     </Tooltip>
                                 ) : (
                                     <BreadcrumbPage className="min-w-0 truncate">
-                                        {isNew ? 'New template' : (templateName ?? 'Template')}
+                                        {isNew ? 'New template' : (templateName ?? '模板')}
                                     </BreadcrumbPage>
                                 )}
                             </BreadcrumbItem>
@@ -510,7 +510,7 @@ function TemplateForm({ templateId }: { templateId?: string }) {
                             disabled={isTemplatePending || (!isNew && !hasUnsavedChanges)}
                             form="template-form"
                             icon={<Save />}
-                            label={isNew ? 'Create' : 'Save'}
+                            label={isNew ? '创建' : '保存'}
                             loading={isSaving}
                             type="submit"
                         />
@@ -843,7 +843,7 @@ function TemplateForm({ templateId }: { templateId?: string }) {
             </Form>
             <ConfirmationDialog
                 confirmIcon={<FileSymlink />}
-                confirmText="Replace"
+                confirmText="替换"
                 confirmVariant="default"
                 description="当前表单已有内容，确定用所选预设替换吗？"
                 handleConfirm={handleConfirmReplacePreset}
@@ -858,8 +858,8 @@ function TemplateForm({ templateId }: { templateId?: string }) {
                 title="替换内容？"
             />
             <ConfirmationDialog
-                cancelText="Cancel"
-                confirmText="Delete"
+                cancelText="取消"
+                confirmText="删除"
                 handleConfirm={handleTemplateDelete}
                 handleOpenChange={setIsDeleteDialogOpen}
                 isOpen={isDeleteDialogOpen}

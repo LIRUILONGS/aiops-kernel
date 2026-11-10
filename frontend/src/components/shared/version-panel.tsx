@@ -293,7 +293,7 @@ function VersionDetails({
     const facts: VersionFact[] = [
         { isMono: true, label: 'Installed', value: presentation.label },
         ...(presentation.indicator === 'update' && presentation.latest
-            ? [{ isAccented: true, isMono: true, label: 'Available', value: presentation.latest }]
+            ? [{ isAccented: true, isMono: true, label: '可用', value: presentation.latest }]
             : []),
         ...describeTiming(versionInfo),
     ];

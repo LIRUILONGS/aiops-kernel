@@ -162,7 +162,7 @@ describe('the create row date picker', () => {
         return within(screen.getByRole('grid')).getByRole('button', { name: format(date, 'PPPP') });
     };
 
-    const submitButton = () => screen.getByRole('button', { name: 'Submit' });
+    const submitButton = () => screen.getByRole('button', { name: '提交' });
 
     it('offers the last day the endpoint accepts and no day past it', async () => {
         const lastAllowed = getLastSelectableExpiry();
@@ -306,7 +306,7 @@ describe('creating the very first token', () => {
             }),
         );
 
-        const submit = screen.getByRole('button', { name: 'Submit' });
+        const submit = screen.getByRole('button', { name: '提交' });
 
         await waitFor(() => expect(submit).toBeEnabled());
         fireEvent.click(submit);
@@ -355,7 +355,7 @@ describe('renaming an expired token', () => {
 
         fireEvent.change(screen.getByPlaceholderText('令牌名称（可选）'), { target: { value: 'renamed' } });
 
-        const submit = screen.getByRole('button', { name: 'Submit' });
+        const submit = screen.getByRole('button', { name: '提交' });
 
         await waitFor(() => expect(submit).toBeEnabled());
         fireEvent.click(submit);

@@ -1410,8 +1410,8 @@ function DeleteProviderDialog({ control, handleConfirm, handleOpenChange, isOpen
 
     return (
         <ConfirmationDialog
-            cancelText="Cancel"
-            confirmText="Delete"
+            cancelText="取消"
+            confirmText="删除"
             handleConfirm={handleConfirm}
             handleOpenChange={handleOpenChange}
             isOpen={isOpen}
@@ -1720,7 +1720,7 @@ function SettingsProvider() {
             return true;
         } catch (error) {
             console.error('Submit error:', error);
-            setSubmitError(error instanceof Error ? error.message : 'An error occurred while saving');
+            setSubmitError(error instanceof Error ? error.message : '保存时出错');
 
             return false;
         }
@@ -1848,7 +1848,7 @@ function SettingsProvider() {
             setIsTestDialogOpen(true);
         } catch (error) {
             console.error('Test error:', error);
-            setSubmitError(error instanceof Error ? error.message : 'An error occurred while testing');
+            setSubmitError(error instanceof Error ? error.message : '测试时出错');
         }
     };
 
@@ -1883,7 +1883,7 @@ function SettingsProvider() {
             return;
         } catch (error) {
             console.error('Test error:', error);
-            setSubmitError(error instanceof Error ? error.message : 'An error occurred while testing');
+            setSubmitError(error instanceof Error ? error.message : '测试时出错');
             setCurrentAgentKey(null);
         }
     };
@@ -2018,7 +2018,7 @@ function SettingsProvider() {
                                         <Play />
                                     )}
                                     <span className="no-underline! hover:no-underline!">
-                                        {isAgentTestLoading && currentAgentKey === agentKey ? 'Testing...' : 'Test'}
+                                        {isAgentTestLoading && currentAgentKey === agentKey ? '正在测试…' : '测试'}
                                     </span>
                                 </span>
                             </Button>
@@ -2249,7 +2249,7 @@ function SettingsProvider() {
                     <AppHeaderAction
                         disabled={isLoading || isTestLoading || isAgentTestLoading}
                         icon={isTestLoading ? <Spinner variant="circle" /> : <Play />}
-                        label={isTestLoading ? 'Testing...' : 'Test'}
+                        label={isTestLoading ? '正在测试…' : '测试'}
                         onClick={() => handleTest()}
                         type="button"
                         variant="outline"
@@ -2282,7 +2282,7 @@ function SettingsProvider() {
                                     onClick={handleDelete}
                                 >
                                     {isDeleteLoading ? <Spinner variant="circle" /> : <Trash2 />}
-                                    {isDeleteLoading ? 'Deleting...' : 'Delete'}
+                                    {isDeleteLoading ? '正在删除…' : '删除'}
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>

@@ -138,8 +138,8 @@ export function FileManagerBulkActionsBar({
     const baseSelectedText = labels.selectedLabel?.(affectedCount) ?? `${affectedCount} selected`;
     const sizeSuffix = (labels.formatSelectionSize ?? formatFileSize)(selectionTotalBytes);
     const selectedText = sizeSuffix ? `${baseSelectedText} · ${sizeSuffix}` : baseSelectedText;
-    const cancelText = labels.bulkCancel ?? 'Cancel';
-    const moreActionsText = labels.bulkMoreActions ?? 'More actions';
+    const cancelText = labels.bulkCancel ?? '取消';
+    const moreActionsText = labels.bulkMoreActions ?? '更多操作';
 
     return (
         <>

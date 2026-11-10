@@ -95,7 +95,7 @@ export function ImageEditForm({
                         className="gap-0"
                     >
                         <InputGroupButton
-                            aria-label={isEditing ? 'Apply image' : 'Insert image'}
+                            aria-label={isEditing ? '应用图片' : '插入图片'}
                             disabled={src === '' || isInvalid}
                             onClick={apply}
                             size="icon-xs"

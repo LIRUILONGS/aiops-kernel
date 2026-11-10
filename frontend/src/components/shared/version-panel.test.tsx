@@ -168,7 +168,7 @@ describe('VersionPanel', () => {
         expect(dialog).toHaveTextContent('New version v2.4.0 is available');
         expect(dialog).toHaveTextContent('Run the installer tool on the host where OpsAGI is deployed');
         expect(dialog).toHaveTextContent('Installed');
-        expect(dialog).toHaveTextContent('Available');
+        expect(dialog).toHaveTextContent('可用');
         expect(dialog).toHaveTextContent('Checked');
         expect(dialog).toHaveTextContent('10 minutes ago');
         expect(screen.getByRole('menuitem', { name: /Release notes for v2\.4\.0/ })).toHaveAttribute(
@@ -195,7 +195,7 @@ describe('VersionPanel', () => {
 
         expect(dialog).toHaveTextContent('Update status unknown');
         expect(dialog).toHaveTextContent('The newest published version is v2.4.0.');
-        expect(dialog).not.toHaveTextContent('Available');
+        expect(dialog).not.toHaveTextContent('可用');
         expect(screen.queryByRole('menuitem', { name: /Release notes/ })).not.toBeInTheDocument();
     });
 

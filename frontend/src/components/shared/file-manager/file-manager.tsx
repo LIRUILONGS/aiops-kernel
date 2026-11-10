@@ -472,7 +472,7 @@ export function FileManager({
             >
                 {isCheckboxVisible ? (
                     <Checkbox
-                        aria-label={effectiveLabels.selectAllAriaLabel ?? 'Select all'}
+                        aria-label={effectiveLabels.selectAllAriaLabel ?? '全选'}
                         checked={getCheckboxState(isAllSelected, isSomeSelected)}
                         onCheckedChange={toggleSelectAll}
                     />
@@ -488,8 +488,8 @@ export function FileManager({
                             aria-expanded={isAllExpanded}
                             aria-label={
                                 isAllExpanded
-                                    ? (effectiveLabels.collapseAllAriaLabel ?? 'Collapse all')
-                                    : (effectiveLabels.expandAllAriaLabel ?? 'Expand all')
+                                    ? (effectiveLabels.collapseAllAriaLabel ?? '全部收起')
+                                    : (effectiveLabels.expandAllAriaLabel ?? '全部展开')
                             }
                             className="text-muted-foreground hover:bg-muted -mx-0.5 size-4 shrink-0 rounded hover:text-blue-400"
                             onClick={toggleExpandAll}
@@ -504,11 +504,11 @@ export function FileManager({
                             className="-mx-0.5 size-4 shrink-0"
                         />
                     )}
-                    {renderSortableHeader('name', effectiveLabels.columnName ?? 'Name', isNameSortable)}
+                    {renderSortableHeader('name', effectiveLabels.columnName ?? '名称', isNameSortable)}
                 </div>
-                {isSizeVisible && renderSortableHeader('size', effectiveLabels.columnSize ?? 'Size', isSizeSortable)}
+                {isSizeVisible && renderSortableHeader('size', effectiveLabels.columnSize ?? '大小', isSizeSortable)}
                 {isModifiedVisible &&
-                    renderSortableHeader('modified', effectiveLabels.columnModified ?? 'Modified', isModifiedSortable)}
+                    renderSortableHeader('modified', effectiveLabels.columnModified ?? '修改时间', isModifiedSortable)}
                 {hasActions && (
                     <span
                         aria-hidden="true"

@@ -56,7 +56,7 @@ export function FileDropZone({
                     isDragging && 'text-foreground scale-110',
                 )}
             />
-            <span className="text-sm font-medium">{isDragging ? 'Drop files here' : title}</span>
+            <span className="text-sm font-medium">{isDragging ? '把文件拖到这里' : title}</span>
             <span className="text-muted-foreground mt-1 max-w-md text-xs">{description}</span>
             <Button
                 className="mt-4 h-7 text-xs"

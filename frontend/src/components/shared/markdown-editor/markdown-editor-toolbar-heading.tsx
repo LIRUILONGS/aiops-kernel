@@ -34,7 +34,7 @@ const OPTIONS: HeadingOption[] = [
     { icon: Heading4, label: 'Heading 4', value: 4 },
     { icon: Heading5, label: 'Heading 5', value: 5 },
     { icon: Heading6, label: 'Heading 6', value: 6 },
-    { icon: Type, iconClassName: 'scale-[0.75]', label: 'Text', value: 'paragraph' },
+    { icon: Type, iconClassName: 'scale-[0.75]', label: '文本', value: 'paragraph' },
 ];
 
 interface HeadingMenuProps {
@@ -58,7 +58,7 @@ export function HeadingMenu({ activeLevel, disabled, editor, isInTableCell }: He
                 <TooltipTrigger asChild>
                     <DropdownMenuTrigger asChild>
                         <Button
-                            aria-label={`Text style: ${active?.label ?? 'Text'}`}
+                            aria-label={`Text style: ${active?.label ?? '文本'}`}
                             className="gap-0.5 px-1.5"
                             data-toolbar-item=""
                             disabled={disabled}

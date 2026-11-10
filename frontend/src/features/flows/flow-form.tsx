@@ -390,7 +390,7 @@ export function FlowForm({
                         className="min-h-16 justify-center"
                         disabled
                     >
-                        {templateSearch ? 'No results found' : 'No available templates'}
+                        {templateSearch ? '没有结果' : 'No available templates'}
                     </DropdownMenuItem>
                 ) : (
                     filteredTemplates.map((template) => (
@@ -445,7 +445,7 @@ export function FlowForm({
                         className="min-h-16 justify-center"
                         disabled
                     >
-                        {resourceSearch ? 'No results found' : 'No available resources'}
+                        {resourceSearch ? '没有结果' : 'No available resources'}
                     </DropdownMenuItem>
                 ) : (
                     filteredResources.map((resource) => {
@@ -501,7 +501,7 @@ export function FlowForm({
                 }}
             >
                 {upload.isUploading ? <Spinner variant="circle" /> : <Plus />}
-                {upload.isUploading ? 'Uploading…' : 'Upload files'}
+                {upload.isUploading ? 'Uploading…' : '上传文件'}
             </DropdownMenuItem>
         </>
     );
@@ -657,7 +657,7 @@ export function FlowForm({
                                                                     disabled
                                                                 >
                                                                     {providerSearch
-                                                                        ? 'No results found'
+                                                                        ? '没有结果'
                                                                         : 'No available providers'}
                                                                 </DropdownMenuItem>
                                                             ) : (
@@ -808,7 +808,7 @@ export function FlowForm({
                                                     // *after* the pointerup that the click triggered.
                                                     // Radix `DropdownMenuItem` listens to pointerup directly,
                                                     // so if we swap synchronously, the pointerup at the tab
-                                                    // coordinates lands on the freshly-mounted "Upload files"
+                                                    // coordinates lands on the freshly-mounted "上传文件"
                                                     // item in the Resources panel and fires its onSelect.
                                                     setTimeout(
                                                         () => setPickerTab(value as 'resources' | 'templates'),
@@ -856,7 +856,7 @@ export function FlowForm({
 
                                     {!isLoading || isSubmitting ? (
                                         <InputGroupButton
-                                            aria-label={isSubmitting ? 'Submitting…' : 'Submit'}
+                                            aria-label={isSubmitting ? 'Submitting…' : '提交'}
                                             className="shrink-0"
                                             disabled={isSubmitting || !isValid || upload.isUploading}
                                             size="icon-xs"
@@ -896,7 +896,7 @@ export function FlowForm({
             />
             <ConfirmationDialog
                 confirmIcon={<FileSymlink />}
-                confirmText="Replace"
+                confirmText="替换"
                 confirmVariant="default"
                 description="当前消息已有内容，确定用所选模板替换吗？"
                 handleConfirm={handleConfirmReplaceTemplate}

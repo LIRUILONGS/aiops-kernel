@@ -122,7 +122,7 @@ export function MainSidebar() {
                                 <SidebarMenuButton asChild>
                                     <Link to={routes.newFlow}>
                                         <Plus />
-                                        New Flow
+                                        新建会话
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
@@ -133,7 +133,7 @@ export function MainSidebar() {
                                 >
                                     <Link to={routes.dashboard}>
                                         <LayoutDashboard />
-                                        Dashboard
+                                        概览
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
@@ -144,7 +144,7 @@ export function MainSidebar() {
                                 >
                                     <Link to={routes.flows}>
                                         <GitFork />
-                                        Flows
+                                        会话
                                     </Link>
                                 </SidebarMenuButton>
                                 <SidebarMenuAction
@@ -333,7 +333,7 @@ export function MainSidebar() {
                                             variant="secondary"
                                         >
                                             {user?.type === 'local'
-                                                ? 'Local'
+                                                ? '本地'
                                                 : (formatAccountProvider(user?.provider) ?? 'OAuth')}
                                         </Badge>
                                     </div>
@@ -382,13 +382,13 @@ export function MainSidebar() {
                                         to={routes.settings.account}
                                     >
                                         <UserIcon className="mr-2 size-4" />
-                                        Profile
+                                        账户设置
                                     </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={() => logout()}>
                                     <LogOut className="mr-2 size-4" />
-                                    Log out
+                                    退出登录
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>

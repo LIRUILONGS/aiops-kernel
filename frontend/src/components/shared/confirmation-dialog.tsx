@@ -36,10 +36,10 @@ interface ConfirmationDialogProps {
 
 function ConfirmationDialog({
     cancelIcon,
-    cancelText = 'Cancel',
+    cancelText = '取消',
     cancelVariant = 'outline',
     confirmIcon = <Trash2 />,
-    confirmText = 'Confirm',
+    confirmText = '确认',
     confirmVariant = 'destructive',
     description,
     handleConfirm,
@@ -51,10 +51,10 @@ function ConfirmationDialog({
 }: ConfirmationDialogProps) {
     const [isProcessing, setIsProcessing] = useState(false);
 
-    // `verb !== 'Confirm'` treats the default confirmText as "no custom verb": a bare
-    // Confirm gets the generic "Confirm Action" title instead of "Confirm <itemType>".
+    // `verb !== '确认'` treats the default confirmText as "no custom verb": a bare
+    // Confirm gets the generic "确认操作" title instead of "Confirm <itemType>".
     const verb = confirmText.trim();
-    const resolvedTitle = title ?? (verb && verb !== 'Confirm' ? `${verb} ${itemType}` : 'Confirm Action');
+    const resolvedTitle = title ?? (verb && verb !== '确认' ? `${verb} ${itemType}` : '确认操作');
 
     const defaultDescription = description || (
         <>

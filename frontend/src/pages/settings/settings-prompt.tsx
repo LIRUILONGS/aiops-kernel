@@ -570,7 +570,7 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
             return true;
         } catch (error) {
             console.error('Submit error:', error);
-            setSubmitError(error instanceof Error ? error.message : 'An error occurred while saving');
+            setSubmitError(error instanceof Error ? error.message : '保存时出错');
 
             return false;
         }
@@ -621,7 +621,7 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
             return true;
         } catch (error) {
             console.error('Submit error:', error);
-            setSubmitError(error instanceof Error ? error.message : 'An error occurred while saving');
+            setSubmitError(error instanceof Error ? error.message : '保存时出错');
 
             return false;
         }
@@ -686,7 +686,7 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
                     <AppHeaderAction
                         form={activeFormId}
                         icon={<Save />}
-                        label="Save"
+                        label="保存"
                         loading={isLoading}
                         type="submit"
                     />
@@ -716,7 +716,7 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
                                         onClick={handleReset}
                                     >
                                         {isDeleteLoading ? <Spinner variant="circle" /> : <RotateCcw />}
-                                        {isDeleteLoading ? 'Resetting...' : 'Reset'}
+                                        {isDeleteLoading ? '正在重置…' : 'Reset'}
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                 </>
@@ -925,7 +925,7 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
             </Tabs>
 
             <ConfirmationDialog
-                cancelText="Cancel"
+                cancelText="取消"
                 cancelVariant="outline"
                 confirmIcon={<RotateCcw />}
                 confirmText="Reset"

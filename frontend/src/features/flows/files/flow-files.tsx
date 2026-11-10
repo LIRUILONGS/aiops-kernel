@@ -66,12 +66,12 @@ function FlowFiles() {
         const wasCopied = await copyToClipboard(file.path);
 
         if (wasCopied) {
-            toast.success('Path copied to clipboard');
+            toast.success('路径已复制');
 
             return;
         }
 
-        toast.error('Failed to copy path');
+        toast.error('复制路径失败');
     }, []);
 
     /**
@@ -91,7 +91,7 @@ function FlowFiles() {
             return;
         }
 
-        toast.error('Failed to copy paths');
+        toast.error('复制路径失败');
     }, []);
 
     // `flowId` may be missing (no flow selected yet) — return '' so FileManager
@@ -359,7 +359,7 @@ function FlowFiles() {
             />
 
             <ConfirmationDialog
-                confirmText="Delete"
+                confirmText="删除"
                 handleConfirm={deletion.confirmDelete}
                 handleOpenChange={handleDeleteDialogOpenChange}
                 isOpen={!!deletion.fileToDelete}

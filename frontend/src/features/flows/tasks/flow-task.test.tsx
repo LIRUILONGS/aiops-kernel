@@ -66,7 +66,7 @@ describe('FlowTask', () => {
         const user = userEvent.setup({ delay: null });
         renderTask(task({ result: 'failed to generate subtasks: status code 404', status: StatusType.Failed }));
 
-        await user.click(screen.getByText('Show details'));
+        await user.click(screen.getByText('展开详情'));
 
         expect(screen.getByText(/status code 404/)).toBeInTheDocument();
     });
