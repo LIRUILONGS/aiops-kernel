@@ -358,6 +358,8 @@ var PromptVariables = map[PromptType][]string{
 		"ChangeAnalystToolName",
 		"WatchToolName",
 		"SandboxToolName",
+		"TraceToolName",
+		"TraceEnabled",
 		"OptimizationToolName",
 		"OptimizationMode",
 		"ExecutionContext",

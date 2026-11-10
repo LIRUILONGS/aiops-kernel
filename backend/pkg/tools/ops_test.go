@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"opsagi/pkg/config"
 	"opsagi/pkg/opsremote"
 )
 
@@ -163,5 +164,67 @@ func TestOpsTools_HandleExec_GivesTheModelAFieldForEveryCatalogueParam(t *testin
 				t.Errorf("command %q declares param %q, which the tool cannot supply", command.ID, param.Template)
 			}
 		}
+	}
+}
+
+func TestOpsTools_TraceIsAbsentUntilTheOperatorTurnsItOn(t *testing.T) {
+	host := config.Config{OpsTargets: `[{"id":"lab","host":"192.0.2.10"}]`}
+
+	off := NewOpsTools(&host)
+	if off.IsAvailable() != true {
+		t.Fatal("the fixture has no target, so this proves nothing about the gate")
+	}
+	if off.TraceAvailable() {
+		t.Error("kernel tracing is offered before the operator allowed it")
+	}
+
+	host.OpsSandboxBPF = true
+	if !NewOpsTools(&host).TraceAvailable() {
+		t.Error("kernel tracing is still absent with OPSAGI_SANDBOX_BPF set")
+	}
+
+	noHost := config.Config{OpsSandboxBPF: true}
+	if NewOpsTools(&noHost).TraceAvailable() {
+		t.Error("kernel tracing is offered without a target to trace")
+	}
+}
+
+func TestOpsTools_HandleTrace_RefusesAnIdOutsideTheCatalogueAsAnAnswer(t *testing.T) {
+	tools := &opsTools{
+		targets:    map[string]opsremote.Target{"lab": {ID: "lab", Host: "192.0.2.10"}},
+		sandboxBPF: true,
+	}
+
+	_, err := tools.HandleTrace(t.Context(), OpsTraceToolName, []byte(`{"target":"lab","script":"run_rm_rf"}`))
+	if err == nil {
+		t.Fatal("an id outside the catalogue was accepted")
+	}
+
+	reason, refused := refusalText(err)
+	if !refused {
+		t.Fatalf("error %q is not a refusal, so the model reads it as a broken tool", err)
+	}
+	for _, want := range []string{"runqlat", "offcputime"} {
+		if !strings.Contains(reason, want) {
+			t.Errorf("refusal %q does not tell the model what it could ask for (%q)", reason, want)
+		}
+	}
+}
+
+func TestRegistry_OpsTraceDescriptionNamesEveryCatalogueScript(t *testing.T) {
+	t.Parallel()
+
+	definition, ok := registryDefinitions[OpsTraceToolName]
+	if !ok {
+		t.Fatal("ops_trace has no definition, so the model never learns it exists")
+	}
+
+	for _, script := range opsremote.TraceScripts() {
+		if !strings.Contains(definition.Description, script.ID) {
+			t.Errorf("the description does not name %q, so the model cannot choose it", script.ID)
+		}
+	}
+	if !strings.Contains(definition.Description, "OPSAGI_SANDBOX_BPF") {
+		t.Error("the description does not say what turns the tool on")
 	}
 }

@@ -1095,6 +1095,10 @@ func (fte *flowToolsExecutor) GetCommanderExecutor(cfg CommanderExecutorConfig) 
 		handlers[OpsExecToolName] = ops.HandleExec
 		handlers[OpsWatchToolName] = ops.HandleWatch
 		handlers[OpsSandboxToolName] = ops.HandleSandbox
+		if ops.TraceAvailable() {
+			definitions = append(definitions, registryDefinitions[OpsTraceToolName])
+			handlers[OpsTraceToolName] = ops.HandleTrace
+		}
 	}
 	if prom := NewPromTools(fte.cfg); prom.IsAvailable() {
 		definitions = append(definitions, registryDefinitions[PromQueryToolName])
@@ -1242,7 +1246,7 @@ func optionalEvidenceTool(name string) bool {
 	switch name {
 	case PromQueryToolName, K8sGetToolName,
 		OpsContainersToolName, OpsLogsToolName, OpsSystemToolName,
-		OpsExecToolName, OpsWatchToolName, OpsSandboxToolName:
+		OpsExecToolName, OpsWatchToolName, OpsSandboxToolName, OpsTraceToolName:
 		return true
 	}
 	return false

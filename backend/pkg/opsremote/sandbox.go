@@ -90,12 +90,23 @@ func sandboxCommandNamed(image, name string, mode SandboxMode) (string, error) {
 // sandboxName is the name a probe container gets. Random rather than derived from
 // the call, so two flows probing one host cannot collide on it.
 func sandboxName() string {
+	suffix := sandboxSuffix()
+	if suffix == "" {
+		return ""
+	}
+
+	return "opsagi-probe-" + suffix
+}
+
+// sandboxSuffix is the random tail shared by every container this package names,
+// so cleanup can kill a run by name without knowing which tool started it.
+func sandboxSuffix() string {
 	suffix := make([]byte, 6)
 	if _, err := rand.Read(suffix); err != nil {
 		return ""
 	}
 
-	return "opsagi-probe-" + hex.EncodeToString(suffix)
+	return hex.EncodeToString(suffix)
 }
 
 // ValidateSandboxImage refuses a name that is not a name. Which image to run is

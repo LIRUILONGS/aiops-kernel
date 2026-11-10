@@ -33,6 +33,8 @@ type opsTools struct {
 
 	sandboxPull    bool
 	sandboxNetwork bool
+	sandboxBPF     bool
+	bpfImage       string
 }
 
 // NewOpsTools builds the read-only probe toolset from configuration. No targets
@@ -63,6 +65,8 @@ func NewOpsTools(cfg *config.Config) *opsTools {
 	sort.Strings(tools.order)
 	tools.sandboxPull = cfg.OpsSandboxPull
 	tools.sandboxNetwork = cfg.OpsSandboxNetwork
+	tools.sandboxBPF = cfg.OpsSandboxBPF
+	tools.bpfImage = cfg.OpsBPFImage
 
 	return tools
 }
@@ -320,6 +324,74 @@ const defaultSandboxTimeout = 60 * time.Second
 // maxSandboxTimeout caps one probe run: a script that outlives it is a script
 // that is watching, and watching is what ops_baseline and ops_diff are for.
 const maxSandboxTimeout = 300 * time.Second
+
+// OpsTraceArgs runs one catalogue eBPF program inside the trace shape. The
+// program is a constant in opsremote: what the model chooses is which question
+// to ask the kernel, never the code that runs with BPF capabilities.
+type OpsTraceArgs struct {
+	Target  string `json:"target,omitempty" jsonschema:"description=目标主机 ID，留空使用默认主机,example=lab"`
+	Script  string `json:"script" jsonschema:"description=要跑的 eBPF 程序 ID（目录见工具说明）,example=runqlat"`
+	Seconds int    `json:"seconds,omitempty" jsonschema:"description=采样窗口秒数，3 到 30，默认 10,example=10"`
+	Image   string `json:"image,omitempty" jsonschema:"description=带 bpftrace 的镜像，留空用操作员配置的 OPSAGI_BPF_IMAGE,example=debian:bookworm"`
+}
+
+// traceIDs lists the catalogue for the description, which has to tell the model
+// what it could ask for.
+func traceIDs() []string {
+	return strings.Split(opsremote.TraceIDs(), "、")
+}
+
+// TraceAvailable reports whether the operator turned kernel tracing on. The tool
+// is absent until they do, rather than present and refused at call time.
+func (o *opsTools) TraceAvailable() bool { return o.IsAvailable() && o.sandboxBPF }
+
+func (o *opsTools) HandleTrace(ctx context.Context, name string, args json.RawMessage) (string, error) {
+	var parsed OpsTraceArgs
+	if err := json.Unmarshal(args, &parsed); err != nil {
+		return "", fmt.Errorf("解析参数失败：%w", err)
+	}
+
+	script, ok := opsremote.LookupTrace(parsed.Script)
+	if !ok {
+		return "", Refuse("没有这个 eBPF 程序：%q；可选的是 %s", parsed.Script, opsremote.TraceIDs())
+	}
+
+	image := strings.TrimSpace(parsed.Image)
+	if image == "" {
+		image = o.bpfImage
+	}
+	image, err := opsremote.ValidateSandboxImage(image)
+	if err != nil {
+		return "", Refuse("%s", err.Error())
+	}
+
+	seconds := opsremote.ClampTraceSeconds(parsed.Seconds)
+
+	client, target, err := o.dial(ctx, args)
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = client.Close() }()
+
+	if err := client.EnsureSandboxImage(ctx, image, o.sandboxPull); err != nil {
+		return "", Refuse("%s", err.Error())
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(seconds)*time.Second+traceOverhead)
+	defer cancel()
+
+	res, err := client.RunTrace(ctx, image, script, seconds, o.sandboxNetwork)
+	if err != nil {
+		return "", fmt.Errorf("内核追踪执行失败：%w", err)
+	}
+
+	label := fmt.Sprintf("eBPF %s（%s，采样 %d 秒）", script.ID, script.Description, seconds)
+	return formatExec(target, label, res), nil
+}
+
+// traceOverhead is the room a container start and bpftrace's own startup need on
+// top of the sampling window.
+const traceOverhead = 45 * time.Second
 
 // OpsWatchArgs samples one catalogue command across a short window. The command
 // is a catalogue id, not a shell line: what the model chooses is which evidence

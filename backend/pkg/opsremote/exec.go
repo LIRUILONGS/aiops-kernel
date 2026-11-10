@@ -55,6 +55,7 @@ var (
 		"inode_usage",
 		"memory",
 		"load",
+		"psi",
 		"top_cpu",
 		"top_mem",
 		"unit_status",
@@ -100,6 +101,11 @@ var (
 			ID:          "load",
 			Description: "1/5/15 分钟平均负载与可运行进程数（/proc/loadavg 与 nproc）",
 			Template:    `cat /proc/loadavg 2>/dev/null; nproc 2>/dev/null`,
+		},
+		"psi": {
+			ID:          "psi",
+			Description: "PSI 压力停顿：CPU、IO、内存各自有多少时间被拖住，以及最短停顿 10 秒与 60 秒的占比（/proc/pressure）",
+			Template:    `for f in cpu io memory; do printf "%s: " "$f"; cat /proc/pressure/$f 2>/dev/null || echo unavailable; done`,
 		},
 		"top_cpu": {
 			ID:          "top_cpu",

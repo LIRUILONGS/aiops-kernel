@@ -3,6 +3,7 @@ package tools
 import (
 	"maps"
 	"opsagi/pkg/database"
+	"strings"
 
 	"github.com/invopop/jsonschema"
 	"github.com/vxcontrol/langchaingo/llms"
@@ -59,6 +60,7 @@ const (
 	OpsExecToolName            = "ops_exec"
 	OpsWatchToolName           = "ops_watch"
 	OpsSandboxToolName         = "ops_sandbox"
+	OpsTraceToolName           = "ops_trace"
 	PromQueryToolName          = "prom_query"
 	K8sGetToolName             = "k8s_get"
 	DiagnosisToolName          = "diagnosis"
@@ -171,6 +173,7 @@ var toolsTypeMapping = map[string]ToolType{
 	OpsExecToolName:            EnvironmentToolType,
 	OpsWatchToolName:           EnvironmentToolType,
 	OpsSandboxToolName:         EnvironmentToolType,
+	OpsTraceToolName:           EnvironmentToolType,
 	PromQueryToolName:          EnvironmentToolType,
 	K8sGetToolName:             EnvironmentToolType,
 	DiagnosisToolName:          BarrierToolType,
@@ -538,6 +541,7 @@ var registryDefinitions = map[string]llms.FunctionDefinition{
 		Name: OpsExecToolName,
 		Description: "按名称执行一条预置的只读诊断命令，用于其他取证工具没覆盖到的角度。command 只能取下列 ID 之一，命令文本本身来自代码里的目录，不接受自由命令：" +
 			"listen_ports（监听端口与进程）、established（已建立连接）、disk_usage（容量）、inode_usage（inode）、memory（内存与 Swap）、load（平均负载与核数）、" +
+			"psi（PSI 压力停顿，CPU / IO / 内存各自被拖住多少）、" +
 			"top_cpu / top_mem（按 CPU 或内存排序的进程，可传 lines）、unit_status / unit_logs（systemd 单元状态与日志，需 unit）、kernel_log（内核日志，可传 lines）、" +
 			"docker_inspect（容器状态、退出码、OOMKilled、重启次数，需 container）、docker_stats（一次性资源采样）、file_stat（绝对路径的元数据，需 path）、" +
 			"package_history（最近的软件包安装与升级，可传 lines，用来对齐变更时间线）、unit_activated_at（systemd 单元的激活与启动时刻，需 unit）、" +
@@ -563,8 +567,18 @@ var registryDefinitions = map[string]llms.FunctionDefinition{
 			"因此你可以读任何东西，改不了任何东西：写文件会失败，kill 宿主进程会失败（那些 PID 不在容器里），联网会失败。" +
 			"看宿主机进程要用 /host/proc/<pid>，看宿主机监听端口要读 /host/proc/1/net/tcp（容器自己的网络命名空间是空的，ss 只能看到空的）。" +
 			"image 由你决定：要装工具就选一个有包管理器的（debian/ubuntu 用 apt、alpine 用 apk），留空用 debian:latest；拉镜像会写目标机，操作员没放开（OPSAGI_SANDBOX_PULL）时只能用目标机上已有的镜像，报错会列出它们。" +
-			"需要 eBPF、perf 这类要特权的工具，或需要联网取证时，不要自己想办法：用 ask 请操作员批准，写清镜像、参数、要采什么、怎么删。",
+			"这个形状里跑不了 eBPF 或 perf：它们要的能力被丢掉了，那是 ops_trace 的事。需要联网取证时，用 ask 请操作员批准。",
 		Parameters: reflector.Reflect(&OpsSandboxArgs{}),
+	},
+	OpsTraceToolName: {
+		Name: OpsTraceToolName,
+		Description: "在目标主机上跑一段 eBPF 程序，看 /proc 快照看不到的那一层：调度延迟、off-CPU 阻塞、块设备 IO 延迟、进程创建、TCP 建连延迟。" +
+			"script 是固定目录里的 ID（" + strings.Join(traceIDs(), "、") + "），程序正文在代码里，你选的是问题不是代码。" +
+			"seconds 是采样窗口，取 3 到 30 秒，默认 10；窗口越长直方图越满，但也越贵。" +
+			"容器形状由代码固定：只丢弃到只留 BPF / PERFMON / SYS_RESOURCE 三种能力，宿主机的 /sys/kernel 只读挂载，不进宿主机 PID 命名空间，无网络。" +
+			"它是采样不是监控，一秒钟的结论不要写成五分钟的结论；写 evidence 时把窗口和直方图的峰值一起写进去。" +
+			"这个工具只在操作员打开内核追踪（OPSAGI_SANDBOX_BPF）时出现：BPF 要的能力比采集容器多，那条边界由他们划。",
+		Parameters: reflector.Reflect(&OpsTraceArgs{}),
 	},
 	K8sGetToolName: {
 		Name: K8sGetToolName,

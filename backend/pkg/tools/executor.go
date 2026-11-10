@@ -270,7 +270,7 @@ func telemetryName(name string) bool {
 	switch name {
 	case OpsContainersToolName, OpsLogsToolName, OpsSystemToolName,
 		OpsBaselineToolName, OpsDiffToolName, OpsExecToolName,
-		OpsWatchToolName, OpsSandboxToolName, K8sGetToolName, PromQueryToolName:
+		OpsWatchToolName, OpsSandboxToolName, OpsTraceToolName, K8sGetToolName, PromQueryToolName:
 		return true
 	}
 	return false

@@ -52,6 +52,10 @@ OpsAGI 是 [PentAGI](https://github.com/vxcontrol/pentagi)（MIT）的分支。�
 
 - `ops_sandbox` — 在目标主机上起一次性容器执行脚本。两种形状：`probe`（只读根文件系统、无网络、256MB）与 `workshop`（可写、可出网、512MB）。都 `--cap-drop=ALL`、都不进宿主机 PID 命名空间，宿主机的 `/proc` 与 `/sys` 只读挂在 `/host/proc`、`/host/sys`。**能读到宿主机的一切，却改不了它。**
 
+内核层（`OPSAGI_SANDBOX_BPF` 打开时）：
+
+`ops_trace` — 五个固定程序（`runqlat` / `offcputime` / `biolatency` / `execsnoop` / `tcpconnlat`），程序正文在代码里，模型只选 ID 与采样窗口。容器丢光 capability 后只加回 `BPF`、`PERFMON`、`SYS_RESOURCE`，`/sys/kernel` 只读挂载，仍无网络、不进宿主机 PID 命名空间。
+
 旁路（直接问监控系统，不经过主机 shell）：
 
 - `prom_query`（`PROMETHEUS_URL`）、`k8s_get`（`K8S_KUBECONFIG`）。没配就不出现在工具表里，而不是出现了再报错。
@@ -71,6 +75,8 @@ OpsAGI 是 [PentAGI](https://github.com/vxcontrol/pentagi)（MIT）的分支。�
 | `K8S_KUBECONFIG` | 空 | 配了才有 `k8s_get` |
 | `OPSAGI_SANDBOX_NETWORK` | `false` | 允许取证容器出网 |
 | `OPSAGI_SANDBOX_PULL` | `false` | 允许拉取镜像 |
+| `OPSAGI_SANDBOX_BPF` | `false` | 打开 `ops_trace`（内核层 eBPF 追踪），关着时工具不存在 |
+| `OPSAGI_BPF_IMAGE` | `debian:bookworm` | 追踪容器用的镜像，里面要有 `bpftrace` |
 | `ASK_USER` | `false` | 打开 `ask` 工具（人工闸门） |
 | `OPSAGI_SUBTASK_CONCURRENCY` | `1` | 同一任务内子任务并发度 |
 

@@ -156,6 +156,17 @@ type Config struct {
 	// box itself may reach out.
 	OpsSandboxNetwork bool `env:"OPSAGI_SANDBOX_NETWORK" envDefault:"false"`
 
+	// OpsSandboxBPF offers the kernel tracing tool at all. eBPF needs capabilities
+	// the probe shape deliberately drops, so the shape that carries them is a
+	// separate one the operator turns on, and until they do the tool is absent
+	// rather than present and failing.
+	OpsSandboxBPF bool `env:"OPSAGI_SANDBOX_BPF" envDefault:"false"`
+
+	// OpsBPFImage is the image the tracer runs. It has to carry bpftrace: the
+	// trace shape has no egress by default, and installing a package on every
+	// ten-second sample would cost more than the sample.
+	OpsBPFImage string `env:"OPSAGI_BPF_IMAGE" envDefault:"debian:bookworm"`
+
 	// SubtaskConcurrency is how many subtasks of one task may run at the same
 	// time. Subtasks are independent by construction, so the default is the
 	// serial value only to keep the ordering of a plan observable.
