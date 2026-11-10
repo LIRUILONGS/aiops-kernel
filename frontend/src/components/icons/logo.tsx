@@ -5,6 +5,7 @@ interface LogoProps extends React.SVGProps<SVGSVGElement> {
 }
 
 const PULSE = 'M196 512 H360 L432 392 L520 648 L596 512 H828';
+const RING_COLOUR = 'var(--logo-ring, currentColor)';
 const PULSE_COLOUR = 'var(--logo-pulse, #fbbf24)';
 
 function Logo({ className, ...props }: LogoProps) {
@@ -20,7 +21,7 @@ function Logo({ className, ...props }: LogoProps) {
                 cy="512"
                 fill="none"
                 r="279"
-                stroke="currentColor"
+                stroke={RING_COLOUR}
                 strokeWidth="74"
             />
             <path

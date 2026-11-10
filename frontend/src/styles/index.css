@@ -294,6 +294,8 @@
         --border: oklch(0.91 0.01 200);
         --input: oklch(0.91 0.01 200);
         --ring: oklch(0.25 0.14 195);
+        --logo-ring: oklch(0.62 0.11 195);
+        --logo-pulse: oklch(0.78 0.16 75);
         --chart-1: oklch(0.25 0.14 195);
         --chart-2: oklch(0.38 0.18 195);
         --chart-3: oklch(0.5 0.22 195);
@@ -373,6 +375,8 @@
         --border: oklch(0.3 0.04 195);
         --input: oklch(0.3 0.04 195);
         --ring: oklch(0.5 0.16 195);
+        --logo-ring: oklch(0.79 0.13 195);
+        --logo-pulse: oklch(0.83 0.16 85);
         --chart-1: oklch(0.5 0.16 195);
         --chart-2: oklch(0.6 0.2 195);
         --chart-3: oklch(0.7 0.22 195);
