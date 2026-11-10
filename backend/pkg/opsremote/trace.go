@@ -10,11 +10,16 @@ import (
 // TraceShape is the container the tracer runs in. /proc and /sys stay read-only,
 // as in every other shape, and the host pid namespace is still not joined: what
 // the BPF programs read is kernel state, which needs no host mount to observe.
-// The three capabilities are the whole of what eBPF needs and nothing more --
-// SYS_ADMIN, SYS_PTRACE and SYS_KILL are absent, so a trace cannot mount, cannot
-// ptrace and cannot signal anything on the host.
+//
+// SYS_ADMIN is here because perf_event_open is gated on it by kernels that do
+// not wire CAP_PERFMON into the check -- this one is Debian 5.10 with
+// perf_event_paranoid=3, where BPF and PERFMON alone get EACCES. It is the one
+// capability that could remount the read-only mounts, so nothing but a catalogue
+// constant ever reaches this shape: the model picks an id, and the text that
+// runs is written here, not by it. SYS_KILL, SYS_PTRACE and a writable host
+// mount stay out either way.
 const TraceShape = "docker run --rm -i" +
-	" --cap-drop=ALL --cap-add=BPF --cap-add=PERFMON --cap-add=SYS_RESOURCE" +
+	" --cap-drop=ALL --cap-add=BPF --cap-add=PERFMON --cap-add=SYS_RESOURCE --cap-add=SYS_ADMIN" +
 	" --security-opt=no-new-privileges --pids-limit=256 --cpus=1 --memory=256m" +
 	" --network=none --read-only" +
 	" -v /sys/kernel/debug:/sys/kernel/debug:ro -v /sys/kernel/tracing:/sys/kernel/tracing:ro" +
@@ -39,24 +44,28 @@ type TraceScript struct {
 	ID          string
 	Description string
 	Program     string
+	Scratch     string
 }
 
 // traceCatalogue is ordered because the tool description lists it in this order.
 var traceCatalogue = []TraceScript{
 	{
 		ID:          "runqlat",
+		Scratch:     "@start",
 		Description: "调度延迟直方图：每个进程从可运行到真正拿到 CPU 等了多久，用来区分「CPU 真的忙」和「进程在排队」",
 		Program: `tracepoint:sched:sched_wakeup { @start[args->pid] = nsecs; }
 tracepoint:sched:sched_switch /@start[args->prev_pid]/ { @us[args->prev_comm] = hist((nsecs - @start[args->prev_pid]) / 1000); delete(@start[args->prev_pid]); }`,
 	},
 	{
 		ID:          "offcputime",
+		Scratch:     "@start",
 		Description: "off-CPU 时间：进程没在跑的时间按进程累计，用来找阻塞在 IO、锁或 futex 上的东西",
 		Program: `tracepoint:sched:sched_switch { @start[args->prev_pid] = nsecs; }
 tracepoint:sched:sched_switch /@start[args->next_pid]/ { @us[args->next_comm] = sum((nsecs - @start[args->next_pid]) / 1000); delete(@start[args->next_pid]); }`,
 	},
 	{
 		ID:          "biolatency",
+		Scratch:     "@start",
 		Description: "块设备 IO 延迟直方图：按设备看一次读写从下达到完成花了多久，用来判断慢在磁盘还是慢在上层",
 		Program: `tracepoint:block:block_rq_issue { @start[args->dev, args->sector] = nsecs; }
 tracepoint:block:block_rq_complete /@start[args->dev, args->sector]/ { @us[args->dev] = hist((nsecs - @start[args->dev, args->sector]) / 1000); delete(@start[args->dev, args->sector]); }`,
@@ -68,6 +77,7 @@ tracepoint:block:block_rq_complete /@start[args->dev, args->sector]/ { @us[args-
 	},
 	{
 		ID:          "tcpconnlat",
+		Scratch:     "@start",
 		Description: "TCP 建连延迟直方图：连出去花了多久，用来区分对端慢、DNS 慢和本机网络栈的问题",
 		Program: `kprobe:tcp_v4_connect { @start[tid] = nsecs; }
 kretprobe:tcp_v4_connect /@start[tid]/ { @us[comm] = hist((nsecs - @start[tid]) / 1000); delete(@start[tid]); }`,
@@ -159,11 +169,16 @@ func (c *Client) RunTrace(ctx context.Context, image string, script TraceScript,
 // image: the shape has no network unless the operator allowed egress, and even
 // then installing on every run would double the cost of a ten-second sample.
 func TraceProgram(script TraceScript, seconds int) string {
+	scratch := ""
+	if script.Scratch != "" {
+		scratch = "clear(" + script.Scratch + "); "
+	}
+
 	return fmt.Sprintf(`if ! command -v bpftrace >/dev/null 2>&1; then
   echo "bpftrace 不在镜像里。换一个带 bpftrace 的镜像（OPSAGI_BPF_IMAGE），或者让操作员放开出网后由本脚本安装。" >&2
   exit 127
 fi
 bpftrace -q -e '%s
-interval:s:%d { exit(); }'
-`, script.Program, seconds)
+interval:s:%d { %sexit(); }'
+`, script.Program, seconds, scratch)
 }

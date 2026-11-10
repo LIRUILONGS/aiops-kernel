@@ -164,8 +164,10 @@ type Config struct {
 
 	// OpsBPFImage is the image the tracer runs. It has to carry bpftrace: the
 	// trace shape has no egress by default, and installing a package on every
-	// ten-second sample would cost more than the sample.
-	OpsBPFImage string `env:"OPSAGI_BPF_IMAGE" envDefault:"debian:bookworm"`
+	// ten-second sample would cost more than the sample. The default is the
+	// project's own image; pin a digest when reproducibility matters more than
+	// freshness.
+	OpsBPFImage string `env:"OPSAGI_BPF_IMAGE" envDefault:"quay.io/iovisor/bpftrace:latest"`
 
 	// SubtaskConcurrency is how many subtasks of one task may run at the same
 	// time. Subtasks are independent by construction, so the default is the

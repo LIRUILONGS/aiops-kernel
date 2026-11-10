@@ -23,6 +23,7 @@ func TestTraceCommand_CarriesTheCapabilitiesTracingNeedsAndNothingElse(t *testin
 		"--cap-add=BPF",
 		"--cap-add=PERFMON",
 		"--cap-add=SYS_RESOURCE",
+		"--cap-add=SYS_ADMIN",
 		"--security-opt=no-new-privileges",
 		"--network=none",
 		"--read-only",
@@ -34,7 +35,7 @@ func TestTraceCommand_CarriesTheCapabilitiesTracingNeedsAndNothingElse(t *testin
 		}
 	}
 
-	for _, never := range []string{"--privileged", "--pid=host", "docker.sock", "SYS_ADMIN", "SYS_PTRACE", "SYS_KILL", "/:/host"} {
+	for _, never := range []string{"--privileged", "--pid=host", "docker.sock", "SYS_PTRACE", "SYS_KILL", "/:/host", "/proc:/proc"} {
 		if strings.Contains(command, never) {
 			t.Errorf("command carries %q, which would let a trace change the host: %s", never, command)
 		}

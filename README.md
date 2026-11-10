@@ -54,7 +54,7 @@ OpsAGI 是 [PentAGI](https://github.com/vxcontrol/pentagi)（MIT）的分支。�
 
 内核层（`OPSAGI_SANDBOX_BPF` 打开时）：
 
-`ops_trace` — 五个固定程序（`runqlat` / `offcputime` / `biolatency` / `execsnoop` / `tcpconnlat`），程序正文在代码里，模型只选 ID 与采样窗口。容器丢光 capability 后只加回 `BPF`、`PERFMON`、`SYS_RESOURCE`，`/sys/kernel` 只读挂载，仍无网络、不进宿主机 PID 命名空间。
+`ops_trace` — 五个固定程序（`runqlat` / `offcputime` / `biolatency` / `execsnoop` / `tcpconnlat`），程序正文在代码里，模型只选 ID 与采样窗口。容器丢光 capability 后加回 `BPF`、`PERFMON`、`SYS_RESOURCE`、`SYS_ADMIN`（最后一个是 `perf_event_open` 在老内核上的门槛），`/sys/kernel` 只读挂载，仍无网络、不进宿主机 PID 命名空间。
 
 旁路（直接问监控系统，不经过主机 shell）：
 
@@ -76,7 +76,7 @@ OpsAGI 是 [PentAGI](https://github.com/vxcontrol/pentagi)（MIT）的分支。�
 | `OPSAGI_SANDBOX_NETWORK` | `false` | 允许取证容器出网 |
 | `OPSAGI_SANDBOX_PULL` | `false` | 允许拉取镜像 |
 | `OPSAGI_SANDBOX_BPF` | `false` | 打开 `ops_trace`（内核层 eBPF 追踪），关着时工具不存在 |
-| `OPSAGI_BPF_IMAGE` | `debian:bookworm` | 追踪容器用的镜像，里面要有 `bpftrace` |
+| `OPSAGI_BPF_IMAGE` | `quay.io/iovisor/bpftrace:latest` | 追踪容器用的镜像，里面要有 `bpftrace` |
 | `ASK_USER` | `false` | 打开 `ask` 工具（人工闸门） |
 | `OPSAGI_SUBTASK_CONCURRENCY` | `1` | 同一任务内子任务并发度 |
 
