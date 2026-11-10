@@ -540,7 +540,7 @@ go vet ./pkg/database/...
 ## Related Documentation
 
 - [config.md](config.md) — database environment variables, tenancy, PgBouncer and Supavisor configuration
-- [README.md](../../README.md) — deployment and development commands
+- [platform-reference.md](../../docs/platform-reference.md) — deployment and development commands
 - `backend/sqlc/sqlc.yml` — sqlc generation settings
 - `backend/migrations/sql` — authoritative schema history
 - `backend/pkg/database` — generated API and database helpers

@@ -247,7 +247,7 @@ The observability stack can be deployed using Docker Compose:
 docker-compose -f docker-compose-observability.yml up -d
 ```
 
-For detailed setup instructions, refer to the README.md file in the repository.
+For detailed setup instructions, refer to `docs/platform-reference.md` in the repository.
 
 ### Jaeger Storage Plugin
 

@@ -296,7 +296,7 @@ OpsAGI includes pre-configured provider files for Qwen3.5-27B-FP8 with optimized
 
 ### Step 2: Add Provider via OpsAGI UI
 
-1. Start OpsAGI (see [Quick Start](../../README.md#-quick-start))
+1. Start OpsAGI (see [Quick Start](../../docs/platform-reference.md#quick-start))
 2. Navigate to **Settings → Providers**
 3. Click **Add Provider**
 4. Fill in the form:
@@ -460,5 +460,5 @@ VLLM_ALLOW_LONG_MAX_MODEL_LEN=1 vllm serve Qwen/Qwen3.5-27B-FP8 \
 - **Official Qwen3.5 Documentation**: [HuggingFace Model Card](https://huggingface.co/Qwen/Qwen3.5-27B-FP8)
 - **vLLM Documentation**: [docs.vllm.ai](https://docs.vllm.ai/)
 - **vLLM Qwen3.5 Recipe**: [Official vLLM Guide](https://docs.vllm.ai/en/latest/models/supported_models/)
-- **OpsAGI Main Documentation**: [README.md](../../README.md)
+- **OpsAGI Main Documentation**: [README.md](../../README.md), [platform reference](../../docs/platform-reference.md)
 - **Provider Configuration Reference**: See example configs in [`examples/configs/`](../configs/)

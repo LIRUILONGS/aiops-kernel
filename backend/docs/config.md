@@ -1941,7 +1941,7 @@ The SSL settings provide additional security configuration:
 
 ## Graphiti Knowledge Graph Settings
 
-Graphiti is an optional beta integration. This section documents the OpsAGI-side configuration boundary and lifecycle; the operator-facing deployment, provider, ingestion, extraction, and Neo4j settings are maintained in [README.md — Knowledge Graph Integration](../../README.md#knowledge-graph-integration-graphiti).
+Graphiti is an optional beta integration. This section documents the OpsAGI-side configuration boundary and lifecycle; the operator-facing deployment, provider, ingestion, extraction, and Neo4j settings are maintained in [platform-reference.md — Knowledge Graph Integration](../../docs/platform-reference.md#graphiti-knowledge-graph-settings).
 
 ### OpsAGI Configuration Boundary
 

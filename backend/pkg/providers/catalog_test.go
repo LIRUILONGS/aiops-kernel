@@ -860,7 +860,7 @@ func readmeHeading(t *testing.T, lines []string, level, heading string) []string
 	t.Helper()
 
 	start := slices.Index(lines, level+" "+heading)
-	require.NotEqual(t, -1, start, "README has no heading %q", heading)
+	require.NotEqual(t, -1, start, "the platform reference has no heading %q", heading)
 
 	end := len(lines)
 	for i := start + 1; i < len(lines); i++ {
@@ -875,7 +875,7 @@ func readmeHeading(t *testing.T, lines []string, level, heading string) []string
 func readmeSection(t *testing.T, heading string) []string {
 	t.Helper()
 
-	raw, err := os.ReadFile("../../../README.md")
+	raw, err := os.ReadFile("../../../docs/platform-reference.md")
 	require.NoError(t, err)
 
 	return readmeHeading(t, strings.Split(string(raw), "\n"), "###", heading)
@@ -885,7 +885,7 @@ func readmeBlock(t *testing.T, section []string, marker string) []string {
 	t.Helper()
 
 	start := slices.Index(section, marker)
-	require.NotEqual(t, -1, start, "README section has no %q block", marker)
+	require.NotEqual(t, -1, start, "the platform reference section has no %q block", marker)
 
 	var block []string
 	for _, line := range section[start+1:] {
@@ -894,7 +894,7 @@ func readmeBlock(t *testing.T, section []string, marker string) []string {
 		}
 		block = append(block, line)
 	}
-	require.NotEmpty(t, block, "README block %q is empty", marker)
+	require.NotEmpty(t, block, "the platform reference block %q is empty", marker)
 	return block
 }
 
@@ -1034,8 +1034,8 @@ func TestCatalog_ReadmeProviderSectionsMatchTheShippedConfig(t *testing.T) {
 			gotModels, notModels := tc.roles(t, section)
 
 			listed, starred := readmeModelRows(t, section, notModels)
-			assert.Equal(t, catalogued, listed, "README model tables must list exactly the models.yml catalogue")
-			assert.Equal(t, wantBound, starred, "README must star exactly the models config.yml binds")
+			assert.Equal(t, catalogued, listed, "the platform reference model tables must list exactly the models.yml catalogue")
+			assert.Equal(t, wantBound, starred, "the platform reference must star exactly the models config.yml binds")
 			assert.Equal(t, wantModels, gotModels)
 
 			if tc.efforts != nil {
