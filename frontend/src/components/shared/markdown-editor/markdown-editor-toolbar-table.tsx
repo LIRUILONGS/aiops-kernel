@@ -51,7 +51,7 @@ export function TableMenu({ columnAlign, disabled, editor, isActive, isHeaderRow
                 <TooltipTrigger asChild>
                     <DropdownMenuTrigger asChild>
                         <Button
-                            aria-label="Table"
+                            aria-label="表格"
                             className={cn('gap-0.5 px-1.5', isActive && 'bg-accent text-accent-foreground')}
                             data-toolbar-item=""
                             disabled={disabled}
@@ -64,7 +64,7 @@ export function TableMenu({ columnAlign, disabled, editor, isActive, isHeaderRow
                         </Button>
                     </DropdownMenuTrigger>
                 </TooltipTrigger>
-                <TooltipContent>Table</TooltipContent>
+                <TooltipContent>表格</TooltipContent>
             </Tooltip>
             <DropdownMenuContent
                 align="start"
@@ -86,7 +86,7 @@ export function TableMenu({ columnAlign, disabled, editor, isActive, isHeaderRow
                             role="menuitemcheckbox"
                         >
                             <PanelTop className="text-muted-foreground size-4 shrink-0" />
-                            <span>Header row</span>
+                            <span>表头</span>
                             <Switch
                                 checked={isHeaderRow}
                                 className="pointer-events-none ml-auto"

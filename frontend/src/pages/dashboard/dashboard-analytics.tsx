@@ -154,12 +154,12 @@ export function DashboardAnalytics({ period }: { period: UsageStatsPeriod }) {
     return (
         <div className="flex flex-col gap-6">
             <ChartCard
-                description="Flows, tasks, and subtasks created per day"
+                description="每天新建的会话、任务与子任务"
                 empty={isSeriesEmpty(flowsChartData)}
                 error={!!flowsByPeriodError && !flowsByPeriodData}
                 height={320}
                 loading={flowsByPeriodLoading && !flowsByPeriodData}
-                title="Flows Activity Over Time"
+                title="会话活动趋势"
             >
                 <BarChart
                     data={flowsChartData}
@@ -214,11 +214,11 @@ export function DashboardAnalytics({ period }: { period: UsageStatsPeriod }) {
 
             <div className="grid gap-6 lg:grid-cols-2">
                 <ChartCard
-                    description="Number of tool executions per day"
+                    description="每天的工具调用次数"
                     empty={isSeriesEmpty(toolcallsChartData)}
                     error={!!toolcallsByPeriodError && !toolcallsByPeriodData}
                     loading={toolcallsByPeriodLoading && !toolcallsByPeriodData}
-                    title="Tool Calls Over Time"
+                    title="工具调用趋势"
                 >
                     <BarChart
                         data={toolcallsChartData}
@@ -260,11 +260,11 @@ export function DashboardAnalytics({ period }: { period: UsageStatsPeriod }) {
                 </ChartCard>
 
                 <ChartCard
-                    description="Input and output tokens processed daily"
+                    description="每天处理的输入与输出 Token"
                     empty={isSeriesEmpty(usageChartData)}
                     error={!!usageByPeriodError && !usageByPeriodData}
                     loading={usageByPeriodLoading && !usageByPeriodData}
-                    title="Token Usage Over Time"
+                    title="Token 用量趋势"
                 >
                     <AreaChart
                         data={usageChartData}
@@ -318,12 +318,12 @@ export function DashboardAnalytics({ period }: { period: UsageStatsPeriod }) {
             </div>
 
             <ChartCard
-                description="LLM spending per day. May stay near zero when using local engines — this is expected."
+                description="每天的模型花费。使用本地模型时可能接近零，这是正常的。"
                 empty={isSeriesEmpty(usageChartData)}
                 error={!!usageByPeriodError && !usageByPeriodData}
                 height={240}
                 loading={usageByPeriodLoading && !usageByPeriodData}
-                title="Cost Over Time"
+                title="费用趋势"
             >
                 <AreaChart
                     data={usageChartData}
@@ -377,8 +377,8 @@ export function DashboardAnalytics({ period }: { period: UsageStatsPeriod }) {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Flow Execution Details</CardTitle>
-                    <CardDescription>Execution time and tool calls breakdown per flow</CardDescription>
+                    <CardTitle>会话执行明细</CardTitle>
+                    <CardDescription>每个会话的执行时长与工具调用明细</CardDescription>
                 </CardHeader>
                 <CardContent>
                     {executionStatsLoading && !executionStatsData ? (

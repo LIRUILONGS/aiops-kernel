@@ -99,7 +99,7 @@ function Knowledge() {
                     <ErrorState
                         message={loadError.message}
                         onRetry={() => refetch()}
-                        title="Error loading knowledge document"
+                        title="知识文档加载失败"
                     />
                 </div>
             </KnowledgeLayout>

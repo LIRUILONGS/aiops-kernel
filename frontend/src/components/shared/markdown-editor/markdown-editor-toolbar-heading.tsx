@@ -71,7 +71,7 @@ export function HeadingMenu({ activeLevel, disabled, editor, isInTableCell }: He
                         </Button>
                     </DropdownMenuTrigger>
                 </TooltipTrigger>
-                <TooltipContent>Text style</TooltipContent>
+                <TooltipContent>文本样式</TooltipContent>
             </Tooltip>
             <DropdownMenuContent
                 align="start"

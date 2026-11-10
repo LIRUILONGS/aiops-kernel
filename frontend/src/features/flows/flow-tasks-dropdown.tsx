@@ -114,7 +114,7 @@ function FlowTasksDropdown({ disabled, onChange, value }: FlowTasksDropdownProps
         >
             <PopoverTrigger asChild>
                 <Button
-                    aria-label="Filter tasks"
+                    aria-label="筛选任务"
                     aria-pressed={hasActiveFilters}
                     disabled={disabled}
                     size="icon"
@@ -128,9 +128,9 @@ function FlowTasksDropdown({ disabled, onChange, value }: FlowTasksDropdownProps
                 className="w-[360px] p-0"
             >
                 <Command>
-                    <CommandInput placeholder="Search tasks..." />
+                    <CommandInput placeholder="搜索任务…" />
                     <CommandList>
-                        <CommandEmpty>Tasks not found</CommandEmpty>
+                        <CommandEmpty>没有任务</CommandEmpty>
                         {tasks?.length ? (
                             tasks.map((task) => (
                                 <CommandGroup key={task.id}>

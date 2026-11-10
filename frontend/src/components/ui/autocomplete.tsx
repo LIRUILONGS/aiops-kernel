@@ -42,7 +42,7 @@ interface AutocompleteContextValue {
  *  <Autocomplete value={path} onValueChange={setPath} onCommit={navigateTo}>
  *      <AutocompleteInput placeholder="/work" />
  *      <AutocompleteContent>
- *          <AutocompleteEmpty>No matches</AutocompleteEmpty>
+ *          <AutocompleteEmpty>没有匹配</AutocompleteEmpty>
  *          <AutocompleteGroup heading="Known paths">
  *              {paths.map((p) => (
  *                  <AutocompleteItem key={p} value={p}>{p}</AutocompleteItem>
@@ -226,7 +226,7 @@ function Autocomplete({
             >
                 <Command
                     filter={filter ?? substringFilter}
-                    label="Suggestions"
+                    label="建议"
                     shouldFilter={shouldFilter}
                 >
                     {children}

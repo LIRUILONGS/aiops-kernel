@@ -74,7 +74,7 @@ function Dashboard() {
         <>
             <AppHeader>
                 <AppHeaderContent>
-                    <AppHeaderTitle icon={<LayoutDashboard className="size-4 shrink-0" />}>Dashboard</AppHeaderTitle>
+                    <AppHeaderTitle icon={<LayoutDashboard className="size-4 shrink-0" />}>概览</AppHeaderTitle>
                 </AppHeaderContent>
             </AppHeader>
 
@@ -86,8 +86,8 @@ function Dashboard() {
                 >
                     <div className="flex items-center justify-between">
                         <TabsList>
-                            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-                            <TabsTrigger value="overview">Overview</TabsTrigger>
+                            <TabsTrigger value="analytics">分析</TabsTrigger>
+                            <TabsTrigger value="overview">概览</TabsTrigger>
                         </TabsList>
 
                         {activeTab === 'analytics' && (

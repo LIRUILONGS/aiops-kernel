@@ -120,7 +120,7 @@ export function FlowDashboardOverview({ flowId }: { flowId: string }) {
                     error={!!flowStatsError && !flowStatsData}
                     icon={<GitFork className="text-muted-foreground size-4" />}
                     loading={anyLoading}
-                    title="Tasks"
+                    title="任务"
                     value={flowStats ? formatNumber(flowStats.totalTasksCount) : '0'}
                 />
                 <MetricCard
@@ -128,23 +128,23 @@ export function FlowDashboardOverview({ flowId }: { flowId: string }) {
                     error={!!toolcallsError && !toolcallsData}
                     icon={<Activity className="text-muted-foreground size-4" />}
                     loading={anyLoading}
-                    title="Tool Calls"
+                    title="工具调用"
                     value={toolcalls ? formatNumber(toolcalls.totalCount) : '0'}
                 />
                 <MetricCard
-                    description="Input + Output tokens"
+                    description="输入 + 输出 Token"
                     error={!!usageError && !usageData}
                     icon={<Cpu className="text-muted-foreground size-4" />}
                     loading={anyLoading}
-                    title="Tokens"
+                    title="Token"
                     value={formatTokenCount(totalTokens)}
                 />
                 <MetricCard
-                    description="LLM spending for this flow"
+                    description="这个会话的模型花费"
                     error={!!usageError && !usageData}
                     icon={<CircleDollarSign className="text-muted-foreground size-4" />}
                     loading={anyLoading}
-                    title="Cost"
+                    title="费用"
                     value={formatCost(totalCost)}
                 />
             </div>
@@ -152,25 +152,25 @@ export function FlowDashboardOverview({ flowId }: { flowId: string }) {
             {!!modelAgentRows.length && (
                 <Card>
                     <CardHeader>
-                        <CardTitle>Usage by Model &amp; Provider</CardTitle>
+                        <CardTitle>各模型与提供商用量</CardTitle>
                         <CardDescription>
                             LLM token usage and costs grouped by model and provider, with agent types used
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Table aria-label="Usage by Model & Provider">
+                        <Table aria-label="各模型与提供商用量">
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="w-40 whitespace-nowrap">Model</TableHead>
-                                    <TableHead className="whitespace-nowrap">Provider</TableHead>
-                                    <TableHead className="w-36 whitespace-nowrap">Agents</TableHead>
-                                    <TableHead className="text-right whitespace-nowrap">Tokens In</TableHead>
-                                    <TableHead className="text-right whitespace-nowrap">Tokens Out</TableHead>
-                                    <TableHead className="text-right whitespace-nowrap">Cache In</TableHead>
-                                    <TableHead className="text-right whitespace-nowrap">Cache Out</TableHead>
-                                    <TableHead className="text-right whitespace-nowrap">Cost In</TableHead>
-                                    <TableHead className="text-right whitespace-nowrap">Cost Out</TableHead>
-                                    <TableHead className="text-right whitespace-nowrap">Total Cost</TableHead>
+                                    <TableHead className="w-40 whitespace-nowrap">模型</TableHead>
+                                    <TableHead className="whitespace-nowrap">提供商</TableHead>
+                                    <TableHead className="w-36 whitespace-nowrap">智能体</TableHead>
+                                    <TableHead className="text-right whitespace-nowrap">输入 Token</TableHead>
+                                    <TableHead className="text-right whitespace-nowrap">输出 Token</TableHead>
+                                    <TableHead className="text-right whitespace-nowrap">缓存读取</TableHead>
+                                    <TableHead className="text-right whitespace-nowrap">缓存写入</TableHead>
+                                    <TableHead className="text-right whitespace-nowrap">输入费用</TableHead>
+                                    <TableHead className="text-right whitespace-nowrap">输出费用</TableHead>
+                                    <TableHead className="text-right whitespace-nowrap">总成本</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -229,21 +229,21 @@ export function FlowDashboardOverview({ flowId }: { flowId: string }) {
             {!!agentTypeRows.length && (
                 <Card>
                     <CardHeader>
-                        <CardTitle>Usage by Agent Type</CardTitle>
-                        <CardDescription>LLM token usage and costs per agent type in this flow</CardDescription>
+                        <CardTitle>各智能体用量</CardTitle>
+                        <CardDescription>本会话中各智能体类型的 Token 用量与费用</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Table aria-label="Usage by Agent Type">
+                        <Table aria-label="各智能体用量">
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Agent Type</TableHead>
-                                    <TableHead className="text-right">Tokens In</TableHead>
-                                    <TableHead className="text-right">Tokens Out</TableHead>
-                                    <TableHead className="text-right">Cache In</TableHead>
-                                    <TableHead className="text-right">Cache Out</TableHead>
-                                    <TableHead className="text-right">Cost In</TableHead>
-                                    <TableHead className="text-right">Cost Out</TableHead>
-                                    <TableHead className="text-right">Total Cost</TableHead>
+                                    <TableHead>智能体类型</TableHead>
+                                    <TableHead className="text-right">输入 Token</TableHead>
+                                    <TableHead className="text-right">输出 Token</TableHead>
+                                    <TableHead className="text-right">缓存读取</TableHead>
+                                    <TableHead className="text-right">缓存写入</TableHead>
+                                    <TableHead className="text-right">输入费用</TableHead>
+                                    <TableHead className="text-right">输出费用</TableHead>
+                                    <TableHead className="text-right">总成本</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -263,18 +263,18 @@ export function FlowDashboardOverview({ flowId }: { flowId: string }) {
             {!!toolcallsByFunction.length && (
                 <Card>
                     <CardHeader>
-                        <CardTitle>Tool Calls by Function</CardTitle>
-                        <CardDescription>Execution statistics per tool function in this flow</CardDescription>
+                        <CardTitle>各工具调用次数</CardTitle>
+                        <CardDescription>本会话中各工具函数的执行统计</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Table aria-label="Tool Calls by Function">
+                        <Table aria-label="各工具调用次数">
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Function</TableHead>
-                                    <TableHead>Type</TableHead>
-                                    <TableHead className="text-right">Count</TableHead>
-                                    <TableHead className="text-right">Total Duration</TableHead>
-                                    <TableHead className="text-right">Avg Duration</TableHead>
+                                    <TableHead>函数</TableHead>
+                                    <TableHead>类型</TableHead>
+                                    <TableHead className="text-right">次数</TableHead>
+                                    <TableHead className="text-right">总耗时</TableHead>
+                                    <TableHead className="text-right">平均耗时</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>

@@ -331,7 +331,7 @@ function FlowFilesPullDialogForm({ cachedFiles, flowId, onClose, onSuccess }: Fl
                 <EmptyMedia variant="icon">
                     <FolderOpen />
                 </EmptyMedia>
-                <EmptyTitle>Failed to list container</EmptyTitle>
+                <EmptyTitle>读取容器目录失败</EmptyTitle>
                 <EmptyDescription>{listingError.message}</EmptyDescription>
             </EmptyHeader>
         </Empty>
@@ -341,7 +341,7 @@ function FlowFilesPullDialogForm({ cachedFiles, flowId, onClose, onSuccess }: Fl
                 <EmptyMedia variant="icon">
                     <TriangleAlert />
                 </EmptyMedia>
-                <EmptyTitle>Nothing readable here</EmptyTitle>
+                <EmptyTitle>这里没有可读内容</EmptyTitle>
                 <EmptyDescription>
                     None of the {listingFailures.length} {listingFailures.length === 1 ? 'entry' : 'entries'} in{' '}
                     <code>{currentPath}</code> could be read.
@@ -365,7 +365,7 @@ function FlowFilesPullDialogForm({ cachedFiles, flowId, onClose, onSuccess }: Fl
                 <EmptyMedia variant="icon">
                     <FolderOpen />
                 </EmptyMedia>
-                <EmptyTitle>Directory is empty</EmptyTitle>
+                <EmptyTitle>目录是空的</EmptyTitle>
                 <EmptyDescription>
                     Nothing to pull from <code>{currentPath}</code>.
                 </EmptyDescription>
@@ -390,7 +390,7 @@ function FlowFilesPullDialogForm({ cachedFiles, flowId, onClose, onSuccess }: Fl
                 <div className="flex flex-col gap-3">
                     <div className="flex items-end gap-2">
                         <div className="flex-1">
-                            <Label className="mb-1.5 block text-sm font-normal">Container path</Label>
+                            <Label className="mb-1.5 block text-sm font-normal">容器内路径</Label>
                             <Autocomplete
                                 onCommit={navigateTo}
                                 onValueChange={setPathInputValue}
@@ -402,7 +402,7 @@ function FlowFilesPullDialogForm({ cachedFiles, flowId, onClose, onSuccess }: Fl
                                     placeholder="/work"
                                 />
                                 <AutocompleteContent>
-                                    <AutocompleteEmpty>No matching paths</AutocompleteEmpty>
+                                    <AutocompleteEmpty>没有匹配的路径</AutocompleteEmpty>
                                     <AutocompleteGroup>
                                         {pathSuggestions.map((suggestion) => (
                                             <AutocompleteItem
@@ -421,7 +421,7 @@ function FlowFilesPullDialogForm({ cachedFiles, flowId, onClose, onSuccess }: Fl
                             <TooltipTrigger asChild>
                                 <span>
                                     <Button
-                                        aria-label="Parent directory"
+                                        aria-label="上级目录"
                                         disabled={isUpDisabled}
                                         onClick={handleNavigateUp}
                                         size="icon-sm"
@@ -432,14 +432,14 @@ function FlowFilesPullDialogForm({ cachedFiles, flowId, onClose, onSuccess }: Fl
                                     </Button>
                                 </span>
                             </TooltipTrigger>
-                            <TooltipContent>Parent directory</TooltipContent>
+                            <TooltipContent>上级目录</TooltipContent>
                         </Tooltip>
 
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <span>
                                     <Button
-                                        aria-label="Refresh listing"
+                                        aria-label="刷新列表"
                                         disabled={isListingLoading || isPulling}
                                         onClick={handleRefresh}
                                         size="icon-sm"
@@ -450,7 +450,7 @@ function FlowFilesPullDialogForm({ cachedFiles, flowId, onClose, onSuccess }: Fl
                                     </Button>
                                 </span>
                             </TooltipTrigger>
-                            <TooltipContent>Refresh listing</TooltipContent>
+                            <TooltipContent>刷新列表</TooltipContent>
                         </Tooltip>
                     </div>
 
@@ -475,7 +475,7 @@ function FlowFilesPullDialogForm({ cachedFiles, flowId, onClose, onSuccess }: Fl
                     {isListingTruncated && (
                         <Alert>
                             <TriangleAlert />
-                            <AlertTitle>Directory truncated</AlertTitle>
+                            <AlertTitle>目录内容已截断</AlertTitle>
                             <AlertDescription>
                                 This directory has too many entries to list in full; only the first {files.length} are
                                 shown. Open a subfolder to see the rest.

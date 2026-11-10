@@ -138,7 +138,7 @@ function Templates() {
                                 inputRef={editingInputRef}
                                 onCancel={handleTemplateRenameCancel}
                                 onSave={handleTemplateRenameSave}
-                                placeholder="Template title"
+                                placeholder="模板标题"
                             />
                         </div>
                     );
@@ -149,7 +149,7 @@ function Templates() {
             header: ({ column }) => (
                 <DataTableColumnHeader
                     column={column}
-                    title="Title"
+                    title="标题"
                 />
             ),
             meta: { searchable: true },
@@ -164,7 +164,7 @@ function Templates() {
             header: ({ column }) => (
                 <DataTableColumnHeader
                     column={column}
-                    title="Text"
+                    title="文本"
                 />
             ),
             meta: { searchable: true },
@@ -178,7 +178,7 @@ function Templates() {
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button
-                                    aria-label="Open menu"
+                                    aria-label="打开菜单"
                                     className="size-8 p-0"
                                     onClick={(e) => e.stopPropagation()}
                                     variant="ghost"
@@ -253,12 +253,12 @@ function Templates() {
     const pageHeader = (
         <AppHeader>
             <AppHeaderContent>
-                <AppHeaderTitle icon={<FileText className="size-4 shrink-0" />}>Templates</AppHeaderTitle>
+                <AppHeaderTitle icon={<FileText className="size-4 shrink-0" />}>模板</AppHeaderTitle>
             </AppHeaderContent>
             <AppHeaderActions>
                 <AppHeaderAction
                     icon={<Plus />}
-                    label="New Template"
+                    label="新建模板"
                     onClick={() => navigate(routes.newTemplate)}
                     variant="secondary"
                 />
@@ -272,8 +272,8 @@ function Templates() {
                 {pageHeader}
                 <div className="flex flex-1 flex-col gap-4 p-4">
                     <LoadingState
-                        description="Please wait while we fetch your flow templates"
-                        title="Loading templates..."
+                        description="正在读取模板"
+                        title="加载中…"
                     />
                 </div>
             </>
@@ -289,7 +289,7 @@ function Templates() {
                     <ErrorState
                         message={error.message}
                         onRetry={refetch}
-                        title="Error loading templates"
+                        title="模板加载失败"
                     />
                 </div>
             </>
@@ -306,8 +306,8 @@ function Templates() {
                             <EmptyMedia variant="icon">
                                 <FileText />
                             </EmptyMedia>
-                            <EmptyTitle>No templates yet</EmptyTitle>
-                            <EmptyDescription>Create your first template to get started</EmptyDescription>
+                            <EmptyTitle>还没有模板</EmptyTitle>
+                            <EmptyDescription>先创建第一个模板</EmptyDescription>
                         </EmptyHeader>
                         <EmptyContent>
                             <Button
@@ -334,7 +334,7 @@ function Templates() {
                     empty={{ entityName: 'templates' }}
                     filterPlaceholder="Filter templates..."
                     filterValue={filter}
-                    label="Templates"
+                    label="模板"
                     onFilterChange={setFilter}
                     onRowClick={(template) => {
                         if (editingTemplateId !== template.id) {

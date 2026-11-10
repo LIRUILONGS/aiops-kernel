@@ -77,7 +77,7 @@ export function ImageEditForm({
     return (
         <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-1.5">
-                <Label htmlFor={srcId}>Image URL</Label>
+                <Label htmlFor={srcId}>图片地址</Label>
                 <InputGroup>
                     <InputGroupInput
                         aria-describedby={isInvalid ? errorId : undefined}
@@ -104,7 +104,7 @@ export function ImageEditForm({
                         </InputGroupButton>
                         {isEditing ? (
                             <InputGroupButton
-                                aria-label="Remove image"
+                                aria-label="移除图片"
                                 onClick={remove}
                                 size="icon-xs"
                             >
@@ -115,12 +115,12 @@ export function ImageEditForm({
                 </InputGroup>
             </div>
             <div className="flex flex-col gap-1.5">
-                <Label htmlFor={altId}>Alt text (optional)</Label>
+                <Label htmlFor={altId}>替代文本（可选）</Label>
                 <Input
                     id={altId}
                     onChange={(event) => setAlt(event.target.value)}
                     onKeyDown={applyOnEnter}
-                    placeholder="Describe the image"
+                    placeholder="描述这张图"
                     value={alt}
                 />
             </div>

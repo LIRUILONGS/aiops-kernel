@@ -135,7 +135,7 @@ export function PasswordChangeForm({
             className={cn(isVertical && 'w-full')}
             size={buttonSize}
         >
-            <span>Update Password</span>
+            <span>更新密码</span>
         </FormSubmitButton>
     );
 
@@ -151,11 +151,11 @@ export function PasswordChangeForm({
                     name="currentPassword"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Current Password</FormLabel>
+                            <FormLabel>当前密码</FormLabel>
                             <FormControl>
                                 <InputPassword
                                     {...field}
-                                    placeholder="Enter your current password"
+                                    placeholder="请输入当前密码"
                                 />
                             </FormControl>
                             <FormMessage />
@@ -168,11 +168,11 @@ export function PasswordChangeForm({
                     name="newPassword"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>New Password</FormLabel>
+                            <FormLabel>新密码</FormLabel>
                             <FormControl>
                                 <InputPassword
                                     {...field}
-                                    placeholder="Enter your new password"
+                                    placeholder="请输入新密码"
                                 />
                             </FormControl>
                             <FormDescription className="text-xs">
@@ -189,11 +189,11 @@ export function PasswordChangeForm({
                     name="confirmPassword"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Confirm New Password</FormLabel>
+                            <FormLabel>确认新密码</FormLabel>
                             <FormControl>
                                 <InputPassword
                                     {...field}
-                                    placeholder="Confirm your new password"
+                                    placeholder="请再次输入新密码"
                                 />
                             </FormControl>
                             <FormMessage />

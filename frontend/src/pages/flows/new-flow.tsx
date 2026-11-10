@@ -50,15 +50,15 @@ function NewFlow() {
         <>
             <AppHeader>
                 <AppHeaderContent>
-                    <AppHeaderTitle>New flow</AppHeaderTitle>
+                    <AppHeaderTitle>新建会话</AppHeaderTitle>
                 </AppHeaderContent>
             </AppHeader>
             <div className="flex min-h-[calc(100dvh-3rem)] items-center justify-center p-4">
                 <Card className="w-full max-w-2xl">
                     <CardContent className="flex flex-col gap-4 pt-6">
                         <div className="flex flex-col gap-2 text-center">
-                            <h2 className="text-2xl font-semibold">Create a new flow</h2>
-                            <p className="text-muted-foreground">Describe the incident to diagnose, or the service to optimise</p>
+                            <h2 className="text-2xl font-semibold">新建会话</h2>
+                            <p className="text-muted-foreground">描述要诊断的故障，或要优化的服务</p>
                         </div>
                         <Tabs
                             onValueChange={(value) => setFlowType(value as 'assistant' | 'automation')}

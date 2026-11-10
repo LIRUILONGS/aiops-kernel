@@ -165,7 +165,7 @@ function ResourcesCopyDialogForm({ files, onClose }: ResourcesCopyDialogFormProp
                     </DialogTitle>
                     <DialogDescription>
                         {isMulti ? (
-                            <>Duplicate every selected item into the destination directory.</>
+                            <>把所选项目复制到目标目录。</>
                         ) : (
                             <>
                                 Duplicate <code>{files[0].path}</code> to a new path.
@@ -204,7 +204,7 @@ function ResourcesCopyDialogForm({ files, onClose }: ResourcesCopyDialogFormProp
                                                 item keeps its current filename.
                                             </>
                                         ) : (
-                                            <>Relative path inside your library.</>
+                                            <>资源库内的相对路径。</>
                                         )}
                                     </FormDescription>
                                     <FormMessage />

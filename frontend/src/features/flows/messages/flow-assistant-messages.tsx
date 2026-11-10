@@ -122,7 +122,7 @@ function AssistantsDropdown({
 
                 <div className="flex flex-1 items-center gap-2 overflow-hidden">
                     <span className="truncate text-sm">{assistant.title}</span>
-                    {!isValid && <span className="text-destructive shrink-0 text-xs">(unavailable)</span>}
+                    {!isValid && <span className="text-destructive shrink-0 text-xs">（不可用）</span>}
                 </div>
 
                 <Check
@@ -158,7 +158,7 @@ function AssistantsDropdown({
             >
                 <PopoverTrigger asChild>
                     <Button
-                        aria-label="Select assistant"
+                        aria-label="选择助手"
                         className="px-2"
                         disabled={isAssistantCreating}
                         variant="outline"
@@ -187,9 +187,9 @@ function AssistantsDropdown({
                     className="w-[400px] p-0"
                 >
                     <Command>
-                        <CommandInput placeholder="Search assistants..." />
+                        <CommandInput placeholder="搜索助手…" />
                         <CommandList>
-                            <CommandEmpty>No assistants found.</CommandEmpty>
+                            <CommandEmpty>没有助手。</CommandEmpty>
 
                             {!isDisabled && (
                                 <CommandGroup>
@@ -243,7 +243,7 @@ function AssistantsDropdown({
                 isOpen={deleteDialogOpen}
                 itemName={currentAssistant?.title}
                 itemType="assistant"
-                title="Delete Assistant"
+                title="删除助手"
             />
         </>
     );
@@ -494,13 +494,13 @@ function FlowAssistantMessages({ className }: FlowAssistantMessagesProps) {
                                                 {...field}
                                                 autoComplete="off"
                                                 disabled={isAssistantCreating}
-                                                placeholder="Search messages..."
+                                                placeholder="搜索消息…"
                                                 type="text"
                                             />
                                             {field.value && (
                                                 <InputGroupAddon align="inline-end">
                                                     <InputGroupButton
-                                                        aria-label="Clear message search"
+                                                        aria-label="清空消息搜索"
                                                         disabled={isAssistantCreating}
                                                         onClick={() => {
                                                             form.reset({ search: '' });
@@ -528,8 +528,8 @@ function FlowAssistantMessages({ className }: FlowAssistantMessagesProps) {
                         <EmptyMedia variant="icon">
                             <Spinner variant="circle" />
                         </EmptyMedia>
-                        <EmptyTitle>Creating assistant...</EmptyTitle>
-                        <EmptyDescription>Please wait while we set up your new assistant</EmptyDescription>
+                        <EmptyTitle>正在创建助手…</EmptyTitle>
+                        <EmptyDescription>正在准备你的新助手</EmptyDescription>
                     </EmptyHeader>
                 </Empty>
             ) : selectedAssistantId ? (
@@ -551,7 +551,7 @@ function FlowAssistantMessages({ className }: FlowAssistantMessagesProps) {
 
                         {!isScrolledToBottom && (
                             <Button
-                                aria-label="Scroll to latest message"
+                                aria-label="跳到最后一条"
                                 className="absolute right-4 bottom-4 z-10 shadow-md hover:shadow-lg"
                                 onClick={() => scrollToEnd()}
                                 size="icon-sm"
@@ -571,8 +571,8 @@ function FlowAssistantMessages({ className }: FlowAssistantMessagesProps) {
                             <EmptyMedia variant="icon">
                                 <ListFilter />
                             </EmptyMedia>
-                            <EmptyTitle>No messages found</EmptyTitle>
-                            <EmptyDescription>Try adjusting your search or filter parameters</EmptyDescription>
+                            <EmptyTitle>没有消息</EmptyTitle>
+                            <EmptyDescription>换个搜索词或筛选条件试试</EmptyDescription>
                         </EmptyHeader>
                         <EmptyContent>
                             <Button
@@ -590,8 +590,8 @@ function FlowAssistantMessages({ className }: FlowAssistantMessagesProps) {
                             <EmptyMedia variant="icon">
                                 <Plus />
                             </EmptyMedia>
-                            <EmptyTitle>No messages</EmptyTitle>
-                            <EmptyDescription>No messages found for this assistant</EmptyDescription>
+                            <EmptyTitle>没有消息</EmptyTitle>
+                            <EmptyDescription>这个助手还没有消息</EmptyDescription>
                         </EmptyHeader>
                     </Empty>
                 )
@@ -601,8 +601,8 @@ function FlowAssistantMessages({ className }: FlowAssistantMessagesProps) {
                         <EmptyMedia variant="icon">
                             <Plus />
                         </EmptyMedia>
-                        <EmptyTitle>New assistant</EmptyTitle>
-                        <EmptyDescription>Type a message below to create a new assistant...</EmptyDescription>
+                        <EmptyTitle>新建助手</EmptyTitle>
+                        <EmptyDescription>在下方输入消息即可创建助手…</EmptyDescription>
                     </EmptyHeader>
                 </Empty>
             )}

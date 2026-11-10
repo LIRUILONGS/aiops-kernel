@@ -70,11 +70,11 @@ export function NameChangeForm({ onCancel, onSuccess }: NameChangeFormProps) {
                     name="name"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Display name</FormLabel>
+                            <FormLabel>显示名称</FormLabel>
                             <FormControl>
                                 <Input
                                     {...field}
-                                    placeholder="Enter your display name"
+                                    placeholder="请输入显示名称"
                                 />
                             </FormControl>
                             <FormMessage />
@@ -96,7 +96,7 @@ export function NameChangeForm({ onCancel, onSuccess }: NameChangeFormProps) {
                         </Button>
                     )}
                     <FormSubmitButton size="sm">
-                        <span>Update Name</span>
+                        <span>更新名称</span>
                     </FormSubmitButton>
                 </div>
             </form>

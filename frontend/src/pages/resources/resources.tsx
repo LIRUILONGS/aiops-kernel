@@ -345,13 +345,13 @@ function Resources() {
     const pageHeader = (
         <AppHeader>
             <AppHeaderContent>
-                <AppHeaderTitle icon={<Folder className="size-4 shrink-0" />}>Resources</AppHeaderTitle>
+                <AppHeaderTitle icon={<Folder className="size-4 shrink-0" />}>资源</AppHeaderTitle>
             </AppHeaderContent>
             <AppHeaderActions>
                 <AppHeaderAction
                     disabled={upload.isUploading}
                     icon={<FolderPlus />}
-                    label="New folder"
+                    label="新建文件夹"
                     onClick={() => setIsMkdirOpen(true)}
                     variant="outline"
                 />
@@ -372,12 +372,12 @@ function Resources() {
     const noResourcesState = (
         <FileDropZone
             actionLabel="Upload files"
-            description="Upload documents so OpsAGI agents can reference them during your flows. You can also drag & drop files anywhere in this panel."
+            description="上传文档，OpsAGI 的智能体在会话中可以引用它们。也可以直接把文件拖到面板里。"
             hint="Up to 300 MB per file · 2 GB per upload"
             isDragging={isDragging}
             isUploading={upload.isUploading}
             onBrowse={upload.openFilePicker}
-            title="No resources yet"
+            title="还没有资源"
         />
     );
 
@@ -387,7 +387,7 @@ function Resources() {
                 <EmptyMedia variant="icon">
                     <Search />
                 </EmptyMedia>
-                <EmptyTitle>No matches</EmptyTitle>
+                <EmptyTitle>没有匹配</EmptyTitle>
                 <EmptyDescription>
                     No resources match <code>{search.debouncedQuery.trim()}</code>. Try a different query.
                 </EmptyDescription>
@@ -404,7 +404,7 @@ function Resources() {
                     <ErrorState
                         message={error.message}
                         onRetry={refetch}
-                        title="Error loading resources"
+                        title="资源加载失败"
                     />
                 </div>
             </>
@@ -433,7 +433,7 @@ function Resources() {
                     <div className="bg-primary/10 border-primary pointer-events-none absolute inset-2 z-30 flex items-center justify-center rounded-lg border-2 border-dashed">
                         <div className="text-link flex flex-col items-center gap-2">
                             <FolderUp className="size-8" />
-                            <span className="text-sm font-medium">Drop files to upload</span>
+                            <span className="text-sm font-medium">拖拽文件到此上传</span>
                         </div>
                     </div>
                 )}
@@ -441,17 +441,17 @@ function Resources() {
                 <div className="flex items-center gap-2">
                     <InputGroup className="max-w-sm flex-1">
                         <InputGroupInput
-                            aria-label="Search resources"
+                            aria-label="搜索资源"
                             autoComplete="off"
                             onChange={(event) => search.setQuery(event.target.value)}
-                            placeholder="Search resources..."
+                            placeholder="搜索资源…"
                             type="text"
                             value={search.rawQuery}
                         />
                         {search.rawQuery ? (
                             <InputGroupAddon align="inline-end">
                                 <InputGroupButton
-                                    aria-label="Clear resource search"
+                                    aria-label="清空资源搜索"
                                     onClick={search.resetSearch}
                                     type="button"
                                 >
@@ -463,7 +463,7 @@ function Resources() {
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button
-                                aria-label="Column settings"
+                                aria-label="列设置"
                                 className="ml-auto"
                                 size="icon"
                                 variant="outline"

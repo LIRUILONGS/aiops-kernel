@@ -175,7 +175,7 @@ describe('VersionPanel', () => {
             'href',
             'https://github.com/vxcontrol/pentagi/releases/tag/v2.4.0',
         );
-        expect(screen.getByRole('menuitem', { name: /All releases/ })).toHaveAttribute(
+        expect(screen.getByRole('menuitem', { name: /所有版本/ })).toHaveAttribute(
             'href',
             'https://github.com/vxcontrol/pentagi/releases',
         );
@@ -245,7 +245,7 @@ describe('VersionPanel', () => {
 
         expect(await screen.findByRole('menu')).toHaveTextContent('Update status unknown');
         expect(screen.queryByRole('menuitem', { name: /Release notes/ })).not.toBeInTheDocument();
-        expect(screen.getByRole('menuitem', { name: /All releases/ })).toBeInTheDocument();
+        expect(screen.getByRole('menuitem', { name: /所有版本/ })).toBeInTheDocument();
     });
 });
 

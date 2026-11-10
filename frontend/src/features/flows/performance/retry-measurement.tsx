@@ -60,7 +60,7 @@ function RetryMeasurement({ verdict }: { verdict: string }) {
                 <RefreshCw className={isRetrying ? 'animate-spin' : undefined} />
                 Measure again
             </Button>
-            <span className="text-muted-foreground text-xs">Starts a new flow with the same input and target type</span>
+            <span className="text-muted-foreground text-xs">用相同的输入和目标新建会话</span>
         </div>
     );
 }

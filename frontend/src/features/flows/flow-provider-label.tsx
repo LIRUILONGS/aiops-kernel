@@ -33,13 +33,13 @@ export function FlowProviderLabel({ isOwnFlow, provider, providers }: FlowProvid
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <AlertCircle
-                            aria-label="Unavailable"
+                            aria-label="不可用"
                             className="text-destructive size-4 shrink-0 cursor-pointer"
                             role="img"
                             tabIndex={0}
                         />
                     </TooltipTrigger>
-                    <TooltipContent>Unavailable</TooltipContent>
+                    <TooltipContent>不可用</TooltipContent>
                 </Tooltip>
             )}
         </div>

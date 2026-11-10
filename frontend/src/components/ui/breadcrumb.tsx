@@ -11,7 +11,7 @@ function Breadcrumb({
 }) {
     return (
         <nav
-            aria-label="breadcrumb"
+            aria-label="面包屑"
             data-slot="breadcrumb"
             {...props}
         />
@@ -28,7 +28,7 @@ function BreadcrumbEllipsis({ className, ...props }: React.ComponentProps<'span'
             {...props}
         >
             <MoreHorizontal className="h-4 w-4" />
-            <span className="sr-only">More</span>
+            <span className="sr-only">更多</span>
         </span>
     );
 }

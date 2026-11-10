@@ -367,7 +367,7 @@ function VersionDetails({
             {releaseNotes && (
                 <ExternalLinkRow href={releaseNotes}>Release notes for {presentation.latest}</ExternalLinkRow>
             )}
-            <ExternalLinkRow href={OPSAGI_RELEASES_URL}>All releases</ExternalLinkRow>
+            <ExternalLinkRow href={OPSAGI_RELEASES_URL}>所有版本</ExternalLinkRow>
         </>
     );
 }

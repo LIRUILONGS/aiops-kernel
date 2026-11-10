@@ -83,11 +83,11 @@ export function EmailChangeForm({ onCancel, onSuccess }: EmailChangeFormProps) {
                     name="currentPassword"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Current Password</FormLabel>
+                            <FormLabel>当前密码</FormLabel>
                             <FormControl>
                                 <InputPassword
                                     {...field}
-                                    placeholder="Enter your current password"
+                                    placeholder="请输入当前密码"
                                 />
                             </FormControl>
                             <FormMessage />
@@ -100,11 +100,11 @@ export function EmailChangeForm({ onCancel, onSuccess }: EmailChangeFormProps) {
                     name="newEmail"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>New Email</FormLabel>
+                            <FormLabel>新邮箱</FormLabel>
                             <FormControl>
                                 <Input
                                     {...field}
-                                    placeholder="Enter your new email address"
+                                    placeholder="请输入新的邮箱地址"
                                     type="email"
                                 />
                             </FormControl>
@@ -127,7 +127,7 @@ export function EmailChangeForm({ onCancel, onSuccess }: EmailChangeFormProps) {
                         </Button>
                     )}
                     <FormSubmitButton size="sm">
-                        <span>Update Email</span>
+                        <span>更新邮箱</span>
                     </FormSubmitButton>
                 </div>
             </form>

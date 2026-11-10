@@ -209,7 +209,7 @@ function Knowledges() {
             header: ({ column }) => (
                 <DataTableColumnHeader
                     column={column}
-                    title="Type"
+                    title="类型"
                 />
             ),
             maxSize: 180,
@@ -234,7 +234,7 @@ function Knowledges() {
                                 inputRef={editingInputRef}
                                 onCancel={handleKnowledgeRenameCancel}
                                 onSave={handleKnowledgeRenameSave}
-                                placeholder="Knowledge question"
+                                placeholder="知识库问题"
                             />
                         </div>
                     );
@@ -252,7 +252,7 @@ function Knowledges() {
             header: ({ column }) => (
                 <DataTableColumnHeader
                     column={column}
-                    title="Question"
+                    title="问题"
                 />
             ),
             meta: { columnMenuLabel: 'Question', searchable: true },
@@ -303,7 +303,7 @@ function Knowledges() {
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button
-                                    aria-label="Open menu"
+                                    aria-label="打开菜单"
                                     className="size-8 p-0"
                                     onClick={(event) => event.stopPropagation()}
                                     variant="ghost"
@@ -380,7 +380,7 @@ function Knowledges() {
     const pageHeader = (
         <AppHeader>
             <AppHeaderContent>
-                <AppHeaderTitle icon={<LibraryBig className="size-4 shrink-0" />}>Knowledges</AppHeaderTitle>
+                <AppHeaderTitle icon={<LibraryBig className="size-4 shrink-0" />}>知识库</AppHeaderTitle>
             </AppHeaderContent>
             <AppHeaderActions>
                 <InputSearch
@@ -389,12 +389,12 @@ function Knowledges() {
                     hotkey="k"
                     maxWidth={220}
                     onSearchChange={handleSemanticQueryChange}
-                    placeholder="Semantic search..."
+                    placeholder="语义搜索…"
                     searchQuery={semanticQuery}
                 />
                 <AppHeaderAction
                     icon={<Plus />}
-                    label="New Knowledge"
+                    label="新建知识"
                     onClick={() => navigate(routes.newKnowledge)}
                     variant="secondary"
                 />
@@ -408,8 +408,8 @@ function Knowledges() {
                 {pageHeader}
                 <div className="flex flex-1 flex-col gap-4 p-4">
                     <LoadingState
-                        description="Please wait while we fetch your knowledge documents"
-                        title="Loading knowledges..."
+                        description="正在读取知识库"
+                        title="加载中…"
                     />
                 </div>
             </>
@@ -425,7 +425,7 @@ function Knowledges() {
                     <ErrorState
                         message={error.message}
                         onRetry={refetch}
-                        title="Error loading knowledge documents"
+                        title="知识库加载失败"
                     />
                 </div>
             </>
@@ -442,7 +442,7 @@ function Knowledges() {
                             <EmptyMedia variant="icon">
                                 <LibraryBig />
                             </EmptyMedia>
-                            <EmptyTitle>No knowledge documents yet</EmptyTitle>
+                            <EmptyTitle>还没有知识文档</EmptyTitle>
                             <EmptyDescription>
                                 Create your first knowledge document to enrich the vector store
                             </EmptyDescription>
@@ -472,7 +472,7 @@ function Knowledges() {
                     empty={{ entityName: 'knowledge documents' }}
                     filterPlaceholder="Filter knowledge documents..."
                     filterValue={filter}
-                    label="Knowledge Documents"
+                    label="知识文档"
                     onFilterChange={setFilter}
                     onRowClick={(k) => {
                         if (editingKnowledgeId !== k.id) {

@@ -59,14 +59,14 @@ function Comparison({ diff }: { diff: DiffReport }) {
                     {diff.material} of {diff.total} material
                 </Badge>
             </div>
-            <Table aria-label="Measured deltas">
+            <Table aria-label="实测变化">
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Metric</TableHead>
-                        <TableHead className="text-right">Before</TableHead>
-                        <TableHead className="text-right">After</TableHead>
-                        <TableHead className="text-right">Change</TableHead>
-                        <TableHead className="text-right">Verdict</TableHead>
+                        <TableHead>指标</TableHead>
+                        <TableHead className="text-right">之前</TableHead>
+                        <TableHead className="text-right">之后</TableHead>
+                        <TableHead className="text-right">变化</TableHead>
+                        <TableHead className="text-right">判定</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -82,7 +82,7 @@ function Comparison({ diff }: { diff: DiffReport }) {
                             <TableCell className="text-right tabular-nums">{row.change}</TableCell>
                             <TableCell className="text-right">
                                 <Badge variant={VERDICT_TONE[row.verdict] ?? 'secondary'}>{row.verdict}</Badge>
-                                {row.worsened && <span className="text-muted-foreground ml-1 text-xs">worsened</span>}
+                                {row.worsened && <span className="text-muted-foreground ml-1 text-xs">变差</span>}
                             </TableCell>
                         </TableRow>
                     ))}
@@ -166,7 +166,7 @@ function FlowPerformance({ flowId }: { flowId: string }) {
                 )}
                 {groups.length > 0 && (
                     <div className="flex flex-col gap-4">
-                        <h3 className="text-sm font-medium">Metrics over time</h3>
+                        <h3 className="text-sm font-medium">指标趋势</h3>
                         {groups.map((group) => (
                             <MetricGroupSection group={group} key={group.key} />
                         ))}
@@ -225,16 +225,16 @@ function Samples({ samples }: { samples: BaselineSample[] }) {
             <div className="text-muted-foreground mb-2 text-xs">
                 Samples — the first one is the baseline every later one is compared with
             </div>
-            <Table aria-label="Performance samples">
+            <Table aria-label="性能采样">
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Label</TableHead>
-                        <TableHead>Captured</TableHead>
-                        <TableHead className="text-right">Load 1m</TableHead>
+                        <TableHead>标签</TableHead>
+                        <TableHead>采集时间</TableHead>
+                        <TableHead className="text-right">1 分钟负载</TableHead>
                         <TableHead className="text-right">CPU</TableHead>
-                        <TableHead className="text-right">Memory</TableHead>
-                        <TableHead className="text-right">Worst disk</TableHead>
-                        <TableHead className="text-right">Restarts</TableHead>
+                        <TableHead className="text-right">内存</TableHead>
+                        <TableHead className="text-right">磁盘最差</TableHead>
+                        <TableHead className="text-right">重启次数</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>

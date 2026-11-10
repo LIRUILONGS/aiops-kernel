@@ -220,7 +220,7 @@ function Flows() {
                 header: ({ column }) => (
                     <DataTableColumnHeader
                         column={column}
-                        title="Title"
+                        title="标题"
                     />
                 ),
                 meta: { searchable: true },
@@ -246,7 +246,7 @@ function Flows() {
                 header: ({ column }) => (
                     <DataTableColumnHeader
                         column={column}
-                        title="Status"
+                        title="状态"
                     />
                 ),
                 maxSize: 130,
@@ -271,7 +271,7 @@ function Flows() {
                 header: ({ column }) => (
                     <DataTableColumnHeader
                         column={column}
-                        title="Provider"
+                        title="提供商"
                     />
                 ),
                 id: 'provider',
@@ -336,7 +336,7 @@ function Flows() {
                 header: ({ column }) => (
                     <DataTableColumnHeader
                         column={column}
-                        title="Terminals"
+                        title="终端"
                     />
                 ),
                 id: 'terminals',
@@ -361,7 +361,7 @@ function Flows() {
                 header: ({ column }) => (
                     <DataTableColumnHeader
                         column={column}
-                        title="Created"
+                        title="创建时间"
                     />
                 ),
                 maxSize: 170,
@@ -385,7 +385,7 @@ function Flows() {
                 header: ({ column }) => (
                     <DataTableColumnHeader
                         column={column}
-                        title="Updated"
+                        title="更新时间"
                     />
                 ),
                 maxSize: 170,
@@ -587,7 +587,7 @@ function Flows() {
             <AppHeaderActions>
                 <AppHeaderAction
                     icon={<Plus />}
-                    label="New Flow"
+                    label="新建会话"
                     onClick={() => navigate(routes.newFlow)}
                     variant="secondary"
                 />
@@ -664,7 +664,7 @@ function Flows() {
                     filterPlaceholder="筛选会话…"
                     filterValue={filter}
                     isVirtualized
-                    label="Flows"
+                    label="会话"
                     onFilterChange={setFilter}
                     onPageChange={handlePageChange}
                     onRowClick={handleRowClick}

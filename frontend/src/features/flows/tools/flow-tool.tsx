@@ -69,7 +69,7 @@ function FlowTool({ log, searchValue = '' }: FlowToolProps) {
                                     <span>{formatName(engine)}</span>
                                 </span>
                             </TooltipTrigger>
-                            <TooltipContent>Tool name</TooltipContent>
+                            <TooltipContent>工具名</TooltipContent>
                         </Tooltip>
                     </div>
 
@@ -121,7 +121,7 @@ function FlowTool({ log, searchValue = '' }: FlowToolProps) {
                             onClick={handleCopy}
                         />
                     </TooltipTrigger>
-                    <TooltipContent>Copy</TooltipContent>
+                    <TooltipContent>复制</TooltipContent>
                 </Tooltip>
                 <span className="text-muted-foreground/50">{formatDate(new Date(createdAt))}</span>
                 {taskId && (

@@ -473,7 +473,7 @@ function TemplateForm({ templateId }: { templateId?: string }) {
                                         inputRef={editingInputRef}
                                         onCancel={handleTemplateRenameCancel}
                                         onSave={handleTemplateRenameSave}
-                                        placeholder="Template title"
+                                        placeholder="模板标题"
                                     />
                                 ) : hasTemplate ? (
                                     <Tooltip>
@@ -485,7 +485,7 @@ function TemplateForm({ templateId }: { templateId?: string }) {
                                                 {templateName ?? 'Template'}
                                             </BreadcrumbPage>
                                         </TooltipTrigger>
-                                        <TooltipContent>Double-click to rename</TooltipContent>
+                                        <TooltipContent>双击重命名</TooltipContent>
                                     </Tooltip>
                                 ) : (
                                     <BreadcrumbPage className="min-w-0 truncate">
@@ -517,7 +517,7 @@ function TemplateForm({ templateId }: { templateId?: string }) {
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button
-                                    aria-label="Template actions"
+                                    aria-label="模板操作"
                                     className="size-8 p-0"
                                     variant="ghost"
                                 >
@@ -716,7 +716,7 @@ function TemplateForm({ templateId }: { templateId?: string }) {
     const introBlock = (
         <div className="flex flex-col gap-2 text-center">
             <h2 className="text-2xl font-semibold">{isNew ? 'Create a new template' : 'Edit template'}</h2>
-            <p className="text-muted-foreground">Add a title and content, or start from a preset.</p>
+            <p className="text-muted-foreground">填写标题与内容，或从预设开始。</p>
         </div>
     );
 
@@ -726,12 +726,12 @@ function TemplateForm({ templateId }: { templateId?: string }) {
             name="title"
             render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Title</FormLabel>
+                    <FormLabel>标题</FormLabel>
                     <FormControl>
                         <Input
                             autoFocus={isNew}
                             disabled={isSaving}
-                            placeholder="A short name for this template"
+                            placeholder="这个模板的简短名称"
                             {...field}
                         />
                     </FormControl>
@@ -749,12 +749,12 @@ function TemplateForm({ templateId }: { templateId?: string }) {
                 <FormItem className="flex min-h-0 flex-1 flex-col">
                     <FormControl>
                         <MarkdownEditorField
-                            aria-label="Template content"
+                            aria-label="模板内容"
                             disabled={isSaving}
                             mode={viewMode}
                             onBlur={field.onBlur}
                             onChange={field.onChange}
-                            placeholder="Describe the task, or start from a preset"
+                            placeholder="描述任务，或从预设开始"
                             ref={field.ref}
                             value={field.value}
                         />
@@ -786,7 +786,7 @@ function TemplateForm({ templateId }: { templateId?: string }) {
                     <ErrorState
                         message={templateLoadError.message}
                         onRetry={() => refetchTemplate()}
-                        title="Error loading template"
+                        title="模板加载失败"
                     />
                 </div>
             </div>
@@ -800,9 +800,9 @@ function TemplateForm({ templateId }: { templateId?: string }) {
                 <div className="flex flex-1 items-center justify-center p-4">
                     <Card className="w-full max-w-2xl">
                         <CardContent className="flex flex-col items-center gap-4 pt-6 text-center">
-                            <h2 className="text-xl font-semibold">Template not found</h2>
-                            <p className="text-muted-foreground">The template you are looking for does not exist.</p>
-                            <Button onClick={() => navigate(routes.templates)}>Back to Templates</Button>
+                            <h2 className="text-xl font-semibold">模板不存在</h2>
+                            <p className="text-muted-foreground">找不到你要的模板。</p>
+                            <Button onClick={() => navigate(routes.templates)}>返回模板列表</Button>
                         </CardContent>
                     </Card>
                 </div>
@@ -845,7 +845,7 @@ function TemplateForm({ templateId }: { templateId?: string }) {
                 confirmIcon={<FileSymlink />}
                 confirmText="Replace"
                 confirmVariant="default"
-                description="Current form has content. Replace with the selected preset?"
+                description="当前表单已有内容，确定用所选预设替换吗？"
                 handleConfirm={handleConfirmReplacePreset}
                 handleOpenChange={(open) => {
                     if (!open) {
@@ -855,7 +855,7 @@ function TemplateForm({ templateId }: { templateId?: string }) {
                     setIsReplaceConfirmOpen(open);
                 }}
                 isOpen={isReplaceConfirmOpen}
-                title="Replace content?"
+                title="替换内容？"
             />
             <ConfirmationDialog
                 cancelText="Cancel"

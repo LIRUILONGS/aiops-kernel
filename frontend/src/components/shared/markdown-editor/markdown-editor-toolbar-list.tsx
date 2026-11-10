@@ -61,7 +61,7 @@ export function ListMenu({ activeType, disabled, editor, isInTableCell }: ListMe
                         </Button>
                     </DropdownMenuTrigger>
                 </TooltipTrigger>
-                <TooltipContent>Lists</TooltipContent>
+                <TooltipContent>列表</TooltipContent>
             </Tooltip>
             <DropdownMenuContent
                 align="start"

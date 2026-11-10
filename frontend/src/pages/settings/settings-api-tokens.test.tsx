@@ -12,7 +12,7 @@ const queryResult = vi.hoisted(() => ({
                     id: '1',
                     name: 'Seeded Token',
                     roleId: '0',
-                    status: 'active',
+                    status: '有效',
                     tokenId: 'tok-1',
                     ttl: 86400,
                     updatedAt: '2026-01-15T00:00:00Z',
@@ -143,8 +143,8 @@ describe('the create row date picker', () => {
             </MemoryRouter>,
         );
 
-        fireEvent.click(screen.getByRole('button', { name: 'Create Token' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Pick date' }));
+        fireEvent.click(screen.getByRole('button', { name: '创建令牌' }));
+        fireEvent.click(screen.getByRole('button', { name: '选择日期' }));
     };
 
     let shownMonth = new Date();
@@ -175,7 +175,7 @@ describe('the create row date picker', () => {
         expect(refused).toBeDisabled();
 
         fireEvent.click(refused);
-        expect(screen.getByRole('button', { name: 'Pick date' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: '选择日期' })).toBeInTheDocument();
 
         fireEvent.click(dayButton(lastAllowed));
         expect(screen.getByRole('button', { name: format(lastAllowed, 'd MMM yyyy') })).toBeInTheDocument();
@@ -221,7 +221,7 @@ describe('a revoked token that also outlived its ttl', () => {
                         id: '1',
                         name: 'Seeded Token',
                         roleId: '0',
-                        status: 'revoked',
+                        status: '已撤销',
                         tokenId: 'tok-1',
                         ttl: 60,
                         updatedAt: '2026-01-15T00:00:00Z',
@@ -239,7 +239,7 @@ describe('a revoked token that also outlived its ttl', () => {
             </MemoryRouter>,
         );
 
-        expect(screen.getByText('revoked')).toBeInTheDocument();
+        expect(screen.getByText('已撤销')).toBeInTheDocument();
         expect(screen.queryByText('expired')).not.toBeInTheDocument();
     });
 });
@@ -255,7 +255,7 @@ describe('a token created in an earlier year', () => {
                         id: '1',
                         name: 'Seeded Token',
                         roleId: '0',
-                        status: 'active',
+                        status: '有效',
                         tokenId: 'tok-1',
                         ttl: 86400,
                         updatedAt: '2025-06-15T12:00:00Z',
@@ -298,8 +298,8 @@ describe('creating the very first token', () => {
             </MemoryRouter>,
         );
 
-        fireEvent.click(screen.getAllByRole('button', { name: 'Create Token' })[0]!);
-        fireEvent.click(screen.getByRole('button', { name: 'Pick date' }));
+        fireEvent.click(screen.getAllByRole('button', { name: '创建令牌' })[0]!);
+        fireEvent.click(screen.getByRole('button', { name: '选择日期' }));
         fireEvent.click(
             within(screen.getByRole('grid')).getByRole('button', {
                 name: format(addDays(new Date('2026-09-01T12:00:00'), 7), 'PPPP'),
@@ -312,7 +312,7 @@ describe('creating the very first token', () => {
         fireEvent.click(submit);
 
         await waitFor(() => expect(mutationSpy).toHaveBeenCalled());
-        expect(await screen.findByText('API Token Created')).toBeInTheDocument();
+        expect(await screen.findByText('令牌已创建')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Copy Token' })).toBeInTheDocument();
     }, 30_000);
 });
@@ -348,12 +348,12 @@ describe('renaming an expired token', () => {
         );
 
         fireEvent.pointerDown(
-            screen.getByRole('button', { name: 'Open menu' }),
+            screen.getByRole('button', { name: '打开菜单' }),
             new MouseEvent('pointerdown', { bubbles: true, cancelable: true }),
         );
         fireEvent.click(await screen.findByRole('menuitem', { name: 'Edit' }));
 
-        fireEvent.change(screen.getByPlaceholderText('Token name (optional)'), { target: { value: 'renamed' } });
+        fireEvent.change(screen.getByPlaceholderText('令牌名称（可选）'), { target: { value: 'renamed' } });
 
         const submit = screen.getByRole('button', { name: 'Submit' });
 

@@ -196,7 +196,7 @@ interface DataTableFilterProps {
 
 function DataTableEmptyState({ entityName, filterValue }: DataTableEmptyStateProps) {
     if (!entityName) {
-        return <>No results.</>;
+        return <>没有数据。</>;
     }
 
     const hasFilter = filterValue.length > 0;
@@ -208,10 +208,10 @@ function DataTableEmptyState({ entityName, filterValue }: DataTableEmptyStatePro
                 <EmptyMedia variant="icon">
                     <Icon />
                 </EmptyMedia>
-                <EmptyTitle>{hasFilter ? 'No matches' : `No ${entityName} yet`}</EmptyTitle>
+                <EmptyTitle>{hasFilter ? '没有匹配' : `还没有${entityName}`}</EmptyTitle>
                 {hasFilter ? (
                     <EmptyDescription>
-                        No {entityName} match <code>{filterValue}</code>. Try a different query.
+                        没有匹配 <code>{filterValue}</code> 的{entityName}，换个搜索词试试。
                     </EmptyDescription>
                 ) : null}
             </EmptyHeader>
@@ -699,7 +699,7 @@ function DataTable<TData, TValue = unknown>({
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button
-                                aria-label="Search in"
+                                aria-label="搜索范围"
                                 className="shrink-0"
                                 size="icon"
                                 variant="outline"
@@ -749,7 +749,7 @@ function DataTable<TData, TValue = unknown>({
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button
-                            aria-label="Columns"
+                            aria-label="列"
                             className="ml-auto shrink-0"
                             size="icon"
                             variant="outline"
@@ -852,16 +852,16 @@ function DataTable<TData, TValue = unknown>({
                 <div className="text-muted-foreground flex-1 text-xs text-nowrap">
                     {totalRows > 0 ? (
                         <>
-                            Showing {rangeStart}–{rangeEnd} of {totalRows}
+                            第 {rangeStart}–{rangeEnd} 条，共 {totalRows} 条
                         </>
                     ) : empty?.entityName ? (
-                        `No ${empty.entityName}`
+                        `没有${empty.entityName}`
                     ) : (
-                        'No results'
+                        '没有数据'
                     )}
                 </div>
                 <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium">Rows per page</span>
+                    <span className="text-xs font-medium">每页行数</span>
                     <Select
                         onValueChange={(value) => {
                             const pageSize = value === 'all' ? data.length : Number.parseInt(value, 10);
@@ -870,7 +870,7 @@ function DataTable<TData, TValue = unknown>({
                         value={pageSizeValue}
                     >
                         <SelectTrigger
-                            aria-label="Rows per page"
+                            aria-label="每页行数"
                             className="h-7 w-16 text-xs"
                         >
                             <SelectValue />
@@ -887,7 +887,7 @@ function DataTable<TData, TValue = unknown>({
                                     {size}
                                 </SelectItem>
                             ))}
-                            <SelectItem value="all">All</SelectItem>
+                            <SelectItem value="all">全部</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -903,7 +903,7 @@ function DataTable<TData, TValue = unknown>({
                 )}
                 <div className="flex items-center gap-1">
                     <Button
-                        aria-label="First page"
+                        aria-label="首页"
                         disabled={!table.getCanPreviousPage()}
                         onClick={() => table.firstPage()}
                         size="icon-xs"
@@ -912,7 +912,7 @@ function DataTable<TData, TValue = unknown>({
                         <ChevronsLeft />
                     </Button>
                     <Button
-                        aria-label="Previous page"
+                        aria-label="上一页"
                         disabled={!table.getCanPreviousPage()}
                         onClick={() => table.previousPage()}
                         size="icon-xs"
@@ -921,7 +921,7 @@ function DataTable<TData, TValue = unknown>({
                         <ChevronLeft />
                     </Button>
                     <Button
-                        aria-label="Next page"
+                        aria-label="下一页"
                         disabled={!table.getCanNextPage()}
                         onClick={() => table.nextPage()}
                         size="icon-xs"
@@ -930,7 +930,7 @@ function DataTable<TData, TValue = unknown>({
                         <ChevronRight />
                     </Button>
                     <Button
-                        aria-label="Last page"
+                        aria-label="末页"
                         disabled={!table.getCanNextPage()}
                         onClick={() => table.lastPage()}
                         size="icon-xs"
@@ -1068,7 +1068,7 @@ function DataTableFilter({ onQueryChange, placeholder, query }: DataTableFilterP
             {localValue ? (
                 <InputGroupAddon align="inline-end">
                     <InputGroupButton
-                        aria-label="Clear search"
+                        aria-label="清空搜索"
                         onClick={handleClear}
                         type="button"
                     >

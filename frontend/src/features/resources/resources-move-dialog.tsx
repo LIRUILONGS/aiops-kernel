@@ -165,7 +165,7 @@ function ResourcesMoveDialogForm({ files, onClose }: ResourcesMoveDialogFormProp
                     </DialogTitle>
                     <DialogDescription>
                         {isMulti ? (
-                            <>Move every selected item into the destination directory.</>
+                            <>把所选项目移动到目标目录。</>
                         ) : (
                             <>
                                 Update the path of <code>{files[0].path}</code>.

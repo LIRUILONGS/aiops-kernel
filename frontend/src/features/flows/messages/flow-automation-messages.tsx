@@ -210,13 +210,13 @@ function FlowAutomationMessages({ className }: FlowAutomationMessagesProps) {
                                         <InputGroupInput
                                             {...field}
                                             autoComplete="off"
-                                            placeholder="Search messages..."
+                                            placeholder="搜索消息…"
                                             type="text"
                                         />
                                         {field.value && (
                                             <InputGroupAddon align="inline-end">
                                                 <InputGroupButton
-                                                    aria-label="Clear message search"
+                                                    aria-label="清空消息搜索"
                                                     onClick={() => {
                                                         form.reset({ search: '' });
                                                         setDebouncedSearchValue('');
@@ -266,7 +266,7 @@ function FlowAutomationMessages({ className }: FlowAutomationMessagesProps) {
 
                     {!isScrolledToBottom && (
                         <Button
-                            aria-label="Scroll to latest message"
+                            aria-label="跳到最后一条"
                             className="absolute right-4 bottom-4 z-10 shadow-md hover:shadow-lg"
                             onClick={() => scrollToEnd()}
                             size="icon-sm"
@@ -286,8 +286,8 @@ function FlowAutomationMessages({ className }: FlowAutomationMessagesProps) {
                         <EmptyMedia variant="icon">
                             <ListFilter />
                         </EmptyMedia>
-                        <EmptyTitle>No messages found</EmptyTitle>
-                        <EmptyDescription>Try adjusting your search or filter parameters</EmptyDescription>
+                        <EmptyTitle>没有消息</EmptyTitle>
+                        <EmptyDescription>换个搜索词或筛选条件试试</EmptyDescription>
                     </EmptyHeader>
                     <EmptyContent>
                         <Button
@@ -305,7 +305,7 @@ function FlowAutomationMessages({ className }: FlowAutomationMessagesProps) {
                         <EmptyMedia variant="icon">
                             <Inbox />
                         </EmptyMedia>
-                        <EmptyTitle>No active tasks</EmptyTitle>
+                        <EmptyTitle>没有进行中的任务</EmptyTitle>
                         <EmptyDescription>
                             Starting a new task may take some time as the OpsAGI agent downloads the required Docker
                             image

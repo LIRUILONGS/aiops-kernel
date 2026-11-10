@@ -210,7 +210,7 @@ function FlowMessageConclusion({ conclusion, footer, raw, searchValue = '' }: Fl
                 )}
                 {confidence && <Badge variant="outline">confidence {confidence}</Badge>}
                 {conclusion.kind === 'diagnosis' && conclusion.needsHuman && (
-                    <Badge variant="orange">needs a human</Badge>
+                    <Badge variant="orange">需要人工介入</Badge>
                 )}
                 <button
                     className="text-muted-foreground ml-auto cursor-pointer text-xs hover:underline"
@@ -233,50 +233,50 @@ function FlowMessageConclusion({ conclusion, footer, raw, searchValue = '' }: Fl
                     {conclusion.kind === 'diagnosis' ? (
                         <>
                             <Row
-                                label="Root cause"
+                                label="根因"
                                 value={conclusion.rootCause}
                             />
                             <Row
-                                label="Blast radius"
+                                label="影响面"
                                 value={conclusion.blastRadius}
                             />
                             <Row
-                                label="Next action"
+                                label="下一步动作"
                                 value={conclusion.action}
                             />
                             <Row
-                                label="Risk"
+                                label="风险"
                                 value={conclusion.risk}
                             />
                             <Row
-                                label="Rollback"
+                                label="回滚"
                                 value={conclusion.rollback}
                             />
                         </>
                     ) : (
                         <>
                             <Row
-                                label="Bottleneck"
+                                label="瓶颈"
                                 value={conclusion.bottleneck}
                             />
                             <Row
-                                label="Baseline"
+                                label="基线"
                                 value={conclusion.baseline}
                             />
                             <Row
-                                label="Proposal"
+                                label="建议"
                                 value={conclusion.proposal}
                             />
                             <Row
-                                label="Expected gain"
+                                label="预期收益"
                                 value={conclusion.expectedGain}
                             />
                             <Row
-                                label="Observed gain"
+                                label="实测收益"
                                 value={conclusion.observedGain ?? 'not re-measured'}
                             />
                             <Row
-                                label="Rollback"
+                                label="回滚"
                                 value={conclusion.rollback}
                             />
                         </>

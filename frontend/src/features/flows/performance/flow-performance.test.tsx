@@ -115,7 +115,7 @@ describe('FlowPerformance', () => {
         expect(deltas).toHaveLength(2);
         expect(deltas[0]).toHaveTextContent('load1');
         expect(deltas[0]).toHaveTextContent('+0.07 (+175%)');
-        expect(deltas[0]).toHaveTextContent('worsened');
+        expect(deltas[0]).toHaveTextContent('变差');
         expect(screen.getByText(/1 of 2 material/)).toBeInTheDocument();
         expect(screen.getByText(/可测量的恶化/)).toBeInTheDocument();
     });
@@ -125,7 +125,7 @@ describe('FlowPerformance', () => {
 
         const { container } = render(<FlowPerformance flowId="15" />);
 
-        await screen.findByText('Metrics over time');
+        await screen.findByText('指标趋势');
         expect(container.querySelectorAll('[data-testid="metric-chart"]')).toHaveLength(1);
         expect(screen.getByText('prometheus_tsdb_head_series{instance="127.0.0.1:9091", job="prometheus"}')).toBeInTheDocument();
         expect(container.querySelector('[data-testid="metric-chart-jump"]')).not.toBeNull();

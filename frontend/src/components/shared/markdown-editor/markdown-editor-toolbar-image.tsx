@@ -27,7 +27,7 @@ export function ImagePopover({ disabled, editor }: ImagePopoverProps) {
                 <TooltipTrigger asChild>
                     <PopoverTrigger asChild>
                         <Button
-                            aria-label="Insert image"
+                            aria-label="插入图片"
                             data-toolbar-item=""
                             disabled={disabled}
                             size="icon-sm"
@@ -38,7 +38,7 @@ export function ImagePopover({ disabled, editor }: ImagePopoverProps) {
                         </Button>
                     </PopoverTrigger>
                 </TooltipTrigger>
-                <TooltipContent>Insert image</TooltipContent>
+                <TooltipContent>插入图片</TooltipContent>
             </Tooltip>
             <PopoverContent
                 align="start"

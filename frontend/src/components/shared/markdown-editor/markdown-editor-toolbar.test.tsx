@@ -41,7 +41,7 @@ const mount = (caret: number) => {
 };
 
 describe('toolbar disables controls whose command reports unavailable', () => {
-    it.each(['Bold', 'Italic', 'Strikethrough', 'Inline code', 'Link'])(
+    it.each(['加粗', '斜体', '删除线', '行内代码', '链接'])(
         '%s is disabled inside a code block and enabled in a paragraph',
         async (label) => {
             const inCode = mount(CODE_BLOCK_CARET);
@@ -59,14 +59,14 @@ describe('toolbar disables controls whose command reports unavailable', () => {
     it('keeps Blockquote enabled inside a code block, where it does apply', async () => {
         const mounted = mount(CODE_BLOCK_CARET);
 
-        await waitFor(() => expect(screen.getByLabelText('Blockquote')).toBeEnabled());
+        await waitFor(() => expect(screen.getByLabelText('引用')).toBeEnabled());
         mounted.cleanup();
     });
 
     it('keeps Code block enabled inside a code block, where a second press unwraps it', async () => {
         const mounted = mount(CODE_BLOCK_CARET);
 
-        await waitFor(() => expect(screen.getByLabelText('Code block')).toBeEnabled());
+        await waitFor(() => expect(screen.getByLabelText('代码块')).toBeEnabled());
         mounted.cleanup();
     });
 
@@ -175,7 +175,7 @@ describe('block controls that a table cell cannot hold are disabled inside one',
 
     // A cell serialises inline, so one click silently degrades the document: a code block in a cell saves as
     // `| ``` alpha ``` |` and reloads as INLINE code, and a horizontal rule applied mid-word splits the word.
-    it.each(['Code block', 'Horizontal rule'])('%s is disabled with the caret inside a cell', async (label) => {
+    it.each(['代码块', '分割线'])('%s is disabled with the caret inside a cell', async (label) => {
         const mounted = mountWithCaretInCell();
 
         await waitFor(() => expect(screen.getByLabelText(label)).toBeDisabled());

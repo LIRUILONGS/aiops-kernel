@@ -93,15 +93,15 @@ export function KnowledgeContentField({
             name="content"
             render={({ field }) => (
                 <FormItem className={fillParent ? 'flex min-h-0 flex-1 flex-col' : undefined}>
-                    {hasLabel ? <FormLabel>Content</FormLabel> : null}
+                    {hasLabel ? <FormLabel>内容</FormLabel> : null}
                     <FormControl>
                         <MarkdownEditorField
-                            aria-label="Content"
+                            aria-label="内容"
                             disabled={isSaving}
                             mode={viewMode}
                             onBlur={field.onBlur}
                             onChange={field.onChange}
-                            placeholder="Knowledge content (will be embedded into the vector store)"
+                            placeholder="知识内容（会被向量化）"
                             ref={field.ref}
                             value={field.value}
                         />
@@ -150,7 +150,7 @@ export function KnowledgeMetaFields({ control, isNew, isSaving }: KnowledgeMetaF
                     name="docType"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Document type</FormLabel>
+                            <FormLabel>文档类型</FormLabel>
                             <Select
                                 disabled={isSaving}
                                 onValueChange={(value) =>
@@ -160,7 +160,7 @@ export function KnowledgeMetaFields({ control, isNew, isSaving }: KnowledgeMetaF
                             >
                                 <FormControl>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select type" />
+                                        <SelectValue placeholder="选择类型" />
                                     </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
@@ -185,7 +185,7 @@ export function KnowledgeMetaFields({ control, isNew, isSaving }: KnowledgeMetaF
                         name="guideType"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Guide type</FormLabel>
+                                <FormLabel>指南类型</FormLabel>
                                 <Select
                                     disabled={isSaving}
                                     onValueChange={field.onChange}
@@ -193,7 +193,7 @@ export function KnowledgeMetaFields({ control, isNew, isSaving }: KnowledgeMetaF
                                 >
                                     <FormControl>
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Select guide type" />
+                                            <SelectValue placeholder="选择指南类型" />
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
@@ -219,7 +219,7 @@ export function KnowledgeMetaFields({ control, isNew, isSaving }: KnowledgeMetaF
                         name="answerType"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Answer type</FormLabel>
+                                <FormLabel>答案类型</FormLabel>
                                 <Select
                                     disabled={isSaving}
                                     onValueChange={field.onChange}
@@ -227,7 +227,7 @@ export function KnowledgeMetaFields({ control, isNew, isSaving }: KnowledgeMetaF
                                 >
                                     <FormControl>
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Select answer type" />
+                                            <SelectValue placeholder="选择答案类型" />
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
@@ -253,7 +253,7 @@ export function KnowledgeMetaFields({ control, isNew, isSaving }: KnowledgeMetaF
                         name="codeLang"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Code language</FormLabel>
+                                <FormLabel>代码语言</FormLabel>
                                 {/* Backend accepts any string — the dropdown is a UX hint, not a closed enum. */}
                                 <Autocomplete
                                     onValueChange={field.onChange}
@@ -265,12 +265,12 @@ export function KnowledgeMetaFields({ control, isNew, isSaving }: KnowledgeMetaF
                                             maxLength={KNOWLEDGE_LIMITS.codeLang}
                                             name={field.name}
                                             onBlur={field.onBlur}
-                                            placeholder="e.g. python, go, typescript"
+                                            placeholder="例如 python、go、typescript"
                                             ref={field.ref}
                                         />
                                     </FormControl>
                                     <AutocompleteContent>
-                                        <AutocompleteEmpty>No matching language</AutocompleteEmpty>
+                                        <AutocompleteEmpty>没有匹配的语言</AutocompleteEmpty>
                                         <AutocompleteGroup>
                                             {LANGUAGES.map((lang) => (
                                                 <AutocompleteItem
@@ -295,7 +295,7 @@ export function KnowledgeMetaFields({ control, isNew, isSaving }: KnowledgeMetaF
                 name="question"
                 render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Question</FormLabel>
+                        <FormLabel>问题</FormLabel>
                         <FormControl>
                             <InputGroup className="block">
                                 <InputGroupTextareaAutosize
@@ -306,7 +306,7 @@ export function KnowledgeMetaFields({ control, isNew, isSaving }: KnowledgeMetaF
                                     maxLength={KNOWLEDGE_LIMITS.question}
                                     maxRows={6}
                                     minRows={1}
-                                    placeholder="Short title or question this document answers"
+                                    placeholder="能概括这份文档的标题或问题"
                                 />
                             </InputGroup>
                         </FormControl>
@@ -320,7 +320,7 @@ export function KnowledgeMetaFields({ control, isNew, isSaving }: KnowledgeMetaF
                 name="description"
                 render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Description (optional)</FormLabel>
+                        <FormLabel>描述（可选）</FormLabel>
                         <FormControl>
                             <InputGroup className="block">
                                 <InputGroupTextareaAutosize
@@ -330,7 +330,7 @@ export function KnowledgeMetaFields({ control, isNew, isSaving }: KnowledgeMetaF
                                     maxLength={KNOWLEDGE_LIMITS.description}
                                     maxRows={8}
                                     minRows={1}
-                                    placeholder="Optional short description"
+                                    placeholder="可选的简短描述"
                                 />
                             </InputGroup>
                         </FormControl>

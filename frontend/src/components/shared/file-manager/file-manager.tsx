@@ -412,7 +412,7 @@ export function FileManager({
     // clicks outside any row, which is the entire point.
     const treeBody = (
         <div
-            aria-label="File tree"
+            aria-label="文件树"
             aria-multiselectable={isCheckboxVisible || undefined}
             className={cn(
                 'flex flex-1 flex-col overflow-y-auto py-1 transition-colors',

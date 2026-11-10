@@ -62,17 +62,17 @@ const renderWithFlow = (state: Record<string, unknown>, ui: React.ReactElement) 
 
 describe('scroll-to-latest buttons carry an accessible name', () => {
     it.each([
-        ['Scroll to latest agent log', { flowData: { agentLogs: [item] } }, <FlowAgents key="agents" />],
-        ['Scroll to latest tool log', { flowData: { searchLogs: [item] } }, <FlowTools key="tools" />],
+        ['跳到最新日志', { flowData: { agentLogs: [item] } }, <FlowAgents key="agents" />],
+        ['跳到最新工具调用', { flowData: { searchLogs: [item] } }, <FlowTools key="tools" />],
         [
-            'Scroll to latest vector store log',
+            '跳到最新向量库日志',
             { flowData: { vectorStoreLogs: [item] } },
             <FlowVectorStores key="vector-stores" />,
         ],
-        ['Scroll to latest task', { flowData: { tasks: [item] } }, <FlowTasks key="tasks" />],
-        ['Scroll to latest screenshot', { flowData: { screenshots: [item] } }, <FlowScreenshots key="screenshots" />],
+        ['跳到最新任务', { flowData: { tasks: [item] } }, <FlowTasks key="tasks" />],
+        ['跳到最新截图', { flowData: { screenshots: [item] } }, <FlowScreenshots key="screenshots" />],
         [
-            'Scroll to latest message',
+            '跳到最后一条',
             {
                 flowData: { messageLogs: [item] },
                 flowStatus: StatusType.Running,
@@ -81,7 +81,7 @@ describe('scroll-to-latest buttons carry an accessible name', () => {
             },
             <FlowAutomationMessages key="automation" />,
         ],
-        ['Scroll to latest message', assistantFlowState, <FlowAssistantMessages key="assistant" />],
+        ['跳到最后一条', assistantFlowState, <FlowAssistantMessages key="assistant" />],
     ])('names the %s button', (name, state, ui) => {
         renderWithFlow(state, ui);
 
@@ -94,7 +94,7 @@ describe('assistant list', () => {
         const user = userEvent.setup({ delay: null });
         renderWithFlow(assistantFlowState, <FlowAssistantMessages />);
 
-        await user.click(screen.getByRole('button', { name: 'Select assistant' }));
+        await user.click(screen.getByRole('button', { name: '选择助手' }));
 
         expect(await screen.findByRole('button', { name: 'Delete Recon assistant' })).toBeInTheDocument();
     });

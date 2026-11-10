@@ -240,13 +240,13 @@ function FormComboboxItem<T extends FieldValues = FieldValues>({
                             <CommandInput
                                 className="h-9"
                                 onValueChange={setSearch}
-                                placeholder={`Search ${label.toLowerCase()}...`}
+                                placeholder={`搜索${label}…`}
                                 value={search}
                             />
                             <CommandList>
                                 <CommandEmpty>
                                     <div className="py-2 text-center">
-                                        <p className="text-muted-foreground text-sm">No {label.toLowerCase()} found.</p>
+                                        <p className="text-muted-foreground text-sm">没有找到{label}</p>
                                         {search.trim() && allowCustom && (
                                             <Button
                                                 className="mt-2"
@@ -258,7 +258,7 @@ function FormComboboxItem<T extends FieldValues = FieldValues>({
                                                 size="sm"
                                                 variant="ghost"
                                             >
-                                                Use "{search}" as custom {label.toLowerCase()}
+                                                使用「{search}」作为自定义{label}
                                             </Button>
                                         )}
                                     </div>
@@ -467,7 +467,7 @@ function FormModelComboboxItem<T extends FieldValues = FieldValues>({
                         <InputGroupAddon align="inline-end">
                             <PopoverTrigger asChild>
                                 <InputGroupButton
-                                    aria-label={`Open ${label.toLowerCase()} list`}
+                                    aria-label={`打开${label}列表`}
                                     disabled={disabled}
                                     size="icon-sm"
                                 >
@@ -484,13 +484,13 @@ function FormModelComboboxItem<T extends FieldValues = FieldValues>({
                             <CommandInput
                                 className="h-9"
                                 onValueChange={setSearch}
-                                placeholder={`Search ${label.toLowerCase()}...`}
+                                placeholder={`搜索${label}…`}
                                 value={search}
                             />
                             <CommandList>
                                 <CommandEmpty>
                                     <div className="py-2 text-center">
-                                        <p className="text-muted-foreground text-sm">No {label.toLowerCase()} found.</p>
+                                        <p className="text-muted-foreground text-sm">没有找到{label}</p>
                                         {search.trim() && allowCustom && (
                                             <Button
                                                 className="mt-2"
@@ -503,7 +503,7 @@ function FormModelComboboxItem<T extends FieldValues = FieldValues>({
                                                 size="sm"
                                                 variant="ghost"
                                             >
-                                                Use "{search}" as custom {label.toLowerCase()}
+                                                使用「{search}」作为自定义{label}
                                             </Button>
                                         )}
                                     </div>
@@ -810,7 +810,7 @@ function MaxTokensField({
             control={control}
             description={ceiling == null ? undefined : `Model ceiling: ${ceiling.toLocaleString('en-US')} tokens`}
             disabled={isLoading}
-            label="Max Tokens"
+            label="最大 Token"
             max={ceiling == null ? undefined : String(ceiling)}
             min="1"
             name={`agents.${agentKey}.maxTokens`}
@@ -936,7 +936,7 @@ function ReasoningFields({
     return (
         <div className="col-span-full p-px">
             <div className="mt-6 flex flex-col gap-4">
-                <h4 className="text-sm font-medium">Reasoning Configuration</h4>
+                <h4 className="text-sm font-medium">推理配置</h4>
                 {isSavedOffDropped && (
                     <p
                         className="text-muted-foreground text-sm"
@@ -975,7 +975,7 @@ function ReasoningFields({
                             name={`agents.${agentKey}.reasoning.mode`}
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Reasoning Mode</FormLabel>
+                                    <FormLabel>推理模式</FormLabel>
                                     <Select
                                         disabled={isLoading || (isAdaptiveOnly && !canDisable)}
                                         onValueChange={(value) => {
@@ -990,19 +990,19 @@ function ReasoningFields({
                                     >
                                         <FormControl>
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Select reasoning mode" />
+                                                <SelectValue placeholder="选择推理模式" />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            {!isAdaptiveOnly && <SelectItem value="none">Not selected</SelectItem>}
+                                            {!isAdaptiveOnly && <SelectItem value="none">未选择</SelectItem>}
                                             {supportsAdaptive && (
-                                                <SelectItem value={ReasoningMode.Adaptive}>Adaptive</SelectItem>
+                                                <SelectItem value={ReasoningMode.Adaptive}>自适应</SelectItem>
                                             )}
                                             {isBudgetOffered && (
-                                                <SelectItem value={ReasoningMode.Budget}>Budget</SelectItem>
+                                                <SelectItem value={ReasoningMode.Budget}>预算</SelectItem>
                                             )}
                                             {canDisable && (
-                                                <SelectItem value={ReasoningMode.Off}>Off (no thinking)</SelectItem>
+                                                <SelectItem value={ReasoningMode.Off}>关闭（不推理）</SelectItem>
                                             )}
                                         </SelectContent>
                                     </Select>
@@ -1029,7 +1029,7 @@ function ReasoningFields({
                             name={`agents.${agentKey}.reasoning.effort`}
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Reasoning Effort</FormLabel>
+                                    <FormLabel>推理强度</FormLabel>
                                     <Select
                                         disabled={isLoading || isOff}
                                         onValueChange={(value) => {
@@ -1058,11 +1058,11 @@ function ReasoningFields({
                                     >
                                         <FormControl>
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Select effort level (optional)" />
+                                                <SelectValue placeholder="选择强度（可选）" />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            <SelectItem value="none">Not selected</SelectItem>
+                                            <SelectItem value="none">未选择</SelectItem>
                                             {allowedEfforts.map((effort) => (
                                                 <SelectItem
                                                     key={effort}
@@ -1083,7 +1083,7 @@ function ReasoningFields({
                         <FormInputNumberItem
                             control={control}
                             disabled={isLoading || shownMode !== ReasoningMode.Budget}
-                            label="Reasoning Max Tokens"
+                            label="推理最大 Token"
                             min="1"
                             name={`agents.${agentKey}.reasoning.maxTokens`}
                             placeholder="1000"
@@ -1267,7 +1267,7 @@ function TestResultsDialog({ handleOpenChange, isOpen, results }: TestResultsDia
         >
             <DialogContent className="flex max-h-[80vh] flex-col sm:max-w-3xl">
                 <DialogHeader className="shrink-0">
-                    <DialogTitle>Provider Test Results</DialogTitle>
+                    <DialogTitle>提供商测试结果</DialogTitle>
                 </DialogHeader>
                 <div className="flex flex-1 flex-col overflow-y-auto">
                     <Accordion
@@ -1894,14 +1894,14 @@ function SettingsProvider() {
                 <AppHeader>
                     <AppHeaderContent>
                         <AppHeaderTitle icon={<Plug className="size-4 shrink-0" />}>
-                            {isNew ? 'Create Provider' : 'Edit Provider'}
+                            {isNew ? '新建提供商' : '编辑提供商'}
                         </AppHeaderTitle>
                     </AppHeaderContent>
                 </AppHeader>
                 <div className="flex flex-1 items-center justify-center p-4">
                     <LoadingState
-                        description="Please wait while we fetch provider configuration"
-                        title="Loading provider data..."
+                        description="正在读取提供商配置"
+                        title="加载中…"
                     />
                 </div>
             </>
@@ -1914,7 +1914,7 @@ function SettingsProvider() {
                 <AppHeader>
                     <AppHeaderContent>
                         <AppHeaderTitle icon={<Plug className="size-4 shrink-0" />}>
-                            {isNew ? 'Create Provider' : 'Edit Provider'}
+                            {isNew ? '新建提供商' : '编辑提供商'}
                         </AppHeaderTitle>
                     </AppHeaderContent>
                 </AppHeader>
@@ -1922,7 +1922,7 @@ function SettingsProvider() {
                     <ErrorState
                         message={error.message}
                         onRetry={refetch}
-                        title="Error loading provider data"
+                        title="提供商配置加载失败"
                     />
                 </div>
             </>
@@ -1936,7 +1936,7 @@ function SettingsProvider() {
     const metaFields = (
         <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-2 text-center">
-                <h2 className="text-2xl font-semibold">{isNew ? 'Create a new provider' : 'Edit provider'}</h2>
+                <h2 className="text-2xl font-semibold">{isNew ? '新建提供商' : '编辑提供商'}</h2>
                 <p className="text-muted-foreground">
                     {isNew ? 'Configure a new language model provider' : 'Update provider settings and configuration'}
                 </p>
@@ -1945,21 +1945,21 @@ function SettingsProvider() {
             <FormComboboxItem
                 allowCustom={false}
                 control={control}
-                description="The type of language model provider"
+                description="模型提供商的类型"
                 disabled={isLoading || !!selectedType}
-                label="Type"
+                label="类型"
                 name="type"
                 options={providers}
-                placeholder="Select provider"
+                placeholder="选择提供商"
             />
 
             <FormInputStringItem
                 control={control}
-                description="A unique name for your provider configuration"
+                description="这个提供商配置的唯一名称"
                 disabled={isLoading}
-                label="Name"
+                label="名称"
                 name="name"
-                placeholder="Enter provider name"
+                placeholder="请输入名称"
             />
         </div>
     );
@@ -2029,7 +2029,7 @@ function SettingsProvider() {
                             <FormModelComboboxItem
                                 control={control}
                                 disabled={isLoading}
-                                label="Model"
+                                label="模型"
                                 name={`agents.${agentKey}.model`}
                                 onOptionSelect={(option) => {
                                     const price = option?.price;
@@ -2063,13 +2063,13 @@ function SettingsProvider() {
                                     }
                                 }}
                                 options={availableModels}
-                                placeholder="Select or enter model name"
+                                placeholder="选择或输入模型名"
                             />
 
                             <FormInputNumberItem
                                 control={control}
                                 disabled={isLoading}
-                                label="Temperature"
+                                label="温度"
                                 max="2"
                                 min="0"
                                 name={`agents.${agentKey}.temperature`}
@@ -2108,7 +2108,7 @@ function SettingsProvider() {
                             <FormInputNumberItem
                                 control={control}
                                 disabled={isLoading}
-                                label="Min Length"
+                                label="最小长度"
                                 min="0"
                                 name={`agents.${agentKey}.minLength`}
                                 placeholder="0"
@@ -2118,7 +2118,7 @@ function SettingsProvider() {
                             <FormInputNumberItem
                                 control={control}
                                 disabled={isLoading}
-                                label="Max Length"
+                                label="最大长度"
                                 min="1"
                                 name={`agents.${agentKey}.maxLength`}
                                 placeholder="2000"
@@ -2128,7 +2128,7 @@ function SettingsProvider() {
                             <FormInputNumberItem
                                 control={control}
                                 disabled={isLoading}
-                                label="Repetition Penalty"
+                                label="重复惩罚"
                                 max="2"
                                 min="0"
                                 name={`agents.${agentKey}.repetitionPenalty`}
@@ -2139,7 +2139,7 @@ function SettingsProvider() {
                             <FormInputNumberItem
                                 control={control}
                                 disabled={isLoading}
-                                label="Frequency Penalty"
+                                label="频率惩罚"
                                 max="2"
                                 min="0"
                                 name={`agents.${agentKey}.frequencyPenalty`}
@@ -2150,7 +2150,7 @@ function SettingsProvider() {
                             <FormInputNumberItem
                                 control={control}
                                 disabled={isLoading}
-                                label="Presence Penalty"
+                                label="存在惩罚"
                                 max="2"
                                 min="0"
                                 name={`agents.${agentKey}.presencePenalty`}
@@ -2169,13 +2169,13 @@ function SettingsProvider() {
 
                         <div className="col-span-full p-px">
                             <div className="mt-6 flex flex-col gap-4">
-                                <h4 className="text-sm font-medium">Price Configuration</h4>
+                                <h4 className="text-sm font-medium">价格配置</h4>
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                     <FormInputNumberItem
                                         control={control}
-                                        description="Price per 1M input tokens"
+                                        description="每百万输入 Token 价格"
                                         disabled={isLoading}
-                                        label="Input Price"
+                                        label="输入价格"
                                         min="0"
                                         name={`agents.${agentKey}.price.input`}
                                         placeholder="0.001"
@@ -2184,9 +2184,9 @@ function SettingsProvider() {
 
                                     <FormInputNumberItem
                                         control={control}
-                                        description="Price per 1M output tokens"
+                                        description="每百万输出 Token 价格"
                                         disabled={isLoading}
-                                        label="Output Price"
+                                        label="输出价格"
                                         min="0"
                                         name={`agents.${agentKey}.price.output`}
                                         placeholder="0.002"
@@ -2195,9 +2195,9 @@ function SettingsProvider() {
 
                                     <FormInputNumberItem
                                         control={control}
-                                        description="Price per 1M cached read tokens"
+                                        description="每百万缓存读取 Token 价格"
                                         disabled={isLoading}
-                                        label="Cache Read Price"
+                                        label="缓存读取价格"
                                         min="0"
                                         name={`agents.${agentKey}.price.cacheRead`}
                                         placeholder="0.0001"
@@ -2206,9 +2206,9 @@ function SettingsProvider() {
 
                                     <FormInputNumberItem
                                         control={control}
-                                        description="Price per 1M cache write tokens"
+                                        description="每百万缓存写入 Token 价格"
                                         disabled={isLoading}
-                                        label="Cache Write Price"
+                                        label="缓存写入价格"
                                         min="0"
                                         name={`agents.${agentKey}.price.cacheWrite`}
                                         placeholder="0.00015"
@@ -2220,12 +2220,12 @@ function SettingsProvider() {
 
                         <div className="col-span-full p-px">
                             <div className="mt-6 flex flex-col gap-4">
-                                <h4 className="text-sm font-medium">Extra Body</h4>
+                                <h4 className="text-sm font-medium">附加请求体</h4>
                                 <FormTextareaItem
                                     control={control}
-                                    description="Provider-specific request body fields as a JSON object, merged into every call (e.g. vLLM chat_template_kwargs)."
+                                    description="提供商特有的请求体字段（JSON 对象），会合并进每次调用（例如 vLLM 的 chat_template_kwargs）。"
                                     disabled={isLoading}
-                                    label="Extra Body (JSON)"
+                                    label="附加请求体（JSON）"
                                     name={`agents.${agentKey}.extraBody`}
                                     placeholder={'{\n    "chat_template_kwargs": { "enable_thinking": false }\n}'}
                                 />
@@ -2242,7 +2242,7 @@ function SettingsProvider() {
             <AppHeader>
                 <AppHeaderContent>
                     <AppHeaderTitle icon={<Plug className="size-4 shrink-0" />}>
-                        {isNew ? 'Create Provider' : 'Edit Provider'}
+                        {isNew ? '新建提供商' : '编辑提供商'}
                     </AppHeaderTitle>
                 </AppHeaderContent>
                 <AppHeaderActions>
@@ -2257,7 +2257,7 @@ function SettingsProvider() {
                     <AppHeaderAction
                         form="provider-form"
                         icon={<Save />}
-                        label={isNew ? 'Create' : 'Save'}
+                        label={isNew ? '创建' : '保存'}
                         loading={isLoading}
                         type="submit"
                     />
@@ -2265,7 +2265,7 @@ function SettingsProvider() {
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button
-                                    aria-label="Provider actions"
+                                    aria-label="提供商操作"
                                     className="size-8 p-0"
                                     type="button"
                                     variant="ghost"

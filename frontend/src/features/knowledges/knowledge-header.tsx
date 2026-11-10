@@ -171,7 +171,7 @@ export function KnowledgeHeader({
                                         inputRef={editingInputRef}
                                         onCancel={handleRenameCancel}
                                         onSave={handleRenameSave}
-                                        placeholder="Knowledge question"
+                                        placeholder="知识库问题"
                                     />
                                 ) : hasKnowledge ? (
                                     <Tooltip>
@@ -183,7 +183,7 @@ export function KnowledgeHeader({
                                                 {knowledgeName ?? 'Knowledge'}
                                             </BreadcrumbPage>
                                         </TooltipTrigger>
-                                        <TooltipContent>Double-click to rename</TooltipContent>
+                                        <TooltipContent>双击重命名</TooltipContent>
                                     </Tooltip>
                                 ) : (
                                     <BreadcrumbPage className="min-w-0 truncate">
@@ -207,7 +207,7 @@ export function KnowledgeHeader({
                         <AppHeaderAction
                             disabled={isAnonymizeDisabled}
                             icon={isAnonymizing ? <Spinner variant="circle" /> : <HatGlasses aria-hidden="true" />}
-                            label="Anonymize"
+                            label="脱敏"
                             onClick={onAnonymize}
                             type="button"
                             variant="outline"
@@ -224,7 +224,7 @@ export function KnowledgeHeader({
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button
-                                aria-label="Knowledge actions"
+                                aria-label="知识库操作"
                                 className="size-8 p-0"
                                 type="button"
                                 variant="ghost"

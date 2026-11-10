@@ -37,9 +37,9 @@ describe('EmailChangeForm', () => {
         const onSuccess = vi.fn();
         render(<EmailChangeForm onSuccess={onSuccess} />);
 
-        await user.type(screen.getByPlaceholderText('Enter your new email address'), 'New@Example.com');
-        await user.type(screen.getByPlaceholderText('Enter your current password'), 'Oldpass0!');
-        await user.click(screen.getByRole('button', { name: 'Update Email' }));
+        await user.type(screen.getByPlaceholderText('请输入新的邮箱地址'), 'New@Example.com');
+        await user.type(screen.getByPlaceholderText('请输入当前密码'), 'Oldpass0!');
+        await user.click(screen.getByRole('button', { name: '更新邮箱' }));
 
         await waitFor(() => expect(onSuccess).toHaveBeenCalledOnce());
         expect(put).toHaveBeenCalledWith('/user/email', { current_password: 'Oldpass0!', mail: 'new@example.com' });
@@ -52,9 +52,9 @@ describe('EmailChangeForm', () => {
         put.mockRejectedValueOnce(apiError('Users.ChangeEmailCurrentUser.EmailAlreadyExists', 'email already exists'));
         render(<EmailChangeForm />);
 
-        await user.type(screen.getByPlaceholderText('Enter your new email address'), 'taken@example.com');
-        await user.type(screen.getByPlaceholderText('Enter your current password'), 'Oldpass0!');
-        await user.click(screen.getByRole('button', { name: 'Update Email' }));
+        await user.type(screen.getByPlaceholderText('请输入新的邮箱地址'), 'taken@example.com');
+        await user.type(screen.getByPlaceholderText('请输入当前密码'), 'Oldpass0!');
+        await user.click(screen.getByRole('button', { name: '更新邮箱' }));
 
         expect(await screen.findByText('Email address is already in use')).toBeInTheDocument();
     });

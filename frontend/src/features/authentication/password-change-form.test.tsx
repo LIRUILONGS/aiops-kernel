@@ -26,7 +26,7 @@ describe('PasswordChangeForm', () => {
         const user = userEvent.setup();
         render(<PasswordChangeForm />);
 
-        const current = screen.getByPlaceholderText('Enter your current password') as HTMLInputElement;
+        const current = screen.getByPlaceholderText('请输入当前密码') as HTMLInputElement;
         expect(current.type).toBe('password');
 
         const [showButton] = screen.getAllByRole('button', { name: 'Show password' });
@@ -45,10 +45,10 @@ describe('PasswordChangeForm', () => {
         const onSuccess = vi.fn();
         render(<PasswordChangeForm onSuccess={onSuccess} />);
 
-        await user.type(screen.getByPlaceholderText('Enter your current password'), 'Oldpass0!');
-        await user.type(screen.getByPlaceholderText('Enter your new password'), 'Abcdef1!gh');
-        await user.type(screen.getByPlaceholderText('Confirm your new password'), 'Abcdef1!gh');
-        await user.click(screen.getByRole('button', { name: 'Update Password' }));
+        await user.type(screen.getByPlaceholderText('请输入当前密码'), 'Oldpass0!');
+        await user.type(screen.getByPlaceholderText('请输入新密码'), 'Abcdef1!gh');
+        await user.type(screen.getByPlaceholderText('请再次输入新密码'), 'Abcdef1!gh');
+        await user.click(screen.getByRole('button', { name: '更新密码' }));
 
         await waitFor(() => expect(onSuccess).toHaveBeenCalledOnce());
         expect(put).toHaveBeenCalledWith('/user/password', {
@@ -70,7 +70,7 @@ describe('PasswordChangeForm', () => {
             />,
         );
 
-        const submit = screen.getByRole('button', { name: 'Update Password' });
+        const submit = screen.getByRole('button', { name: '更新密码' });
         const skip = screen.getByRole('button', { name: 'Skip for now' });
         expect(submit.compareDocumentPosition(skip) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
@@ -82,10 +82,10 @@ describe('PasswordChangeForm', () => {
         );
         render(<PasswordChangeForm />);
 
-        await user.type(screen.getByPlaceholderText('Enter your current password'), 'Oldpass0!');
-        await user.type(screen.getByPlaceholderText('Enter your new password'), 'Abcdef1!gh');
-        await user.type(screen.getByPlaceholderText('Confirm your new password'), 'Abcdef1!gh');
-        await user.click(screen.getByRole('button', { name: 'Update Password' }));
+        await user.type(screen.getByPlaceholderText('请输入当前密码'), 'Oldpass0!');
+        await user.type(screen.getByPlaceholderText('请输入新密码'), 'Abcdef1!gh');
+        await user.type(screen.getByPlaceholderText('请再次输入新密码'), 'Abcdef1!gh');
+        await user.click(screen.getByRole('button', { name: '更新密码' }));
 
         expect(await screen.findByText('Current password is incorrect')).toBeInTheDocument();
         expect(screen.queryByText('invalid current password')).not.toBeInTheDocument();
@@ -97,10 +97,10 @@ describe('PasswordChangeForm', () => {
         const user = userEvent.setup();
         render(<PasswordChangeForm />);
 
-        await user.type(screen.getByPlaceholderText('Enter your current password'), 'Oldpass0!');
-        await user.type(screen.getByPlaceholderText('Enter your new password'), password);
-        await user.type(screen.getByPlaceholderText('Confirm your new password'), password);
-        await user.click(screen.getByRole('button', { name: 'Update Password' }));
+        await user.type(screen.getByPlaceholderText('请输入当前密码'), 'Oldpass0!');
+        await user.type(screen.getByPlaceholderText('请输入新密码'), password);
+        await user.type(screen.getByPlaceholderText('请再次输入新密码'), password);
+        await user.click(screen.getByRole('button', { name: '更新密码' }));
 
         expect(await screen.findByText(/Password must be either longer than 15 characters/)).toBeInTheDocument();
         expect(put).not.toHaveBeenCalled();
@@ -110,10 +110,10 @@ describe('PasswordChangeForm', () => {
         const user = userEvent.setup();
         render(<PasswordChangeForm />);
 
-        await user.type(screen.getByPlaceholderText('Enter your current password'), 'Oldpass0!');
-        await user.type(screen.getByPlaceholderText('Enter your new password'), 'abcdefghijklmnop');
-        await user.type(screen.getByPlaceholderText('Confirm your new password'), 'abcdefghijklmnop');
-        await user.click(screen.getByRole('button', { name: 'Update Password' }));
+        await user.type(screen.getByPlaceholderText('请输入当前密码'), 'Oldpass0!');
+        await user.type(screen.getByPlaceholderText('请输入新密码'), 'abcdefghijklmnop');
+        await user.type(screen.getByPlaceholderText('请再次输入新密码'), 'abcdefghijklmnop');
+        await user.click(screen.getByRole('button', { name: '更新密码' }));
 
         await waitFor(() => expect(put).toHaveBeenCalled());
     });

@@ -19,7 +19,7 @@ export function DashboardError({
             style={style}
         >
             <AlertCircle className={cn('text-muted-foreground/40 size-6', iconClassName)} />
-            <p className="text-sm">Couldn't load</p>
+            <p className="text-sm">加载失败</p>
         </div>
     );
 }

@@ -152,13 +152,13 @@ function FlowTools() {
                                         <InputGroupInput
                                             {...field}
                                             autoComplete="off"
-                                            placeholder="Search tool logs..."
+                                            placeholder="搜索工具调用…"
                                             type="text"
                                         />
                                         {field.value && (
                                             <InputGroupAddon align="inline-end">
                                                 <InputGroupButton
-                                                    aria-label="Clear tool search"
+                                                    aria-label="清空工具搜索"
                                                     onClick={() => {
                                                         form.reset({ search: '' });
                                                         setDebouncedSearchValue('');
@@ -208,7 +208,7 @@ function FlowTools() {
 
                     {!isScrolledToBottom && (
                         <Button
-                            aria-label="Scroll to latest tool log"
+                            aria-label="跳到最新工具调用"
                             className="absolute right-4 bottom-4 z-10 shadow-md hover:shadow-lg"
                             onClick={() => scrollToEnd()}
                             size="icon-sm"
@@ -228,8 +228,8 @@ function FlowTools() {
                         <EmptyMedia variant="icon">
                             <ListFilter />
                         </EmptyMedia>
-                        <EmptyTitle>No search logs found</EmptyTitle>
-                        <EmptyDescription>Try adjusting your search or filter parameters</EmptyDescription>
+                        <EmptyTitle>没有匹配的工具调用</EmptyTitle>
+                        <EmptyDescription>换个搜索词或筛选条件试试</EmptyDescription>
                     </EmptyHeader>
                     <EmptyContent>
                         <Button
@@ -247,7 +247,7 @@ function FlowTools() {
                         <EmptyMedia variant="icon">
                             <Wrench />
                         </EmptyMedia>
-                        <EmptyTitle>No search logs available</EmptyTitle>
+                        <EmptyTitle>还没有工具调用</EmptyTitle>
                         <EmptyDescription>
                             Search logs will appear here when the agent performs searches
                         </EmptyDescription>

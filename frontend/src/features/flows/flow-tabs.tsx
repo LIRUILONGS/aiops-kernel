@@ -41,16 +41,16 @@ function FlowTabs({ activeTab, onTabChange }: FlowTabsProps) {
             <div className="max-w-full pr-4">
                 <ScrollArea className="w-full pb-3">
                     <TabsList className="flex w-fit">
-                        {!isDesktop && <TabsTrigger value="automation">Automation</TabsTrigger>}
-                        {!isDesktop && <TabsTrigger value="assistant">Assistant</TabsTrigger>}
-                        {!isDesktop && <TabsTrigger value="dashboard">Dashboard</TabsTrigger>}
-                        <TabsTrigger value="terminal">Terminal</TabsTrigger>
-                        <TabsTrigger value="tasks">Tasks</TabsTrigger>
-                        <TabsTrigger value="agents">Agents</TabsTrigger>
-                        <TabsTrigger value="tools">Searches</TabsTrigger>
-                        <TabsTrigger value="vectorStores">Vector Store</TabsTrigger>
-                        <TabsTrigger value="files">Files</TabsTrigger>
-                        <TabsTrigger value="screenshots">Screenshots</TabsTrigger>
+                        {!isDesktop && <TabsTrigger value="automation">自动化</TabsTrigger>}
+                        {!isDesktop && <TabsTrigger value="assistant">助手</TabsTrigger>}
+                        {!isDesktop && <TabsTrigger value="dashboard">概览</TabsTrigger>}
+                        <TabsTrigger value="terminal">终端</TabsTrigger>
+                        <TabsTrigger value="tasks">任务</TabsTrigger>
+                        <TabsTrigger value="agents">智能体</TabsTrigger>
+                        <TabsTrigger value="tools">工具调用</TabsTrigger>
+                        <TabsTrigger value="vectorStores">向量库</TabsTrigger>
+                        <TabsTrigger value="files">文件</TabsTrigger>
+                        <TabsTrigger value="screenshots">截图</TabsTrigger>
                     </TabsList>
                     <ScrollBar orientation="horizontal" />
                 </ScrollArea>

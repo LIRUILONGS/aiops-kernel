@@ -407,7 +407,7 @@ export function DetailNavigationSheet<T extends { id: string }>({
                             {hasClearButton ? (
                                 <InputGroupAddon align="inline-end">
                                     <InputGroupButton
-                                        aria-label="Clear search"
+                                        aria-label="清空搜索"
                                         onClick={handleSearchClear}
                                         size="icon-sm"
                                         type="button"

@@ -72,7 +72,7 @@ function RouteErrorBoundary() {
                     <EmptyMedia variant="icon">
                         <TriangleAlert />
                     </EmptyMedia>
-                    <EmptyTitle>Something went wrong</EmptyTitle>
+                    <EmptyTitle>出错了</EmptyTitle>
                     <EmptyDescription>{describeFailure({ isChunk, isDesync, isOnline })}</EmptyDescription>
                 </EmptyHeader>
                 <EmptyContent>

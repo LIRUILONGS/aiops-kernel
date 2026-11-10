@@ -75,7 +75,7 @@ export function TableHandles({ editor }: { editor: Editor }) {
             >
                 <DropdownMenuTrigger asChild>
                     <button
-                        aria-label="Column actions"
+                        aria-label="列操作"
                         className={GRIP_CLASS}
                         data-table-grip=""
                         style={{
@@ -147,7 +147,7 @@ export function TableHandles({ editor }: { editor: Editor }) {
             >
                 <DropdownMenuTrigger asChild>
                     <button
-                        aria-label="Row actions"
+                        aria-label="行操作"
                         className={GRIP_CLASS}
                         data-table-grip=""
                         style={{
@@ -223,7 +223,7 @@ function RowHeaderToggleItem({ cellPos, editor }: { cellPos: number; editor: Edi
             role="menuitemcheckbox"
         >
             <PanelTop className="text-muted-foreground size-4 shrink-0" />
-            <span>Header row</span>
+            <span>表头</span>
             <Switch
                 checked={isHeaderRow}
                 className="pointer-events-none ml-auto"

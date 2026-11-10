@@ -197,7 +197,7 @@ function Flow() {
                         <Breadcrumb className="min-w-0 flex-1">
                             <BreadcrumbList className="min-w-0 flex-nowrap">
                                 <BreadcrumbItem className="min-w-0">
-                                    <BreadcrumbPage>Flow</BreadcrumbPage>
+                                    <BreadcrumbPage>会话</BreadcrumbPage>
                                 </BreadcrumbItem>
                             </BreadcrumbList>
                         </Breadcrumb>
@@ -207,7 +207,7 @@ function Flow() {
                     <ErrorState
                         message={flowLoadError.message}
                         onRetry={refetchFlow}
-                        title="Error loading flow"
+                        title="会话加载失败"
                     />
                 </div>
             </>
@@ -258,7 +258,7 @@ function Flow() {
                                         inputRef={editingInputRef}
                                         onCancel={handleFlowRenameCancel}
                                         onSave={handleFlowRenameSave}
-                                        placeholder="Flow title"
+                                        placeholder="会话标题"
                                     />
                                 ) : flow ? (
                                     <Tooltip>
@@ -270,7 +270,7 @@ function Flow() {
                                                 {flowTitle || 'Select a flow'}
                                             </BreadcrumbPage>
                                         </TooltipTrigger>
-                                        <TooltipContent>Double-click to rename</TooltipContent>
+                                        <TooltipContent>双击重命名</TooltipContent>
                                     </Tooltip>
                                 ) : (
                                     <BreadcrumbPage className="min-w-0 truncate">
@@ -293,7 +293,7 @@ function Flow() {
                     )}
                     {flowId && !isMobile && isFavoriteSlotShown && (
                         <Button
-                            aria-label="Toggle favorite"
+                            aria-label="切换收藏"
                             aria-pressed={isFavoriteFlow(flowId)}
                             className="shrink-0"
                             disabled={!isFavoriteToggleable}
@@ -307,7 +307,7 @@ function Flow() {
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button
-                                aria-label="Flow actions"
+                                aria-label="会话操作"
                                 className="size-8 p-0"
                                 variant="ghost"
                             >
@@ -526,7 +526,7 @@ function FlowReportDropdown() {
                     disabled={isReportDisabled}
                     endIcon={<ChevronDown className="opacity-50" />}
                     icon={<NotepadText />}
-                    label="Report"
+                    label="报告"
                     variant="ghost"
                 />
             </DropdownMenuTrigger>

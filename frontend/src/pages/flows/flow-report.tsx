@@ -115,7 +115,7 @@ function FlowReport() {
                 <div className="flex min-h-screen flex-col items-center justify-center p-8">
                     <Logo className="mb-8 size-16" />
                     <div className="flex flex-col gap-4 text-center">
-                        <h1 className="text-2xl font-semibold text-red-600 dark:text-red-400">Error Loading Report</h1>
+                        <h1 className="text-2xl font-semibold text-red-600 dark:text-red-400">报告加载失败</h1>
                         <p className="max-w-md text-gray-600 dark:text-gray-400">
                             {errorMessage || 'An unexpected error occurred while loading the report.'}
                         </p>

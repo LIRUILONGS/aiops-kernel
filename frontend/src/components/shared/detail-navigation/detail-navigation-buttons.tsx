@@ -45,7 +45,7 @@ export function DetailNavigationButtons<T extends { id: string }>({
             <Tooltip>
                 <TooltipTrigger asChild>
                     <Button
-                        aria-label="Previous"
+                        aria-label="上一页"
                         className={cn(sideButtonSize, 'rounded-r-none border-r-0 p-0')}
                         disabled={!controller.prevId}
                         onClick={controller.goToPrev}
@@ -56,7 +56,7 @@ export function DetailNavigationButtons<T extends { id: string }>({
                         <ChevronLeft />
                     </Button>
                 </TooltipTrigger>
-                <TooltipContent>Previous</TooltipContent>
+                <TooltipContent>上一页</TooltipContent>
             </Tooltip>
             <Tooltip>
                 <TooltipTrigger asChild>
@@ -79,7 +79,7 @@ export function DetailNavigationButtons<T extends { id: string }>({
             <Tooltip>
                 <TooltipTrigger asChild>
                     <Button
-                        aria-label="Next"
+                        aria-label="下一页"
                         className={cn(sideButtonSize, 'rounded-l-none border-l-0 p-0')}
                         disabled={!controller.nextId}
                         onClick={controller.goToNext}
@@ -90,7 +90,7 @@ export function DetailNavigationButtons<T extends { id: string }>({
                         <ChevronRight />
                     </Button>
                 </TooltipTrigger>
-                <TooltipContent>Next</TooltipContent>
+                <TooltipContent>下一页</TooltipContent>
             </Tooltip>
         </div>
     );

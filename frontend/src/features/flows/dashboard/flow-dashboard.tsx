@@ -17,7 +17,7 @@ function FlowDashboard() {
     return (
         <Tabs defaultValue="overview">
             <TabsList className="hidden">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="overview">概览</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview">

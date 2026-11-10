@@ -87,7 +87,7 @@ export function DashboardOverview() {
                     error={!!flowsTotalError && !flowsTotalData}
                     icon={<GitFork className="text-muted-foreground size-4" />}
                     loading={flowsTotalLoading && !flowsTotalData}
-                    title="Total Flows"
+                    title="会话总数"
                     value={flowsTotal ? formatNumber(flowsTotal.totalFlowsCount) : '0'}
                 />
                 <MetricCard
@@ -95,31 +95,31 @@ export function DashboardOverview() {
                     error={!!toolcallsTotalError && !toolcallsTotalData}
                     icon={<Activity className="text-muted-foreground size-4" />}
                     loading={toolcallsTotalLoading && !toolcallsTotalData}
-                    title="Tool Calls"
+                    title="工具调用"
                     value={toolcallsTotal ? formatNumber(toolcallsTotal.totalCount) : '0'}
                 />
                 <MetricCard
-                    description="Input + Output tokens processed"
+                    description="处理的输入 + 输出 Token"
                     error={!!usageTotalError && !usageTotalData}
                     icon={<Cpu className="text-muted-foreground size-4" />}
                     loading={usageTotalLoading && !usageTotalData}
-                    title="Total Tokens"
+                    title="Token 总数"
                     value={formatTokenCount(totalTokens)}
                 />
                 <MetricCard
-                    description="Total LLM spending across all providers"
+                    description="所有提供商的模型花费总计"
                     error={!!usageTotalError && !usageTotalData}
                     icon={<CircleDollarSign className="text-muted-foreground size-4" />}
                     loading={usageTotalLoading && !usageTotalData}
-                    title="Total Cost"
+                    title="总成本"
                     value={formatCost(totalCost)}
                 />
             </div>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Usage by Provider</CardTitle>
-                    <CardDescription>LLM token usage and costs grouped by provider</CardDescription>
+                    <CardTitle>各提供商用量</CardTitle>
+                    <CardDescription>按提供商分组的 Token 用量与费用</CardDescription>
                 </CardHeader>
                 <CardContent>
                     {usageByProviderLoading && !usageByProviderData ? (
@@ -128,7 +128,7 @@ export function DashboardOverview() {
                         <ErrorTable />
                     ) : (
                         <UsageStatsTable
-                            label="Usage by Provider"
+                            label="各提供商用量"
                             rows={providerRows}
                         />
                     )}
@@ -137,8 +137,8 @@ export function DashboardOverview() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Usage by Model</CardTitle>
-                    <CardDescription>LLM token usage and costs grouped by model</CardDescription>
+                    <CardTitle>各模型用量</CardTitle>
+                    <CardDescription>按模型分组的 Token 用量与费用</CardDescription>
                 </CardHeader>
                 <CardContent>
                     {usageByModelLoading && !usageByModelData ? (
@@ -147,7 +147,7 @@ export function DashboardOverview() {
                         <ErrorTable />
                     ) : (
                         <UsageStatsTable
-                            label="Usage by Model"
+                            label="各模型用量"
                             rows={modelRows}
                         />
                     )}
@@ -156,8 +156,8 @@ export function DashboardOverview() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Usage by Agent Type</CardTitle>
-                    <CardDescription>LLM token usage and costs grouped by agent type</CardDescription>
+                    <CardTitle>各智能体用量</CardTitle>
+                    <CardDescription>按智能体类型分组的 Token 用量与费用</CardDescription>
                 </CardHeader>
                 <CardContent>
                     {usageByAgentTypeLoading && !usageByAgentTypeData ? (
@@ -166,7 +166,7 @@ export function DashboardOverview() {
                         <ErrorTable />
                     ) : (
                         <UsageStatsTable
-                            label="Usage by Agent Type"
+                            label="各智能体用量"
                             rows={agentTypeRows}
                         />
                     )}
@@ -175,8 +175,8 @@ export function DashboardOverview() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Tool Calls by Function</CardTitle>
-                    <CardDescription>Execution statistics for each tool function</CardDescription>
+                    <CardTitle>各工具调用次数</CardTitle>
+                    <CardDescription>各工具函数的执行统计</CardDescription>
                 </CardHeader>
                 <CardContent>
                     {toolcallsByFunctionLoading && !toolcallsByFunctionData ? (
@@ -184,14 +184,14 @@ export function DashboardOverview() {
                     ) : toolcallsByFunctionError && !toolcallsByFunctionData ? (
                         <ErrorTable />
                     ) : (
-                        <Table aria-label="Tool Calls by Function">
+                        <Table aria-label="各工具调用次数">
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="whitespace-nowrap">Function</TableHead>
-                                    <TableHead className="whitespace-nowrap">Type</TableHead>
-                                    <TableHead className="text-right whitespace-nowrap">Count</TableHead>
-                                    <TableHead className="text-right whitespace-nowrap">Total Duration</TableHead>
-                                    <TableHead className="text-right whitespace-nowrap">Avg Duration</TableHead>
+                                    <TableHead className="whitespace-nowrap">函数</TableHead>
+                                    <TableHead className="whitespace-nowrap">类型</TableHead>
+                                    <TableHead className="text-right whitespace-nowrap">次数</TableHead>
+                                    <TableHead className="text-right whitespace-nowrap">总耗时</TableHead>
+                                    <TableHead className="text-right whitespace-nowrap">平均耗时</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -236,14 +236,14 @@ function UsageStatsTable({
         <Table aria-label={label}>
             <TableHeader>
                 <TableRow>
-                    <TableHead className="whitespace-nowrap">Name</TableHead>
-                    <TableHead className="text-right whitespace-nowrap">Tokens In</TableHead>
-                    <TableHead className="text-right whitespace-nowrap">Tokens Out</TableHead>
-                    <TableHead className="text-right whitespace-nowrap">Cache In</TableHead>
-                    <TableHead className="text-right whitespace-nowrap">Cache Out</TableHead>
-                    <TableHead className="text-right whitespace-nowrap">Cost In</TableHead>
-                    <TableHead className="text-right whitespace-nowrap">Cost Out</TableHead>
-                    <TableHead className="text-right whitespace-nowrap">Total Cost</TableHead>
+                    <TableHead className="whitespace-nowrap">名称</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">输入 Token</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">输出 Token</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">缓存读取</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">缓存写入</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">输入费用</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">输出费用</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">总成本</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>

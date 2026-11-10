@@ -73,19 +73,19 @@ export function SettingsProvidersHeader() {
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button
-                    aria-label="Create provider — choose type"
+                    aria-label="新建提供商 — 选择类型"
                     className="w-8 shrink-0 px-0 md:w-auto md:px-3"
                     size="sm"
                     variant="secondary"
                 >
                     <Plus />
-                    <span className="hidden md:inline">Create Provider</span>
+                    <span className="hidden md:inline">新建提供商</span>
                     <ChevronDown className="hidden size-4 md:inline-flex" />
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 {availableTypes.length === 0 ? (
-                    <DropdownMenuItem disabled>No available provider types</DropdownMenuItem>
+                    <DropdownMenuItem disabled>没有可用的提供商类型</DropdownMenuItem>
                 ) : (
                     availableTypes.map(({ label, type }) => {
                         const Icon = providerIcons[type]?.icon;
@@ -165,7 +165,7 @@ function SettingsProviders() {
                 header: ({ column }) => (
                     <DataTableColumnHeader
                         column={column}
-                        title="Name"
+                        title="名称"
                     />
                 ),
                 // Name flexes to fill remaining width — fixed `size` would push
@@ -192,7 +192,7 @@ function SettingsProviders() {
                 header: ({ column }) => (
                     <DataTableColumnHeader
                         column={column}
-                        title="Type"
+                        title="类型"
                     />
                 ),
                 meta: { searchable: true },
@@ -209,7 +209,7 @@ function SettingsProviders() {
                 header: ({ column }) => (
                     <DataTableColumnHeader
                         column={column}
-                        title="Created"
+                        title="创建时间"
                     />
                 ),
                 meta: { columnMenuLabel: 'Created' },
@@ -231,7 +231,7 @@ function SettingsProviders() {
                 header: ({ column }) => (
                     <DataTableColumnHeader
                         column={column}
-                        title="Updated"
+                        title="更新时间"
                     />
                 ),
                 size: 120,
@@ -251,7 +251,7 @@ function SettingsProviders() {
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button
-                                        aria-label="Open menu"
+                                        aria-label="打开菜单"
                                         className="size-8 p-0"
                                         variant="ghost"
                                     >
@@ -307,7 +307,7 @@ function SettingsProviders() {
         const { agents } = provider;
 
         if (!agents) {
-            return <div className="text-muted-foreground p-4 text-sm">No agent configuration available</div>;
+            return <div className="text-muted-foreground p-4 text-sm">没有可用的智能体配置</div>;
         }
 
         const getName = (key: string): string =>
@@ -346,7 +346,7 @@ function SettingsProviders() {
 
         return (
             <div className="bg-muted/20 border-t p-4">
-                <h4 className="font-medium">Agent Configurations</h4>
+                <h4 className="font-medium">智能体配置</h4>
                 <hr className="border-muted-foreground/20 my-4" />
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
                     {agentTypes.map(({ data, key, name }) => {
@@ -367,7 +367,7 @@ function SettingsProviders() {
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="text-muted-foreground text-sm">No configuration available</div>
+                                    <div className="text-muted-foreground text-sm">没有可用配置</div>
                                 )}
                             </div>
                         );
@@ -404,7 +404,7 @@ function SettingsProviders() {
     const pageHeader = (
         <AppHeader>
             <AppHeaderContent>
-                <AppHeaderTitle icon={<Plug className="size-4 shrink-0" />}>Providers</AppHeaderTitle>
+                <AppHeaderTitle icon={<Plug className="size-4 shrink-0" />}>模型提供商</AppHeaderTitle>
             </AppHeaderContent>
             <AppHeaderActions>
                 <SettingsProvidersHeader />
@@ -418,8 +418,8 @@ function SettingsProviders() {
                 {pageHeader}
                 <div className="flex flex-1 flex-col gap-4 p-4">
                     <LoadingState
-                        description="Please wait while we fetch your provider configurations"
-                        title="Loading providers..."
+                        description="正在读取提供商列表"
+                        title="加载中…"
                     />
                 </div>
             </>
@@ -435,7 +435,7 @@ function SettingsProviders() {
                     <ErrorState
                         message={error.message}
                         onRetry={refetch}
-                        title="Error loading providers"
+                        title="提供商加载失败"
                     />
                 </div>
             </>
@@ -454,7 +454,7 @@ function SettingsProviders() {
                             <EmptyMedia variant="icon">
                                 <Settings />
                             </EmptyMedia>
-                            <EmptyTitle>No providers configured</EmptyTitle>
+                            <EmptyTitle>还没有配置提供商</EmptyTitle>
                             <EmptyDescription>
                                 Get started by adding your first language model provider
                             </EmptyDescription>
@@ -484,7 +484,7 @@ function SettingsProviders() {
                     empty={{ entityName: 'providers' }}
                     filterPlaceholder="Filter providers..."
                     filterValue={filter}
-                    label="Providers"
+                    label="模型提供商"
                     onFilterChange={setFilter}
                     onPageChange={handlePageChange}
                     pageIndex={currentPage}

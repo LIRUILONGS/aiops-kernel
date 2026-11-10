@@ -365,13 +365,13 @@ export function FlowForm({
                         onChange={(event) => setTemplateSearch(event.target.value)}
                         onClick={(event) => event.stopPropagation()}
                         onKeyDown={(event) => event.stopPropagation()}
-                        placeholder="Search..."
+                        placeholder="搜索…"
                         value={templateSearch}
                     />
                     {templateSearch && (
                         <InputGroupAddon align="inline-end">
                             <InputGroupButton
-                                aria-label="Clear template search"
+                                aria-label="清空模板搜索"
                                 onClick={(event) => {
                                     event.stopPropagation();
                                     setTemplateSearch('');
@@ -420,13 +420,13 @@ export function FlowForm({
                         onChange={(event) => setResourceSearch(event.target.value)}
                         onClick={(event) => event.stopPropagation()}
                         onKeyDown={(event) => event.stopPropagation()}
-                        placeholder="Search..."
+                        placeholder="搜索…"
                         value={resourceSearch}
                     />
                     {resourceSearch && (
                         <InputGroupAddon align="inline-end">
                             <InputGroupButton
-                                aria-label="Clear resource search"
+                                aria-label="清空资源搜索"
                                 onClick={(event) => {
                                     event.stopPropagation();
                                     setResourceSearch('');
@@ -631,13 +631,13 @@ export function FlowForm({
                                                                     }
                                                                     onClick={(event) => event.stopPropagation()}
                                                                     onKeyDown={(event) => event.stopPropagation()}
-                                                                    placeholder="Search..."
+                                                                    placeholder="搜索…"
                                                                     value={providerSearch}
                                                                 />
                                                                 {providerSearch && (
                                                                     <InputGroupAddon align="inline-end">
                                                                         <InputGroupButton
-                                                                            aria-label="Clear provider search"
+                                                                            aria-label="清空提供商搜索"
                                                                             onClick={(event) => {
                                                                                 event.stopPropagation();
                                                                                 setProviderSearch('');
@@ -785,7 +785,7 @@ export function FlowForm({
                                     >
                                         <DropdownMenuTrigger asChild>
                                             <InputGroupButton
-                                                aria-label="Templates and resources"
+                                                aria-label="模板与资源"
                                                 className="ml-auto shrink-0"
                                                 disabled={isFormDisabled}
                                                 size="icon-xs"
@@ -898,7 +898,7 @@ export function FlowForm({
                 confirmIcon={<FileSymlink />}
                 confirmText="Replace"
                 confirmVariant="default"
-                description="Current message has content. Replace with the selected template?"
+                description="当前消息已有内容，确定用所选模板替换吗？"
                 handleConfirm={handleConfirmReplaceTemplate}
                 handleOpenChange={(open) => {
                     if (!open) {
@@ -908,7 +908,7 @@ export function FlowForm({
                     setIsReplaceConfirmOpen(open);
                 }}
                 isOpen={isReplaceConfirmOpen}
-                title="Replace content?"
+                title="替换内容？"
             />
         </Form>
     );

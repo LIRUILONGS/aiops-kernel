@@ -83,7 +83,7 @@ describe('SettingsAccount gating', () => {
 
         await user.click(screen.getByRole('button', { name: '修改' }));
 
-        expect(screen.getByRole('button', { name: 'Update Name' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: '更新名称' })).toBeInTheDocument();
     });
 
     it('keeps an open section and its draft when another section is opened', async () => {
@@ -98,7 +98,7 @@ describe('SettingsAccount gating', () => {
         }
 
         await user.click(firstChangeButton);
-        const nameInput = screen.getByPlaceholderText('Enter your display name');
+        const nameInput = screen.getByPlaceholderText('请输入显示名称');
         await user.clear(nameInput);
         await user.type(nameInput, 'Draft Name');
 
@@ -110,7 +110,7 @@ describe('SettingsAccount gating', () => {
 
         await user.click(reopenChangeButton);
 
-        expect(screen.getByRole('button', { name: 'Update Email' })).toBeInTheDocument();
-        expect(screen.getByPlaceholderText('Enter your display name')).toHaveValue('Draft Name');
+        expect(screen.getByRole('button', { name: '更新邮箱' })).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('请输入显示名称')).toHaveValue('Draft Name');
     });
 });

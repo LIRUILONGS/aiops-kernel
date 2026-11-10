@@ -175,7 +175,7 @@ function CreateRowActions({
                 {isLoading ? <Spinner variant="circle" /> : <Check />}
             </Button>
             <Button
-                aria-label="Cancel"
+                aria-label="取消"
                 className="shrink-0"
                 onClick={onCancel}
                 size="icon-sm"
@@ -213,7 +213,7 @@ function EditRowActions({
                 {isLoading ? <Spinner variant="circle" /> : <Check />}
             </Button>
             <Button
-                aria-label="Cancel"
+                aria-label="取消"
                 className="shrink-0"
                 onClick={onCancel}
                 size="icon-sm"
@@ -430,7 +430,7 @@ function SettingsAPITokens() {
                                         autoFocus
                                         className="h-8"
                                         id={createNameFieldId}
-                                        placeholder="Token name (optional)"
+                                        placeholder="令牌名称（可选）"
                                     />
                                 )}
                             />
@@ -449,7 +449,7 @@ function SettingsAPITokens() {
                                         autoFocus
                                         className="h-8"
                                         id={editNameFieldId}
-                                        placeholder="Token name (optional)"
+                                        placeholder="令牌名称（可选）"
                                     />
                                 )}
                             />
@@ -461,7 +461,7 @@ function SettingsAPITokens() {
                             className="truncate font-medium"
                             title={token.name || undefined}
                         >
-                            {token.name || <span className="text-muted-foreground font-normal italic">(unnamed)</span>}
+                            {token.name || <span className="text-muted-foreground font-normal italic">（未命名）</span>}
                         </div>
                     );
                 },
@@ -469,7 +469,7 @@ function SettingsAPITokens() {
                 header: ({ column }) => (
                     <DataTableColumnHeader
                         column={column}
-                        title="Name"
+                        title="名称"
                     />
                 ),
                 meta: { searchable: true },
@@ -482,7 +482,7 @@ function SettingsAPITokens() {
                     const isCreating = token.id === 'create-new';
 
                     if (isCreating) {
-                        return <div className="text-muted-foreground text-sm">N/A</div>;
+                        return <div className="text-muted-foreground text-sm">—</div>;
                     }
 
                     const tokenId = row.getValue('tokenId') as string;
@@ -491,7 +491,7 @@ function SettingsAPITokens() {
                         <div className="flex items-center gap-2">
                             <code className="text-sm">{tokenId}</code>
                             <Button
-                                aria-label="Copy token ID"
+                                aria-label="复制令牌 ID"
                                 className="size-6 p-0"
                                 onClick={() => handleCopyTokenId(tokenId)}
                                 variant="ghost"
@@ -505,7 +505,7 @@ function SettingsAPITokens() {
                 header: ({ column }) => (
                     <DataTableColumnHeader
                         column={column}
-                        title="Token ID"
+                        title="令牌 ID"
                     />
                 ),
                 meta: { columnMenuLabel: 'Token ID', searchable: true },
@@ -518,7 +518,7 @@ function SettingsAPITokens() {
                     const isCreating = token.id === 'create-new';
 
                     if (isCreating) {
-                        return <Badge variant="default">active</Badge>;
+                        return <Badge variant="default">有效</Badge>;
                     }
 
                     const isEditing = editingTokenId === token.tokenId;
@@ -540,15 +540,15 @@ function SettingsAPITokens() {
                                         value={field.value}
                                     >
                                         <SelectTrigger
-                                            aria-label="Token status"
+                                            aria-label="令牌状态"
                                             className="h-8 w-32"
                                         >
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectGroup>
-                                                <SelectItem value={TokenStatusEnum.Active}>active</SelectItem>
-                                                <SelectItem value={TokenStatusEnum.Revoked}>revoked</SelectItem>
+                                                <SelectItem value={TokenStatusEnum.Active}>有效</SelectItem>
+                                                <SelectItem value={TokenStatusEnum.Revoked}>已撤销</SelectItem>
                                             </SelectGroup>
                                         </SelectContent>
                                     </Select>
@@ -562,7 +562,7 @@ function SettingsAPITokens() {
                 header: ({ column }) => (
                     <DataTableColumnHeader
                         column={column}
-                        title="Status"
+                        title="状态"
                     />
                 ),
                 meta: { searchable: true },
@@ -596,7 +596,7 @@ function SettingsAPITokens() {
                                                 {field.value ? (
                                                     format(field.value, 'd MMM yyyy', { locale: enUS })
                                                 ) : (
-                                                    <span>Pick date</span>
+                                                    <span>选择日期</span>
                                                 )}
                                             </Button>
                                         </PopoverTrigger>
@@ -626,7 +626,7 @@ function SettingsAPITokens() {
                 header: ({ column }) => (
                     <DataTableColumnHeader
                         column={column}
-                        title="Expires"
+                        title="过期时间"
                     />
                 ),
                 size: 150,
@@ -644,7 +644,7 @@ function SettingsAPITokens() {
                     const isCreating = token.id === 'create-new';
 
                     if (isCreating) {
-                        return <div className="text-muted-foreground text-sm">N/A</div>;
+                        return <div className="text-muted-foreground text-sm">—</div>;
                     }
 
                     const dateString = row.getValue('createdAt') as string;
@@ -654,7 +654,7 @@ function SettingsAPITokens() {
                 header: ({ column }) => (
                     <DataTableColumnHeader
                         column={column}
-                        title="Created"
+                        title="创建时间"
                     />
                 ),
                 meta: { columnMenuLabel: 'Created' },
@@ -699,7 +699,7 @@ function SettingsAPITokens() {
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button
-                                        aria-label="Open menu"
+                                        aria-label="打开菜单"
                                         className="shrink-0"
                                         size="icon-sm"
                                         variant="ghost"
@@ -801,19 +801,19 @@ function SettingsAPITokens() {
     const pageHeader = (
         <AppHeader>
             <AppHeaderContent>
-                <AppHeaderTitle icon={<Key className="size-4 shrink-0" />}>API Tokens</AppHeaderTitle>
+                <AppHeaderTitle icon={<Key className="size-4 shrink-0" />}>API 令牌</AppHeaderTitle>
             </AppHeaderContent>
             <AppHeaderActions>
                 <AppHeaderAction
                     icon={<Plus />}
-                    label="Create Token"
+                    label="创建令牌"
                     onClick={handleCreateNew}
                     variant="secondary"
                 />
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button
-                            aria-label="Developer tools"
+                            aria-label="开发者工具"
                             className="size-8 p-0"
                             size="sm"
                             variant="ghost"
@@ -856,8 +856,8 @@ function SettingsAPITokens() {
             return (
                 <div className="flex flex-1 flex-col gap-4 p-4">
                     <LoadingState
-                        description="Please wait while we fetch your API tokens"
-                        title="Loading tokens..."
+                        description="正在读取 API 令牌"
+                        title="加载中…"
                     />
                 </div>
             );
@@ -870,7 +870,7 @@ function SettingsAPITokens() {
                     <ErrorState
                         message={error.message}
                         onRetry={refetch}
-                        title="Error loading tokens"
+                        title="令牌加载失败"
                     />
                 </div>
             );
@@ -886,7 +886,7 @@ function SettingsAPITokens() {
                             <EmptyMedia variant="icon">
                                 <Key />
                             </EmptyMedia>
-                            <EmptyTitle>No API tokens configured</EmptyTitle>
+                            <EmptyTitle>还没有 API 令牌</EmptyTitle>
                             <EmptyDescription>
                                 Create your first API token to access OpsAGI programmatically
                             </EmptyDescription>
@@ -913,7 +913,7 @@ function SettingsAPITokens() {
                     empty={{ entityName: 'API tokens' }}
                     filterPlaceholder="Filter tokens..."
                     filterValue={filter}
-                    label="API Tokens"
+                    label="API 令牌"
                     onFilterChange={setFilter}
                     onPageChange={handlePageChange}
                     pageIndex={currentPage}
@@ -933,7 +933,7 @@ function SettingsAPITokens() {
             >
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>API Token Created</DialogTitle>
+                        <DialogTitle>令牌已创建</DialogTitle>
                         <DialogDescription>
                             Copy this token now. You won't be able to see it again for security reasons.
                         </DialogDescription>

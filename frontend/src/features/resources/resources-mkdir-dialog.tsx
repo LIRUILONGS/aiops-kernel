@@ -91,7 +91,7 @@ function ResourcesMkdirDialogForm({ defaultParentPath, onClose }: ResourcesMkdir
                         name="path"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Path</FormLabel>
+                                <FormLabel>路径</FormLabel>
                                 <FormControl>
                                     <Input
                                         {...field}
@@ -118,7 +118,7 @@ function ResourcesMkdirDialogForm({ defaultParentPath, onClose }: ResourcesMkdir
                         >
                             Cancel
                         </Button>
-                        <FormSubmitButton icon={<FolderPlus />}>Create</FormSubmitButton>
+                        <FormSubmitButton icon={<FolderPlus />}>创建</FormSubmitButton>
                     </div>
                 </form>
             </Form>

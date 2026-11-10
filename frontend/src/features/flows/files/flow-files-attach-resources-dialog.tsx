@@ -184,8 +184,8 @@ function FlowFilesAttachResourcesDialogBody({
                 <EmptyMedia variant="icon">
                     <FolderInput />
                 </EmptyMedia>
-                <EmptyTitle>Resource library is empty</EmptyTitle>
-                <EmptyDescription>Upload resources first to attach them to a flow.</EmptyDescription>
+                <EmptyTitle>资源库是空的</EmptyTitle>
+                <EmptyDescription>先上传资源，才能附加到会话。</EmptyDescription>
             </EmptyHeader>
         </Empty>
     );
@@ -196,7 +196,7 @@ function FlowFilesAttachResourcesDialogBody({
                 <EmptyMedia variant="icon">
                     <Search />
                 </EmptyMedia>
-                <EmptyTitle>No matches</EmptyTitle>
+                <EmptyTitle>没有匹配</EmptyTitle>
                 <EmptyDescription>
                     No resources match <code>{searchQuery.trim()}</code>.
                 </EmptyDescription>
@@ -228,14 +228,14 @@ function FlowFilesAttachResourcesDialogBody({
                             autoComplete="off"
                             disabled={isAttaching || isResourcesLoading}
                             onChange={(event) => setSearchQuery(event.target.value)}
-                            placeholder="Search resources..."
+                            placeholder="搜索资源…"
                             type="text"
                             value={searchQuery}
                         />
                         {searchQuery && (
                             <InputGroupAddon align="inline-end">
                                 <InputGroupButton
-                                    aria-label="Clear resource search"
+                                    aria-label="清空资源搜索"
                                     onClick={() => setSearchQuery('')}
                                     type="button"
                                 >

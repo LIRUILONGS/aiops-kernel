@@ -121,11 +121,11 @@ describe('FlowMessageConclusion', () => {
             />,
         );
 
-        expect(screen.getByText('needs a human')).toBeInTheDocument();
+        expect(screen.getByText('需要人工介入')).toBeInTheDocument();
 
         await userEvent.click(screen.getByRole('button', { name: 'Show report' }));
 
         expect(screen.getByText('Hide report')).toBeInTheDocument();
-        expect(screen.queryByText('Next action')).not.toBeInTheDocument();
+        expect(screen.queryByText('下一步动作')).not.toBeInTheDocument();
     });
 });

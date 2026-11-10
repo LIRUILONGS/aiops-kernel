@@ -164,7 +164,7 @@ function FlowFiles() {
                 <EmptyMedia variant="icon">
                     <FolderUp />
                 </EmptyMedia>
-                <EmptyTitle>No files in cache</EmptyTitle>
+                <EmptyTitle>缓存里没有文件</EmptyTitle>
                 <EmptyDescription>
                     Upload files to make them available at <code>/work/uploads</code>, or use Pull to sync files from
                     the running container. You can also drag &amp; drop files here.
@@ -179,7 +179,7 @@ function FlowFiles() {
                 <EmptyMedia variant="icon">
                     <Search />
                 </EmptyMedia>
-                <EmptyTitle>No matches</EmptyTitle>
+                <EmptyTitle>没有匹配</EmptyTitle>
                 <EmptyDescription>
                     No files match <code>{search.debouncedQuery.trim()}</code>. Try a different query.
                 </EmptyDescription>
@@ -207,7 +207,7 @@ function FlowFiles() {
                 <div className="bg-primary/10 border-primary pointer-events-none absolute inset-0 z-30 flex items-center justify-center rounded-lg border-2 border-dashed">
                     <div className="text-link flex flex-col items-center gap-2">
                         <FolderUp className="size-8" />
-                        <span className="text-sm font-medium">Drop files to upload</span>
+                        <span className="text-sm font-medium">拖拽文件到此上传</span>
                     </div>
                 </div>
             )}
@@ -228,13 +228,13 @@ function FlowFiles() {
                                             <InputGroupInput
                                                 {...field}
                                                 autoComplete="off"
-                                                placeholder="Search files..."
+                                                placeholder="搜索文件…"
                                                 type="text"
                                             />
                                             {field.value && (
                                                 <InputGroupAddon align="inline-end">
                                                     <InputGroupButton
-                                                        aria-label="Clear file search"
+                                                        aria-label="清空文件搜索"
                                                         onClick={search.resetSearch}
                                                         type="button"
                                                     >
@@ -252,7 +252,7 @@ function FlowFiles() {
                             <TooltipTrigger asChild>
                                 <span>
                                     <Button
-                                        aria-label="Upload files"
+                                        aria-label="上传文件"
                                         disabled={upload.isUploading || isLoading}
                                         onClick={upload.openFilePicker}
                                         size="icon-sm"
@@ -264,7 +264,7 @@ function FlowFiles() {
                                 </span>
                             </TooltipTrigger>
                             <TooltipContent className="max-w-64 text-center text-xs">
-                                <p className="font-medium">Upload files</p>
+                                <p className="font-medium">上传文件</p>
                                 <p className="mt-1">
                                     Pushed to <code>/work/uploads</code> — immediately accessible inside the container.
                                 </p>
@@ -275,7 +275,7 @@ function FlowFiles() {
                             <TooltipTrigger asChild>
                                 <span>
                                     <Button
-                                        aria-label="Attach resources"
+                                        aria-label="附加资源"
                                         disabled={isAttachResourcesDisabled}
                                         onClick={handleOpenAttachResourcesDialog}
                                         size="icon-sm"
@@ -287,7 +287,7 @@ function FlowFiles() {
                                 </span>
                             </TooltipTrigger>
                             <TooltipContent className="max-w-64 text-center text-xs">
-                                <p className="font-medium">Attach resources</p>
+                                <p className="font-medium">附加资源</p>
                                 <p className="mt-1">
                                     Copied from the library to <code>/work/resources</code> — immediately accessible
                                     inside the container.
@@ -299,7 +299,7 @@ function FlowFiles() {
                             <TooltipTrigger asChild>
                                 <span>
                                     <Button
-                                        aria-label="Pull from container"
+                                        aria-label="从容器拉取"
                                         disabled={isPullDisabled}
                                         onClick={handleOpenPullDialog}
                                         size="icon-sm"
@@ -313,13 +313,13 @@ function FlowFiles() {
                             <TooltipContent className="max-w-64 text-center text-xs">
                                 {isContainerRunning ? (
                                     <>
-                                        <p className="font-medium">Pull file or directory from container</p>
+                                        <p className="font-medium">从容器拉取文件或目录</p>
                                         <p className="mt-1">
-                                            Snapshots are stored separately under <strong>Container</strong>.
+                                            Snapshots are stored separately under <strong>容器</strong>.
                                         </p>
                                     </>
                                 ) : (
-                                    <p className="font-medium">Container is not running</p>
+                                    <p className="font-medium">容器未运行</p>
                                 )}
                             </TooltipContent>
                         </Tooltip>

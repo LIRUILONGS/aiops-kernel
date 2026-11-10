@@ -153,7 +153,7 @@ export function MainSidebar() {
                                     showOnHover
                                 >
                                     <Link
-                                        aria-label="New flow"
+                                        aria-label="新建会话"
                                         to={routes.newFlow}
                                     >
                                         <Plus />
@@ -176,7 +176,7 @@ export function MainSidebar() {
                                     showOnHover
                                 >
                                     <Link
-                                        aria-label="New template"
+                                        aria-label="新建模板"
                                         to={routes.newTemplate}
                                     >
                                         <Plus />
@@ -197,7 +197,7 @@ export function MainSidebar() {
                                     className="data-[state=open]:bg-accent rounded-sm"
                                     onClick={resourcesUpload.openFilePicker}
                                     showOnHover
-                                    title="Upload file"
+                                    title="上传文件"
                                     type="button"
                                 >
                                     <Plus />
@@ -219,7 +219,7 @@ export function MainSidebar() {
                                     showOnHover
                                 >
                                     <Link
-                                        aria-label="New knowledge"
+                                        aria-label="新建知识"
                                         to={routes.newKnowledge}
                                     >
                                         <Plus />
@@ -352,21 +352,21 @@ export function MainSidebar() {
                                     >
                                         <TabsList className="dark:bg-background h-7 p-0.5">
                                             <TabsTrigger
-                                                aria-label="System theme"
+                                                aria-label="跟随系统"
                                                 className="dark:data-[state=active]:bg-card h-6 px-2"
                                                 value="system"
                                             >
                                                 <Monitor className="size-4" />
                                             </TabsTrigger>
                                             <TabsTrigger
-                                                aria-label="Light theme"
+                                                aria-label="浅色"
                                                 className="dark:data-[state=active]:bg-card h-6 px-2"
                                                 value="light"
                                             >
                                                 <Sun className="size-4" />
                                             </TabsTrigger>
                                             <TabsTrigger
-                                                aria-label="Dark theme"
+                                                aria-label="深色"
                                                 className="dark:data-[state=active]:bg-card h-6 px-2"
                                                 value="dark"
                                             >
@@ -430,7 +430,7 @@ function FlowMenuItem({ activeFlowId, flow, isFavorite, isToggleShown, onToggleF
             </SidebarMenuButton>
             {isToggleShown && (
                 <SidebarMenuAction
-                    aria-label="Toggle favorite"
+                    aria-label="切换收藏"
                     aria-pressed={isFavorite}
                     className="data-[state=open]:bg-accent rounded-sm"
                     onClick={() => onToggleFavorite(flow.id)}

@@ -151,13 +151,13 @@ function FlowAgents() {
                                         <InputGroupInput
                                             {...field}
                                             autoComplete="off"
-                                            placeholder="Search agent logs..."
+                                            placeholder="搜索智能体日志…"
                                             type="text"
                                         />
                                         {field.value && (
                                             <InputGroupAddon align="inline-end">
                                                 <InputGroupButton
-                                                    aria-label="Clear agent search"
+                                                    aria-label="清空智能体搜索"
                                                     onClick={() => {
                                                         form.reset({ search: '' });
                                                         setDebouncedSearchValue('');
@@ -207,7 +207,7 @@ function FlowAgents() {
 
                     {!isScrolledToBottom && (
                         <Button
-                            aria-label="Scroll to latest agent log"
+                            aria-label="跳到最新日志"
                             className="absolute right-4 bottom-4 z-10 shadow-md hover:shadow-lg"
                             onClick={() => scrollToEnd()}
                             size="icon-sm"
@@ -227,8 +227,8 @@ function FlowAgents() {
                         <EmptyMedia variant="icon">
                             <ListFilter />
                         </EmptyMedia>
-                        <EmptyTitle>No agent logs found</EmptyTitle>
-                        <EmptyDescription>Try adjusting your search or filter parameters</EmptyDescription>
+                        <EmptyTitle>没有匹配的智能体日志</EmptyTitle>
+                        <EmptyDescription>换个搜索词或筛选条件试试</EmptyDescription>
                     </EmptyHeader>
                     <EmptyContent>
                         <Button
@@ -246,8 +246,8 @@ function FlowAgents() {
                         <EmptyMedia variant="icon">
                             <Bot />
                         </EmptyMedia>
-                        <EmptyTitle>No agent logs available</EmptyTitle>
-                        <EmptyDescription>Agent logs will appear here when agents are working</EmptyDescription>
+                        <EmptyTitle>还没有智能体日志</EmptyTitle>
+                        <EmptyDescription>智能体开始工作后，日志会出现在这里</EmptyDescription>
                     </EmptyHeader>
                 </Empty>
             )}
