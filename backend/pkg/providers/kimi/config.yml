@@ -2,7 +2,7 @@
 #
 # Strategy: kimi-k2.6 for utility/orchestration, kimi-k2.7-code-highspeed for the
 # primary/assistant loop, kimi-k3 (always-thinking flagship) for advice, and
-# kimi-k2.7-code for generator/refiner/coder/pentester.
+# kimi-k2.7-code for generator/refiner.
 #
 # Thinking is expressed through the reasoning block, not extra_body: utility kimi-k2.6
 # agents set reasoning.mode "off" (langchaingo emits thinking.type=disabled), kimi-k3
@@ -120,24 +120,6 @@ refiner:
     output: 4.00
     cache_read: 0.19
 
-adviser:
-  model: kimi-k3
-  temperature: 1.0
-  top_p: 0.95
-  presence_penalty: 0
-  frequency_penalty: 0
-  n: 1
-  max_tokens: 8192
-  reasoning:
-    effort: max
-  extra_body:
-    tool_choice: auto
-  price:
-    input: 3.00
-    output: 15.00
-    cache_read: 0.30
-    cache_write: 3.00
-
 reflector:
   model: kimi-k2.6
   temperature: 0.6
@@ -167,57 +149,3 @@ searcher:
     input: 0.95
     output: 4.00
     cache_read: 0.16
-
-enricher:
-  model: kimi-k2.6
-  temperature: 0.6
-  top_p: 0.95
-  n: 1
-  max_tokens: 4096
-  reasoning:
-    mode: "off"
-  extra_body:
-    tool_choice: auto
-  price:
-    input: 0.95
-    output: 4.00
-    cache_read: 0.16
-
-coder:
-  model: kimi-k2.7-code
-  temperature: 1.0
-  top_p: 0.95
-  n: 1
-  max_tokens: 20480
-  extra_body:
-    tool_choice: auto
-  price:
-    input: 0.95
-    output: 4.00
-    cache_read: 0.19
-
-installer:
-  model: kimi-k2.6
-  temperature: 1.0
-  top_p: 0.95
-  n: 1
-  max_tokens: 16384
-  extra_body:
-    tool_choice: auto
-  price:
-    input: 0.95
-    output: 4.00
-    cache_read: 0.16
-
-pentester:
-  model: kimi-k2.7-code
-  temperature: 1.0
-  top_p: 0.95
-  n: 1
-  max_tokens: 16384
-  extra_body:
-    tool_choice: auto
-  price:
-    input: 0.95
-    output: 4.00
-    cache_read: 0.19

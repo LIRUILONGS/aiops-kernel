@@ -71,20 +71,12 @@ type ModelReasoningInfo {
 
 # Template types for AI agent prompts and system operations
 enum PromptType {
-  primary_agent
+  commander
+  triage
+  log_analyst
+  metrics_analyst
+  change_analyst
   assistant
-  pentester
-  question_pentester
-  coder
-  question_coder
-  installer
-  question_installer
-  searcher
-  question_searcher
-  memorist
-  question_memorist
-  adviser
-  question_adviser
   generator
   subtasks_generator
   refiner
@@ -93,8 +85,6 @@ enum PromptType {
   task_reporter
   reflector
   question_reflector
-  enricher
-  question_enricher
   toolcall_fixer
   input_toolcall_fixer
   summarizer
@@ -107,25 +97,14 @@ enum PromptType {
   short_execution_context
   tool_call_id_collector
   tool_call_id_detector
-  question_execution_monitor
-  question_task_planner
-  task_assignment_wrapper
 }
 
 # AI agent types
 enum AgentType {
-  primary_agent
   reporter
   generator
   refiner
   reflector
-  enricher
-  adviser
-  coder
-  memorist
-  searcher
-  installer
-  pentester
   summarizer
   tool_call_fixer
   assistant
@@ -138,19 +117,14 @@ enum AgentType {
 
 # AI agent type for provider configuration
 enum AgentConfigType {
+  primary_agent
+  searcher
   simple
   simple_json
-  primary_agent
   assistant
   generator
   refiner
-  adviser
   reflector
-  searcher
-  enricher
-  coder
-  installer
-  pentester
 }
 
 # Terminal output stream types
@@ -540,21 +514,18 @@ type AgentPrompts {
 
 # All agent prompt configurations
 type AgentsPrompts {
-  primaryAgent: AgentPrompt!
   assistant: AgentPrompt!
-  pentester: AgentPrompts!
-  coder: AgentPrompts!
-  installer: AgentPrompts!
-  searcher: AgentPrompts!
-  memorist: AgentPrompts!
-  adviser: AgentPrompts!
   generator: AgentPrompts!
   refiner: AgentPrompts!
   reporter: AgentPrompts!
   reflector: AgentPrompts!
-  enricher: AgentPrompts!
   toolCallFixer: AgentPrompts!
   summarizer: AgentPrompt!
+  commander: AgentPrompt!
+  triage: AgentPrompt!
+  logAnalyst: AgentPrompt!
+  metricsAnalyst: AgentPrompt!
+  changeAnalyst: AgentPrompt!
 }
 
 # Tool-specific prompt configurations
@@ -568,9 +539,6 @@ type ToolsPrompts {
   chooseUserLanguage: DefaultPrompt!
   collectToolCallId: DefaultPrompt!
   detectToolCallIdPattern: DefaultPrompt!
-  monitorAgentExecution: DefaultPrompt!
-  planAgentTask: DefaultPrompt!
-  wrapAgentTask: DefaultPrompt!
 }
 
 # Complete default prompt configuration (read only)
@@ -608,13 +576,8 @@ type ProviderTestResult {
   assistant: AgentTestResult!
   generator: AgentTestResult!
   refiner: AgentTestResult!
-  adviser: AgentTestResult!
   reflector: AgentTestResult!
   searcher: AgentTestResult!
-  enricher: AgentTestResult!
-  coder: AgentTestResult!
-  installer: AgentTestResult!
-  pentester: AgentTestResult!
 }
 
 # ==================== Analytics & Usage Statistics Types ====================
@@ -866,13 +829,8 @@ type AgentsConfig {
   assistant: AgentConfig!
   generator: AgentConfig!
   refiner: AgentConfig!
-  adviser: AgentConfig!
   reflector: AgentConfig!
   searcher: AgentConfig!
-  enricher: AgentConfig!
-  coder: AgentConfig!
-  installer: AgentConfig!
-  pentester: AgentConfig!
 }
 
 # ==================== Input Types ====================
@@ -921,13 +879,8 @@ input AgentsConfigInput {
   assistant: AgentConfigInput!
   generator: AgentConfigInput!
   refiner: AgentConfigInput!
-  adviser: AgentConfigInput!
   reflector: AgentConfigInput!
   searcher: AgentConfigInput!
-  enricher: AgentConfigInput!
-  coder: AgentConfigInput!
-  installer: AgentConfigInput!
-  pentester: AgentConfigInput!
 }
 
 # ==================== Knowledge (Vector Store) Types ====================

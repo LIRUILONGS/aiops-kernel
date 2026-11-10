@@ -1369,13 +1369,8 @@ function TestResultsDialog({ handleOpenChange, isOpen, results }: TestResultsDia
 }
 
 const agentTypesMap: Record<string, AgentConfigType> = {
-    adviser: AgentConfigType.Adviser,
     assistant: AgentConfigType.Assistant,
-    coder: AgentConfigType.Coder,
-    enricher: AgentConfigType.Enricher,
     generator: AgentConfigType.Generator,
-    installer: AgentConfigType.Installer,
-    pentester: AgentConfigType.Pentester,
     primaryAgent: AgentConfigType.PrimaryAgent,
     refiner: AgentConfigType.Refiner,
     reflector: AgentConfigType.Reflector,

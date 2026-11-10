@@ -145,14 +145,9 @@ const (
 	OptionsTypeAssistant    ProviderOptionsType = "assistant"
 	OptionsTypeSimple       ProviderOptionsType = "simple"
 	OptionsTypeSimpleJSON   ProviderOptionsType = "simple_json"
-	OptionsTypeAdviser      ProviderOptionsType = "adviser"
 	OptionsTypeGenerator    ProviderOptionsType = "generator"
 	OptionsTypeRefiner      ProviderOptionsType = "refiner"
 	OptionsTypeSearcher     ProviderOptionsType = "searcher"
-	OptionsTypeEnricher     ProviderOptionsType = "enricher"
-	OptionsTypeCoder        ProviderOptionsType = "coder"
-	OptionsTypeInstaller    ProviderOptionsType = "installer"
-	OptionsTypePentester    ProviderOptionsType = "pentester"
 	OptionsTypeReflector    ProviderOptionsType = "reflector"
 )
 
@@ -163,18 +158,13 @@ var AllAgentTypes = []ProviderOptionsType{
 	OptionsTypeAssistant,
 	OptionsTypeGenerator,
 	OptionsTypeRefiner,
-	OptionsTypeAdviser,
 	OptionsTypeReflector,
 	OptionsTypeSearcher,
-	OptionsTypeEnricher,
-	OptionsTypeCoder,
-	OptionsTypeInstaller,
-	OptionsTypePentester,
 }
 
 func (opt ProviderOptionsType) UsesTools() bool {
 	switch opt {
-	case OptionsTypeSimpleJSON, OptionsTypeAdviser, OptionsTypeReflector:
+	case OptionsTypeSimpleJSON, OptionsTypeReflector:
 		return false
 	default:
 		return true
@@ -310,13 +300,8 @@ type ProviderConfig struct {
 	Assistant      *AgentConfig      `json:"assistant,omitempty" yaml:"assistant,omitempty"`
 	Generator      *AgentConfig      `json:"generator,omitempty" yaml:"generator,omitempty"`
 	Refiner        *AgentConfig      `json:"refiner,omitempty" yaml:"refiner,omitempty"`
-	Adviser        *AgentConfig      `json:"adviser,omitempty" yaml:"adviser,omitempty"`
 	Reflector      *AgentConfig      `json:"reflector,omitempty" yaml:"reflector,omitempty"`
 	Searcher       *AgentConfig      `json:"searcher,omitempty" yaml:"searcher,omitempty"`
-	Enricher       *AgentConfig      `json:"enricher,omitempty" yaml:"enricher,omitempty"`
-	Coder          *AgentConfig      `json:"coder,omitempty" yaml:"coder,omitempty"`
-	Installer      *AgentConfig      `json:"installer,omitempty" yaml:"installer,omitempty"`
-	Pentester      *AgentConfig      `json:"pentester,omitempty" yaml:"pentester,omitempty"`
 	defaultOptions []llms.CallOption `json:"-" yaml:"-"`
 	rawConfig      []byte            `json:"-" yaml:"-"`
 }
@@ -330,9 +315,7 @@ func (pc *ProviderConfig) Validate() error {
 	agents := map[string]*AgentConfig{
 		"simple": pc.Simple, "simple_json": pc.SimpleJSON, "primary_agent": pc.PrimaryAgent,
 		"assistant": pc.Assistant, "generator": pc.Generator, "refiner": pc.Refiner,
-		"adviser": pc.Adviser, "reflector": pc.Reflector, "searcher": pc.Searcher,
-		"enricher": pc.Enricher, "coder": pc.Coder, "installer": pc.Installer,
-		"pentester": pc.Pentester,
+		"reflector": pc.Reflector, "searcher": pc.Searcher,
 	}
 	for name, ac := range agents {
 		if ac == nil {
@@ -1136,20 +1119,10 @@ func (pc *ProviderConfig) GetOptionsForType(optType ProviderOptionsType) []llms.
 		agentConfig = pc.Generator
 	case OptionsTypeRefiner:
 		agentConfig = pc.Refiner
-	case OptionsTypeAdviser:
-		agentConfig = pc.Adviser
 	case OptionsTypeReflector:
 		agentConfig = pc.Reflector
 	case OptionsTypeSearcher:
 		agentConfig = pc.Searcher
-	case OptionsTypeEnricher:
-		agentConfig = pc.Enricher
-	case OptionsTypeCoder:
-		agentConfig = pc.Coder
-	case OptionsTypeInstaller:
-		agentConfig = pc.Installer
-	case OptionsTypePentester:
-		agentConfig = pc.Pentester
 	default:
 		return nil
 	}
@@ -1198,20 +1171,10 @@ func (pc *ProviderConfig) AgentConfigForType(optType ProviderOptionsType) *Agent
 		return pc.Generator
 	case OptionsTypeRefiner:
 		return pc.Refiner
-	case OptionsTypeAdviser:
-		return pc.Adviser
 	case OptionsTypeReflector:
 		return pc.Reflector
 	case OptionsTypeSearcher:
 		return pc.Searcher
-	case OptionsTypeEnricher:
-		return pc.Enricher
-	case OptionsTypeCoder:
-		return pc.Coder
-	case OptionsTypeInstaller:
-		return pc.Installer
-	case OptionsTypePentester:
-		return pc.Pentester
 	default:
 		return nil
 	}
@@ -1308,13 +1271,8 @@ func (pc *ProviderConfig) BuildOptionsMap() map[ProviderOptionsType][]llms.CallO
 		OptionsTypeAssistant:    pc.GetOptionsForType(OptionsTypeAssistant),
 		OptionsTypeGenerator:    pc.GetOptionsForType(OptionsTypeGenerator),
 		OptionsTypeRefiner:      pc.GetOptionsForType(OptionsTypeRefiner),
-		OptionsTypeAdviser:      pc.GetOptionsForType(OptionsTypeAdviser),
 		OptionsTypeReflector:    pc.GetOptionsForType(OptionsTypeReflector),
 		OptionsTypeSearcher:     pc.GetOptionsForType(OptionsTypeSearcher),
-		OptionsTypeEnricher:     pc.GetOptionsForType(OptionsTypeEnricher),
-		OptionsTypeCoder:        pc.GetOptionsForType(OptionsTypeCoder),
-		OptionsTypeInstaller:    pc.GetOptionsForType(OptionsTypeInstaller),
-		OptionsTypePentester:    pc.GetOptionsForType(OptionsTypePentester),
 	}
 
 	return options

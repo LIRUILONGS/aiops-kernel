@@ -1,4 +1,4 @@
-package validator
+﻿package validator
 
 import (
 	"database/sql"
@@ -324,7 +324,7 @@ func CreateDummyTemplateData() map[string]any {
 
 		// New variables for execution monitor and task planner
 		"SubtaskDescription": "Test subtask description for execution monitoring",
-		"AgentType":          "pentester",
+		"AgentType":          "reporter",
 		"AgentPrompt":        "Test agent system prompt",
 		"RecentMessages": []map[string]string{
 			{
@@ -345,7 +345,7 @@ func CreateDummyTemplateData() map[string]any {
 		"TaskQuestion":    "Test task question for planning",
 		"OriginalRequest": "Test original request for task assignment",
 		"ExecutionPlan":   "1. First step\n2. Second step\n3. Third step",
-		"InitiatorAgent":  database.MsgchainTypePentester,
+		"InitiatorAgent":  database.MsgchainTypeReporter,
 	}
 }
 

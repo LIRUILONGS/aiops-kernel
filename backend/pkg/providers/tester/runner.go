@@ -441,13 +441,8 @@ func groupResults(responses []testResponse) ProviderTestResults {
 		Assistant:    AgentTestResults(resultMap[pconfig.OptionsTypeAssistant]),
 		Generator:    AgentTestResults(resultMap[pconfig.OptionsTypeGenerator]),
 		Refiner:      AgentTestResults(resultMap[pconfig.OptionsTypeRefiner]),
-		Adviser:      AgentTestResults(resultMap[pconfig.OptionsTypeAdviser]),
 		Reflector:    AgentTestResults(resultMap[pconfig.OptionsTypeReflector]),
 		Searcher:     AgentTestResults(resultMap[pconfig.OptionsTypeSearcher]),
-		Enricher:     AgentTestResults(resultMap[pconfig.OptionsTypeEnricher]),
-		Coder:        AgentTestResults(resultMap[pconfig.OptionsTypeCoder]),
-		Installer:    AgentTestResults(resultMap[pconfig.OptionsTypeInstaller]),
-		Pentester:    AgentTestResults(resultMap[pconfig.OptionsTypePentester]),
 	}
 }
 

@@ -277,13 +277,8 @@ func parseAgentTypes(agentStrings []string) []pconfig.ProviderOptionsType {
 		"assistant":     pconfig.OptionsTypeAssistant,
 		"generator":     pconfig.OptionsTypeGenerator,
 		"refiner":       pconfig.OptionsTypeRefiner,
-		"adviser":       pconfig.OptionsTypeAdviser,
 		"reflector":     pconfig.OptionsTypeReflector,
 		"searcher":      pconfig.OptionsTypeSearcher,
-		"enricher":      pconfig.OptionsTypeEnricher,
-		"coder":         pconfig.OptionsTypeCoder,
-		"installer":     pconfig.OptionsTypeInstaller,
-		"pentester":     pconfig.OptionsTypePentester,
 	}
 
 	for _, agentStr := range agentStrings {
@@ -333,13 +328,8 @@ func convertToAgentResults(results tester.ProviderTestResults, prv provider.Prov
 		pconfig.OptionsTypeAssistant:    {"assistant", results.Assistant},
 		pconfig.OptionsTypeGenerator:    {"generator", results.Generator},
 		pconfig.OptionsTypeRefiner:      {"refiner", results.Refiner},
-		pconfig.OptionsTypeAdviser:      {"adviser", results.Adviser},
 		pconfig.OptionsTypeReflector:    {"reflector", results.Reflector},
 		pconfig.OptionsTypeSearcher:     {"searcher", results.Searcher},
-		pconfig.OptionsTypeEnricher:     {"enricher", results.Enricher},
-		pconfig.OptionsTypeCoder:        {"coder", results.Coder},
-		pconfig.OptionsTypeInstaller:    {"installer", results.Installer},
-		pconfig.OptionsTypePentester:    {"pentester", results.Pentester},
 	}
 
 	// Use deterministic order from AllAgentTypes

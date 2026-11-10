@@ -114,23 +114,6 @@ refiner:
     output: 4.40
     cache_read: 0.26
 
-adviser:
-  model: "glm-5.3"
-  temperature: 1.0
-  top_p: 0.95
-  n: 1
-  max_tokens: 16384
-  reasoning:
-    effort: max
-  extra_body:
-    thinking:
-      clear_thinking: false
-    tool_choice: auto
-  price:
-    input: 1.40
-    output: 4.40
-    cache_read: 0.26
-
 reflector:
   model: "glm-5.3-flash"
   temperature: 1.0
@@ -164,71 +147,3 @@ searcher:
     input: 0.15
     output: 0.50
     cache_read: 0.03
-
-enricher:
-  model: "glm-5.3-flash"
-  temperature: 1.0
-  top_p: 0.95
-  n: 1
-  max_tokens: 4096
-  reasoning:
-    effort: low
-  extra_body:
-    thinking:
-      clear_thinking: false
-    tool_choice: auto
-  price:
-    input: 0.15
-    output: 0.50
-    cache_read: 0.03
-
-coder:
-  model: "glm-5.3"
-  temperature: 1.0
-  top_p: 0.95
-  n: 1
-  max_tokens: 20480
-  reasoning:
-    effort: max
-  extra_body:
-    thinking:
-      clear_thinking: false
-    tool_choice: auto
-  price:
-    input: 1.40
-    output: 4.40
-    cache_read: 0.26
-
-installer:
-  model: "glm-5.3-flash"
-  temperature: 1.0
-  top_p: 0.95
-  n: 1
-  max_tokens: 16384
-  reasoning:
-    effort: high
-  extra_body:
-    thinking:
-      clear_thinking: false
-    tool_choice: auto
-  price:
-    input: 0.15
-    output: 0.50
-    cache_read: 0.03
-
-pentester:
-  model: "glm-5.3"
-  temperature: 1.0
-  top_p: 0.95
-  n: 1
-  max_tokens: 16384
-  reasoning:
-    effort: max
-  extra_body:
-    thinking:
-      clear_thinking: false
-    tool_choice: auto
-  price:
-    input: 1.40
-    output: 4.40
-    cache_read: 0.26

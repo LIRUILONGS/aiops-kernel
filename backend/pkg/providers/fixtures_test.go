@@ -30,11 +30,6 @@ func newFlowProvider() *flowProvider {
 		callCounter:     &atomic.Int64{},
 		maxGACallsLimit: maxGeneralAgentChainIterations,
 		maxLACallsLimit: maxLimitedAgentChainIterations,
-		buildMonitor: func() *executionMonitor {
-			return &executionMonitor{
-				enabled: false,
-			}
-		},
 	}
 }
 

@@ -3123,15 +3123,3 @@ func (r *Resolver) Subscription() SubscriptionResolver { return &subscriptionRes
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
-
-// An absent type keeps the behaviour every existing flow has: the planner decides
-// per plan entry whether a subtask is an incident or a performance task.
-const flowTypeAuto = "auto"
-
-func convertFlowType(flowType *model.FlowType) string {
-	if flowType == nil {
-		return flowTypeAuto
-	}
-
-	return string(*flowType)
-}

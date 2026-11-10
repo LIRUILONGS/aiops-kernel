@@ -609,7 +609,7 @@ func TestExecutor_Execute_AnonymizesWhatEveryAgentStoresInMemory(t *testing.T) {
 			},
 		},
 		"installer": {
-			agent: database.MsgchainTypeInstaller,
+			agent: database.MsgchainTypeTriage,
 			build: func(fte *flowToolsExecutor) (ContextToolsExecutor, error) {
 				return fte.GetInstallerExecutor(InstallerExecutorConfig{
 					Adviser: handler, Memorist: handler, Searcher: handler, MaintenanceResult: handler,
@@ -617,7 +617,7 @@ func TestExecutor_Execute_AnonymizesWhatEveryAgentStoresInMemory(t *testing.T) {
 			},
 		},
 		"coder": {
-			agent: database.MsgchainTypeCoder,
+			agent: database.MsgchainTypeReporter,
 			build: func(fte *flowToolsExecutor) (ContextToolsExecutor, error) {
 				return fte.GetCoderExecutor(CoderExecutorConfig{
 					Adviser: handler, Installer: handler, Memorist: handler, Searcher: handler, CodeResult: handler,
@@ -625,7 +625,7 @@ func TestExecutor_Execute_AnonymizesWhatEveryAgentStoresInMemory(t *testing.T) {
 			},
 		},
 		"pentester": {
-			agent: database.MsgchainTypePentester,
+			agent: database.MsgchainTypeChangeAnalyst,
 			build: func(fte *flowToolsExecutor) (ContextToolsExecutor, error) {
 				return fte.GetPentesterExecutor(PentesterExecutorConfig{
 					Adviser: handler, Coder: handler, Installer: handler,
@@ -634,13 +634,13 @@ func TestExecutor_Execute_AnonymizesWhatEveryAgentStoresInMemory(t *testing.T) {
 			},
 		},
 		"memorist": {
-			agent: database.MsgchainTypeMemorist,
+			agent: database.MsgchainTypeLogAnalyst,
 			build: func(fte *flowToolsExecutor) (ContextToolsExecutor, error) {
 				return fte.GetMemoristExecutor(MemoristExecutorConfig{SearchResult: handler})
 			},
 		},
 		"enricher": {
-			agent: database.MsgchainTypeEnricher,
+			agent: database.MsgchainTypeTriage,
 			build: func(fte *flowToolsExecutor) (ContextToolsExecutor, error) {
 				return fte.GetEnricherExecutor(EnricherExecutorConfig{EnricherResult: handler})
 			},
@@ -748,7 +748,7 @@ func TestExecutor_Execute_StoresAMemoryToolResultUnderItsScope(t *testing.T) {
 			if tc.message != "" {
 				fields["message"] = tc.message
 			}
-			ctx := PutAgentContext(t.Context(), database.MsgchainTypePentester)
+			ctx := PutAgentContext(t.Context(), database.MsgchainTypeChangeAnalyst)
 			if _, err := ce.Execute(ctx, 1, "call-1", tc.tool, tc.tool, "", mustJSON(fields)); err != nil {
 				t.Fatalf("the call failed: %v", err)
 			}
@@ -816,7 +816,7 @@ func TestExecutor_Execute_ObservesEachToolTypeUnderTheCallersTrace(t *testing.T)
 			traceID, callerID := "trace-of-"+tc.tool, "caller-of-"+tc.tool
 			caller, _ := obs.Observer.NewObservation(t.Context(),
 				langfuse.WithObservationTraceID(traceID), langfuse.WithObservationID(callerID))
-			caller = PutAgentContext(caller, database.MsgchainTypePentester)
+			caller = PutAgentContext(caller, database.MsgchainTypeChangeAnalyst)
 
 			var ranIn []langfuse.Observation
 			ce := &customExecutor{
@@ -828,7 +828,7 @@ func TestExecutor_Execute_ObservesEachToolTypeUnderTheCallersTrace(t *testing.T)
 					tc.tool: func(ctx context.Context, _ string, args json.RawMessage) (string, error) {
 						_, observation := obs.Observer.NewObservation(ctx)
 						ranIn = append(ranIn, observation)
-						if agent, ok := GetAgentContext(ctx); !ok || agent.CurrentAgentType != database.MsgchainTypePentester {
+						if agent, ok := GetAgentContext(ctx); !ok || agent.CurrentAgentType != database.MsgchainTypeChangeAnalyst {
 							t.Errorf("the handler lost the calling agent, got %+v", agent)
 						}
 						if string(args) == string(failing) {

@@ -9,18 +9,10 @@ import (
 type MsgchainType string
 
 const (
-	MsgchainTypePrimaryAgent  MsgchainType = "primary_agent"
 	MsgchainTypeReporter      MsgchainType = "reporter"
 	MsgchainTypeGenerator     MsgchainType = "generator"
 	MsgchainTypeRefiner       MsgchainType = "refiner"
 	MsgchainTypeReflector     MsgchainType = "reflector"
-	MsgchainTypeEnricher      MsgchainType = "enricher"
-	MsgchainTypeAdviser       MsgchainType = "adviser"
-	MsgchainTypeCoder         MsgchainType = "coder"
-	MsgchainTypeMemorist      MsgchainType = "memorist"
-	MsgchainTypeSearcher      MsgchainType = "searcher"
-	MsgchainTypeInstaller     MsgchainType = "installer"
-	MsgchainTypePentester     MsgchainType = "pentester"
 	MsgchainTypeSummarizer    MsgchainType = "summarizer"
 	MsgchainTypeToolCallFixer MsgchainType = "tool_call_fixer"
 	MsgchainTypeAssistant     MsgchainType = "assistant"
@@ -50,12 +42,9 @@ func (s MsgchainType) String() string {
 // Valid is function to control input/output data
 func (ml MsgchainType) Valid() error {
 	switch ml {
-	case MsgchainTypePrimaryAgent, MsgchainTypeReporter,
+	case MsgchainTypeReporter,
 		MsgchainTypeGenerator, MsgchainTypeRefiner,
-		MsgchainTypeReflector, MsgchainTypeEnricher,
-		MsgchainTypeAdviser, MsgchainTypeCoder,
-		MsgchainTypeMemorist, MsgchainTypeSearcher,
-		MsgchainTypeInstaller, MsgchainTypePentester,
+		MsgchainTypeReflector,
 		MsgchainTypeSummarizer, MsgchainTypeToolCallFixer,
 		MsgchainTypeAssistant, MsgchainTypeCommander,
 		MsgchainTypeTriage, MsgchainTypeLogAnalyst,

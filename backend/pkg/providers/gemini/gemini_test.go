@@ -73,13 +73,8 @@ func TestGemini_BundledRolesUseTheReplayedModelsAndPrices(t *testing.T) {
 		pconfig.OptionsTypeAssistant:    "gemini-3.5-flash-lite",
 		pconfig.OptionsTypeGenerator:    "gemini-3.5-flash-lite",
 		pconfig.OptionsTypeRefiner:      "gemini-3.5-flash-lite",
-		pconfig.OptionsTypeAdviser:      "gemini-3.5-flash-lite",
 		pconfig.OptionsTypeReflector:    "gemini-3.1-flash-lite",
 		pconfig.OptionsTypeSearcher:     "gemini-3.1-flash-lite",
-		pconfig.OptionsTypeEnricher:     "gemini-3.1-flash-lite",
-		pconfig.OptionsTypeCoder:        "gemini-3.5-flash-lite",
-		pconfig.OptionsTypeInstaller:    "gemini-3.5-flash-lite",
-		pconfig.OptionsTypePentester:    "gemini-3.5-flash-lite",
 	}
 	if len(wantModels) != len(pconfig.AllAgentTypes) {
 		t.Fatalf("test covers %d bundled roles, want %d", len(wantModels), len(pconfig.AllAgentTypes))

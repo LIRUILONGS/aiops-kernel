@@ -34,7 +34,7 @@ func CalculateSubtaskDuration(subtask database.Subtask, msgchains []database.Msg
 	// Try to find primary_agent msgchain for validation
 	var msgchainDuration float64
 	for _, mc := range msgchains {
-		if mc.Type == database.MsgchainTypePrimaryAgent &&
+		if mc.Type == database.MsgchainTypeCommander &&
 			mc.SubtaskID.Valid && mc.SubtaskID.Int64 == subtask.ID {
 			msgchainDuration += mc.DurationSeconds
 		}
@@ -104,7 +104,7 @@ func CalculateSubtasksWithOverlapCompensation(subtasks []database.Subtask, msgch
 			// Validate against sum of all primary_agent msgchains for this subtask
 			var msgchainDuration float64
 			for _, mc := range msgchains {
-				if mc.Type == database.MsgchainTypePrimaryAgent &&
+				if mc.Type == database.MsgchainTypeCommander &&
 					mc.SubtaskID.Valid && mc.SubtaskID.Int64 == subtask.ID {
 					msgchainDuration += mc.DurationSeconds
 				}

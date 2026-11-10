@@ -28,7 +28,7 @@ test.describe('settings prompt detail', { tag: '@coverage' }, () => {
                                 createdAt: '2026-01-15T12:00:00Z',
                                 id: '77',
                                 template: 'saved',
-                                type: 'pentester',
+                                type: 'refiner',
                                 updatedAt: '2026-01-15T12:00:00Z',
                             },
                         } as never,
@@ -53,8 +53,8 @@ test.describe('settings prompt detail', { tag: '@coverage' }, () => {
         const editor = page.getByRole('textbox', { name: EDITOR });
 
         await expect(editor).toBeVisible();
-        await expect(editor.getByRole('heading', { name: 'Pentester' })).toBeVisible();
-        await expect(editor.getByText('nmap -sV {{.Target}}')).toBeVisible();
+        await expect(editor.getByRole('heading', { name: 'Refiner' })).toBeVisible();
+        await expect(editor.getByText('kubectl get pods {{.Target}}')).toBeVisible();
 
         await switchToRaw(page);
 
@@ -75,7 +75,7 @@ test.describe('settings prompt detail', { tag: '@coverage' }, () => {
 
         const editor = page.getByRole('textbox', { name: EDITOR });
 
-        await expect(editor.getByRole('heading', { name: 'Pentester' })).toBeVisible();
+        await expect(editor.getByRole('heading', { name: 'Refiner' })).toBeVisible();
 
         await editor.click();
         await page.keyboard.press('ControlOrMeta+End');
@@ -85,7 +85,7 @@ test.describe('settings prompt detail', { tag: '@coverage' }, () => {
 
         const raw = await page.getByRole('textbox', { name: EDITOR }).inputValue();
 
-        for (const atom of ['Pentester', '{{.Target}}', '{{.Scope}}', 'nmap -sV', 'stay inside the agreed scope']) {
+        for (const atom of ['Refiner', '{{.Target}}', '{{.Scope}}', 'kubectl get pods', 'stay inside the agreed scope']) {
             expect(raw, `"${atom}" survived the editor round-trip`).toContain(atom);
         }
 
@@ -101,7 +101,7 @@ test.describe('settings prompt detail', { tag: '@coverage' }, () => {
 
         const editor = page.getByRole('textbox', { name: EDITOR });
 
-        await expect(editor.getByRole('heading', { name: 'Pentester' })).toBeVisible();
+        await expect(editor.getByRole('heading', { name: 'Refiner' })).toBeVisible();
 
         await editor.click();
         await page.keyboard.press('ControlOrMeta+End');
@@ -117,7 +117,7 @@ test.describe('settings prompt detail', { tag: '@coverage' }, () => {
 
         expect(variables.template, 'the edit reached the wire').toContain('E2E-SAVE-MARK');
 
-        for (const atom of ['# Pentester', '{{.Target}}', '{{.Scope}}', '```bash', '| Scope | {{.Scope}} |']) {
+        for (const atom of ['# Refiner', '{{.Target}}', '{{.Scope}}', '```bash', '| Scope | {{.Scope}} |']) {
             expect(variables.template, `"${atom}" survived the save`).toContain(atom);
         }
 
@@ -147,7 +147,7 @@ test.describe('settings prompt validation', { tag: '@coverage' }, () => {
 
             await page.getByRole('button', { name: 'Validate' }).click();
 
-            expect((await request).postDataJSON().variables.template).toContain('# Pentester');
+            expect((await request).postDataJSON().variables.template).toContain('# Refiner');
             await expect(page.getByRole('dialog')).toContainText('Valid Template');
             expectCleanPage(pageErrorLog);
         });
@@ -198,7 +198,7 @@ test.describe('settings prompt detail, already overridden', { tag: '@coverage' }
                                     createdAt: '2026-01-15T09:00:00Z',
                                     id: PROMPT_OVERRIDE.id,
                                     template: 'saved',
-                                    type: 'pentester',
+                                    type: 'refiner',
                                     updatedAt: '2026-01-15T12:00:00Z',
                                 },
                             } as never,
@@ -251,7 +251,7 @@ test.describe('settings prompt detail, already overridden', { tag: '@coverage' }
 
             const dialog = page.getByRole('dialog');
 
-            await expect(dialog).toContainText('# Pentester');
+            await expect(dialog).toContainText('# Refiner');
             await expect(dialog).toContainText('# Operator override');
             await expect(dialog).toContainText('This copy replaces the shipped prompt for {{.Target}}.');
             await expect(dialog).toContainText('You are assessing **{{.Target}}** within {{.Scope}}.');
@@ -301,7 +301,7 @@ test.describe('settings prompt detail, already overridden', { tag: '@coverage' }
 
             // Deleting the row is only half the operation: the editor has to fall back to the default,
             // or the operator is left looking at text that no longer exists anywhere.
-            await expect(editor.getByRole('heading', { name: 'Pentester' })).toBeVisible();
+            await expect(editor.getByRole('heading', { name: 'Refiner' })).toBeVisible();
             await expect(editor.getByRole('heading', { name: 'Operator override' })).toBeHidden();
             expectCleanPage(pageErrorLog);
         });

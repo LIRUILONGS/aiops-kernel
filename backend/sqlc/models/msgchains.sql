@@ -1,4 +1,4 @@
--- name: GetSubtaskMsgChains :many
+﻿-- name: GetSubtaskMsgChains :many
 SELECT
   mc.*
 FROM msgchains mc
@@ -9,7 +9,7 @@ ORDER BY mc.created_at DESC;
 SELECT
   mc.*
 FROM msgchains mc
-WHERE mc.subtask_id = $1 AND mc.type = 'primary_agent'
+WHERE mc.subtask_id = $1 AND mc.type = 'commander'
 ORDER BY mc.created_at DESC;
 
 -- name: GetSubtaskTypeMsgChains :many
@@ -32,7 +32,7 @@ SELECT
   mc.*
 FROM msgchains mc
 LEFT JOIN subtasks s ON mc.subtask_id = s.id
-WHERE (mc.task_id = $1 OR s.task_id = $1) AND mc.type = 'primary_agent'
+WHERE (mc.task_id = $1 OR s.task_id = $1) AND mc.type = 'commander'
 ORDER BY mc.created_at DESC;
 
 -- name: GetTaskPrimaryMsgChainIDs :many
@@ -41,7 +41,7 @@ SELECT DISTINCT
   mc.subtask_id
 FROM msgchains mc
 LEFT JOIN subtasks s ON mc.subtask_id = s.id
-WHERE (mc.task_id = $1 OR s.task_id = $1) AND mc.type = 'primary_agent';
+WHERE (mc.task_id = $1 OR s.task_id = $1) AND mc.type = 'commander';
 
 -- name: GetTaskTypeMsgChains :many
 SELECT

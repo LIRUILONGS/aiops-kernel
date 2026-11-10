@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
-	"strings"
 
 	"opsagi/pkg/cast"
 	"opsagi/pkg/csum"
@@ -159,42 +158,6 @@ func (ap *assistantProvider) PerformAgentChain(ctx context.Context) error {
 		return fmt.Errorf("failed to unmarshal primary agent msg chain %d: %w", ap.msgChainID, err)
 	}
 
-	adviser, err := ap.fp.GetAskAdviceHandler(ctx, nil, nil)
-	if err != nil {
-		logger.WithError(err).Error("failed to get ask advice handler")
-		return fmt.Errorf("failed to get ask advice handler: %w", err)
-	}
-
-	coder, err := ap.fp.GetCoderHandler(ctx, nil, nil)
-	if err != nil {
-		logger.WithError(err).Error("failed to get coder handler")
-		return fmt.Errorf("failed to get coder handler: %w", err)
-	}
-
-	installer, err := ap.fp.GetInstallerHandler(ctx, nil, nil)
-	if err != nil {
-		logger.WithError(err).Error("failed to get installer handler")
-		return fmt.Errorf("failed to get installer handler: %w", err)
-	}
-
-	memorist, err := ap.fp.GetMemoristHandler(ctx, nil, nil)
-	if err != nil {
-		logger.WithError(err).Error("failed to get memorist handler")
-		return fmt.Errorf("failed to get memorist handler: %w", err)
-	}
-
-	pentester, err := ap.fp.GetPentesterHandler(ctx, nil, nil)
-	if err != nil {
-		logger.WithError(err).Error("failed to get pentester handler")
-		return fmt.Errorf("failed to get pentester handler: %w", err)
-	}
-
-	searcher, err := ap.fp.GetSubtaskSearcherHandler(ctx, nil, nil)
-	if err != nil {
-		logger.WithError(err).Error("failed to get searcher handler")
-		return fmt.Errorf("failed to get searcher handler: %w", err)
-	}
-
 	ctx, observation := obs.Observer.NewObservation(ctx)
 	executorAgent := observation.Agent(
 		langfuse.WithAgentName(fmt.Sprintf("assistant %d for flow %d: %s", ap.id, ap.fp.ID(), ap.fp.Title())),
@@ -212,12 +175,6 @@ func (ap *assistantProvider) PerformAgentChain(ctx context.Context) error {
 
 	cfg := tools.AssistantExecutorConfig{
 		UseAgents:   useAgents,
-		Adviser:     adviser,
-		Coder:       coder,
-		Installer:   installer,
-		Memorist:    memorist,
-		Pentester:   pentester,
-		Searcher:    searcher,
 		Summarizer:  ap.fp.GetSummarizeResultHandler(nil, nil),
 		FlowManager: ap.buildFlowManagerHandlers(),
 	}
@@ -316,12 +273,6 @@ func (ap *assistantProvider) getAssistantSystemPrompt(ctx context.Context) (stri
 		"flow_id":      ap.fp.ID(),
 	})
 
-	useAgents, err := ap.getAssistantUseAgents(ctx)
-	if err != nil {
-		logger.WithError(err).Error("failed to get assistant use agents")
-		return "", fmt.Errorf("failed to get assistant use agents: %w", err)
-	}
-
 	executionContext, err := ap.getAssistantExecutionContext(ctx)
 	if err != nil {
 		logger.WithError(err).Error("failed to get assistant execution context")
@@ -329,23 +280,14 @@ func (ap *assistantProvider) getAssistantSystemPrompt(ctx context.Context) (stri
 	}
 
 	systemAssistantTmpl, err := ap.fp.Prompter().RenderTemplate(templates.PromptTypeAssistant, map[string]any{
-		"SearchToolName":             tools.SearchToolName,
-		"PentesterToolName":          tools.PentesterToolName,
-		"CoderToolName":              tools.CoderToolName,
-		"AdviceToolName":             tools.AdviceToolName,
-		"MemoristToolName":           tools.MemoristToolName,
-		"MaintenanceToolName":        tools.MaintenanceToolName,
 		"TerminalToolName":           tools.TerminalToolName,
 		"FileToolName":               tools.FileToolName,
 		"WebSearchToolName":          tools.WebSearchToolName,
-		"BrowserToolName":            tools.BrowserToolName,
 		"SearchInMemoryToolName":     tools.SearchInMemoryToolName,
 		"SearchGuideToolName":        tools.SearchGuideToolName,
 		"SearchAnswerToolName":       tools.SearchAnswerToolName,
 		"SearchCodeToolName":         tools.SearchCodeToolName,
 		"SummarizationToolName":      cast.SummarizationToolName,
-		"SummarizedContentPrefix":    strings.ReplaceAll(csum.SummarizedContentPrefix, "\n", "\\n"),
-		"UseAgents":                  useAgents,
 		"DockerImage":                ap.fp.Image(),
 		"Cwd":                        docker.WorkFolderPathInContainer,
 		"ContainerPorts":             ap.fp.getContainerPortsDescription(),
@@ -674,7 +616,7 @@ func (ap *assistantProvider) patchAssistantFlowSubtasks(
 	_, _ = ap.fp.putAgentLog(
 		ctx,
 		database.MsgchainTypeAssistant,
-		database.MsgchainTypePrimaryAgent,
+		database.MsgchainTypeCommander,
 		patch.Message,
 		ap.fp.subtasksToMarkdown(subtasksResult),
 		&taskID,

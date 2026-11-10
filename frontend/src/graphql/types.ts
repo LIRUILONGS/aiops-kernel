@@ -24,13 +24,8 @@ export type AgentConfigInput = {
 };
 
 export enum AgentConfigType {
-    Adviser = 'adviser',
     Assistant = 'assistant',
-    Coder = 'coder',
-    Enricher = 'enricher',
     Generator = 'generator',
-    Installer = 'installer',
-    Pentester = 'pentester',
     PrimaryAgent = 'primary_agent',
     Refiner = 'refiner',
     Reflector = 'reflector',
@@ -40,36 +35,23 @@ export enum AgentConfigType {
 }
 
 export enum AgentType {
-    Adviser = 'adviser',
     Assistant = 'assistant',
     ChangeAnalyst = 'change_analyst',
-    Coder = 'coder',
     Commander = 'commander',
-    Enricher = 'enricher',
     Generator = 'generator',
-    Installer = 'installer',
     LogAnalyst = 'log_analyst',
-    Memorist = 'memorist',
     MetricsAnalyst = 'metrics_analyst',
-    Pentester = 'pentester',
-    PrimaryAgent = 'primary_agent',
     Refiner = 'refiner',
     Reflector = 'reflector',
     Reporter = 'reporter',
-    Searcher = 'searcher',
     Summarizer = 'summarizer',
     ToolCallFixer = 'tool_call_fixer',
     Triage = 'triage',
 }
 
 export type AgentsConfigInput = {
-    adviser: AgentConfigInput;
     assistant: AgentConfigInput;
-    coder: AgentConfigInput;
-    enricher: AgentConfigInput;
     generator: AgentConfigInput;
-    installer: AgentConfigInput;
-    pentester: AgentConfigInput;
     primaryAgent: AgentConfigInput;
     refiner: AgentConfigInput;
     reflector: AgentConfigInput;
@@ -164,45 +146,32 @@ export enum ModelReasoningMode {
 }
 
 export enum PromptType {
-    Adviser = 'adviser',
     Assistant = 'assistant',
-    Coder = 'coder',
-    Enricher = 'enricher',
+    ChangeAnalyst = 'change_analyst',
+    Commander = 'commander',
     ExecutionLogs = 'execution_logs',
     FlowDescriptor = 'flow_descriptor',
     FullExecutionContext = 'full_execution_context',
     Generator = 'generator',
     ImageChooser = 'image_chooser',
     InputToolcallFixer = 'input_toolcall_fixer',
-    Installer = 'installer',
     LanguageChooser = 'language_chooser',
-    Memorist = 'memorist',
-    Pentester = 'pentester',
-    PrimaryAgent = 'primary_agent',
-    QuestionAdviser = 'question_adviser',
-    QuestionCoder = 'question_coder',
-    QuestionEnricher = 'question_enricher',
-    QuestionExecutionMonitor = 'question_execution_monitor',
-    QuestionInstaller = 'question_installer',
-    QuestionMemorist = 'question_memorist',
-    QuestionPentester = 'question_pentester',
+    LogAnalyst = 'log_analyst',
+    MetricsAnalyst = 'metrics_analyst',
     QuestionReflector = 'question_reflector',
-    QuestionSearcher = 'question_searcher',
-    QuestionTaskPlanner = 'question_task_planner',
     Refiner = 'refiner',
     Reflector = 'reflector',
     Reporter = 'reporter',
-    Searcher = 'searcher',
     ShortExecutionContext = 'short_execution_context',
     SubtasksGenerator = 'subtasks_generator',
     SubtasksRefiner = 'subtasks_refiner',
     Summarizer = 'summarizer',
-    TaskAssignmentWrapper = 'task_assignment_wrapper',
     TaskDescriptor = 'task_descriptor',
     TaskReporter = 'task_reporter',
     ToolCallIdCollector = 'tool_call_id_collector',
     ToolCallIdDetector = 'tool_call_id_detector',
     ToolcallFixer = 'toolcall_fixer',
+    Triage = 'triage',
 }
 
 export enum PromptValidationErrorType {
@@ -526,13 +495,8 @@ export type ProviderTestResultFragmentFragment = {
     assistant: AgentTestResultFragmentFragment;
     generator: AgentTestResultFragmentFragment;
     refiner: AgentTestResultFragmentFragment;
-    adviser: AgentTestResultFragmentFragment;
     reflector: AgentTestResultFragmentFragment;
     searcher: AgentTestResultFragmentFragment;
-    enricher: AgentTestResultFragmentFragment;
-    coder: AgentTestResultFragmentFragment;
-    installer: AgentTestResultFragmentFragment;
-    pentester: AgentTestResultFragmentFragment;
 };
 
 export type ModelConfigFragmentFragment = {
@@ -569,13 +533,8 @@ export type AgentsConfigFragmentFragment = {
     assistant: AgentConfigFragmentFragment;
     generator: AgentConfigFragmentFragment;
     refiner: AgentConfigFragmentFragment;
-    adviser: AgentConfigFragmentFragment;
     reflector: AgentConfigFragmentFragment;
     searcher: AgentConfigFragmentFragment;
-    enricher: AgentConfigFragmentFragment;
-    coder: AgentConfigFragmentFragment;
-    installer: AgentConfigFragmentFragment;
-    pentester: AgentConfigFragmentFragment;
 };
 
 export type AgentConfigFragmentFragment = {
@@ -820,21 +779,18 @@ export type SettingsPromptsQuery = {
     settingsPrompts: {
         default: {
             agents: {
-                primaryAgent: { system: DefaultPromptFragmentFragment };
                 assistant: { system: DefaultPromptFragmentFragment };
-                pentester: { system: DefaultPromptFragmentFragment; human: DefaultPromptFragmentFragment };
-                coder: { system: DefaultPromptFragmentFragment; human: DefaultPromptFragmentFragment };
-                installer: { system: DefaultPromptFragmentFragment; human: DefaultPromptFragmentFragment };
-                searcher: { system: DefaultPromptFragmentFragment; human: DefaultPromptFragmentFragment };
-                memorist: { system: DefaultPromptFragmentFragment; human: DefaultPromptFragmentFragment };
-                adviser: { system: DefaultPromptFragmentFragment; human: DefaultPromptFragmentFragment };
                 generator: { system: DefaultPromptFragmentFragment; human: DefaultPromptFragmentFragment };
                 refiner: { system: DefaultPromptFragmentFragment; human: DefaultPromptFragmentFragment };
                 reporter: { system: DefaultPromptFragmentFragment; human: DefaultPromptFragmentFragment };
                 reflector: { system: DefaultPromptFragmentFragment; human: DefaultPromptFragmentFragment };
-                enricher: { system: DefaultPromptFragmentFragment; human: DefaultPromptFragmentFragment };
                 toolCallFixer: { system: DefaultPromptFragmentFragment; human: DefaultPromptFragmentFragment };
                 summarizer: { system: DefaultPromptFragmentFragment };
+                commander: { system: DefaultPromptFragmentFragment };
+                triage: { system: DefaultPromptFragmentFragment };
+                logAnalyst: { system: DefaultPromptFragmentFragment };
+                metricsAnalyst: { system: DefaultPromptFragmentFragment };
+                changeAnalyst: { system: DefaultPromptFragmentFragment };
             };
             tools: {
                 getFlowDescription: DefaultPromptFragmentFragment;
@@ -846,9 +802,6 @@ export type SettingsPromptsQuery = {
                 chooseUserLanguage: DefaultPromptFragmentFragment;
                 collectToolCallId: DefaultPromptFragmentFragment;
                 detectToolCallIdPattern: DefaultPromptFragmentFragment;
-                monitorAgentExecution: DefaultPromptFragmentFragment;
-                planAgentTask: DefaultPromptFragmentFragment;
-                wrapAgentTask: DefaultPromptFragmentFragment;
             };
         };
         userDefined: Array<UserPromptFragmentFragment> | null;
@@ -2070,16 +2023,6 @@ export const ProviderTestResultFragmentFragmentDoc = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'adviser' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentTestResultFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
                         name: { kind: 'Name', value: 'reflector' },
                         selectionSet: {
                             kind: 'SelectionSet',
@@ -2091,46 +2034,6 @@ export const ProviderTestResultFragmentFragmentDoc = {
                     {
                         kind: 'Field',
                         name: { kind: 'Name', value: 'searcher' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentTestResultFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'enricher' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentTestResultFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'coder' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentTestResultFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'installer' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentTestResultFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'pentester' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [
@@ -2354,16 +2257,6 @@ export const AgentsConfigFragmentFragmentDoc = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'adviser' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
                         name: { kind: 'Name', value: 'reflector' },
                         selectionSet: {
                             kind: 'SelectionSet',
@@ -2375,46 +2268,6 @@ export const AgentsConfigFragmentFragmentDoc = {
                     {
                         kind: 'Field',
                         name: { kind: 'Name', value: 'searcher' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'enricher' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'coder' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'installer' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'pentester' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [
@@ -2624,16 +2477,6 @@ export const ProviderConfigFragmentFragmentDoc = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'adviser' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
                         name: { kind: 'Name', value: 'reflector' },
                         selectionSet: {
                             kind: 'SelectionSet',
@@ -2645,46 +2488,6 @@ export const ProviderConfigFragmentFragmentDoc = {
                     {
                         kind: 'Field',
                         name: { kind: 'Name', value: 'searcher' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'enricher' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'coder' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'installer' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'pentester' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [
@@ -4176,16 +3979,6 @@ export const SettingsProvidersDocument = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'adviser' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
                         name: { kind: 'Name', value: 'reflector' },
                         selectionSet: {
                             kind: 'SelectionSet',
@@ -4197,46 +3990,6 @@ export const SettingsProvidersDocument = {
                     {
                         kind: 'Field',
                         name: { kind: 'Name', value: 'searcher' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'enricher' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'coder' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'installer' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'pentester' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [
@@ -4346,31 +4099,6 @@ export const SettingsPromptsDocument = {
                                                     selections: [
                                                         {
                                                             kind: 'Field',
-                                                            name: { kind: 'Name', value: 'primaryAgent' },
-                                                            selectionSet: {
-                                                                kind: 'SelectionSet',
-                                                                selections: [
-                                                                    {
-                                                                        kind: 'Field',
-                                                                        name: { kind: 'Name', value: 'system' },
-                                                                        selectionSet: {
-                                                                            kind: 'SelectionSet',
-                                                                            selections: [
-                                                                                {
-                                                                                    kind: 'FragmentSpread',
-                                                                                    name: {
-                                                                                        kind: 'Name',
-                                                                                        value: 'defaultPromptFragment',
-                                                                                    },
-                                                                                },
-                                                                            ],
-                                                                        },
-                                                                    },
-                                                                ],
-                                                            },
-                                                        },
-                                                        {
-                                                            kind: 'Field',
                                                             name: { kind: 'Name', value: 'assistant' },
                                                             selectionSet: {
                                                                 kind: 'SelectionSet',
@@ -4378,252 +4106,6 @@ export const SettingsPromptsDocument = {
                                                                     {
                                                                         kind: 'Field',
                                                                         name: { kind: 'Name', value: 'system' },
-                                                                        selectionSet: {
-                                                                            kind: 'SelectionSet',
-                                                                            selections: [
-                                                                                {
-                                                                                    kind: 'FragmentSpread',
-                                                                                    name: {
-                                                                                        kind: 'Name',
-                                                                                        value: 'defaultPromptFragment',
-                                                                                    },
-                                                                                },
-                                                                            ],
-                                                                        },
-                                                                    },
-                                                                ],
-                                                            },
-                                                        },
-                                                        {
-                                                            kind: 'Field',
-                                                            name: { kind: 'Name', value: 'pentester' },
-                                                            selectionSet: {
-                                                                kind: 'SelectionSet',
-                                                                selections: [
-                                                                    {
-                                                                        kind: 'Field',
-                                                                        name: { kind: 'Name', value: 'system' },
-                                                                        selectionSet: {
-                                                                            kind: 'SelectionSet',
-                                                                            selections: [
-                                                                                {
-                                                                                    kind: 'FragmentSpread',
-                                                                                    name: {
-                                                                                        kind: 'Name',
-                                                                                        value: 'defaultPromptFragment',
-                                                                                    },
-                                                                                },
-                                                                            ],
-                                                                        },
-                                                                    },
-                                                                    {
-                                                                        kind: 'Field',
-                                                                        name: { kind: 'Name', value: 'human' },
-                                                                        selectionSet: {
-                                                                            kind: 'SelectionSet',
-                                                                            selections: [
-                                                                                {
-                                                                                    kind: 'FragmentSpread',
-                                                                                    name: {
-                                                                                        kind: 'Name',
-                                                                                        value: 'defaultPromptFragment',
-                                                                                    },
-                                                                                },
-                                                                            ],
-                                                                        },
-                                                                    },
-                                                                ],
-                                                            },
-                                                        },
-                                                        {
-                                                            kind: 'Field',
-                                                            name: { kind: 'Name', value: 'coder' },
-                                                            selectionSet: {
-                                                                kind: 'SelectionSet',
-                                                                selections: [
-                                                                    {
-                                                                        kind: 'Field',
-                                                                        name: { kind: 'Name', value: 'system' },
-                                                                        selectionSet: {
-                                                                            kind: 'SelectionSet',
-                                                                            selections: [
-                                                                                {
-                                                                                    kind: 'FragmentSpread',
-                                                                                    name: {
-                                                                                        kind: 'Name',
-                                                                                        value: 'defaultPromptFragment',
-                                                                                    },
-                                                                                },
-                                                                            ],
-                                                                        },
-                                                                    },
-                                                                    {
-                                                                        kind: 'Field',
-                                                                        name: { kind: 'Name', value: 'human' },
-                                                                        selectionSet: {
-                                                                            kind: 'SelectionSet',
-                                                                            selections: [
-                                                                                {
-                                                                                    kind: 'FragmentSpread',
-                                                                                    name: {
-                                                                                        kind: 'Name',
-                                                                                        value: 'defaultPromptFragment',
-                                                                                    },
-                                                                                },
-                                                                            ],
-                                                                        },
-                                                                    },
-                                                                ],
-                                                            },
-                                                        },
-                                                        {
-                                                            kind: 'Field',
-                                                            name: { kind: 'Name', value: 'installer' },
-                                                            selectionSet: {
-                                                                kind: 'SelectionSet',
-                                                                selections: [
-                                                                    {
-                                                                        kind: 'Field',
-                                                                        name: { kind: 'Name', value: 'system' },
-                                                                        selectionSet: {
-                                                                            kind: 'SelectionSet',
-                                                                            selections: [
-                                                                                {
-                                                                                    kind: 'FragmentSpread',
-                                                                                    name: {
-                                                                                        kind: 'Name',
-                                                                                        value: 'defaultPromptFragment',
-                                                                                    },
-                                                                                },
-                                                                            ],
-                                                                        },
-                                                                    },
-                                                                    {
-                                                                        kind: 'Field',
-                                                                        name: { kind: 'Name', value: 'human' },
-                                                                        selectionSet: {
-                                                                            kind: 'SelectionSet',
-                                                                            selections: [
-                                                                                {
-                                                                                    kind: 'FragmentSpread',
-                                                                                    name: {
-                                                                                        kind: 'Name',
-                                                                                        value: 'defaultPromptFragment',
-                                                                                    },
-                                                                                },
-                                                                            ],
-                                                                        },
-                                                                    },
-                                                                ],
-                                                            },
-                                                        },
-                                                        {
-                                                            kind: 'Field',
-                                                            name: { kind: 'Name', value: 'searcher' },
-                                                            selectionSet: {
-                                                                kind: 'SelectionSet',
-                                                                selections: [
-                                                                    {
-                                                                        kind: 'Field',
-                                                                        name: { kind: 'Name', value: 'system' },
-                                                                        selectionSet: {
-                                                                            kind: 'SelectionSet',
-                                                                            selections: [
-                                                                                {
-                                                                                    kind: 'FragmentSpread',
-                                                                                    name: {
-                                                                                        kind: 'Name',
-                                                                                        value: 'defaultPromptFragment',
-                                                                                    },
-                                                                                },
-                                                                            ],
-                                                                        },
-                                                                    },
-                                                                    {
-                                                                        kind: 'Field',
-                                                                        name: { kind: 'Name', value: 'human' },
-                                                                        selectionSet: {
-                                                                            kind: 'SelectionSet',
-                                                                            selections: [
-                                                                                {
-                                                                                    kind: 'FragmentSpread',
-                                                                                    name: {
-                                                                                        kind: 'Name',
-                                                                                        value: 'defaultPromptFragment',
-                                                                                    },
-                                                                                },
-                                                                            ],
-                                                                        },
-                                                                    },
-                                                                ],
-                                                            },
-                                                        },
-                                                        {
-                                                            kind: 'Field',
-                                                            name: { kind: 'Name', value: 'memorist' },
-                                                            selectionSet: {
-                                                                kind: 'SelectionSet',
-                                                                selections: [
-                                                                    {
-                                                                        kind: 'Field',
-                                                                        name: { kind: 'Name', value: 'system' },
-                                                                        selectionSet: {
-                                                                            kind: 'SelectionSet',
-                                                                            selections: [
-                                                                                {
-                                                                                    kind: 'FragmentSpread',
-                                                                                    name: {
-                                                                                        kind: 'Name',
-                                                                                        value: 'defaultPromptFragment',
-                                                                                    },
-                                                                                },
-                                                                            ],
-                                                                        },
-                                                                    },
-                                                                    {
-                                                                        kind: 'Field',
-                                                                        name: { kind: 'Name', value: 'human' },
-                                                                        selectionSet: {
-                                                                            kind: 'SelectionSet',
-                                                                            selections: [
-                                                                                {
-                                                                                    kind: 'FragmentSpread',
-                                                                                    name: {
-                                                                                        kind: 'Name',
-                                                                                        value: 'defaultPromptFragment',
-                                                                                    },
-                                                                                },
-                                                                            ],
-                                                                        },
-                                                                    },
-                                                                ],
-                                                            },
-                                                        },
-                                                        {
-                                                            kind: 'Field',
-                                                            name: { kind: 'Name', value: 'adviser' },
-                                                            selectionSet: {
-                                                                kind: 'SelectionSet',
-                                                                selections: [
-                                                                    {
-                                                                        kind: 'Field',
-                                                                        name: { kind: 'Name', value: 'system' },
-                                                                        selectionSet: {
-                                                                            kind: 'SelectionSet',
-                                                                            selections: [
-                                                                                {
-                                                                                    kind: 'FragmentSpread',
-                                                                                    name: {
-                                                                                        kind: 'Name',
-                                                                                        value: 'defaultPromptFragment',
-                                                                                    },
-                                                                                },
-                                                                            ],
-                                                                        },
-                                                                    },
-                                                                    {
-                                                                        kind: 'Field',
-                                                                        name: { kind: 'Name', value: 'human' },
                                                                         selectionSet: {
                                                                             kind: 'SelectionSet',
                                                                             selections: [
@@ -4806,47 +4288,6 @@ export const SettingsPromptsDocument = {
                                                         },
                                                         {
                                                             kind: 'Field',
-                                                            name: { kind: 'Name', value: 'enricher' },
-                                                            selectionSet: {
-                                                                kind: 'SelectionSet',
-                                                                selections: [
-                                                                    {
-                                                                        kind: 'Field',
-                                                                        name: { kind: 'Name', value: 'system' },
-                                                                        selectionSet: {
-                                                                            kind: 'SelectionSet',
-                                                                            selections: [
-                                                                                {
-                                                                                    kind: 'FragmentSpread',
-                                                                                    name: {
-                                                                                        kind: 'Name',
-                                                                                        value: 'defaultPromptFragment',
-                                                                                    },
-                                                                                },
-                                                                            ],
-                                                                        },
-                                                                    },
-                                                                    {
-                                                                        kind: 'Field',
-                                                                        name: { kind: 'Name', value: 'human' },
-                                                                        selectionSet: {
-                                                                            kind: 'SelectionSet',
-                                                                            selections: [
-                                                                                {
-                                                                                    kind: 'FragmentSpread',
-                                                                                    name: {
-                                                                                        kind: 'Name',
-                                                                                        value: 'defaultPromptFragment',
-                                                                                    },
-                                                                                },
-                                                                            ],
-                                                                        },
-                                                                    },
-                                                                ],
-                                                            },
-                                                        },
-                                                        {
-                                                            kind: 'Field',
                                                             name: { kind: 'Name', value: 'toolCallFixer' },
                                                             selectionSet: {
                                                                 kind: 'SelectionSet',
@@ -4889,6 +4330,131 @@ export const SettingsPromptsDocument = {
                                                         {
                                                             kind: 'Field',
                                                             name: { kind: 'Name', value: 'summarizer' },
+                                                            selectionSet: {
+                                                                kind: 'SelectionSet',
+                                                                selections: [
+                                                                    {
+                                                                        kind: 'Field',
+                                                                        name: { kind: 'Name', value: 'system' },
+                                                                        selectionSet: {
+                                                                            kind: 'SelectionSet',
+                                                                            selections: [
+                                                                                {
+                                                                                    kind: 'FragmentSpread',
+                                                                                    name: {
+                                                                                        kind: 'Name',
+                                                                                        value: 'defaultPromptFragment',
+                                                                                    },
+                                                                                },
+                                                                            ],
+                                                                        },
+                                                                    },
+                                                                ],
+                                                            },
+                                                        },
+                                                        {
+                                                            kind: 'Field',
+                                                            name: { kind: 'Name', value: 'commander' },
+                                                            selectionSet: {
+                                                                kind: 'SelectionSet',
+                                                                selections: [
+                                                                    {
+                                                                        kind: 'Field',
+                                                                        name: { kind: 'Name', value: 'system' },
+                                                                        selectionSet: {
+                                                                            kind: 'SelectionSet',
+                                                                            selections: [
+                                                                                {
+                                                                                    kind: 'FragmentSpread',
+                                                                                    name: {
+                                                                                        kind: 'Name',
+                                                                                        value: 'defaultPromptFragment',
+                                                                                    },
+                                                                                },
+                                                                            ],
+                                                                        },
+                                                                    },
+                                                                ],
+                                                            },
+                                                        },
+                                                        {
+                                                            kind: 'Field',
+                                                            name: { kind: 'Name', value: 'triage' },
+                                                            selectionSet: {
+                                                                kind: 'SelectionSet',
+                                                                selections: [
+                                                                    {
+                                                                        kind: 'Field',
+                                                                        name: { kind: 'Name', value: 'system' },
+                                                                        selectionSet: {
+                                                                            kind: 'SelectionSet',
+                                                                            selections: [
+                                                                                {
+                                                                                    kind: 'FragmentSpread',
+                                                                                    name: {
+                                                                                        kind: 'Name',
+                                                                                        value: 'defaultPromptFragment',
+                                                                                    },
+                                                                                },
+                                                                            ],
+                                                                        },
+                                                                    },
+                                                                ],
+                                                            },
+                                                        },
+                                                        {
+                                                            kind: 'Field',
+                                                            name: { kind: 'Name', value: 'logAnalyst' },
+                                                            selectionSet: {
+                                                                kind: 'SelectionSet',
+                                                                selections: [
+                                                                    {
+                                                                        kind: 'Field',
+                                                                        name: { kind: 'Name', value: 'system' },
+                                                                        selectionSet: {
+                                                                            kind: 'SelectionSet',
+                                                                            selections: [
+                                                                                {
+                                                                                    kind: 'FragmentSpread',
+                                                                                    name: {
+                                                                                        kind: 'Name',
+                                                                                        value: 'defaultPromptFragment',
+                                                                                    },
+                                                                                },
+                                                                            ],
+                                                                        },
+                                                                    },
+                                                                ],
+                                                            },
+                                                        },
+                                                        {
+                                                            kind: 'Field',
+                                                            name: { kind: 'Name', value: 'metricsAnalyst' },
+                                                            selectionSet: {
+                                                                kind: 'SelectionSet',
+                                                                selections: [
+                                                                    {
+                                                                        kind: 'Field',
+                                                                        name: { kind: 'Name', value: 'system' },
+                                                                        selectionSet: {
+                                                                            kind: 'SelectionSet',
+                                                                            selections: [
+                                                                                {
+                                                                                    kind: 'FragmentSpread',
+                                                                                    name: {
+                                                                                        kind: 'Name',
+                                                                                        value: 'defaultPromptFragment',
+                                                                                    },
+                                                                                },
+                                                                            ],
+                                                                        },
+                                                                    },
+                                                                ],
+                                                            },
+                                                        },
+                                                        {
+                                                            kind: 'Field',
+                                                            name: { kind: 'Name', value: 'changeAnalyst' },
                                                             selectionSet: {
                                                                 kind: 'SelectionSet',
                                                                 selections: [
@@ -5051,54 +4617,6 @@ export const SettingsPromptsDocument = {
                                                         {
                                                             kind: 'Field',
                                                             name: { kind: 'Name', value: 'detectToolCallIdPattern' },
-                                                            selectionSet: {
-                                                                kind: 'SelectionSet',
-                                                                selections: [
-                                                                    {
-                                                                        kind: 'FragmentSpread',
-                                                                        name: {
-                                                                            kind: 'Name',
-                                                                            value: 'defaultPromptFragment',
-                                                                        },
-                                                                    },
-                                                                ],
-                                                            },
-                                                        },
-                                                        {
-                                                            kind: 'Field',
-                                                            name: { kind: 'Name', value: 'monitorAgentExecution' },
-                                                            selectionSet: {
-                                                                kind: 'SelectionSet',
-                                                                selections: [
-                                                                    {
-                                                                        kind: 'FragmentSpread',
-                                                                        name: {
-                                                                            kind: 'Name',
-                                                                            value: 'defaultPromptFragment',
-                                                                        },
-                                                                    },
-                                                                ],
-                                                            },
-                                                        },
-                                                        {
-                                                            kind: 'Field',
-                                                            name: { kind: 'Name', value: 'planAgentTask' },
-                                                            selectionSet: {
-                                                                kind: 'SelectionSet',
-                                                                selections: [
-                                                                    {
-                                                                        kind: 'FragmentSpread',
-                                                                        name: {
-                                                                            kind: 'Name',
-                                                                            value: 'defaultPromptFragment',
-                                                                        },
-                                                                    },
-                                                                ],
-                                                            },
-                                                        },
-                                                        {
-                                                            kind: 'Field',
-                                                            name: { kind: 'Name', value: 'wrapAgentTask' },
                                                             selectionSet: {
                                                                 kind: 'SelectionSet',
                                                                 selections: [
@@ -8898,16 +8416,6 @@ export const TestProviderDocument = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'adviser' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentTestResultFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
                         name: { kind: 'Name', value: 'reflector' },
                         selectionSet: {
                             kind: 'SelectionSet',
@@ -8919,46 +8427,6 @@ export const TestProviderDocument = {
                     {
                         kind: 'Field',
                         name: { kind: 'Name', value: 'searcher' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentTestResultFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'enricher' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentTestResultFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'coder' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentTestResultFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'installer' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentTestResultFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'pentester' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [
@@ -9153,16 +8621,6 @@ export const CreateProviderDocument = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'adviser' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
                         name: { kind: 'Name', value: 'reflector' },
                         selectionSet: {
                             kind: 'SelectionSet',
@@ -9174,46 +8632,6 @@ export const CreateProviderDocument = {
                     {
                         kind: 'Field',
                         name: { kind: 'Name', value: 'searcher' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'enricher' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'coder' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'installer' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'pentester' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [
@@ -9430,16 +8848,6 @@ export const UpdateProviderDocument = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'adviser' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
                         name: { kind: 'Name', value: 'reflector' },
                         selectionSet: {
                             kind: 'SelectionSet',
@@ -9451,46 +8859,6 @@ export const UpdateProviderDocument = {
                     {
                         kind: 'Field',
                         name: { kind: 'Name', value: 'searcher' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'enricher' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'coder' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'installer' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'pentester' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [
@@ -11677,16 +11045,6 @@ export const ProviderCreatedDocument = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'adviser' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
                         name: { kind: 'Name', value: 'reflector' },
                         selectionSet: {
                             kind: 'SelectionSet',
@@ -11698,46 +11056,6 @@ export const ProviderCreatedDocument = {
                     {
                         kind: 'Field',
                         name: { kind: 'Name', value: 'searcher' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'enricher' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'coder' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'installer' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'pentester' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [
@@ -11917,16 +11235,6 @@ export const ProviderUpdatedDocument = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'adviser' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
                         name: { kind: 'Name', value: 'reflector' },
                         selectionSet: {
                             kind: 'SelectionSet',
@@ -11938,46 +11246,6 @@ export const ProviderUpdatedDocument = {
                     {
                         kind: 'Field',
                         name: { kind: 'Name', value: 'searcher' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'enricher' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'coder' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'installer' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'pentester' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [
@@ -12157,16 +11425,6 @@ export const ProviderDeletedDocument = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'adviser' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
                         name: { kind: 'Name', value: 'reflector' },
                         selectionSet: {
                             kind: 'SelectionSet',
@@ -12178,46 +11436,6 @@ export const ProviderDeletedDocument = {
                     {
                         kind: 'Field',
                         name: { kind: 'Name', value: 'searcher' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'enricher' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'coder' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'installer' },
-                        selectionSet: {
-                            kind: 'SelectionSet',
-                            selections: [
-                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'agentConfigFragment' } },
-                            ],
-                        },
-                    },
-                    {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'pentester' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [

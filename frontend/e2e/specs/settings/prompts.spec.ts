@@ -19,17 +19,17 @@ test.describe('settings prompts', { tag: '@coverage' }, () => {
         await expect(page.getByRole('heading', { name: 'Agent Prompts' })).toBeVisible();
         await expect(page.getByRole('heading', { name: 'Tool Prompts' })).toBeVisible();
 
-        const pentesterRow = page.getByRole('row', { name: /Pentester/ });
+        const refinerRow = page.getByRole('row', { name: /Refiner/ });
 
-        await expect(pentesterRow).toBeVisible();
+        await expect(refinerRow).toBeVisible();
         await expect(page.getByRole('row', { name: /Get Flow Description/ })).toBeVisible();
 
-        await pentesterRow.click();
+        await refinerRow.click();
 
         await expect(page.getByRole('heading', { name: 'System Prompt' })).toBeVisible();
         await expect(page.getByRole('heading', { name: 'Human Prompt' })).toBeVisible();
-        await expect(page.getByText(promptTemplate(PromptType.Pentester))).toBeVisible();
-        await expect(page.getByText(promptTemplate(PromptType.QuestionPentester))).toBeVisible();
+        await expect(page.getByText(promptTemplate(PromptType.Refiner))).toBeVisible();
+        await expect(page.getByText(promptTemplate(PromptType.SubtasksRefiner))).toBeVisible();
 
         expectCleanPage(pageErrorLog);
     });
@@ -53,7 +53,7 @@ test.describe('settings prompts, resetting from the list', { tag: '@coverage' },
     test('offers Reset System on the overridden agent and sends the override id', async ({ page, pageErrorLog }) => {
         await page.goto('/settings/prompts');
 
-        const row = page.getByRole('row', { name: /Pentester/ }).first();
+        const row = page.getByRole('row', { name: /Refiner/ }).first();
 
         await row.getByRole('button', { name: 'Open menu' }).click();
 

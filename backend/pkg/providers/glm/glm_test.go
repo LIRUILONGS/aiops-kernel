@@ -226,7 +226,6 @@ func TestGlm_DefaultProviderConfig_SendsLowEffortForUtilityAgents(t *testing.T) 
 		{name: "the shipped simple json agent", opt: pconfig.OptionsTypeSimpleJSON},
 		{name: "the shipped reflector", opt: pconfig.OptionsTypeReflector},
 		{name: "the shipped searcher", opt: pconfig.OptionsTypeSearcher},
-		{name: "the shipped enricher", opt: pconfig.OptionsTypeEnricher},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			body := glmWireBody(t, tc.opt, nil)

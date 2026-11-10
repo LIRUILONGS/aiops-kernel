@@ -86,7 +86,7 @@ func TestOllama_DefaultProviderConfig_ReadsTheConfiguredFileOverTheEmbeddedOne(t
 			name: "no configured file takes the embedded config",
 			maxTokens: map[pconfig.ProviderOptionsType]int{
 				pconfig.OptionsTypeSimple: 8192, pconfig.OptionsTypeSimpleJSON: 4096, pconfig.OptionsTypePrimaryAgent: 16384,
-				pconfig.OptionsTypeGenerator: 20480, pconfig.OptionsTypeRefiner: 16384, pconfig.OptionsTypeAdviser: 8192,
+				pconfig.OptionsTypeGenerator: 20480, pconfig.OptionsTypeRefiner: 16384,
 			},
 		},
 		{

@@ -406,7 +406,7 @@ func TestCode_Handle_RefusesWhatItCannotServe(t *testing.T) {
 			}
 			door := codeDoor(rig, identityReplacer{}, tc.limit)
 
-			result, err := door.Handle(PutAgentContext(t.Context(), database.MsgchainTypeSearcher), tc.tool, tc.args)
+			result, err := door.Handle(PutAgentContext(t.Context(), database.MsgchainTypeMetricsAnalyst), tc.tool, tc.args)
 
 			if err == nil || err.Error() != tc.want {
 				t.Fatalf("answered %q with the error %v, want the error %q", result, err, tc.want)

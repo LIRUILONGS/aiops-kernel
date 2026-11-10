@@ -36,9 +36,9 @@ func TestContext_PutAgentContext_MakesThePreviousCurrentAgentTheParent(t *testin
 	t.Parallel()
 
 	base := t.Context()
-	first := PutAgentContext(base, database.MsgchainTypePrimaryAgent)
-	second := PutAgentContext(first, database.MsgchainTypeSearcher)
-	third := PutAgentContext(second, database.MsgchainTypePentester)
+	first := PutAgentContext(base, database.MsgchainTypeCommander)
+	second := PutAgentContext(first, database.MsgchainTypeMetricsAnalyst)
+	third := PutAgentContext(second, database.MsgchainTypeChangeAnalyst)
 
 	tests := []struct {
 		name        string
@@ -52,22 +52,22 @@ func TestContext_PutAgentContext_MakesThePreviousCurrentAgentTheParent(t *testin
 			name:        "the first agent is its own parent",
 			ctx:         first,
 			wantOK:      true,
-			wantParent:  database.MsgchainTypePrimaryAgent,
-			wantCurrent: database.MsgchainTypePrimaryAgent,
+			wantParent:  database.MsgchainTypeCommander,
+			wantCurrent: database.MsgchainTypeCommander,
 		},
 		{
 			name:        "the second agent has the first as parent",
 			ctx:         second,
 			wantOK:      true,
-			wantParent:  database.MsgchainTypePrimaryAgent,
-			wantCurrent: database.MsgchainTypeSearcher,
+			wantParent:  database.MsgchainTypeCommander,
+			wantCurrent: database.MsgchainTypeMetricsAnalyst,
 		},
 		{
 			name:        "the third agent has the second as parent, not the first",
 			ctx:         third,
 			wantOK:      true,
-			wantParent:  database.MsgchainTypeSearcher,
-			wantCurrent: database.MsgchainTypePentester,
+			wantParent:  database.MsgchainTypeMetricsAnalyst,
+			wantCurrent: database.MsgchainTypeChangeAnalyst,
 		},
 	}
 

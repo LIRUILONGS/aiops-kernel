@@ -396,13 +396,6 @@ func (pc *providerController) NewFlowProvider(
 		Provider:        prv,
 		maxGACallsLimit: pc.cfg.MaxGeneralAgentToolCalls,
 		maxLACallsLimit: pc.cfg.MaxLimitedAgentToolCalls,
-		buildMonitor: func() *executionMonitor {
-			return &executionMonitor{
-				enabled:        pc.cfg.ExecutionMonitorEnabled,
-				sameThreshold:  pc.cfg.ExecutionMonitorSameToolLimit,
-				totalThreshold: pc.cfg.ExecutionMonitorTotalToolLimit,
-			}
-		},
 	}
 
 	return fp, nil
@@ -446,13 +439,6 @@ func (pc *providerController) LoadFlowProvider(
 		Provider:        prv,
 		maxGACallsLimit: pc.cfg.MaxGeneralAgentToolCalls,
 		maxLACallsLimit: pc.cfg.MaxLimitedAgentToolCalls,
-		buildMonitor: func() *executionMonitor {
-			return &executionMonitor{
-				enabled:        pc.cfg.ExecutionMonitorEnabled,
-				sameThreshold:  pc.cfg.ExecutionMonitorSameToolLimit,
-				totalThreshold: pc.cfg.ExecutionMonitorTotalToolLimit,
-			}
-		},
 	}
 
 	return fp, nil
@@ -540,13 +526,6 @@ func (pc *providerController) NewAssistantProvider(
 			Provider:        prv,
 			maxGACallsLimit: pc.cfg.MaxGeneralAgentToolCalls,
 			maxLACallsLimit: pc.cfg.MaxLimitedAgentToolCalls,
-			buildMonitor: func() *executionMonitor {
-				return &executionMonitor{
-					enabled:        pc.cfg.ExecutionMonitorEnabled,
-					sameThreshold:  pc.cfg.ExecutionMonitorSameToolLimit,
-					totalThreshold: pc.cfg.ExecutionMonitorTotalToolLimit,
-				}
-			},
 		},
 	}
 
@@ -593,13 +572,6 @@ func (pc *providerController) LoadAssistantProvider(
 			Provider:        prv,
 			maxGACallsLimit: pc.cfg.MaxGeneralAgentToolCalls,
 			maxLACallsLimit: pc.cfg.MaxLimitedAgentToolCalls,
-			buildMonitor: func() *executionMonitor {
-				return &executionMonitor{
-					enabled:        pc.cfg.ExecutionMonitorEnabled,
-					sameThreshold:  pc.cfg.ExecutionMonitorSameToolLimit,
-					totalThreshold: pc.cfg.ExecutionMonitorTotalToolLimit,
-				}
-			},
 		},
 	}
 
@@ -997,20 +969,10 @@ func (pc *providerController) TestAgent(
 		testConfig.Generator = config
 	case pconfig.OptionsTypeRefiner:
 		testConfig.Refiner = config
-	case pconfig.OptionsTypeAdviser:
-		testConfig.Adviser = config
 	case pconfig.OptionsTypeReflector:
 		testConfig.Reflector = config
 	case pconfig.OptionsTypeSearcher:
 		testConfig.Searcher = config
-	case pconfig.OptionsTypeEnricher:
-		testConfig.Enricher = config
-	case pconfig.OptionsTypeCoder:
-		testConfig.Coder = config
-	case pconfig.OptionsTypeInstaller:
-		testConfig.Installer = config
-	case pconfig.OptionsTypePentester:
-		testConfig.Pentester = config
 	default:
 		return result, fmt.Errorf("unsupported agent type: %s", agentType)
 	}
@@ -1058,20 +1020,10 @@ func (pc *providerController) TestAgent(
 		result = results.Generator
 	case pconfig.OptionsTypeRefiner:
 		result = results.Refiner
-	case pconfig.OptionsTypeAdviser:
-		result = results.Adviser
 	case pconfig.OptionsTypeReflector:
 		result = results.Reflector
 	case pconfig.OptionsTypeSearcher:
 		result = results.Searcher
-	case pconfig.OptionsTypeEnricher:
-		result = results.Enricher
-	case pconfig.OptionsTypeCoder:
-		result = results.Coder
-	case pconfig.OptionsTypeInstaller:
-		result = results.Installer
-	case pconfig.OptionsTypePentester:
-		result = results.Pentester
 	default:
 		return result, fmt.Errorf("unexpected agent type: %s", agentType)
 	}
@@ -1157,26 +1109,11 @@ func (pc *providerController) patchProviderConfig(
 	if config.Refiner == nil {
 		config.Refiner = defaultCfg.Refiner
 	}
-	if config.Adviser == nil {
-		config.Adviser = defaultCfg.Adviser
-	}
 	if config.Reflector == nil {
 		config.Reflector = defaultCfg.Reflector
 	}
 	if config.Searcher == nil {
 		config.Searcher = defaultCfg.Searcher
-	}
-	if config.Enricher == nil {
-		config.Enricher = defaultCfg.Enricher
-	}
-	if config.Coder == nil {
-		config.Coder = defaultCfg.Coder
-	}
-	if config.Installer == nil {
-		config.Installer = defaultCfg.Installer
-	}
-	if config.Pentester == nil {
-		config.Pentester = defaultCfg.Pentester
 	}
 
 	config.SetDefaultOptions(defaultCfg.GetDefaultOptions())

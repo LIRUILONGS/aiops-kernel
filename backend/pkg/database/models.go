@@ -194,18 +194,10 @@ func (ns NullFlowStatus) Value() (driver.Value, error) {
 type MsgchainType string
 
 const (
-	MsgchainTypePrimaryAgent   MsgchainType = "primary_agent"
 	MsgchainTypeReporter       MsgchainType = "reporter"
 	MsgchainTypeGenerator      MsgchainType = "generator"
 	MsgchainTypeRefiner        MsgchainType = "refiner"
 	MsgchainTypeReflector      MsgchainType = "reflector"
-	MsgchainTypeEnricher       MsgchainType = "enricher"
-	MsgchainTypeAdviser        MsgchainType = "adviser"
-	MsgchainTypeCoder          MsgchainType = "coder"
-	MsgchainTypeMemorist       MsgchainType = "memorist"
-	MsgchainTypeSearcher       MsgchainType = "searcher"
-	MsgchainTypeInstaller      MsgchainType = "installer"
-	MsgchainTypePentester      MsgchainType = "pentester"
 	MsgchainTypeSummarizer     MsgchainType = "summarizer"
 	MsgchainTypeToolCallFixer  MsgchainType = "tool_call_fixer"
 	MsgchainTypeAssistant      MsgchainType = "assistant"
@@ -348,20 +340,12 @@ func (ns NullMsglogType) Value() (driver.Value, error) {
 type PromptType string
 
 const (
-	PromptTypePrimaryAgent             PromptType = "primary_agent"
+	PromptTypeCommander                PromptType = "commander"
+	PromptTypeTriage                   PromptType = "triage"
+	PromptTypeLogAnalyst               PromptType = "log_analyst"
+	PromptTypeMetricsAnalyst           PromptType = "metrics_analyst"
+	PromptTypeChangeAnalyst            PromptType = "change_analyst"
 	PromptTypeAssistant                PromptType = "assistant"
-	PromptTypePentester                PromptType = "pentester"
-	PromptTypeQuestionPentester        PromptType = "question_pentester"
-	PromptTypeCoder                    PromptType = "coder"
-	PromptTypeQuestionCoder            PromptType = "question_coder"
-	PromptTypeInstaller                PromptType = "installer"
-	PromptTypeQuestionInstaller        PromptType = "question_installer"
-	PromptTypeSearcher                 PromptType = "searcher"
-	PromptTypeQuestionSearcher         PromptType = "question_searcher"
-	PromptTypeMemorist                 PromptType = "memorist"
-	PromptTypeQuestionMemorist         PromptType = "question_memorist"
-	PromptTypeAdviser                  PromptType = "adviser"
-	PromptTypeQuestionAdviser          PromptType = "question_adviser"
 	PromptTypeGenerator                PromptType = "generator"
 	PromptTypeSubtasksGenerator        PromptType = "subtasks_generator"
 	PromptTypeRefiner                  PromptType = "refiner"
@@ -370,8 +354,6 @@ const (
 	PromptTypeTaskReporter             PromptType = "task_reporter"
 	PromptTypeReflector                PromptType = "reflector"
 	PromptTypeQuestionReflector        PromptType = "question_reflector"
-	PromptTypeEnricher                 PromptType = "enricher"
-	PromptTypeQuestionEnricher         PromptType = "question_enricher"
 	PromptTypeToolcallFixer            PromptType = "toolcall_fixer"
 	PromptTypeInputToolcallFixer       PromptType = "input_toolcall_fixer"
 	PromptTypeSummarizer               PromptType = "summarizer"
@@ -384,9 +366,6 @@ const (
 	PromptTypeShortExecutionContext    PromptType = "short_execution_context"
 	PromptTypeToolCallIDCollector      PromptType = "tool_call_id_collector"
 	PromptTypeToolCallIDDetector       PromptType = "tool_call_id_detector"
-	PromptTypeQuestionExecutionMonitor PromptType = "question_execution_monitor"
-	PromptTypeQuestionTaskPlanner      PromptType = "question_task_planner"
-	PromptTypeTaskAssignmentWrapper    PromptType = "task_assignment_wrapper"
 )
 
 func (e *PromptType) Scan(src interface{}) error {

@@ -56,7 +56,7 @@ func NewTaskWorker(
 	ctx, span := obs.Observer.NewSpan(ctx, obs.SpanKindInternal, "controller.NewTaskWorker")
 	defer span.End()
 
-	ctx = tools.PutAgentContext(ctx, database.MsgchainTypePrimaryAgent)
+	ctx = tools.PutAgentContext(ctx, database.MsgchainTypeCommander)
 
 	title, err := flowCtx.Provider.GetTaskTitle(ctx, input)
 	if err != nil {
@@ -163,7 +163,7 @@ func LoadTaskWorker(
 	ctx, span := obs.Observer.NewSpan(ctx, obs.SpanKindInternal, "controller.LoadTaskWorker")
 	defer span.End()
 
-	ctx = tools.PutAgentContext(ctx, database.MsgchainTypePrimaryAgent)
+	ctx = tools.PutAgentContext(ctx, database.MsgchainTypeCommander)
 	taskCtx := &TaskContext{
 		FlowContext: *flowCtx,
 		TaskID:      task.ID,
@@ -339,7 +339,7 @@ func (tw *taskWorker) PutInput(ctx context.Context, input string) error {
 }
 
 func (tw *taskWorker) Run(ctx context.Context) error {
-	ctx = tools.PutAgentContext(ctx, database.MsgchainTypePrimaryAgent)
+	ctx = tools.PutAgentContext(ctx, database.MsgchainTypeCommander)
 
 	for len(tw.stc.ListSubtasks(ctx)) < providers.TasksNumberLimit+3 {
 		batch, err := tw.stc.PopSubtasks(ctx, tw, tw.subtaskConcurrency())
@@ -528,7 +528,7 @@ func (tw *taskWorker) Report(ctx context.Context) error {
 
 	// Run's first statement, so a report-initiated chain is attributed the same
 	// way the ordinary one is.
-	ctx = tools.PutAgentContext(ctx, database.MsgchainTypePrimaryAgent)
+	ctx = tools.PutAgentContext(ctx, database.MsgchainTypeCommander)
 
 	if err := tw.SetStatus(ctx, database.TaskStatusRunning); err != nil {
 		return fmt.Errorf("failed to start reporting task %d: %w", tw.taskCtx.TaskID, err)

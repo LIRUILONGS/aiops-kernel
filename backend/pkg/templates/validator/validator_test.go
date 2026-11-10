@@ -63,8 +63,9 @@ func TestValidator_ValidatePrompt_ClassifiesEveryFailure(t *testing.T) {
 	require.NoError(t, err)
 
 	const (
-		primary = templates.PromptTypePrimaryAgent
-		chooser = templates.PromptTypeImageChooser
+		commander = templates.PromptTypeCommander
+		assistant = templates.PromptTypeAssistant
+		chooser   = templates.PromptTypeImageChooser
 	)
 
 	tests := []struct {
@@ -78,51 +79,50 @@ func TestValidator_ValidatePrompt_ClassifiesEveryFailure(t *testing.T) {
 	}{
 		{
 			name:       "declared variables",
-			promptType: primary,
-			template:   "You are an AI assistant. Your name is {{.FinalyToolName}} and you can use {{.SearchToolName}} for searches.",
+			promptType: assistant,
+			template:   "You are the incident commander. Answer in {{.Lang}} and use {{.SearchInMemoryToolName}} when the evidence is thin.",
 		},
 		{
 			name:       "declared variables under a condition",
 			promptType: templates.PromptTypeAssistant,
 			template: `You are an assistant with the following tools:
-{{if .UseAgents}}
-- {{.SearchToolName}}
-- {{.PentesterToolName}}
-- {{.CoderToolName}}
+{{if .FlowManagerEnabled}}
+- {{.TerminalToolName}}
+- {{.FileToolName}}
 {{end}}
 Current time: {{.CurrentTime}}
 Language: {{.Lang}}`,
 		},
-		{name: "the shipped primary agent prompt", promptType: primary, template: defaultPrompts.AgentsPrompts.PrimaryAgent.System.Template},
+		{name: "the shipped commander prompt", promptType: commander, template: defaultPrompts.AgentsPrompts.Commander.System.Template},
 		{
 			name:       "the shipped assistant prompt",
 			promptType: templates.PromptTypeAssistant,
 			template:   defaultPrompts.AgentsPrompts.Assistant.System.Template,
 		},
 		{
-			name:       "the shipped pentester prompt",
-			promptType: templates.PromptTypePentester,
-			template:   defaultPrompts.AgentsPrompts.Pentester.System.Template,
+			name:       "the shipped triage prompt",
+			promptType: templates.PromptTypeTriage,
+			template:   defaultPrompts.AgentsPrompts.Triage.System.Template,
 		},
 		{
 			name:        "an empty template",
-			promptType:  primary,
+			promptType:  commander,
 			template:    "",
 			wantType:    "Empty Template",
 			wantMessage: "template content cannot be empty",
 		},
 		{
 			name:        "an undeclared variable",
-			promptType:  primary,
-			template:    "{{.FinalyToolName}} and {{.NonExistentVar}}",
+			promptType:  commander,
+			template:    "{{.Lang}} and {{.NonExistentVar}}",
 			wantType:    "Unauthorized Variable",
 			wantMessage: "[NonExistentVar]",
 			wantDetails: "Backend code cannot provide these variables",
 		},
 		{
 			name:        "several undeclared variables",
-			promptType:  primary,
-			template:    "{{.UnauthorizedVar1}} and {{.UnauthorizedVar2}} with valid {{.FinalyToolName}}",
+			promptType:  commander,
+			template:    "{{.UnauthorizedVar1}} and {{.UnauthorizedVar2}} with valid {{.Lang}}",
 			wantType:    "Unauthorized Variable",
 			wantMessage: "[UnauthorizedVar1 UnauthorizedVar2]",
 		},
@@ -135,8 +135,8 @@ Language: {{.Lang}}`,
 		},
 		{
 			name:        "an unclosed action",
-			promptType:  primary,
-			template:    "{{.FinalyToolName",
+			promptType:  commander,
+			template:    "{{.Lang",
 			wantType:    "Syntax Error",
 			wantDetails: "missing closing braces",
 			wantLine:    1,
@@ -158,8 +158,8 @@ Language: {{.Lang}}`,
 		},
 		{
 			name:        "a declared variable used as the wrong type",
-			promptType:  primary,
-			template:    "{{.FinalyToolName.Foo}}",
+			promptType:  commander,
+			template:    "{{.Lang.Foo}}",
 			wantType:    "Rendering Failed",
 			wantMessage: "template rendering failed",
 			wantDetails: "Variable type mismatch",

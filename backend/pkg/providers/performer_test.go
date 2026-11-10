@@ -511,49 +511,6 @@ func (p *performerToolRecordingProvider) CallWithTools(
 }
 
 // The reflector and the adviser send no tools; the agent the reflector answers for keeps its own.
-func TestPerformer_ToolFreeAgentsAreCalledWithoutTools(t *testing.T) {
-	recorder := &performerToolRecordingProvider{
-		Provider:     mock.NewProvider(provider.ProviderOpenAI, "openai", "gpt-5.6-sol"),
-		withTools:    map[pconfig.ProviderOptionsType]bool{},
-		withoutTools: map[pconfig.ProviderOptionsType]bool{},
-	}
-
-	fp := newFlowProvider()
-	fp.db = &usageCapturingQuerier{}
-	fp.Provider = recorder
-	fp.prompter = templates.NewDefaultPrompter()
-
-	_, err := fp.performReflector(
-		context.Background(),
-		pconfig.OptionsTypeCoder,
-		42,
-		nil, nil,
-		[]llms.MessageContent{llms.TextParts(llms.ChatMessageTypeHuman, "run the scan")},
-		oneToolExecutor{},
-		"run the scan",
-		"I am not sure which tool to call.",
-		"",
-		1,
-	)
-	require.NoError(t, err)
-
-	msgChainType := database.MsgchainTypeAdviser
-	_, err = fp.performSimpleChain(context.Background(), nil, nil, agentByChain[msgChainType], msgChainType, "system", "question")
-	require.NoError(t, err)
-
-	require.True(t, recorder.withTools[pconfig.OptionsTypeCoder], "the answering agent calls with tools")
-	require.True(t, recorder.withoutTools[pconfig.OptionsTypeReflector], "the reflector was called")
-	require.True(t, recorder.withoutTools[pconfig.OptionsTypeAdviser], "the adviser was called")
-
-	for opt := range recorder.withTools {
-		assert.True(t, opt.UsesTools(), "%s sent tools", opt)
-	}
-	for opt := range recorder.withoutTools {
-		if !recorder.withTools[opt] {
-			assert.False(t, opt.UsesTools(), "%s ran with no tools", opt)
-		}
-	}
-}
 
 // performerFailingProvider fails every call; with cancel set it cancels the chain first, the way a stopped flow does.
 type performerFailingProvider struct {
@@ -769,8 +726,8 @@ func TestPerformer_ExecToolCall_AnswersARepeatWithWhatTheToolSaidUntilItAborts(t
 	result := performerToolCallResult()
 	call := func() (string, error) {
 		return fp.execToolCall(
-			context.Background(), pconfig.OptionsTypePentester, 1, 0, result,
-			&executionMonitor{}, detector, executor, nil, nil, nil,
+			context.Background(), pconfig.OptionsTypeRefiner, 1, 0, result,
+			detector, executor, nil, nil, nil,
 		)
 	}
 
@@ -808,8 +765,8 @@ func TestPerformer_ExecToolCall_ReturnsAnErrorNoCorrectionCanFixAtOnce(t *testin
 			executor := &performerExecutor{err: tt.err}
 
 			_, err := fp.execToolCall(
-				context.Background(), pconfig.OptionsTypePentester, 1, 0, performerToolCallResult(),
-				&executionMonitor{}, &repeatingDetector{}, executor, nil, nil, nil,
+				context.Background(), pconfig.OptionsTypeRefiner, 1, 0, performerToolCallResult(),
+				&repeatingDetector{}, executor, nil, nil, nil,
 			)
 
 			assert.ErrorIs(t, err, tt.err)
@@ -951,7 +908,7 @@ func TestPerformer_PerformAgentChain_CompactsAChainItsToolSchemasPushOutOfTheWin
 			executor := performerSchemaExecutor{schemas: windowCompactionTools(tt.description)}
 
 			err := fp.performAgentChain(
-				context.Background(), pconfig.OptionsTypePentester, 42, nil, nil, chain, executor,
+				context.Background(), pconfig.OptionsTypeRefiner, 42, nil, nil, chain, executor,
 				csum.NewSummarizer(csum.SummarizerConfig{}),
 			)
 			require.ErrorIs(t, err, performerLocalRefusal)
@@ -1112,15 +1069,15 @@ func TestPerformer_PerformAgentChain_WritesAMissingScopeToGraphitiAsADash(t *tes
 		},
 		{
 			name:      "an agent working on a subtask names both",
-			agent:     pconfig.OptionsTypePentester,
+			agent:     pconfig.OptionsTypeRefiner,
 			taskID:    &taskID,
 			subtaskID: &subtaskID,
 			barrier:   "hack_result",
 			want: []performerGraphitiEpisode{
 				{
 					name:    "agent_response",
-					source:  "OpsAGI pentester agent execution in flow 42, task 7, subtask 11",
-					content: "Agent: pentester\nResponse: hello\nContext: Task 7, Subtask 11\n\n",
+					source:  "OpsAGI refiner agent execution in flow 42, task 7, subtask 11",
+					content: "Agent: refiner\nResponse: hello\nContext: Task 7, Subtask 11\n\n",
 				},
 				{
 					name:   "tool_execution_hack_result",

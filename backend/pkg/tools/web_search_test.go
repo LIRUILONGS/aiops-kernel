@@ -116,7 +116,7 @@ func webSearchArgs(t *testing.T, mode, query string) []byte {
 }
 
 func webSearchAgentCtx() context.Context {
-	return PutAgentContext(context.Background(), database.MsgchainTypeSearcher)
+	return PutAgentContext(context.Background(), database.MsgchainTypeMetricsAnalyst)
 }
 
 func webSearchFails(msg string) func(int) (string, error) {
@@ -508,8 +508,8 @@ func TestWebSearch_Handle_StopsWaitingToRetryWhenTheContextEnds(t *testing.T) {
 func TestWebSearch_Handle_AttributesTheSearchLogToTheAgentsInTheContext(t *testing.T) {
 	taskID, subtaskID := int64(7), int64(8)
 	primaryThenSearcher := PutAgentContext(
-		PutAgentContext(context.Background(), database.MsgchainTypePrimaryAgent),
-		database.MsgchainTypeSearcher,
+		PutAgentContext(context.Background(), database.MsgchainTypeCommander),
+		database.MsgchainTypeMetricsAnalyst,
 	)
 
 	tests := []struct {
@@ -527,8 +527,8 @@ func TestWebSearch_Handle_AttributesTheSearchLogToTheAgentsInTheContext(t *testi
 				result:     "found",
 				taskID:     &taskID,
 				subtaskID:  &subtaskID,
-				parentType: database.MsgchainTypePrimaryAgent,
-				currType:   database.MsgchainTypeSearcher,
+				parentType: database.MsgchainTypeCommander,
+				currType:   database.MsgchainTypeMetricsAnalyst,
 			},
 		},
 		{

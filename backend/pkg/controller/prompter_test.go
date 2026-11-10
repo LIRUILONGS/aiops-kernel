@@ -1,4 +1,4 @@
-package controller
+﻿package controller
 
 import (
 	"context"
@@ -36,43 +36,43 @@ func TestPrompter_NewUserPrompter_OverlaysTheUsersPromptsOnTheDefaults(t *testin
 	}{
 		{
 			name:        "no user prompts",
-			wantDefault: []templates.PromptType{templates.PromptTypePrimaryAgent, templates.PromptTypeAssistant},
+			wantDefault: []templates.PromptType{templates.PromptTypeGenerator, templates.PromptTypeAssistant},
 		},
 		{
 			name:        "one override",
-			prompts:     []database.Prompt{{Type: database.PromptTypePrimaryAgent, Prompt: "custom primary"}},
-			wantCustom:  map[templates.PromptType]string{templates.PromptTypePrimaryAgent: "custom primary"},
-			wantDefault: []templates.PromptType{templates.PromptTypeAssistant, templates.PromptTypePentester},
+			prompts:     []database.Prompt{{Type: database.PromptTypeGenerator, Prompt: "custom generator"}},
+			wantCustom:  map[templates.PromptType]string{templates.PromptTypeGenerator: "custom generator"},
+			wantDefault: []templates.PromptType{templates.PromptTypeAssistant, templates.PromptTypeTriage},
 		},
 		{
 			name: "several overrides",
 			prompts: []database.Prompt{
-				{Type: database.PromptTypePrimaryAgent, Prompt: "custom primary"},
-				{Type: database.PromptTypeCoder, Prompt: "custom coder"},
+				{Type: database.PromptTypeGenerator, Prompt: "custom generator"},
 				{Type: database.PromptTypeReporter, Prompt: "custom reporter"},
+				{Type: database.PromptTypeRefiner, Prompt: "custom refiner"},
 			},
 			wantCustom: map[templates.PromptType]string{
-				templates.PromptTypePrimaryAgent: "custom primary",
-				templates.PromptTypeCoder:        "custom coder",
-				templates.PromptTypeReporter:     "custom reporter",
+				templates.PromptTypeGenerator: "custom generator",
+				templates.PromptTypeReporter:  "custom reporter",
+				templates.PromptTypeRefiner:   "custom refiner",
 			},
 			wantDefault: []templates.PromptType{
-				templates.PromptTypeAssistant, templates.PromptTypePentester, templates.PromptTypeSearcher,
+				templates.PromptTypeAssistant, templates.PromptTypeTriage, templates.PromptTypeLogAnalyst,
 			},
 		},
 		{
 			name:        "an empty body, which would surface deep in agent rendering",
-			prompts:     []database.Prompt{{Type: database.PromptTypePrimaryAgent, Prompt: ""}},
-			wantDefault: []templates.PromptType{templates.PromptTypePrimaryAgent},
+			prompts:     []database.Prompt{{Type: database.PromptTypeGenerator, Prompt: ""}},
+			wantDefault: []templates.PromptType{templates.PromptTypeGenerator},
 		},
 		{
 			name: "an override using a variable the backend no longer provides",
 			prompts: []database.Prompt{
-				{Type: database.PromptTypeSearcher, Prompt: "Search with {{.GoogleToolName}}"},
-				{Type: database.PromptTypeCoder, Prompt: "custom coder"},
+				{Type: database.PromptTypeSummarizer, Prompt: "Search with {{.GoogleToolName}}"},
+				{Type: database.PromptTypeReporter, Prompt: "custom reporter"},
 			},
-			wantCustom:  map[templates.PromptType]string{templates.PromptTypeCoder: "custom coder"},
-			wantDefault: []templates.PromptType{templates.PromptTypeSearcher},
+			wantCustom:  map[templates.PromptType]string{templates.PromptTypeReporter: "custom reporter"},
+			wantDefault: []templates.PromptType{templates.PromptTypeSummarizer},
 		},
 		{name: "a database that cannot be read", dbErr: dbErr},
 	} {

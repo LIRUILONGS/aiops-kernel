@@ -76,13 +76,8 @@ func TestRunner_GroupResults_FilesEachAgentsResultsUnderItsOwnField(t *testing.T
 			pconfig.OptionsTypeAssistant:    r.Assistant,
 			pconfig.OptionsTypeGenerator:    r.Generator,
 			pconfig.OptionsTypeRefiner:      r.Refiner,
-			pconfig.OptionsTypeAdviser:      r.Adviser,
 			pconfig.OptionsTypeReflector:    r.Reflector,
 			pconfig.OptionsTypeSearcher:     r.Searcher,
-			pconfig.OptionsTypeEnricher:     r.Enricher,
-			pconfig.OptionsTypeCoder:        r.Coder,
-			pconfig.OptionsTypeInstaller:    r.Installer,
-			pconfig.OptionsTypePentester:    r.Pentester,
 		}
 	}
 
@@ -270,7 +265,7 @@ func TestRunner_CollectTestRequests_BuildsARegistryCaseAfreshForEachAgent(t *tes
 func TestRunner_CollectTestRequests_BuildsTheFileEditCaseAfreshForEachAgent(t *testing.T) {
 	emptyRegistry := testerRegistry(t, "[]")
 	config := &testConfig{
-		agentTypes:     []pconfig.ProviderOptionsType{pconfig.OptionsTypePrimaryAgent, pconfig.OptionsTypeCoder, pconfig.OptionsTypePentester},
+		agentTypes:     []pconfig.ProviderOptionsType{pconfig.OptionsTypePrimaryAgent, pconfig.OptionsTypeRefiner, pconfig.OptionsTypeGenerator},
 		groups:         []cases.TestGroup{cases.TestGroupAdvanced},
 		customRegistry: emptyRegistry,
 	}
@@ -307,23 +302,23 @@ func TestRunner_IsTestCompatibleWithAgent_RunsToolCasesOnlyOnAgentsWhoseCallsCar
 	t.Cleanup(srv.Close)
 
 	providerConfig, err := openai.BuildProviderConfig([]byte(`
-adviser: {model: gpt-5.6-sol, reasoning: {effort: xhigh}}
 reflector: {model: gpt-5.6-sol, reasoning: {effort: high}}
-coder: {model: gpt-5.6-sol}
+simple_json: {model: gpt-5.6-sol, reasoning: {effort: xhigh}}
+refiner: {model: gpt-5.6-sol}
 `))
 	require.NoError(t, err)
 	prv, err := openai.New(&config.Config{OpenAIServerURL: srv.URL, OpenAIKey: "k"}, provider.DefaultProviderNameOpenAI, providerConfig)
 	require.NoError(t, err)
 
 	results, err := TestProvider(t.Context(), prv,
-		WithAgentTypes(pconfig.OptionsTypeAdviser, pconfig.OptionsTypeReflector, pconfig.OptionsTypeCoder),
+		WithAgentTypes(pconfig.OptionsTypeSimpleJSON, pconfig.OptionsTypeReflector, pconfig.OptionsTypeRefiner),
 		WithStreamingMode(false),
 	)
 	require.NoError(t, err)
 
 	for agent, got := range map[pconfig.ProviderOptionsType]AgentTestResults{
-		pconfig.OptionsTypeAdviser:   results.Adviser,
-		pconfig.OptionsTypeReflector: results.Reflector,
+		pconfig.OptionsTypeSimpleJSON: results.SimpleJSON,
+		pconfig.OptionsTypeReflector:  results.Reflector,
 	} {
 		require.NotEmpty(t, got, agent)
 		for _, result := range got {
@@ -335,10 +330,10 @@ coder: {model: gpt-5.6-sol}
 	}
 
 	ranTools := false
-	for _, result := range results.Coder {
+	for _, result := range results.Refiner {
 		ranTools = ranTools || result.Type == cases.TestTypeTool
 	}
-	assert.True(t, ranTools, "the coder calls with tools, so its tool cases still run")
+	assert.True(t, ranTools, "the refiner calls with tools, so its tool cases still run")
 }
 
 const (

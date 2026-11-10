@@ -831,7 +831,7 @@ func newKnowledgeRig(t *testing.T) *knowledgeRig {
 func (r *knowledgeRig) handle(t *testing.T, tool Tool, name string, args json.RawMessage) string {
 	t.Helper()
 
-	result, err := tool.Handle(PutAgentContext(t.Context(), database.MsgchainTypeSearcher), name, args)
+	result, err := tool.Handle(PutAgentContext(t.Context(), database.MsgchainTypeMetricsAnalyst), name, args)
 	if err != nil {
 		t.Fatalf("%s returned an error: %v", name, err)
 	}

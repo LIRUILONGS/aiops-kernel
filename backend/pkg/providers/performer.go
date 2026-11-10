@@ -71,8 +71,7 @@ func (fp *flowProvider) performAgentChain(
 	var (
 		wantToStop        bool
 		nudged            bool
-		monitor           = fp.buildMonitor()
-		detector          = &repeatingDetector{}
+			detector          = &repeatingDetector{}
 		summarizerHandler = fp.GetSummarizeResultHandler(taskID, subtaskID)
 	)
 
@@ -100,8 +99,7 @@ func (fp *flowProvider) performAgentChain(
 
 	var maxCallsLimit int
 	switch optAgentType {
-	case pconfig.OptionsTypeAssistant, pconfig.OptionsTypePrimaryAgent,
-		pconfig.OptionsTypePentester, pconfig.OptionsTypeCoder, pconfig.OptionsTypeInstaller:
+	case pconfig.OptionsTypeAssistant, pconfig.OptionsTypePrimaryAgent:
 		if fp.maxGACallsLimit <= 0 {
 			maxCallsLimit = maxGeneralAgentChainIterations
 		} else {
@@ -216,7 +214,7 @@ func (fp *flowProvider) performAgentChain(
 
 			funcName := toolCall.FunctionCall.Name
 			response, err := fp.execToolCall(
-				ctx, optAgentType, chainID, idx, result, monitor, detector, executor, taskID, subtaskID, chain,
+				ctx, optAgentType, chainID, idx, result, detector, executor, taskID, subtaskID, chain,
 			)
 
 			if toolTypeMapping[funcName] != tools.AgentToolType {
@@ -350,7 +348,6 @@ func (fp *flowProvider) execToolCall(
 	chainID int64,
 	toolCallIDx int,
 	result *callResult,
-	monitor *executionMonitor,
 	detector *repeatingDetector,
 	executor tools.ContextToolsExecutor,
 	taskID, subtaskID *int64,
@@ -456,23 +453,6 @@ func (fp *flowProvider) execToolCall(
 		} else {
 			detector.lastResponse = response
 			break
-		}
-	}
-
-	if monitor.shouldInvokeMentor(toolCall) && executor.IsFunctionExists(tools.AdviceToolName) {
-		logger.WithFields(logrus.Fields{
-			"same_tool_count":  monitor.sameToolCount,
-			"total_call_count": monitor.totalCallCount,
-		}).Debug("execution monitor threshold reached, invoking mentor for progress review")
-
-		mentorResponse, err := fp.performMentor(
-			ctx, optAgentType, chainID, taskID, subtaskID, chain, executor, toolCall, response,
-		)
-		if err != nil {
-			logger.WithError(err).Warn("failed to invoke execution mentor, continuing with normal execution")
-		} else {
-			monitor.reset()
-			response = formatEnhancedToolResponse(response, mentorResponse)
 		}
 	}
 

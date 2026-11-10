@@ -223,25 +223,10 @@ fragment providerTestResultFragment on ProviderTestResult {
     refiner {
         ...agentTestResultFragment
     }
-    adviser {
-        ...agentTestResultFragment
-    }
     reflector {
         ...agentTestResultFragment
     }
     searcher {
-        ...agentTestResultFragment
-    }
-    enricher {
-        ...agentTestResultFragment
-    }
-    coder {
-        ...agentTestResultFragment
-    }
-    installer {
-        ...agentTestResultFragment
-    }
-    pentester {
         ...agentTestResultFragment
     }
 }
@@ -302,25 +287,10 @@ fragment agentsConfigFragment on AgentsConfig {
     refiner {
         ...agentConfigFragment
     }
-    adviser {
-        ...agentConfigFragment
-    }
     reflector {
         ...agentConfigFragment
     }
     searcher {
-        ...agentConfigFragment
-    }
-    enricher {
-        ...agentConfigFragment
-    }
-    coder {
-        ...agentConfigFragment
-    }
-    installer {
-        ...agentConfigFragment
-    }
-    pentester {
         ...agentConfigFragment
     }
 }
@@ -685,61 +655,8 @@ query settingsPrompts {
     settingsPrompts {
         default {
             agents {
-                primaryAgent {
-                    system {
-                        ...defaultPromptFragment
-                    }
-                }
                 assistant {
                     system {
-                        ...defaultPromptFragment
-                    }
-                }
-                pentester {
-                    system {
-                        ...defaultPromptFragment
-                    }
-                    human {
-                        ...defaultPromptFragment
-                    }
-                }
-                coder {
-                    system {
-                        ...defaultPromptFragment
-                    }
-                    human {
-                        ...defaultPromptFragment
-                    }
-                }
-                installer {
-                    system {
-                        ...defaultPromptFragment
-                    }
-                    human {
-                        ...defaultPromptFragment
-                    }
-                }
-                searcher {
-                    system {
-                        ...defaultPromptFragment
-                    }
-                    human {
-                        ...defaultPromptFragment
-                    }
-                }
-                memorist {
-                    system {
-                        ...defaultPromptFragment
-                    }
-                    human {
-                        ...defaultPromptFragment
-                    }
-                }
-                adviser {
-                    system {
-                        ...defaultPromptFragment
-                    }
-                    human {
                         ...defaultPromptFragment
                     }
                 }
@@ -775,14 +692,6 @@ query settingsPrompts {
                         ...defaultPromptFragment
                     }
                 }
-                enricher {
-                    system {
-                        ...defaultPromptFragment
-                    }
-                    human {
-                        ...defaultPromptFragment
-                    }
-                }
                 toolCallFixer {
                     system {
                         ...defaultPromptFragment
@@ -792,6 +701,31 @@ query settingsPrompts {
                     }
                 }
                 summarizer {
+                    system {
+                        ...defaultPromptFragment
+                    }
+                }
+                commander {
+                    system {
+                        ...defaultPromptFragment
+                    }
+                }
+                triage {
+                    system {
+                        ...defaultPromptFragment
+                    }
+                }
+                logAnalyst {
+                    system {
+                        ...defaultPromptFragment
+                    }
+                }
+                metricsAnalyst {
+                    system {
+                        ...defaultPromptFragment
+                    }
+                }
+                changeAnalyst {
                     system {
                         ...defaultPromptFragment
                     }
@@ -823,15 +757,6 @@ query settingsPrompts {
                     ...defaultPromptFragment
                 }
                 detectToolCallIdPattern {
-                    ...defaultPromptFragment
-                }
-                monitorAgentExecution {
-                    ...defaultPromptFragment
-                }
-                planAgentTask {
-                    ...defaultPromptFragment
-                }
-                wrapAgentTask {
                     ...defaultPromptFragment
                 }
             }

@@ -111,13 +111,6 @@ type FlowProvider interface {
 }
 
 type FlowProviderHandlers interface {
-	GetAskAdviceHandler(ctx context.Context, taskID, subtaskID *int64) (tools.ExecutorHandler, error)
-	GetCoderHandler(ctx context.Context, taskID, subtaskID *int64) (tools.ExecutorHandler, error)
-	GetInstallerHandler(ctx context.Context, taskID, subtaskID *int64) (tools.ExecutorHandler, error)
-	GetMemoristHandler(ctx context.Context, taskID, subtaskID *int64) (tools.ExecutorHandler, error)
-	GetPentesterHandler(ctx context.Context, taskID, subtaskID *int64) (tools.ExecutorHandler, error)
-	GetSubtaskSearcherHandler(ctx context.Context, taskID, subtaskID *int64) (tools.ExecutorHandler, error)
-	GetTaskSearcherHandler(ctx context.Context, taskID int64) (tools.ExecutorHandler, error)
 	GetSummarizeResultHandler(taskID, subtaskID *int64) tools.SummarizeHandler
 }
 
@@ -166,7 +159,6 @@ type flowProvider struct {
 
 	maxGACallsLimit int
 	maxLACallsLimit int
-	buildMonitor    executionMonitorBuilder
 
 	provider.Provider
 }

@@ -36,11 +36,7 @@ func TestXai_DefaultToolRolesUseTheReplayedModelAndItsPrice(t *testing.T) {
 		pconfig.OptionsTypeAssistant,
 		pconfig.OptionsTypeGenerator,
 		pconfig.OptionsTypeRefiner,
-		pconfig.OptionsTypeAdviser,
 		pconfig.OptionsTypeSearcher,
-		pconfig.OptionsTypeCoder,
-		pconfig.OptionsTypeInstaller,
-		pconfig.OptionsTypePentester,
 	} {
 		options := llms.CallOptions{}
 		for _, option := range cfg.GetOptionsForType(role) {
@@ -66,7 +62,6 @@ func TestXai_DefaultUtilityRolesUseTheNonReasoningModel(t *testing.T) {
 		pconfig.OptionsTypeSimple,
 		pconfig.OptionsTypeSimpleJSON,
 		pconfig.OptionsTypeReflector,
-		pconfig.OptionsTypeEnricher,
 	} {
 		options := llms.CallOptions{}
 		for _, option := range cfg.GetOptionsForType(role) {

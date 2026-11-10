@@ -79,19 +79,6 @@ refiner:
     output: 2.50
     cache_read: 0.03
 
-adviser:
-  model: gemini-3.5-flash-lite
-  temperature: 1.0
-  top_p: 0.95
-  n: 1
-  max_tokens: 8192
-  reasoning:
-    effort: high
-  price:
-    input: 0.30
-    output: 2.50
-    cache_read: 0.03
-
 reflector:
   model: gemini-3.1-flash-lite
   temperature: 1.0
@@ -113,53 +100,3 @@ searcher:
     input: 0.25
     output: 1.50
     cache_read: 0.025
-
-enricher:
-  model: gemini-3.1-flash-lite
-  temperature: 1.0
-  top_p: 0.95
-  n: 1
-  max_tokens: 8192
-  price:
-    input: 0.25
-    output: 1.50
-    cache_read: 0.025
-
-coder:
-  model: gemini-3.5-flash-lite
-  temperature: 1.0
-  top_p: 0.95
-  n: 1
-  max_tokens: 20480
-  reasoning:
-    effort: medium
-  price:
-    input: 0.30
-    output: 2.50
-    cache_read: 0.03
-
-installer:
-  model: gemini-3.5-flash-lite
-  temperature: 1.0
-  top_p: 0.95
-  n: 1
-  max_tokens: 16384
-  reasoning:
-    effort: medium
-  price:
-    input: 0.30
-    output: 2.50
-    cache_read: 0.03
-
-pentester:
-  model: gemini-3.5-flash-lite
-  temperature: 1.0
-  top_p: 0.95
-  n: 1
-  max_tokens: 8192
-  reasoning:
-    effort: medium
-  price:
-    input: 0.30
-    output: 2.50
-    cache_read: 0.03

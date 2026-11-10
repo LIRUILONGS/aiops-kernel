@@ -392,21 +392,18 @@ func ConvertAgentPrompts(prompts *templates.AgentPrompts) *model.AgentPrompts {
 func ConvertDefaultPrompts(prompts *templates.DefaultPrompts) *model.DefaultPrompts {
 	return &model.DefaultPrompts{
 		Agents: &model.AgentsPrompts{
-			PrimaryAgent:  ConvertAgentPrompt(&prompts.AgentsPrompts.PrimaryAgent),
-			Assistant:     ConvertAgentPrompt(&prompts.AgentsPrompts.Assistant),
-			Pentester:     ConvertAgentPrompts(&prompts.AgentsPrompts.Pentester),
-			Coder:         ConvertAgentPrompts(&prompts.AgentsPrompts.Coder),
-			Installer:     ConvertAgentPrompts(&prompts.AgentsPrompts.Installer),
-			Searcher:      ConvertAgentPrompts(&prompts.AgentsPrompts.Searcher),
-			Memorist:      ConvertAgentPrompts(&prompts.AgentsPrompts.Memorist),
-			Adviser:       ConvertAgentPrompts(&prompts.AgentsPrompts.Adviser),
-			Generator:     ConvertAgentPrompts(&prompts.AgentsPrompts.Generator),
-			Refiner:       ConvertAgentPrompts(&prompts.AgentsPrompts.Refiner),
-			Reporter:      ConvertAgentPrompts(&prompts.AgentsPrompts.Reporter),
-			Reflector:     ConvertAgentPrompts(&prompts.AgentsPrompts.Reflector),
-			Enricher:      ConvertAgentPrompts(&prompts.AgentsPrompts.Enricher),
-			ToolCallFixer: ConvertAgentPrompts(&prompts.AgentsPrompts.ToolCallFixer),
-			Summarizer:    ConvertAgentPrompt(&prompts.AgentsPrompts.Summarizer),
+			Assistant:      ConvertAgentPrompt(&prompts.AgentsPrompts.Assistant),
+			Generator:      ConvertAgentPrompts(&prompts.AgentsPrompts.Generator),
+			Refiner:        ConvertAgentPrompts(&prompts.AgentsPrompts.Refiner),
+			Reporter:       ConvertAgentPrompts(&prompts.AgentsPrompts.Reporter),
+			Reflector:      ConvertAgentPrompts(&prompts.AgentsPrompts.Reflector),
+			ToolCallFixer:  ConvertAgentPrompts(&prompts.AgentsPrompts.ToolCallFixer),
+			Summarizer:     ConvertAgentPrompt(&prompts.AgentsPrompts.Summarizer),
+			Commander:      ConvertAgentPrompt(&prompts.AgentsPrompts.Commander),
+			Triage:         ConvertAgentPrompt(&prompts.AgentsPrompts.Triage),
+			LogAnalyst:     ConvertAgentPrompt(&prompts.AgentsPrompts.LogAnalyst),
+			MetricsAnalyst: ConvertAgentPrompt(&prompts.AgentsPrompts.MetricsAnalyst),
+			ChangeAnalyst:  ConvertAgentPrompt(&prompts.AgentsPrompts.ChangeAnalyst),
 		},
 		Tools: &model.ToolsPrompts{
 			GetFlowDescription:       ConvertDefaultPrompt(&prompts.ToolsPrompts.GetFlowDescription),
@@ -418,9 +415,6 @@ func ConvertDefaultPrompts(prompts *templates.DefaultPrompts) *model.DefaultProm
 			ChooseUserLanguage:       ConvertDefaultPrompt(&prompts.ToolsPrompts.ChooseUserLanguage),
 			CollectToolCallID:        ConvertDefaultPrompt(&prompts.ToolsPrompts.CollectToolCallID),
 			DetectToolCallIDPattern:  ConvertDefaultPrompt(&prompts.ToolsPrompts.DetectToolCallIDPattern),
-			MonitorAgentExecution:    ConvertDefaultPrompt(&prompts.ToolsPrompts.QuestionExecutionMonitor),
-			PlanAgentTask:            ConvertDefaultPrompt(&prompts.ToolsPrompts.QuestionTaskPlanner),
-			WrapAgentTask:            ConvertDefaultPrompt(&prompts.ToolsPrompts.TaskAssignmentWrapper),
 		},
 	}
 }
@@ -687,13 +681,8 @@ func ConvertProviderConfigToGqlModel(cfg *pconfig.ProviderConfig) *model.AgentsC
 		Assistant:    ConvertAgentConfigToGqlModel(cfg.Assistant),
 		Generator:    ConvertAgentConfigToGqlModel(cfg.Generator),
 		Refiner:      ConvertAgentConfigToGqlModel(cfg.Refiner),
-		Adviser:      ConvertAgentConfigToGqlModel(cfg.Adviser),
 		Reflector:    ConvertAgentConfigToGqlModel(cfg.Reflector),
 		Searcher:     ConvertAgentConfigToGqlModel(cfg.Searcher),
-		Enricher:     ConvertAgentConfigToGqlModel(cfg.Enricher),
-		Coder:        ConvertAgentConfigToGqlModel(cfg.Coder),
-		Installer:    ConvertAgentConfigToGqlModel(cfg.Installer),
-		Pentester:    ConvertAgentConfigToGqlModel(cfg.Pentester),
 	}
 }
 
@@ -792,13 +781,8 @@ func ConvertAgentsConfigFromGqlModel(cfg *model.AgentsConfig) *pconfig.ProviderC
 		Assistant:    ConvertAgentConfigFromGqlModel(cfg.Assistant),
 		Generator:    ConvertAgentConfigFromGqlModel(cfg.Generator),
 		Refiner:      ConvertAgentConfigFromGqlModel(cfg.Refiner),
-		Adviser:      ConvertAgentConfigFromGqlModel(cfg.Adviser),
 		Reflector:    ConvertAgentConfigFromGqlModel(cfg.Reflector),
 		Searcher:     ConvertAgentConfigFromGqlModel(cfg.Searcher),
-		Enricher:     ConvertAgentConfigFromGqlModel(cfg.Enricher),
-		Coder:        ConvertAgentConfigFromGqlModel(cfg.Coder),
-		Installer:    ConvertAgentConfigFromGqlModel(cfg.Installer),
-		Pentester:    ConvertAgentConfigFromGqlModel(cfg.Pentester),
 	}
 
 	rawConfig, err := json.Marshal(pc)
@@ -949,13 +933,8 @@ func ConvertProviderTestResults(results tester.ProviderTestResults) *model.Provi
 		Assistant:    ConvertTestResults(results.Assistant),
 		Generator:    ConvertTestResults(results.Generator),
 		Refiner:      ConvertTestResults(results.Refiner),
-		Adviser:      ConvertTestResults(results.Adviser),
 		Reflector:    ConvertTestResults(results.Reflector),
 		Searcher:     ConvertTestResults(results.Searcher),
-		Enricher:     ConvertTestResults(results.Enricher),
-		Coder:        ConvertTestResults(results.Coder),
-		Installer:    ConvertTestResults(results.Installer),
-		Pentester:    ConvertTestResults(results.Pentester),
 	}
 }
 

@@ -55,7 +55,7 @@ func TestAnalytics_CalculateSubtaskDuration_CountsOnlyAStartedSubtask(t *testing
 			analyticsSubtask(1, database.SubtaskStatusFinished, 0, 100), nil, 100},
 		{"a shorter primary agent chain is the more conservative duration",
 			analyticsSubtask(1, database.SubtaskStatusFinished, 0, 100),
-			[]database.Msgchain{analyticsMsgchain(database.MsgchainTypePrimaryAgent, 1, 1, 0, 50)}, 50},
+			[]database.Msgchain{analyticsMsgchain(database.MsgchainTypeCommander, 1, 1, 0, 50)}, 50},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.InDelta(t, tt.want, CalculateSubtaskDuration(tt.subtask, tt.msgchains), 1e-9)
@@ -109,8 +109,8 @@ func TestAnalytics_CalculateSubtasksWithOverlapCompensation_StartsEachSubtaskWhe
 			name:     "a shorter primary agent chain caps the compensated duration",
 			subtasks: []database.Subtask{analyticsSubtask(1, finished, 0, 10), analyticsSubtask(2, finished, 0, 25)},
 			msgchains: []database.Msgchain{
-				analyticsMsgchain(database.MsgchainTypePrimaryAgent, 1, 1, 0, 10),
-				analyticsMsgchain(database.MsgchainTypePrimaryAgent, 1, 2, 10, 15),
+				analyticsMsgchain(database.MsgchainTypeCommander, 1, 1, 0, 10),
+				analyticsMsgchain(database.MsgchainTypeCommander, 1, 2, 10, 15),
 			},
 			want: map[int64]float64{1: 10, 2: 5},
 		},
@@ -225,7 +225,7 @@ func TestAnalytics_BuildFlowExecutionStats_BuildsTheWholeTree(t *testing.T) {
 			name:      "a task whose subtask made a tool call",
 			tasks:     []database.GetTasksForFlowRow{{ID: 1, Title: "Test Task", CreatedAt: analyticsAt(0), UpdatedAt: analyticsAt(10)}},
 			subtasks:  []database.GetSubtasksForTasksRow{subtaskRow(1, 1, "Test Subtask", 0, 10)},
-			msgchains: []database.GetMsgchainsForFlowRow{chainRow(database.MsgchainTypePrimaryAgent, 1, 1, 0, 10)},
+			msgchains: []database.GetMsgchainsForFlowRow{chainRow(database.MsgchainTypeCommander, 1, 1, 0, 10)},
 			toolcalls: []database.GetToolcallsForFlowRow{{ID: 1, Status: database.ToolcallStatusFinished, FlowID: 1,
 				SubtaskID: analyticsID(1), DurationSeconds: 5, CreatedAt: analyticsAt(0), UpdatedAt: analyticsAt(5)}},
 			assistants: 2,

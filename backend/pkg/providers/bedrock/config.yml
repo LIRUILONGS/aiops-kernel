@@ -76,22 +76,6 @@ refiner:
     cache_read: 0.33
     cache_write: 4.125
 
-# Adviser - strategic planning with world-class intelligence
-adviser:
-  model: us.anthropic.claude-opus-4-6-v1
-  temperature: 1.0
-  n: 1
-  max_tokens: 16384
-  reasoning:
-    mode: adaptive
-    effort: high
-  price:
-    input: 5.5
-    output: 27.5
-    cache_read: 0.55
-    cache_write: 6.875
-
-# Reflector - result analysis with efficiency
 reflector:
   model: us.anthropic.claude-haiku-4-5-20251001-v1:0
   temperature: 1.0
@@ -118,59 +102,3 @@ searcher:
     output: 5.5
     cache_read: 0.11
     cache_write: 1.375
-
-# Enricher - data enrichment with long-context efficiency
-enricher:
-  model: us.anthropic.claude-haiku-4-5-20251001-v1:0
-  temperature: 1.0
-  n: 1
-  max_tokens: 8192
-  reasoning:
-    max_tokens: 1024
-  price:
-    input: 1.1
-    output: 5.5
-    cache_read: 0.11
-    cache_write: 1.375
-
-# Coder - code generation with industry-leading coding capabilities
-coder:
-  model: us.anthropic.claude-sonnet-4-5-20250929-v1:0
-  temperature: 1.0
-  n: 1
-  max_tokens: 16384
-  reasoning:
-    max_tokens: 2048
-  price:
-    input: 3.3
-    output: 16.5
-    cache_read: 0.33
-    cache_write: 4.125
-
-# Installer - installation and configuration with extensive software knowledge
-installer:
-  model: us.anthropic.claude-sonnet-4-5-20250929-v1:0
-  temperature: 1.0
-  n: 1
-  max_tokens: 8192
-  reasoning:
-    max_tokens: 1024
-  price:
-    input: 3.3
-    output: 16.5
-    cache_read: 0.33
-    cache_write: 4.125
-
-# Pentester - security testing with multimodal and thinking capabilities
-pentester:
-  model: us.anthropic.claude-sonnet-4-5-20250929-v1:0
-  temperature: 1.0
-  n: 1
-  max_tokens: 16384
-  reasoning:
-    max_tokens: 1024
-  price:
-    input: 3.3
-    output: 16.5
-    cache_read: 0.33
-    cache_write: 4.125

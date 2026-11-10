@@ -96,7 +96,6 @@ func TestAgentForChain_AgentByChain_BorrowsAConfiguredAgentForChainsWithoutOwnCo
 		database.MsgchainTypeReporter:       pconfig.OptionsTypeSimple,
 		database.MsgchainTypeSummarizer:     pconfig.OptionsTypeSimple,
 		database.MsgchainTypeToolCallFixer:  pconfig.OptionsTypeSimpleJSON,
-		database.MsgchainTypeMemorist:       pconfig.OptionsTypeSearcher,
 		database.MsgchainTypeCommander:      pconfig.OptionsTypePrimaryAgent,
 		database.MsgchainTypeTriage:         pconfig.OptionsTypeSimple,
 		database.MsgchainTypeLogAnalyst:     pconfig.OptionsTypeSearcher,

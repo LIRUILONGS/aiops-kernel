@@ -126,13 +126,8 @@ type ComplexityRoot struct {
 	}
 
 	AgentsConfig struct {
-		Adviser      func(childComplexity int) int
 		Assistant    func(childComplexity int) int
-		Coder        func(childComplexity int) int
-		Enricher     func(childComplexity int) int
 		Generator    func(childComplexity int) int
-		Installer    func(childComplexity int) int
-		Pentester    func(childComplexity int) int
 		PrimaryAgent func(childComplexity int) int
 		Refiner      func(childComplexity int) int
 		Reflector    func(childComplexity int) int
@@ -142,21 +137,18 @@ type ComplexityRoot struct {
 	}
 
 	AgentsPrompts struct {
-		Adviser       func(childComplexity int) int
-		Assistant     func(childComplexity int) int
-		Coder         func(childComplexity int) int
-		Enricher      func(childComplexity int) int
-		Generator     func(childComplexity int) int
-		Installer     func(childComplexity int) int
-		Memorist      func(childComplexity int) int
-		Pentester     func(childComplexity int) int
-		PrimaryAgent  func(childComplexity int) int
-		Refiner       func(childComplexity int) int
-		Reflector     func(childComplexity int) int
-		Reporter      func(childComplexity int) int
-		Searcher      func(childComplexity int) int
-		Summarizer    func(childComplexity int) int
-		ToolCallFixer func(childComplexity int) int
+		Assistant      func(childComplexity int) int
+		ChangeAnalyst  func(childComplexity int) int
+		Commander      func(childComplexity int) int
+		Generator      func(childComplexity int) int
+		LogAnalyst     func(childComplexity int) int
+		MetricsAnalyst func(childComplexity int) int
+		Refiner        func(childComplexity int) int
+		Reflector      func(childComplexity int) int
+		Reporter       func(childComplexity int) int
+		Summarizer     func(childComplexity int) int
+		ToolCallFixer  func(childComplexity int) int
+		Triage         func(childComplexity int) int
 	}
 
 	Assistant struct {
@@ -431,13 +423,8 @@ type ComplexityRoot struct {
 	}
 
 	ProviderTestResult struct {
-		Adviser      func(childComplexity int) int
 		Assistant    func(childComplexity int) int
-		Coder        func(childComplexity int) int
-		Enricher     func(childComplexity int) int
 		Generator    func(childComplexity int) int
-		Installer    func(childComplexity int) int
-		Pentester    func(childComplexity int) int
 		PrimaryAgent func(childComplexity int) int
 		Refiner      func(childComplexity int) int
 		Reflector    func(childComplexity int) int
@@ -714,9 +701,6 @@ type ComplexityRoot struct {
 		GetFullExecutionContext  func(childComplexity int) int
 		GetShortExecutionContext func(childComplexity int) int
 		GetTaskDescription       func(childComplexity int) int
-		MonitorAgentExecution    func(childComplexity int) int
-		PlanAgentTask            func(childComplexity int) int
-		WrapAgentTask            func(childComplexity int) int
 	}
 
 	UsageStats struct {
@@ -1274,13 +1258,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.AgentTypeUsageStats.Stats(childComplexity), true
 
-	case "AgentsConfig.adviser":
-		if e.complexity.AgentsConfig.Adviser == nil {
-			break
-		}
-
-		return e.complexity.AgentsConfig.Adviser(childComplexity), true
-
 	case "AgentsConfig.assistant":
 		if e.complexity.AgentsConfig.Assistant == nil {
 			break
@@ -1288,40 +1265,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.AgentsConfig.Assistant(childComplexity), true
 
-	case "AgentsConfig.coder":
-		if e.complexity.AgentsConfig.Coder == nil {
-			break
-		}
-
-		return e.complexity.AgentsConfig.Coder(childComplexity), true
-
-	case "AgentsConfig.enricher":
-		if e.complexity.AgentsConfig.Enricher == nil {
-			break
-		}
-
-		return e.complexity.AgentsConfig.Enricher(childComplexity), true
-
 	case "AgentsConfig.generator":
 		if e.complexity.AgentsConfig.Generator == nil {
 			break
 		}
 
 		return e.complexity.AgentsConfig.Generator(childComplexity), true
-
-	case "AgentsConfig.installer":
-		if e.complexity.AgentsConfig.Installer == nil {
-			break
-		}
-
-		return e.complexity.AgentsConfig.Installer(childComplexity), true
-
-	case "AgentsConfig.pentester":
-		if e.complexity.AgentsConfig.Pentester == nil {
-			break
-		}
-
-		return e.complexity.AgentsConfig.Pentester(childComplexity), true
 
 	case "AgentsConfig.primaryAgent":
 		if e.complexity.AgentsConfig.PrimaryAgent == nil {
@@ -1365,13 +1314,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.AgentsConfig.SimpleJSON(childComplexity), true
 
-	case "AgentsPrompts.adviser":
-		if e.complexity.AgentsPrompts.Adviser == nil {
-			break
-		}
-
-		return e.complexity.AgentsPrompts.Adviser(childComplexity), true
-
 	case "AgentsPrompts.assistant":
 		if e.complexity.AgentsPrompts.Assistant == nil {
 			break
@@ -1379,19 +1321,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.AgentsPrompts.Assistant(childComplexity), true
 
-	case "AgentsPrompts.coder":
-		if e.complexity.AgentsPrompts.Coder == nil {
+	case "AgentsPrompts.changeAnalyst":
+		if e.complexity.AgentsPrompts.ChangeAnalyst == nil {
 			break
 		}
 
-		return e.complexity.AgentsPrompts.Coder(childComplexity), true
+		return e.complexity.AgentsPrompts.ChangeAnalyst(childComplexity), true
 
-	case "AgentsPrompts.enricher":
-		if e.complexity.AgentsPrompts.Enricher == nil {
+	case "AgentsPrompts.commander":
+		if e.complexity.AgentsPrompts.Commander == nil {
 			break
 		}
 
-		return e.complexity.AgentsPrompts.Enricher(childComplexity), true
+		return e.complexity.AgentsPrompts.Commander(childComplexity), true
 
 	case "AgentsPrompts.generator":
 		if e.complexity.AgentsPrompts.Generator == nil {
@@ -1400,33 +1342,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.AgentsPrompts.Generator(childComplexity), true
 
-	case "AgentsPrompts.installer":
-		if e.complexity.AgentsPrompts.Installer == nil {
+	case "AgentsPrompts.logAnalyst":
+		if e.complexity.AgentsPrompts.LogAnalyst == nil {
 			break
 		}
 
-		return e.complexity.AgentsPrompts.Installer(childComplexity), true
+		return e.complexity.AgentsPrompts.LogAnalyst(childComplexity), true
 
-	case "AgentsPrompts.memorist":
-		if e.complexity.AgentsPrompts.Memorist == nil {
+	case "AgentsPrompts.metricsAnalyst":
+		if e.complexity.AgentsPrompts.MetricsAnalyst == nil {
 			break
 		}
 
-		return e.complexity.AgentsPrompts.Memorist(childComplexity), true
-
-	case "AgentsPrompts.pentester":
-		if e.complexity.AgentsPrompts.Pentester == nil {
-			break
-		}
-
-		return e.complexity.AgentsPrompts.Pentester(childComplexity), true
-
-	case "AgentsPrompts.primaryAgent":
-		if e.complexity.AgentsPrompts.PrimaryAgent == nil {
-			break
-		}
-
-		return e.complexity.AgentsPrompts.PrimaryAgent(childComplexity), true
+		return e.complexity.AgentsPrompts.MetricsAnalyst(childComplexity), true
 
 	case "AgentsPrompts.refiner":
 		if e.complexity.AgentsPrompts.Refiner == nil {
@@ -1449,13 +1377,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.AgentsPrompts.Reporter(childComplexity), true
 
-	case "AgentsPrompts.searcher":
-		if e.complexity.AgentsPrompts.Searcher == nil {
-			break
-		}
-
-		return e.complexity.AgentsPrompts.Searcher(childComplexity), true
-
 	case "AgentsPrompts.summarizer":
 		if e.complexity.AgentsPrompts.Summarizer == nil {
 			break
@@ -1469,6 +1390,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AgentsPrompts.ToolCallFixer(childComplexity), true
+
+	case "AgentsPrompts.triage":
+		if e.complexity.AgentsPrompts.Triage == nil {
+			break
+		}
+
+		return e.complexity.AgentsPrompts.Triage(childComplexity), true
 
 	case "Assistant.createdAt":
 		if e.complexity.Assistant.CreatedAt == nil {
@@ -2918,13 +2846,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProviderConfig.UpdatedAt(childComplexity), true
 
-	case "ProviderTestResult.adviser":
-		if e.complexity.ProviderTestResult.Adviser == nil {
-			break
-		}
-
-		return e.complexity.ProviderTestResult.Adviser(childComplexity), true
-
 	case "ProviderTestResult.assistant":
 		if e.complexity.ProviderTestResult.Assistant == nil {
 			break
@@ -2932,40 +2853,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProviderTestResult.Assistant(childComplexity), true
 
-	case "ProviderTestResult.coder":
-		if e.complexity.ProviderTestResult.Coder == nil {
-			break
-		}
-
-		return e.complexity.ProviderTestResult.Coder(childComplexity), true
-
-	case "ProviderTestResult.enricher":
-		if e.complexity.ProviderTestResult.Enricher == nil {
-			break
-		}
-
-		return e.complexity.ProviderTestResult.Enricher(childComplexity), true
-
 	case "ProviderTestResult.generator":
 		if e.complexity.ProviderTestResult.Generator == nil {
 			break
 		}
 
 		return e.complexity.ProviderTestResult.Generator(childComplexity), true
-
-	case "ProviderTestResult.installer":
-		if e.complexity.ProviderTestResult.Installer == nil {
-			break
-		}
-
-		return e.complexity.ProviderTestResult.Installer(childComplexity), true
-
-	case "ProviderTestResult.pentester":
-		if e.complexity.ProviderTestResult.Pentester == nil {
-			break
-		}
-
-		return e.complexity.ProviderTestResult.Pentester(childComplexity), true
 
 	case "ProviderTestResult.primaryAgent":
 		if e.complexity.ProviderTestResult.PrimaryAgent == nil {
@@ -4713,27 +4606,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ToolsPrompts.GetTaskDescription(childComplexity), true
-
-	case "ToolsPrompts.monitorAgentExecution":
-		if e.complexity.ToolsPrompts.MonitorAgentExecution == nil {
-			break
-		}
-
-		return e.complexity.ToolsPrompts.MonitorAgentExecution(childComplexity), true
-
-	case "ToolsPrompts.planAgentTask":
-		if e.complexity.ToolsPrompts.PlanAgentTask == nil {
-			break
-		}
-
-		return e.complexity.ToolsPrompts.PlanAgentTask(childComplexity), true
-
-	case "ToolsPrompts.wrapAgentTask":
-		if e.complexity.ToolsPrompts.WrapAgentTask == nil {
-			break
-		}
-
-		return e.complexity.ToolsPrompts.WrapAgentTask(childComplexity), true
 
 	case "UsageStats.totalUsageCacheIn":
 		if e.complexity.UsageStats.TotalUsageCacheIn == nil {
@@ -11635,86 +11507,6 @@ func (ec *executionContext) fieldContext_AgentsConfig_refiner(_ context.Context,
 	return fc, nil
 }
 
-func (ec *executionContext) _AgentsConfig_adviser(ctx context.Context, field graphql.CollectedField, obj *model.AgentsConfig) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AgentsConfig_adviser(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Adviser, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.AgentConfig)
-	fc.Result = res
-	return ec.marshalNAgentConfig2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentConfig(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AgentsConfig_adviser(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AgentsConfig",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "model":
-				return ec.fieldContext_AgentConfig_model(ctx, field)
-			case "maxTokens":
-				return ec.fieldContext_AgentConfig_maxTokens(ctx, field)
-			case "temperature":
-				return ec.fieldContext_AgentConfig_temperature(ctx, field)
-			case "topK":
-				return ec.fieldContext_AgentConfig_topK(ctx, field)
-			case "topP":
-				return ec.fieldContext_AgentConfig_topP(ctx, field)
-			case "minLength":
-				return ec.fieldContext_AgentConfig_minLength(ctx, field)
-			case "maxLength":
-				return ec.fieldContext_AgentConfig_maxLength(ctx, field)
-			case "repetitionPenalty":
-				return ec.fieldContext_AgentConfig_repetitionPenalty(ctx, field)
-			case "frequencyPenalty":
-				return ec.fieldContext_AgentConfig_frequencyPenalty(ctx, field)
-			case "presencePenalty":
-				return ec.fieldContext_AgentConfig_presencePenalty(ctx, field)
-			case "minP":
-				return ec.fieldContext_AgentConfig_minP(ctx, field)
-			case "n":
-				return ec.fieldContext_AgentConfig_n(ctx, field)
-			case "json":
-				return ec.fieldContext_AgentConfig_json(ctx, field)
-			case "responseMimeType":
-				return ec.fieldContext_AgentConfig_responseMimeType(ctx, field)
-			case "reasoning":
-				return ec.fieldContext_AgentConfig_reasoning(ctx, field)
-			case "price":
-				return ec.fieldContext_AgentConfig_price(ctx, field)
-			case "extraBody":
-				return ec.fieldContext_AgentConfig_extraBody(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type AgentConfig", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _AgentsConfig_reflector(ctx context.Context, field graphql.CollectedField, obj *model.AgentsConfig) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_AgentsConfig_reflector(ctx, field)
 	if err != nil {
@@ -11875,374 +11667,6 @@ func (ec *executionContext) fieldContext_AgentsConfig_searcher(_ context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _AgentsConfig_enricher(ctx context.Context, field graphql.CollectedField, obj *model.AgentsConfig) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AgentsConfig_enricher(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Enricher, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.AgentConfig)
-	fc.Result = res
-	return ec.marshalNAgentConfig2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentConfig(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AgentsConfig_enricher(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AgentsConfig",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "model":
-				return ec.fieldContext_AgentConfig_model(ctx, field)
-			case "maxTokens":
-				return ec.fieldContext_AgentConfig_maxTokens(ctx, field)
-			case "temperature":
-				return ec.fieldContext_AgentConfig_temperature(ctx, field)
-			case "topK":
-				return ec.fieldContext_AgentConfig_topK(ctx, field)
-			case "topP":
-				return ec.fieldContext_AgentConfig_topP(ctx, field)
-			case "minLength":
-				return ec.fieldContext_AgentConfig_minLength(ctx, field)
-			case "maxLength":
-				return ec.fieldContext_AgentConfig_maxLength(ctx, field)
-			case "repetitionPenalty":
-				return ec.fieldContext_AgentConfig_repetitionPenalty(ctx, field)
-			case "frequencyPenalty":
-				return ec.fieldContext_AgentConfig_frequencyPenalty(ctx, field)
-			case "presencePenalty":
-				return ec.fieldContext_AgentConfig_presencePenalty(ctx, field)
-			case "minP":
-				return ec.fieldContext_AgentConfig_minP(ctx, field)
-			case "n":
-				return ec.fieldContext_AgentConfig_n(ctx, field)
-			case "json":
-				return ec.fieldContext_AgentConfig_json(ctx, field)
-			case "responseMimeType":
-				return ec.fieldContext_AgentConfig_responseMimeType(ctx, field)
-			case "reasoning":
-				return ec.fieldContext_AgentConfig_reasoning(ctx, field)
-			case "price":
-				return ec.fieldContext_AgentConfig_price(ctx, field)
-			case "extraBody":
-				return ec.fieldContext_AgentConfig_extraBody(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type AgentConfig", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _AgentsConfig_coder(ctx context.Context, field graphql.CollectedField, obj *model.AgentsConfig) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AgentsConfig_coder(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Coder, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.AgentConfig)
-	fc.Result = res
-	return ec.marshalNAgentConfig2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentConfig(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AgentsConfig_coder(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AgentsConfig",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "model":
-				return ec.fieldContext_AgentConfig_model(ctx, field)
-			case "maxTokens":
-				return ec.fieldContext_AgentConfig_maxTokens(ctx, field)
-			case "temperature":
-				return ec.fieldContext_AgentConfig_temperature(ctx, field)
-			case "topK":
-				return ec.fieldContext_AgentConfig_topK(ctx, field)
-			case "topP":
-				return ec.fieldContext_AgentConfig_topP(ctx, field)
-			case "minLength":
-				return ec.fieldContext_AgentConfig_minLength(ctx, field)
-			case "maxLength":
-				return ec.fieldContext_AgentConfig_maxLength(ctx, field)
-			case "repetitionPenalty":
-				return ec.fieldContext_AgentConfig_repetitionPenalty(ctx, field)
-			case "frequencyPenalty":
-				return ec.fieldContext_AgentConfig_frequencyPenalty(ctx, field)
-			case "presencePenalty":
-				return ec.fieldContext_AgentConfig_presencePenalty(ctx, field)
-			case "minP":
-				return ec.fieldContext_AgentConfig_minP(ctx, field)
-			case "n":
-				return ec.fieldContext_AgentConfig_n(ctx, field)
-			case "json":
-				return ec.fieldContext_AgentConfig_json(ctx, field)
-			case "responseMimeType":
-				return ec.fieldContext_AgentConfig_responseMimeType(ctx, field)
-			case "reasoning":
-				return ec.fieldContext_AgentConfig_reasoning(ctx, field)
-			case "price":
-				return ec.fieldContext_AgentConfig_price(ctx, field)
-			case "extraBody":
-				return ec.fieldContext_AgentConfig_extraBody(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type AgentConfig", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _AgentsConfig_installer(ctx context.Context, field graphql.CollectedField, obj *model.AgentsConfig) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AgentsConfig_installer(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Installer, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.AgentConfig)
-	fc.Result = res
-	return ec.marshalNAgentConfig2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentConfig(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AgentsConfig_installer(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AgentsConfig",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "model":
-				return ec.fieldContext_AgentConfig_model(ctx, field)
-			case "maxTokens":
-				return ec.fieldContext_AgentConfig_maxTokens(ctx, field)
-			case "temperature":
-				return ec.fieldContext_AgentConfig_temperature(ctx, field)
-			case "topK":
-				return ec.fieldContext_AgentConfig_topK(ctx, field)
-			case "topP":
-				return ec.fieldContext_AgentConfig_topP(ctx, field)
-			case "minLength":
-				return ec.fieldContext_AgentConfig_minLength(ctx, field)
-			case "maxLength":
-				return ec.fieldContext_AgentConfig_maxLength(ctx, field)
-			case "repetitionPenalty":
-				return ec.fieldContext_AgentConfig_repetitionPenalty(ctx, field)
-			case "frequencyPenalty":
-				return ec.fieldContext_AgentConfig_frequencyPenalty(ctx, field)
-			case "presencePenalty":
-				return ec.fieldContext_AgentConfig_presencePenalty(ctx, field)
-			case "minP":
-				return ec.fieldContext_AgentConfig_minP(ctx, field)
-			case "n":
-				return ec.fieldContext_AgentConfig_n(ctx, field)
-			case "json":
-				return ec.fieldContext_AgentConfig_json(ctx, field)
-			case "responseMimeType":
-				return ec.fieldContext_AgentConfig_responseMimeType(ctx, field)
-			case "reasoning":
-				return ec.fieldContext_AgentConfig_reasoning(ctx, field)
-			case "price":
-				return ec.fieldContext_AgentConfig_price(ctx, field)
-			case "extraBody":
-				return ec.fieldContext_AgentConfig_extraBody(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type AgentConfig", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _AgentsConfig_pentester(ctx context.Context, field graphql.CollectedField, obj *model.AgentsConfig) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AgentsConfig_pentester(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Pentester, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.AgentConfig)
-	fc.Result = res
-	return ec.marshalNAgentConfig2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentConfig(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AgentsConfig_pentester(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AgentsConfig",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "model":
-				return ec.fieldContext_AgentConfig_model(ctx, field)
-			case "maxTokens":
-				return ec.fieldContext_AgentConfig_maxTokens(ctx, field)
-			case "temperature":
-				return ec.fieldContext_AgentConfig_temperature(ctx, field)
-			case "topK":
-				return ec.fieldContext_AgentConfig_topK(ctx, field)
-			case "topP":
-				return ec.fieldContext_AgentConfig_topP(ctx, field)
-			case "minLength":
-				return ec.fieldContext_AgentConfig_minLength(ctx, field)
-			case "maxLength":
-				return ec.fieldContext_AgentConfig_maxLength(ctx, field)
-			case "repetitionPenalty":
-				return ec.fieldContext_AgentConfig_repetitionPenalty(ctx, field)
-			case "frequencyPenalty":
-				return ec.fieldContext_AgentConfig_frequencyPenalty(ctx, field)
-			case "presencePenalty":
-				return ec.fieldContext_AgentConfig_presencePenalty(ctx, field)
-			case "minP":
-				return ec.fieldContext_AgentConfig_minP(ctx, field)
-			case "n":
-				return ec.fieldContext_AgentConfig_n(ctx, field)
-			case "json":
-				return ec.fieldContext_AgentConfig_json(ctx, field)
-			case "responseMimeType":
-				return ec.fieldContext_AgentConfig_responseMimeType(ctx, field)
-			case "reasoning":
-				return ec.fieldContext_AgentConfig_reasoning(ctx, field)
-			case "price":
-				return ec.fieldContext_AgentConfig_price(ctx, field)
-			case "extraBody":
-				return ec.fieldContext_AgentConfig_extraBody(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type AgentConfig", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _AgentsPrompts_primaryAgent(ctx context.Context, field graphql.CollectedField, obj *model.AgentsPrompts) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AgentsPrompts_primaryAgent(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PrimaryAgent, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.AgentPrompt)
-	fc.Result = res
-	return ec.marshalNAgentPrompt2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentPrompt(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AgentsPrompts_primaryAgent(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AgentsPrompts",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "system":
-				return ec.fieldContext_AgentPrompt_system(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type AgentPrompt", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _AgentsPrompts_assistant(ctx context.Context, field graphql.CollectedField, obj *model.AgentsPrompts) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_AgentsPrompts_assistant(ctx, field)
 	if err != nil {
@@ -12286,306 +11710,6 @@ func (ec *executionContext) fieldContext_AgentsPrompts_assistant(_ context.Conte
 				return ec.fieldContext_AgentPrompt_system(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type AgentPrompt", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _AgentsPrompts_pentester(ctx context.Context, field graphql.CollectedField, obj *model.AgentsPrompts) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AgentsPrompts_pentester(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Pentester, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.AgentPrompts)
-	fc.Result = res
-	return ec.marshalNAgentPrompts2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentPrompts(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AgentsPrompts_pentester(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AgentsPrompts",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "system":
-				return ec.fieldContext_AgentPrompts_system(ctx, field)
-			case "human":
-				return ec.fieldContext_AgentPrompts_human(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type AgentPrompts", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _AgentsPrompts_coder(ctx context.Context, field graphql.CollectedField, obj *model.AgentsPrompts) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AgentsPrompts_coder(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Coder, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.AgentPrompts)
-	fc.Result = res
-	return ec.marshalNAgentPrompts2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentPrompts(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AgentsPrompts_coder(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AgentsPrompts",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "system":
-				return ec.fieldContext_AgentPrompts_system(ctx, field)
-			case "human":
-				return ec.fieldContext_AgentPrompts_human(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type AgentPrompts", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _AgentsPrompts_installer(ctx context.Context, field graphql.CollectedField, obj *model.AgentsPrompts) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AgentsPrompts_installer(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Installer, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.AgentPrompts)
-	fc.Result = res
-	return ec.marshalNAgentPrompts2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentPrompts(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AgentsPrompts_installer(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AgentsPrompts",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "system":
-				return ec.fieldContext_AgentPrompts_system(ctx, field)
-			case "human":
-				return ec.fieldContext_AgentPrompts_human(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type AgentPrompts", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _AgentsPrompts_searcher(ctx context.Context, field graphql.CollectedField, obj *model.AgentsPrompts) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AgentsPrompts_searcher(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Searcher, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.AgentPrompts)
-	fc.Result = res
-	return ec.marshalNAgentPrompts2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentPrompts(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AgentsPrompts_searcher(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AgentsPrompts",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "system":
-				return ec.fieldContext_AgentPrompts_system(ctx, field)
-			case "human":
-				return ec.fieldContext_AgentPrompts_human(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type AgentPrompts", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _AgentsPrompts_memorist(ctx context.Context, field graphql.CollectedField, obj *model.AgentsPrompts) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AgentsPrompts_memorist(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Memorist, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.AgentPrompts)
-	fc.Result = res
-	return ec.marshalNAgentPrompts2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentPrompts(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AgentsPrompts_memorist(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AgentsPrompts",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "system":
-				return ec.fieldContext_AgentPrompts_system(ctx, field)
-			case "human":
-				return ec.fieldContext_AgentPrompts_human(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type AgentPrompts", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _AgentsPrompts_adviser(ctx context.Context, field graphql.CollectedField, obj *model.AgentsPrompts) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AgentsPrompts_adviser(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Adviser, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.AgentPrompts)
-	fc.Result = res
-	return ec.marshalNAgentPrompts2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentPrompts(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AgentsPrompts_adviser(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AgentsPrompts",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "system":
-				return ec.fieldContext_AgentPrompts_system(ctx, field)
-			case "human":
-				return ec.fieldContext_AgentPrompts_human(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type AgentPrompts", field.Name)
 		},
 	}
 	return fc, nil
@@ -12791,56 +11915,6 @@ func (ec *executionContext) fieldContext_AgentsPrompts_reflector(_ context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _AgentsPrompts_enricher(ctx context.Context, field graphql.CollectedField, obj *model.AgentsPrompts) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AgentsPrompts_enricher(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Enricher, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.AgentPrompts)
-	fc.Result = res
-	return ec.marshalNAgentPrompts2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentPrompts(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AgentsPrompts_enricher(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AgentsPrompts",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "system":
-				return ec.fieldContext_AgentPrompts_system(ctx, field)
-			case "human":
-				return ec.fieldContext_AgentPrompts_human(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type AgentPrompts", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _AgentsPrompts_toolCallFixer(ctx context.Context, field graphql.CollectedField, obj *model.AgentsPrompts) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_AgentsPrompts_toolCallFixer(ctx, field)
 	if err != nil {
@@ -12923,6 +11997,246 @@ func (ec *executionContext) _AgentsPrompts_summarizer(ctx context.Context, field
 }
 
 func (ec *executionContext) fieldContext_AgentsPrompts_summarizer(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentsPrompts",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "system":
+				return ec.fieldContext_AgentPrompt_system(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AgentPrompt", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentsPrompts_commander(ctx context.Context, field graphql.CollectedField, obj *model.AgentsPrompts) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentsPrompts_commander(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Commander, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.AgentPrompt)
+	fc.Result = res
+	return ec.marshalNAgentPrompt2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentPrompt(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentsPrompts_commander(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentsPrompts",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "system":
+				return ec.fieldContext_AgentPrompt_system(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AgentPrompt", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentsPrompts_triage(ctx context.Context, field graphql.CollectedField, obj *model.AgentsPrompts) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentsPrompts_triage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Triage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.AgentPrompt)
+	fc.Result = res
+	return ec.marshalNAgentPrompt2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentPrompt(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentsPrompts_triage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentsPrompts",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "system":
+				return ec.fieldContext_AgentPrompt_system(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AgentPrompt", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentsPrompts_logAnalyst(ctx context.Context, field graphql.CollectedField, obj *model.AgentsPrompts) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentsPrompts_logAnalyst(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LogAnalyst, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.AgentPrompt)
+	fc.Result = res
+	return ec.marshalNAgentPrompt2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentPrompt(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentsPrompts_logAnalyst(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentsPrompts",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "system":
+				return ec.fieldContext_AgentPrompt_system(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AgentPrompt", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentsPrompts_metricsAnalyst(ctx context.Context, field graphql.CollectedField, obj *model.AgentsPrompts) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentsPrompts_metricsAnalyst(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MetricsAnalyst, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.AgentPrompt)
+	fc.Result = res
+	return ec.marshalNAgentPrompt2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentPrompt(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentsPrompts_metricsAnalyst(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentsPrompts",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "system":
+				return ec.fieldContext_AgentPrompt_system(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AgentPrompt", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentsPrompts_changeAnalyst(ctx context.Context, field graphql.CollectedField, obj *model.AgentsPrompts) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentsPrompts_changeAnalyst(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ChangeAnalyst, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.AgentPrompt)
+	fc.Result = res
+	return ec.marshalNAgentPrompt2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentPrompt(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentsPrompts_changeAnalyst(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AgentsPrompts",
 		Field:      field,
@@ -14199,22 +13513,8 @@ func (ec *executionContext) fieldContext_DefaultPrompts_agents(_ context.Context
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "primaryAgent":
-				return ec.fieldContext_AgentsPrompts_primaryAgent(ctx, field)
 			case "assistant":
 				return ec.fieldContext_AgentsPrompts_assistant(ctx, field)
-			case "pentester":
-				return ec.fieldContext_AgentsPrompts_pentester(ctx, field)
-			case "coder":
-				return ec.fieldContext_AgentsPrompts_coder(ctx, field)
-			case "installer":
-				return ec.fieldContext_AgentsPrompts_installer(ctx, field)
-			case "searcher":
-				return ec.fieldContext_AgentsPrompts_searcher(ctx, field)
-			case "memorist":
-				return ec.fieldContext_AgentsPrompts_memorist(ctx, field)
-			case "adviser":
-				return ec.fieldContext_AgentsPrompts_adviser(ctx, field)
 			case "generator":
 				return ec.fieldContext_AgentsPrompts_generator(ctx, field)
 			case "refiner":
@@ -14223,12 +13523,20 @@ func (ec *executionContext) fieldContext_DefaultPrompts_agents(_ context.Context
 				return ec.fieldContext_AgentsPrompts_reporter(ctx, field)
 			case "reflector":
 				return ec.fieldContext_AgentsPrompts_reflector(ctx, field)
-			case "enricher":
-				return ec.fieldContext_AgentsPrompts_enricher(ctx, field)
 			case "toolCallFixer":
 				return ec.fieldContext_AgentsPrompts_toolCallFixer(ctx, field)
 			case "summarizer":
 				return ec.fieldContext_AgentsPrompts_summarizer(ctx, field)
+			case "commander":
+				return ec.fieldContext_AgentsPrompts_commander(ctx, field)
+			case "triage":
+				return ec.fieldContext_AgentsPrompts_triage(ctx, field)
+			case "logAnalyst":
+				return ec.fieldContext_AgentsPrompts_logAnalyst(ctx, field)
+			case "metricsAnalyst":
+				return ec.fieldContext_AgentsPrompts_metricsAnalyst(ctx, field)
+			case "changeAnalyst":
+				return ec.fieldContext_AgentsPrompts_changeAnalyst(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type AgentsPrompts", field.Name)
 		},
@@ -14293,12 +13601,6 @@ func (ec *executionContext) fieldContext_DefaultPrompts_tools(_ context.Context,
 				return ec.fieldContext_ToolsPrompts_collectToolCallId(ctx, field)
 			case "detectToolCallIdPattern":
 				return ec.fieldContext_ToolsPrompts_detectToolCallIdPattern(ctx, field)
-			case "monitorAgentExecution":
-				return ec.fieldContext_ToolsPrompts_monitorAgentExecution(ctx, field)
-			case "planAgentTask":
-				return ec.fieldContext_ToolsPrompts_planAgentTask(ctx, field)
-			case "wrapAgentTask":
-				return ec.fieldContext_ToolsPrompts_wrapAgentTask(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ToolsPrompts", field.Name)
 		},
@@ -19992,20 +19294,10 @@ func (ec *executionContext) fieldContext_Mutation_testProvider(ctx context.Conte
 				return ec.fieldContext_ProviderTestResult_generator(ctx, field)
 			case "refiner":
 				return ec.fieldContext_ProviderTestResult_refiner(ctx, field)
-			case "adviser":
-				return ec.fieldContext_ProviderTestResult_adviser(ctx, field)
 			case "reflector":
 				return ec.fieldContext_ProviderTestResult_reflector(ctx, field)
 			case "searcher":
 				return ec.fieldContext_ProviderTestResult_searcher(ctx, field)
-			case "enricher":
-				return ec.fieldContext_ProviderTestResult_enricher(ctx, field)
-			case "coder":
-				return ec.fieldContext_ProviderTestResult_coder(ctx, field)
-			case "installer":
-				return ec.fieldContext_ProviderTestResult_installer(ctx, field)
-			case "pentester":
-				return ec.fieldContext_ProviderTestResult_pentester(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ProviderTestResult", field.Name)
 		},
@@ -21936,20 +21228,10 @@ func (ec *executionContext) fieldContext_ProviderConfig_agents(_ context.Context
 				return ec.fieldContext_AgentsConfig_generator(ctx, field)
 			case "refiner":
 				return ec.fieldContext_AgentsConfig_refiner(ctx, field)
-			case "adviser":
-				return ec.fieldContext_AgentsConfig_adviser(ctx, field)
 			case "reflector":
 				return ec.fieldContext_AgentsConfig_reflector(ctx, field)
 			case "searcher":
 				return ec.fieldContext_AgentsConfig_searcher(ctx, field)
-			case "enricher":
-				return ec.fieldContext_AgentsConfig_enricher(ctx, field)
-			case "coder":
-				return ec.fieldContext_AgentsConfig_coder(ctx, field)
-			case "installer":
-				return ec.fieldContext_AgentsConfig_installer(ctx, field)
-			case "pentester":
-				return ec.fieldContext_AgentsConfig_pentester(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type AgentsConfig", field.Name)
 		},
@@ -22333,54 +21615,6 @@ func (ec *executionContext) fieldContext_ProviderTestResult_refiner(_ context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _ProviderTestResult_adviser(ctx context.Context, field graphql.CollectedField, obj *model.ProviderTestResult) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ProviderTestResult_adviser(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Adviser, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.AgentTestResult)
-	fc.Result = res
-	return ec.marshalNAgentTestResult2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentTestResult(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_ProviderTestResult_adviser(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ProviderTestResult",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "tests":
-				return ec.fieldContext_AgentTestResult_tests(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type AgentTestResult", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _ProviderTestResult_reflector(ctx context.Context, field graphql.CollectedField, obj *model.ProviderTestResult) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ProviderTestResult_reflector(ctx, field)
 	if err != nil {
@@ -22461,198 +21695,6 @@ func (ec *executionContext) _ProviderTestResult_searcher(ctx context.Context, fi
 }
 
 func (ec *executionContext) fieldContext_ProviderTestResult_searcher(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ProviderTestResult",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "tests":
-				return ec.fieldContext_AgentTestResult_tests(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type AgentTestResult", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ProviderTestResult_enricher(ctx context.Context, field graphql.CollectedField, obj *model.ProviderTestResult) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ProviderTestResult_enricher(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Enricher, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.AgentTestResult)
-	fc.Result = res
-	return ec.marshalNAgentTestResult2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentTestResult(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_ProviderTestResult_enricher(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ProviderTestResult",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "tests":
-				return ec.fieldContext_AgentTestResult_tests(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type AgentTestResult", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ProviderTestResult_coder(ctx context.Context, field graphql.CollectedField, obj *model.ProviderTestResult) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ProviderTestResult_coder(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Coder, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.AgentTestResult)
-	fc.Result = res
-	return ec.marshalNAgentTestResult2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentTestResult(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_ProviderTestResult_coder(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ProviderTestResult",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "tests":
-				return ec.fieldContext_AgentTestResult_tests(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type AgentTestResult", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ProviderTestResult_installer(ctx context.Context, field graphql.CollectedField, obj *model.ProviderTestResult) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ProviderTestResult_installer(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Installer, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.AgentTestResult)
-	fc.Result = res
-	return ec.marshalNAgentTestResult2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentTestResult(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_ProviderTestResult_installer(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ProviderTestResult",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "tests":
-				return ec.fieldContext_AgentTestResult_tests(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type AgentTestResult", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ProviderTestResult_pentester(ctx context.Context, field graphql.CollectedField, obj *model.ProviderTestResult) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ProviderTestResult_pentester(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Pentester, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.AgentTestResult)
-	fc.Result = res
-	return ec.marshalNAgentTestResult2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentTestResult(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_ProviderTestResult_pentester(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ProviderTestResult",
 		Field:      field,
@@ -34789,162 +33831,6 @@ func (ec *executionContext) fieldContext_ToolsPrompts_detectToolCallIdPattern(_ 
 	return fc, nil
 }
 
-func (ec *executionContext) _ToolsPrompts_monitorAgentExecution(ctx context.Context, field graphql.CollectedField, obj *model.ToolsPrompts) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ToolsPrompts_monitorAgentExecution(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.MonitorAgentExecution, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.DefaultPrompt)
-	fc.Result = res
-	return ec.marshalNDefaultPrompt2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐDefaultPrompt(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_ToolsPrompts_monitorAgentExecution(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ToolsPrompts",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "type":
-				return ec.fieldContext_DefaultPrompt_type(ctx, field)
-			case "template":
-				return ec.fieldContext_DefaultPrompt_template(ctx, field)
-			case "variables":
-				return ec.fieldContext_DefaultPrompt_variables(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type DefaultPrompt", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ToolsPrompts_planAgentTask(ctx context.Context, field graphql.CollectedField, obj *model.ToolsPrompts) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ToolsPrompts_planAgentTask(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PlanAgentTask, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.DefaultPrompt)
-	fc.Result = res
-	return ec.marshalNDefaultPrompt2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐDefaultPrompt(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_ToolsPrompts_planAgentTask(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ToolsPrompts",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "type":
-				return ec.fieldContext_DefaultPrompt_type(ctx, field)
-			case "template":
-				return ec.fieldContext_DefaultPrompt_template(ctx, field)
-			case "variables":
-				return ec.fieldContext_DefaultPrompt_variables(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type DefaultPrompt", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ToolsPrompts_wrapAgentTask(ctx context.Context, field graphql.CollectedField, obj *model.ToolsPrompts) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ToolsPrompts_wrapAgentTask(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.WrapAgentTask, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.DefaultPrompt)
-	fc.Result = res
-	return ec.marshalNDefaultPrompt2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐDefaultPrompt(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_ToolsPrompts_wrapAgentTask(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ToolsPrompts",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "type":
-				return ec.fieldContext_DefaultPrompt_type(ctx, field)
-			case "template":
-				return ec.fieldContext_DefaultPrompt_template(ctx, field)
-			case "variables":
-				return ec.fieldContext_DefaultPrompt_variables(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type DefaultPrompt", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _UsageStats_totalUsageIn(ctx context.Context, field graphql.CollectedField, obj *model.UsageStats) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UsageStats_totalUsageIn(ctx, field)
 	if err != nil {
@@ -38565,7 +37451,7 @@ func (ec *executionContext) unmarshalInputAgentsConfigInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"simple", "simpleJson", "primaryAgent", "assistant", "generator", "refiner", "adviser", "reflector", "searcher", "enricher", "coder", "installer", "pentester"}
+	fieldsInOrder := [...]string{"simple", "simpleJson", "primaryAgent", "assistant", "generator", "refiner", "reflector", "searcher"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -38614,13 +37500,6 @@ func (ec *executionContext) unmarshalInputAgentsConfigInput(ctx context.Context,
 				return it, err
 			}
 			it.Refiner = data
-		case "adviser":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("adviser"))
-			data, err := ec.unmarshalNAgentConfigInput2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentConfig(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Adviser = data
 		case "reflector":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reflector"))
 			data, err := ec.unmarshalNAgentConfigInput2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentConfig(ctx, v)
@@ -38635,34 +37514,6 @@ func (ec *executionContext) unmarshalInputAgentsConfigInput(ctx context.Context,
 				return it, err
 			}
 			it.Searcher = data
-		case "enricher":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enricher"))
-			data, err := ec.unmarshalNAgentConfigInput2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentConfig(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Enricher = data
-		case "coder":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("coder"))
-			data, err := ec.unmarshalNAgentConfigInput2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentConfig(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Coder = data
-		case "installer":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("installer"))
-			data, err := ec.unmarshalNAgentConfigInput2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentConfig(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Installer = data
-		case "pentester":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pentester"))
-			data, err := ec.unmarshalNAgentConfigInput2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentConfig(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Pentester = data
 		}
 	}
 
@@ -39610,11 +38461,6 @@ func (ec *executionContext) _AgentsConfig(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "adviser":
-			out.Values[i] = ec._AgentsConfig_adviser(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "reflector":
 			out.Values[i] = ec._AgentsConfig_reflector(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -39622,26 +38468,6 @@ func (ec *executionContext) _AgentsConfig(ctx context.Context, sel ast.Selection
 			}
 		case "searcher":
 			out.Values[i] = ec._AgentsConfig_searcher(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "enricher":
-			out.Values[i] = ec._AgentsConfig_enricher(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "coder":
-			out.Values[i] = ec._AgentsConfig_coder(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "installer":
-			out.Values[i] = ec._AgentsConfig_installer(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "pentester":
-			out.Values[i] = ec._AgentsConfig_pentester(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -39679,43 +38505,8 @@ func (ec *executionContext) _AgentsPrompts(ctx context.Context, sel ast.Selectio
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("AgentsPrompts")
-		case "primaryAgent":
-			out.Values[i] = ec._AgentsPrompts_primaryAgent(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "assistant":
 			out.Values[i] = ec._AgentsPrompts_assistant(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "pentester":
-			out.Values[i] = ec._AgentsPrompts_pentester(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "coder":
-			out.Values[i] = ec._AgentsPrompts_coder(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "installer":
-			out.Values[i] = ec._AgentsPrompts_installer(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "searcher":
-			out.Values[i] = ec._AgentsPrompts_searcher(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "memorist":
-			out.Values[i] = ec._AgentsPrompts_memorist(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "adviser":
-			out.Values[i] = ec._AgentsPrompts_adviser(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -39739,11 +38530,6 @@ func (ec *executionContext) _AgentsPrompts(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "enricher":
-			out.Values[i] = ec._AgentsPrompts_enricher(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "toolCallFixer":
 			out.Values[i] = ec._AgentsPrompts_toolCallFixer(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -39751,6 +38537,31 @@ func (ec *executionContext) _AgentsPrompts(ctx context.Context, sel ast.Selectio
 			}
 		case "summarizer":
 			out.Values[i] = ec._AgentsPrompts_summarizer(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "commander":
+			out.Values[i] = ec._AgentsPrompts_commander(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "triage":
+			out.Values[i] = ec._AgentsPrompts_triage(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "logAnalyst":
+			out.Values[i] = ec._AgentsPrompts_logAnalyst(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "metricsAnalyst":
+			out.Values[i] = ec._AgentsPrompts_metricsAnalyst(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "changeAnalyst":
+			out.Values[i] = ec._AgentsPrompts_changeAnalyst(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -41670,11 +40481,6 @@ func (ec *executionContext) _ProviderTestResult(ctx context.Context, sel ast.Sel
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "adviser":
-			out.Values[i] = ec._ProviderTestResult_adviser(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "reflector":
 			out.Values[i] = ec._ProviderTestResult_reflector(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -41682,26 +40488,6 @@ func (ec *executionContext) _ProviderTestResult(ctx context.Context, sel ast.Sel
 			}
 		case "searcher":
 			out.Values[i] = ec._ProviderTestResult_searcher(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "enricher":
-			out.Values[i] = ec._ProviderTestResult_enricher(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "coder":
-			out.Values[i] = ec._ProviderTestResult_coder(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "installer":
-			out.Values[i] = ec._ProviderTestResult_installer(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "pentester":
-			out.Values[i] = ec._ProviderTestResult_pentester(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -43952,21 +42738,6 @@ func (ec *executionContext) _ToolsPrompts(ctx context.Context, sel ast.Selection
 			}
 		case "detectToolCallIdPattern":
 			out.Values[i] = ec._ToolsPrompts_detectToolCallIdPattern(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "monitorAgentExecution":
-			out.Values[i] = ec._ToolsPrompts_monitorAgentExecution(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "planAgentTask":
-			out.Values[i] = ec._ToolsPrompts_planAgentTask(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "wrapAgentTask":
-			out.Values[i] = ec._ToolsPrompts_wrapAgentTask(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

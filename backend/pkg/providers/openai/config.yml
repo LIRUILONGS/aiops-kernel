@@ -1,9 +1,9 @@
 # OpenAI agent configuration.
 #
-# Strategy: gpt-5.4-nano for utility/orchestration (simple/searcher/enricher),
+# Strategy: gpt-5.4-nano for utility/orchestration (simple/simple_json),
 # gpt-5.4-mini for the primary/assistant loop and lightweight security agents,
 # gpt-5.6-terra (newest mid-tier flagship, same price as gpt-5.4) for critical
-# reasoning (generator/refiner/adviser/coder).
+# reasoning (generator/refiner).
 #
 # All models below are current (non-deprecated) per OpenAI's model catalog. Do not
 # reintroduce o3/o4-mini/gpt-4.1/gpt-4o-class models here: see models.yml for the
@@ -23,7 +23,7 @@
 # `.vscode/launch.json` "Launch Agents Tests", `-type openai -agents <name>`):
 #   - Omitting `reasoning:` entirely (the previous state of this file) is NOT
 #     enough: it still 400s on every test of `type: tool` for gpt-5.6-terra
-#     (verified on the `coder` agent, 15/23 passing — every failure was a
+#     (verified on the `refiner` agent, 15/23 passing — every failure was a
 #     tool-attached call, every pass was a plain completion). These models
 #     default to thinking ON even with no reasoning CallOption set, and the
 #     API refuses to combine that default-on thinking with tools on this
@@ -41,9 +41,9 @@
 #     "gpt-5" prefix match) that are NOT in the hard-mandatory o1/o3/o4-mini/
 #     gpt-5-pro set, so ResolveOff returns OffEffortNone and openaillm.go's
 #     setReasoningOff sends a real "reasoning_effort":"none". Re-tested the
-#     `coder` agent with this set: 24/24 (100%) passing, including every
+#     `refiner` agent with this set: 24/24 (100%) passing, including every
 #     `type: tool` and streaming test.
-#   - gpt-5.4-nano (simple/simple_json/searcher/enricher) needs no such
+#   - gpt-5.4-nano (simple/simple_json) needs no such
 #     override: re-tested live and it is 100% passing (69/69) as-is — the
 #     tester's "Reasoning" column reports `false` for it, i.e. this tier does
 #     not default to thinking ON, so tools attach without conflict.
@@ -122,17 +122,6 @@ refiner:
     output: 12.0
     cache_read: 0.2
 
-adviser:
-  model: gpt-5.6-terra
-  n: 1
-  max_tokens: 8192
-  reasoning:
-    mode: off
-  price:
-    input: 2.0
-    output: 12.0
-    cache_read: 0.2
-
 reflector:
   model: gpt-5.4-mini
   n: 1
@@ -154,47 +143,3 @@ searcher:
     input: 0.2
     output: 1.25
     cache_read: 0.02
-
-enricher:
-  model: gpt-5.4-nano
-  temperature: 0.7
-  top_p: 0.8
-  n: 1
-  max_tokens: 4096
-  price:
-    input: 0.2
-    output: 1.25
-    cache_read: 0.02
-
-coder:
-  model: gpt-5.6-terra
-  n: 1
-  max_tokens: 20480
-  reasoning:
-    mode: off
-  price:
-    input: 2.0
-    output: 12.0
-    cache_read: 0.2
-
-installer:
-  model: gpt-5.4-mini
-  n: 1
-  max_tokens: 16384
-  reasoning:
-    mode: off
-  price:
-    input: 0.75
-    output: 4.5
-    cache_read: 0.075
-
-pentester:
-  model: gpt-5.4-mini
-  n: 1
-  max_tokens: 8192
-  reasoning:
-    mode: off
-  price:
-    input: 0.75
-    output: 4.5
-    cache_read: 0.075

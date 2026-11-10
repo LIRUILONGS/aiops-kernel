@@ -28,25 +28,12 @@ var ErrTemplateNotFound = errors.New("template not found")
 type PromptType string
 
 const (
-	PromptTypePrimaryAgent             PromptType = "primary_agent"              // orchestrates subtask execution using AI agents
 	PromptTypeCommander                PromptType = "commander"                  // leads an incident diagnosis and states the conclusion
 	PromptTypeTriage                   PromptType = "triage"                     // rates severity, blast radius and known patterns
 	PromptTypeLogAnalyst               PromptType = "log_analyst"                // finds error patterns and their onset in logs
 	PromptTypeMetricsAnalyst           PromptType = "metrics_analyst"            // locates the inflection point in metric series
 	PromptTypeChangeAnalyst            PromptType = "change_analyst"             // builds the change timeline around the onset
 	PromptTypeAssistant                PromptType = "assistant"                  // interactive AI assistant for user conversations
-	PromptTypePentester                PromptType = "pentester"                  // executes security tests and vulnerability scanning
-	PromptTypeQuestionPentester        PromptType = "question_pentester"         // human input requesting penetration testing
-	PromptTypeCoder                    PromptType = "coder"                      // develops exploits and custom security tools
-	PromptTypeQuestionCoder            PromptType = "question_coder"             // human input requesting code development
-	PromptTypeInstaller                PromptType = "installer"                  // sets up testing environment and tools
-	PromptTypeQuestionInstaller        PromptType = "question_installer"         // human input requesting system installation
-	PromptTypeSearcher                 PromptType = "searcher"                   // gathers intelligence from web sources
-	PromptTypeQuestionSearcher         PromptType = "question_searcher"          // human input requesting information search
-	PromptTypeMemorist                 PromptType = "memorist"                   // retrieves knowledge from vector memory store
-	PromptTypeQuestionMemorist         PromptType = "question_memorist"          // human input querying past experiences
-	PromptTypeAdviser                  PromptType = "adviser"                    // provides security recommendations and guidance
-	PromptTypeQuestionAdviser          PromptType = "question_adviser"           // human input seeking expert advice
 	PromptTypeGenerator                PromptType = "generator"                  // creates structured subtask breakdown
 	PromptTypeSubtasksGenerator        PromptType = "subtasks_generator"         // human input for task decomposition
 	PromptTypeRefiner                  PromptType = "refiner"                    // optimizes and adjusts planned subtasks
@@ -55,8 +42,6 @@ const (
 	PromptTypeTaskReporter             PromptType = "task_reporter"              // human input for result documentation
 	PromptTypeReflector                PromptType = "reflector"                  // analyzes outcomes and suggests improvements
 	PromptTypeQuestionReflector        PromptType = "question_reflector"         // human input for self-assessment
-	PromptTypeEnricher                 PromptType = "enricher"                   // adds context and details to requests
-	PromptTypeQuestionEnricher         PromptType = "question_enricher"          // human input for context enhancement
 	PromptTypeToolCallFixer            PromptType = "toolcall_fixer"             // corrects malformed security tool commands
 	PromptTypeInputToolCallFixer       PromptType = "input_toolcall_fixer"       // human input for tool argument fixing
 	PromptTypeSummarizer               PromptType = "summarizer"                 // condenses long conversations and results
@@ -69,54 +54,21 @@ const (
 	PromptTypeShortExecutionContext    PromptType = "short_execution_context"    // prepares minimal context for quick processing
 	PromptTypeToolCallIDCollector      PromptType = "tool_call_id_collector"     // requests function call to collect tool call ID sample
 	PromptTypeToolCallIDDetector       PromptType = "tool_call_id_detector"      // analyzes tool call ID samples to detect pattern template
-	PromptTypeQuestionExecutionMonitor PromptType = "question_execution_monitor" // question for adviser to monitor agent execution progress
-	PromptTypeQuestionTaskPlanner      PromptType = "question_task_planner"      // question for adviser to create execution plan for agent
-	PromptTypeTaskAssignmentWrapper    PromptType = "task_assignment_wrapper"    // wraps original request with execution plan for specialist agents
 )
 
 var PromptVariables = map[PromptType][]string{
-	PromptTypePrimaryAgent: {
-		"FinalyToolName",
-		"SearchToolName",
-		"PentesterToolName",
-		"CoderToolName",
-		"AdviceToolName",
-		"MemoristToolName",
-		"MaintenanceToolName",
-		"SummarizationToolName",
-		"SummarizedContentPrefix",
-		"AskUserToolName",
-		"AskUserEnabled",
-		"ExecutionContext",
-		"Cwd",
-		"Lang",
-		"DockerImage",
-		"CurrentTime",
-		"ToolPlaceholder",
-		"UserFiles",
-	},
 	PromptTypeAssistant: {
-		"SearchToolName",
-		"PentesterToolName",
-		"CoderToolName",
-		"AdviceToolName",
-		"MemoristToolName",
-		"MaintenanceToolName",
 		"TerminalToolName",
 		"FileToolName",
 		"WebSearchToolName",
-		"BrowserToolName",
 		"SearchInMemoryToolName",
 		"SearchGuideToolName",
 		"SearchAnswerToolName",
 		"SearchCodeToolName",
 		"SummarizationToolName",
-		"SummarizedContentPrefix",
-		"UseAgents",
 		"DockerImage",
 		"Cwd",
 		"ContainerPorts",
-		"ExecutionContext",
 		"Lang",
 		"CurrentTime",
 		"FlowManagerEnabled",
@@ -126,151 +78,6 @@ var PromptVariables = map[PromptType][]string{
 		"PatchFlowSubtasksToolName",
 		"WaitFlowCompletionToolName",
 		"UserFiles",
-	},
-	PromptTypePentester: {
-		"HackResultToolName",
-		"WebSearchToolName",
-		"SearchGuideToolName",
-		"StoreGuideToolName",
-		"GraphitiEnabled",
-		"GraphitiSearchToolName",
-		"SearchToolName",
-		"CoderToolName",
-		"AdviceToolName",
-		"MemoristToolName",
-		"MaintenanceToolName",
-		"TerminalToolName",
-		"FileToolName",
-		"SummarizationToolName",
-		"SummarizedContentPrefix",
-		"IsDefaultDockerImage",
-		"DockerImage",
-		"Cwd",
-		"ContainerPorts",
-		"ExecutionContext",
-		"Lang",
-		"CurrentTime",
-		"ToolPlaceholder",
-		"UserFiles",
-	},
-	PromptTypeQuestionPentester: {
-		"Question",
-	},
-	PromptTypeCoder: {
-		"CodeResultToolName",
-		"SearchCodeToolName",
-		"StoreCodeToolName",
-		"GraphitiEnabled",
-		"GraphitiSearchToolName",
-		"SearchToolName",
-		"AdviceToolName",
-		"MemoristToolName",
-		"MaintenanceToolName",
-		"TerminalToolName",
-		"FileToolName",
-		"SummarizationToolName",
-		"SummarizedContentPrefix",
-		"DockerImage",
-		"Cwd",
-		"ContainerPorts",
-		"ExecutionContext",
-		"Lang",
-		"CurrentTime",
-		"ToolPlaceholder",
-		"UserFiles",
-	},
-	PromptTypeQuestionCoder: {
-		"Question",
-	},
-	PromptTypeInstaller: {
-		"MaintenanceResultToolName",
-		"SearchGuideToolName",
-		"StoreGuideToolName",
-		"SearchToolName",
-		"AdviceToolName",
-		"MemoristToolName",
-		"TerminalToolName",
-		"FileToolName",
-		"SummarizationToolName",
-		"SummarizedContentPrefix",
-		"DockerImage",
-		"Cwd",
-		"ContainerPorts",
-		"ExecutionContext",
-		"Lang",
-		"CurrentTime",
-		"ToolPlaceholder",
-		"UserFiles",
-	},
-	PromptTypeQuestionInstaller: {
-		"Question",
-	},
-	PromptTypeSearcher: {
-		"SearchResultToolName",
-		"SearchAnswerToolName",
-		"StoreAnswerToolName",
-		"SummarizationToolName",
-		"SummarizedContentPrefix",
-		"ExecutionContext",
-		"Cwd",
-		"Lang",
-		"CurrentTime",
-		"ToolPlaceholder",
-		"UserFiles",
-	},
-	PromptTypeQuestionSearcher: {
-		"Question",
-		"Task",
-		"Subtask",
-	},
-	PromptTypeMemorist: {
-		"MemoristResultToolName",
-		"GraphitiEnabled",
-		"GraphitiSearchToolName",
-		"TerminalToolName",
-		"FileToolName",
-		"SummarizationToolName",
-		"SummarizedContentPrefix",
-		"DockerImage",
-		"Cwd",
-		"ContainerPorts",
-		"ExecutionContext",
-		"Lang",
-		"CurrentTime",
-		"ToolPlaceholder",
-		"UserFiles",
-	},
-	PromptTypeQuestionMemorist: {
-		"Question",
-		"Task",
-		"Subtask",
-		"ExecutionDetails",
-	},
-	PromptTypeAdviser: {
-		"ExecutionContext",
-		"CurrentTime",
-		"FinalyToolName",
-		"PentesterToolName",
-		"HackResultToolName",
-		"CoderToolName",
-		"CodeResultToolName",
-		"MaintenanceToolName",
-		"MaintenanceResultToolName",
-		"SearchToolName",
-		"SearchResultToolName",
-		"MemoristToolName",
-		"AdviceToolName",
-		"DockerImage",
-		"Cwd",
-		"ContainerPorts",
-		"UserFiles",
-	},
-	PromptTypeQuestionAdviser: {
-		"InitiatorAgent",
-		"Question",
-		"Code",
-		"Output",
-		"Enriches",
 	},
 	PromptTypeGenerator: {
 		"SubtaskListToolName",
@@ -324,28 +131,6 @@ var PromptVariables = map[PromptType][]string{
 	PromptTypeQuestionReflector: {
 		"Message",
 		"BarrierToolNames",
-	},
-	PromptTypeEnricher: {
-		"EnricherToolName",
-		"SummarizationToolName",
-		"SummarizedContentPrefix",
-		"ExecutionContext",
-		"Cwd",
-		"Lang",
-		"CurrentTime",
-		"ToolPlaceholder",
-		"SearchInMemoryToolName",
-		"GraphitiEnabled",
-		"GraphitiSearchToolName",
-		"FileToolName",
-		"TerminalToolName",
-		"BrowserToolName",
-		"UserFiles",
-	},
-	PromptTypeQuestionEnricher: {
-		"Question",
-		"Code",
-		"Output",
 	},
 	PromptTypeToolCallFixer: {},
 	PromptTypeCommander: {
@@ -435,24 +220,6 @@ var PromptVariables = map[PromptType][]string{
 		"Samples",
 		"PreviousAttempts",
 	},
-	PromptTypeQuestionExecutionMonitor: {
-		"SubtaskDescription",
-		"AgentType",
-		"AgentPrompt",
-		"RecentMessages",
-		"ExecutedToolCalls",
-		"LastToolName",
-		"LastToolArgs",
-		"LastToolResult",
-	},
-	PromptTypeQuestionTaskPlanner: {
-		"AgentType",
-		"TaskQuestion",
-	},
-	PromptTypeTaskAssignmentWrapper: {
-		"OriginalRequest",
-		"ExecutionPlan",
-	},
 }
 
 type Prompt struct {
@@ -471,19 +238,11 @@ type AgentPrompts struct {
 }
 
 type AgentsPrompts struct {
-	PrimaryAgent   AgentPrompt
 	Assistant      AgentPrompt
-	Pentester      AgentPrompts
-	Coder          AgentPrompts
-	Installer      AgentPrompts
-	Searcher       AgentPrompts
-	Memorist       AgentPrompts
-	Adviser        AgentPrompts
 	Generator      AgentPrompts
 	Refiner        AgentPrompts
 	Reporter       AgentPrompts
 	Reflector      AgentPrompts
-	Enricher       AgentPrompts
 	ToolCallFixer  AgentPrompts
 	Summarizer     AgentPrompt
 	Commander      AgentPrompt
@@ -503,9 +262,6 @@ type ToolsPrompts struct {
 	ChooseUserLanguage       Prompt
 	CollectToolCallID        Prompt
 	DetectToolCallIDPattern  Prompt
-	QuestionExecutionMonitor Prompt
-	QuestionTaskPlanner      Prompt
-	TaskAssignmentWrapper    Prompt
 }
 
 type DefaultPrompts struct {
@@ -540,35 +296,8 @@ func GetDefaultPrompts() (*DefaultPrompts, error) {
 
 	return &DefaultPrompts{
 		AgentsPrompts: AgentsPrompts{
-			PrimaryAgent: AgentPrompt{
-				System: getPrompt(PromptTypePrimaryAgent),
-			},
 			Assistant: AgentPrompt{
 				System: getPrompt(PromptTypeAssistant),
-			},
-			Pentester: AgentPrompts{
-				System: getPrompt(PromptTypePentester),
-				Human:  getPrompt(PromptTypeQuestionPentester),
-			},
-			Coder: AgentPrompts{
-				System: getPrompt(PromptTypeCoder),
-				Human:  getPrompt(PromptTypeQuestionCoder),
-			},
-			Installer: AgentPrompts{
-				System: getPrompt(PromptTypeInstaller),
-				Human:  getPrompt(PromptTypeQuestionInstaller),
-			},
-			Searcher: AgentPrompts{
-				System: getPrompt(PromptTypeSearcher),
-				Human:  getPrompt(PromptTypeQuestionSearcher),
-			},
-			Memorist: AgentPrompts{
-				System: getPrompt(PromptTypeMemorist),
-				Human:  getPrompt(PromptTypeQuestionMemorist),
-			},
-			Adviser: AgentPrompts{
-				System: getPrompt(PromptTypeAdviser),
-				Human:  getPrompt(PromptTypeQuestionAdviser),
 			},
 			Generator: AgentPrompts{
 				System: getPrompt(PromptTypeGenerator),
@@ -585,10 +314,6 @@ func GetDefaultPrompts() (*DefaultPrompts, error) {
 			Reflector: AgentPrompts{
 				System: getPrompt(PromptTypeReflector),
 				Human:  getPrompt(PromptTypeQuestionReflector),
-			},
-			Enricher: AgentPrompts{
-				System: getPrompt(PromptTypeEnricher),
-				Human:  getPrompt(PromptTypeQuestionEnricher),
 			},
 			ToolCallFixer: AgentPrompts{
 				System: getPrompt(PromptTypeToolCallFixer),
@@ -623,9 +348,6 @@ func GetDefaultPrompts() (*DefaultPrompts, error) {
 			ChooseUserLanguage:       getPrompt(PromptTypeLanguageChooser),
 			CollectToolCallID:        getPrompt(PromptTypeToolCallIDCollector),
 			DetectToolCallIDPattern:  getPrompt(PromptTypeToolCallIDDetector),
-			QuestionExecutionMonitor: getPrompt(PromptTypeQuestionExecutionMonitor),
-			QuestionTaskPlanner:      getPrompt(PromptTypeQuestionTaskPlanner),
-			TaskAssignmentWrapper:    getPrompt(PromptTypeTaskAssignmentWrapper),
 		},
 	}, nil
 }

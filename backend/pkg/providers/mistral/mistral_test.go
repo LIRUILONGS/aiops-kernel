@@ -53,14 +53,12 @@ func TestMistral_DefaultProviderConfig_SendsEffortHighOnlyFromReasoningAgents(t 
 		agents []pconfig.ProviderOptionsType
 	}{
 		{effort: "high", agents: []pconfig.ProviderOptionsType{
-			pconfig.OptionsTypeGenerator, pconfig.OptionsTypeRefiner, pconfig.OptionsTypeAdviser,
-			pconfig.OptionsTypeInstaller,
+			pconfig.OptionsTypeGenerator, pconfig.OptionsTypeRefiner,
 		}},
 		{agents: []pconfig.ProviderOptionsType{
 			pconfig.OptionsTypeSimple, pconfig.OptionsTypeSimpleJSON,
 			pconfig.OptionsTypePrimaryAgent, pconfig.OptionsTypeAssistant,
-			pconfig.OptionsTypeReflector, pconfig.OptionsTypeSearcher, pconfig.OptionsTypeEnricher,
-			pconfig.OptionsTypeCoder, pconfig.OptionsTypePentester,
+			pconfig.OptionsTypeReflector, pconfig.OptionsTypeSearcher,
 		}},
 	} {
 		for _, opt := range tc.agents {

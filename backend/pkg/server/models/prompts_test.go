@@ -12,9 +12,9 @@ import (
 func TestPrompts_Valid_RefusesExactlyTheInvalidField(t *testing.T) {
 	t.Parallel()
 
-	prompt := Prompt{Type: "primary_agent", Prompt: "You are a security assistant."}
+	prompt := Prompt{Type: "generator", Prompt: "You are an incident planner."}
 	cases := []modelsValidCase{
-		{"the primary agent prompt type", PromptType("primary_agent"), ""},
+		{"a retired prompt type", PromptType("primary_agent"), "invalid PromptType: primary_agent"},
 		{"an empty prompt type", PromptType(""), "invalid PromptType: "},
 		{"a misspelt prompt type", PromptType("primarry_agent"), "invalid PromptType: primarry_agent"},
 
@@ -35,7 +35,7 @@ func TestPrompts_Valid_RefusesExactlyTheInvalidField(t *testing.T) {
 func TestPrompts_String_SpellsTheStoredValue(t *testing.T) {
 	t.Parallel()
 
-	assert.Equal(t, "primary_agent", PromptType(templates.PromptTypePrimaryAgent).String())
+	assert.Equal(t, "commander", PromptType(templates.PromptTypeCommander).String())
 	assert.Equal(t, "assistant", PromptType(templates.PromptTypeAssistant).String())
 }
 

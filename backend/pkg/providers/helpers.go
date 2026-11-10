@@ -159,43 +159,6 @@ func (rd *repeatingDetector) clearCallArguments(toolCall *llms.FunctionCall) llm
 	}
 }
 
-type executionMonitorBuilder func() *executionMonitor
-
-// executionMonitor detects when to invoke mentor (adviser agent) for execution monitoring
-type executionMonitor struct {
-	sameToolCount  int
-	totalCallCount int
-	lastToolName   string
-	sameThreshold  int
-	totalThreshold int
-	enabled        bool
-}
-
-// shouldInvokeMentor checks if mentor (adviser agent) should be invoked based on tool call patterns
-func (emd *executionMonitor) shouldInvokeMentor(toolCall llms.ToolCall) bool {
-	if !emd.enabled || toolCall.FunctionCall == nil {
-		return false
-	}
-
-	emd.totalCallCount++
-
-	if toolCall.FunctionCall.Name == emd.lastToolName {
-		emd.sameToolCount++
-	} else {
-		emd.sameToolCount = 1
-		emd.lastToolName = toolCall.FunctionCall.Name
-	}
-
-	return emd.sameToolCount >= emd.sameThreshold || emd.totalCallCount >= emd.totalThreshold
-}
-
-// reset resets the execution monitor state after mentor (adviser agent) invocation
-func (emd *executionMonitor) reset() {
-	emd.sameToolCount = 0
-	emd.totalCallCount = 0
-	emd.lastToolName = ""
-}
-
 func (fp *flowProvider) getTasksInfo(ctx context.Context, taskID int64) (*tasksInfo, error) {
 	var (
 		err  error
@@ -326,7 +289,7 @@ func (fp *flowProvider) ensureChainConsistency(chain []llms.MessageContent) ([]l
 // tries the commander first and that name second.
 var taskChainCandidates = []database.MsgchainType{
 	database.MsgchainTypeCommander,
-	database.MsgchainTypePrimaryAgent,
+	database.MsgchainTypeCommander,
 }
 
 func (fp *flowProvider) getTaskMainChain(ctx context.Context, taskID int64) (database.Msgchain, error) {

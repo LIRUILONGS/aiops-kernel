@@ -266,10 +266,10 @@ const TABS_TASK = entity('Task', {
 
 const TABS_AGENT_LOG = entity('AgentLog', {
     createdAt: T,
-    executor: AgentType.Pentester,
+    executor: AgentType.Commander,
     flowId: '5',
     id: '41',
-    initiator: AgentType.Adviser,
+    initiator: AgentType.Triage,
     result: 'Reconnaissance summary ready',
     subtaskId: null,
     task: 'E2E agent reconnaissance',
@@ -279,10 +279,10 @@ const TABS_AGENT_LOG = entity('AgentLog', {
 const TABS_SEARCH_LOG = entity('SearchLog', {
     createdAt: T,
     engine: 'duckduckgo',
-    executor: AgentType.Searcher,
+    executor: AgentType.LogAnalyst,
     flowId: '5',
     id: '51',
-    initiator: AgentType.Pentester,
+    initiator: AgentType.Commander,
     query: 'E2E search for the CVE',
     result: 'Found relevant advisories',
     subtaskId: null,
@@ -292,11 +292,11 @@ const TABS_SEARCH_LOG = entity('SearchLog', {
 const TABS_VECTOR_LOG = entity('VectorStoreLog', {
     action: VectorStoreAction.Retrieve,
     createdAt: T,
-    executor: AgentType.Memorist,
+    executor: AgentType.MetricsAnalyst,
     filter: '{}',
     flowId: '5',
     id: '61',
-    initiator: AgentType.Pentester,
+    initiator: AgentType.Commander,
     query: 'E2E recall prior findings',
     result: 'Recalled 3 memories',
     subtaskId: null,
@@ -405,13 +405,13 @@ const flowUsage: UsageStatsFragmentFragment = entity('UsageStats', {
 const usageStatsByFlow: ResultOf<typeof UsageStatsByFlowDocument> = { usageStatsByFlow: flowUsage };
 
 const usageStatsByAgentTypeForFlow: ResultOf<typeof UsageStatsByAgentTypeForFlowDocument> = {
-    usageStatsByAgentTypeForFlow: [entity('AgentTypeUsageStats', { agentType: AgentType.Pentester, stats: flowUsage })],
+    usageStatsByAgentTypeForFlow: [entity('AgentTypeUsageStats', { agentType: AgentType.Commander, stats: flowUsage })],
 };
 
 const usageStatsByModelAgentsForFlow: ResultOf<typeof UsageStatsByModelAgentsForFlowDocument> = {
     usageStatsByModelAgentsForFlow: [
         entity('ModelAgentsUsageStats', {
-            agentTypes: [AgentType.Pentester],
+            agentTypes: [AgentType.Commander],
             model: 'e2e-model',
             provider: 'e2e-provider',
             stats: flowUsage,
@@ -471,10 +471,10 @@ export const livePanelsCassette = (): Cassette =>
                         streamedFrame({
                             agentLogAdded: entity('AgentLog', {
                                 createdAt: T,
-                                executor: AgentType.Pentester,
+                                executor: AgentType.Commander,
                                 flowId: '5',
                                 id: '42',
-                                initiator: AgentType.Adviser,
+                                initiator: AgentType.Triage,
                                 result: 'Streamed step complete',
                                 subtaskId: null,
                                 task: STREAMED.agent,
@@ -528,10 +528,10 @@ export const livePanelsCassette = (): Cassette =>
                             searchLogAdded: entity('SearchLog', {
                                 createdAt: T,
                                 engine: 'duckduckgo',
-                                executor: AgentType.Searcher,
+                                executor: AgentType.LogAnalyst,
                                 flowId: '5',
                                 id: '52',
-                                initiator: AgentType.Pentester,
+                                initiator: AgentType.Commander,
                                 query: STREAMED.search,
                                 result: 'Streamed advisories',
                                 subtaskId: null,
@@ -589,11 +589,11 @@ export const livePanelsCassette = (): Cassette =>
                             vectorStoreLogAdded: entity('VectorStoreLog', {
                                 action: VectorStoreAction.Retrieve,
                                 createdAt: T,
-                                executor: AgentType.Memorist,
+                                executor: AgentType.MetricsAnalyst,
                                 filter: '{}',
                                 flowId: '5',
                                 id: '62',
-                                initiator: AgentType.Pentester,
+                                initiator: AgentType.Commander,
                                 query: STREAMED.vector,
                                 result: 'Streamed recall complete',
                                 subtaskId: null,

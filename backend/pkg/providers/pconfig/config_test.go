@@ -67,13 +67,8 @@ var configAgentCallsCarryTools = map[ProviderOptionsType]bool{
 	OptionsTypeAssistant:    true,
 	OptionsTypeGenerator:    true,
 	OptionsTypeRefiner:      true,
-	OptionsTypeAdviser:      false,
 	OptionsTypeReflector:    false,
 	OptionsTypeSearcher:     true,
-	OptionsTypeEnricher:     true,
-	OptionsTypeCoder:        true,
-	OptionsTypeInstaller:    true,
-	OptionsTypePentester:    true,
 }
 
 // configChatServer answers every chat completion, so an error from the door is a refusal raised before sending.
@@ -680,7 +675,7 @@ func TestConfig_LoadConfig_ReadsAJSONOrYAMLFile(t *testing.T) {
 			simple := *cfg.Simple
 			simple.ClearRaw()
 			assert.Equal(t, *tt.want, simple)
-			assert.Equal(t, llms.CallOptions{MaxTokens: configPtr(1000)}, configResolve(cfg.GetOptionsForType(OptionsTypeCoder)),
+			assert.Equal(t, llms.CallOptions{MaxTokens: configPtr(1000)}, configResolve(cfg.GetOptionsForType(OptionsTypeRefiner)),
 				"an agent the file leaves unset takes the defaults the loader was given")
 			assert.Equal(t, tt.content, string(cfg.GetRawConfig()))
 		})
@@ -826,7 +821,7 @@ func TestConfig_UsesAdaptiveThinking_FollowsTheDoorDefaultModelWhenTheBlockNames
 	require.NoError(t, err)
 
 	for _, opt := range []ProviderOptionsType{
-		OptionsTypeSimple, OptionsTypeSimpleJSON, OptionsTypePrimaryAgent, OptionsTypeAssistant, OptionsTypeCoder,
+		OptionsTypeSimple, OptionsTypeSimpleJSON, OptionsTypePrimaryAgent, OptionsTypeAssistant, OptionsTypeRefiner,
 	} {
 		assert.True(t, pc.UsesAdaptiveThinking(adaptiveOnly, opt), opt)
 	}
@@ -889,7 +884,7 @@ func TestConfig_PrepareAdaptiveCallOptions_AppendsTheAdaptiveOptionOnlyWhenAdapt
 func TestConfig_SetDefaultOptions_KeepsOneAgentsEffortOutOfAnother(t *testing.T) {
 	raw := []byte(`{
 		"simple": {"reasoning": {"mode": "adaptive", "effort": "low"}},
-		"pentester": {"reasoning": {"mode": "adaptive", "effort": "xhigh"}}
+		"generator": {"reasoning": {"mode": "adaptive", "effort": "xhigh"}}
 	}`)
 
 	defaults := []llms.CallOption{
@@ -909,12 +904,12 @@ func TestConfig_SetDefaultOptions_KeepsOneAgentsEffortOutOfAnother(t *testing.T)
 
 	_, simple := pc.PrepareAdaptiveCallOptions(
 		context.Background(), nil, OptionsTypeSimple, pc.GetOptionsForType(OptionsTypeSimple))
-	_, pentester := pc.PrepareAdaptiveCallOptions(
-		context.Background(), nil, OptionsTypePentester, pc.GetOptionsForType(OptionsTypePentester))
+	_, generator := pc.PrepareAdaptiveCallOptions(
+		context.Background(), nil, OptionsTypeGenerator, pc.GetOptionsForType(OptionsTypeGenerator))
 
-	require.NotNil(t, configResolve(pentester).Reasoning)
+	require.NotNil(t, configResolve(generator).Reasoning)
 	require.NotNil(t, configResolve(simple).Reasoning)
-	assert.Equal(t, llms.ReasoningXHigh, configResolve(pentester).Reasoning.Effort)
+	assert.Equal(t, llms.ReasoningXHigh, configResolve(generator).Reasoning.Effort)
 	assert.Equal(t, llms.ReasoningLow, configResolve(simple).Reasoning.Effort,
 		"preparing another agent must not rewrite an already-prepared option slice")
 }
@@ -1111,10 +1106,10 @@ func TestConfig_ValidateToolReasoning_NamesTheAgentModelAndLevelToClear(t *testi
 		{name: "a budget mode with a leftover effort",
 			config: `{"simple":{"model":"gpt-5.6-sol","reasoning":{"mode":"budget","max_tokens":4096,"effort":"low"}}}`,
 			door:   reasoning.ProviderOpenAI, want: `simple: model "gpt-5.6-sol" refuses a reasoning budget of 4096 tokens` + tail},
-		{name: "the door default model when the block names none", config: `{"coder":{"reasoning":{"effort":"high"}}}`,
+		{name: "the door default model when the block names none", config: `{"refiner":{"reasoning":{"effort":"high"}}}`,
 			defaults: []llms.CallOption{llms.WithModel("gpt-5.5")},
-			door:     reasoning.ProviderOpenAI, want: `coder: model "gpt-5.5" refuses reasoning effort "high"` + tail},
-		{name: "another door does not refuse", config: `{"coder":{"model":"gpt-5.6-sol","reasoning":{"effort":"high"}}}`,
+			door:     reasoning.ProviderOpenAI, want: `refiner: model "gpt-5.5" refuses reasoning effort "high"` + tail},
+		{name: "another door does not refuse", config: `{"refiner":{"model":"gpt-5.6-sol","reasoning":{"effort":"high"}}}`,
 			door: reasoning.ProviderOllama},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1138,11 +1133,11 @@ func TestConfig_ValidateReasoningOff_RefusesWhatTheDoorRefuses(t *testing.T) {
 	for _, model := range []string{"o3", "o4-mini", "gpt-oss-120b", "deepseek-reasoner", "gpt-5.2", "gpt-4o", "glm-5-turbo"} {
 		for _, r := range []string{`{}`, `{"mode":"off"}`, `{"effort":"high"}`, `{"mode":"off","max_tokens":2048}`} {
 			t.Run(fmt.Sprintf("%s with reasoning %s", model, r), func(t *testing.T) {
-				cfg, err := LoadConfigData([]byte(fmt.Sprintf(`{"adviser":{"model":%q,"reasoning":%s}}`, model, r)), nil)
+				cfg, err := LoadConfigData([]byte(fmt.Sprintf(`{"generator":{"model":%q,"reasoning":%s}}`, model, r)), nil)
 				require.NoError(t, err)
 
 				var refusal *reasoning.ErrReasoningOffUnsupported
-				refused := errors.As(configCallTheDoor(t, url, model, cfg.GetOptionsForType(OptionsTypeAdviser)), &refusal)
+				refused := errors.As(configCallTheDoor(t, url, model, cfg.GetOptionsForType(OptionsTypeGenerator)), &refusal)
 				if refused {
 					refusals++
 				}
@@ -1164,15 +1159,15 @@ func TestConfig_ValidateReasoningOff_NamesTheAgentAndModelThatCannotTurnOff(t *t
 		want     string
 	}{
 		{name: "a model the ollama door cannot turn off", model: "gpt-oss:120b", door: reasoning.ProviderOllama,
-			want: `coder: model "gpt-oss:120b" cannot turn reasoning off; clear Reasoning Mode Off`},
+			want: `refiner: model "gpt-oss:120b" cannot turn reasoning off; clear Reasoning Mode Off`},
 		{name: "a model the ollama door turns off and the openai door cannot", model: "deepseek-r1:7b", door: reasoning.ProviderOllama},
 		{name: "the door default model when the block names none", defaults: []llms.CallOption{llms.WithModel("o3")},
-			door: reasoning.ProviderOpenAI, want: `coder: model "o3" cannot turn reasoning off; clear Reasoning Mode Off`},
+			door: reasoning.ProviderOpenAI, want: `refiner: model "o3" cannot turn reasoning off; clear Reasoning Mode Off`},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			block := `{"coder":{"reasoning":{"mode":"off"}}}`
+			block := `{"refiner":{"reasoning":{"mode":"off"}}}`
 			if tt.model != "" {
-				block = fmt.Sprintf(`{"coder":{"model":%q,"reasoning":{"mode":"off"}}}`, tt.model)
+				block = fmt.Sprintf(`{"refiner":{"model":%q,"reasoning":{"mode":"off"}}}`, tt.model)
 			}
 			cfg, err := LoadConfigData([]byte(block), tt.defaults)
 			require.NoError(t, err)
@@ -1201,10 +1196,10 @@ func TestConfig_ValidateThinkingBudget_RefusesWhatTheDoorRefuses(t *testing.T) {
 		}
 		for _, r := range []string{`{}`, `{"max_tokens":2048}`, `{"mode":"budget","max_tokens":2048}`, `{"mode":"off"}`, `{"effort":"high"}`} {
 			t.Run(fmt.Sprintf("%s with reasoning %s", wire, r), func(t *testing.T) {
-				cfg, err := LoadConfigData([]byte(fmt.Sprintf(`{"adviser":{"model":%q,"reasoning":%s}}`, route.model, r)), nil)
+				cfg, err := LoadConfigData([]byte(fmt.Sprintf(`{"generator":{"model":%q,"reasoning":%s}}`, route.model, r)), nil)
 				require.NoError(t, err)
 
-				options := append(cfg.GetOptionsForType(OptionsTypeAdviser), llms.WithModel(wire))
+				options := append(cfg.GetOptionsForType(OptionsTypeGenerator), llms.WithModel(wire))
 				var refusal *reasoning.ErrThinkingBudgetUnsupported
 				refused := errors.As(configCallTheDoor(t, url, wire, options), &refusal)
 				if refused {
@@ -1220,19 +1215,19 @@ func TestConfig_ValidateThinkingBudget_RefusesWhatTheDoorRefuses(t *testing.T) {
 }
 
 func TestConfig_ValidateThinkingBudget_KeepsToTheOpenAIDoor(t *testing.T) {
-	cfg, err := LoadConfigData([]byte(`{"coder":{"model":"glm-5-turbo","reasoning":{"max_tokens":2048}}}`), nil)
+	cfg, err := LoadConfigData([]byte(`{"refiner":{"model":"glm-5-turbo","reasoning":{"max_tokens":2048}}}`), nil)
 	require.NoError(t, err)
 
 	assert.EqualError(t, cfg.ValidateThinkingBudget(reasoning.ProviderOpenAI, "zai"),
-		`coder: model "zai/glm-5-turbo" takes no thinking budget; clear Reasoning Max Tokens`)
+		`refiner: model "zai/glm-5-turbo" takes no thinking budget; clear Reasoning Max Tokens`)
 	assert.NoError(t, cfg.ValidateThinkingBudget(reasoning.ProviderBedrock, ""))
 }
 
 func TestConfig_ValidateThinkingAgreement_RefusesAnExtraBodyToggleThatContradictsReasoning(t *testing.T) {
 	const (
-		enablesAgainstOff = `adviser: extra_body enables thinking while reasoning.mode is "off"; ` +
+		enablesAgainstOff = `generator: extra_body enables thinking while reasoning.mode is "off"; ` +
 			`drop the extra_body thinking toggle or clear reasoning.mode`
-		disablesAgainstOn = `adviser: extra_body disables thinking while the reasoning block requests it; ` +
+		disablesAgainstOn = `generator: extra_body disables thinking while the reasoning block requests it; ` +
 			`drop the extra_body thinking toggle or turn reasoning off`
 	)
 
@@ -1280,7 +1275,7 @@ func TestConfig_ValidateThinkingAgreement_RefusesAnExtraBodyToggleThatContradict
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			var pc ProviderConfig
-			require.NoError(t, json.Unmarshal([]byte(`{"adviser":`+tc.agentJSON+`}`), &pc))
+			require.NoError(t, json.Unmarshal([]byte(`{"generator":`+tc.agentJSON+`}`), &pc))
 
 			err := pc.ValidateThinkingAgreement(reasoning.ProviderOpenAI)
 			if tc.want == "" {

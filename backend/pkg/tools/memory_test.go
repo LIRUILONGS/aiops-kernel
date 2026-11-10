@@ -365,7 +365,7 @@ func TestMemory_Handle_LogsTheRetrievalAnonymized(t *testing.T) {
 		{docs: []schema.Document{memoryFact("root:toor accepted", 0.8, map[string]any{"tool_name": "terminal"})}},
 	}}
 	log := &recordingVectorStoreLog{}
-	ctx := PutAgentContext(PutAgentContext(t.Context(), database.MsgchainTypePrimaryAgent), database.MsgchainTypeMemorist)
+	ctx := PutAgentContext(PutAgentContext(t.Context(), database.MsgchainTypeCommander), database.MsgchainTypeLogAnalyst)
 
 	result, err := memoryToolOver(t, conn, log).Handle(
 		ctx, SearchInMemoryToolName,
@@ -380,7 +380,7 @@ func TestMemory_Handle_LogsTheRetrievalAnonymized(t *testing.T) {
 	}
 	entry := log.entries[0]
 
-	if entry.initiator != database.MsgchainTypePrimaryAgent || entry.executor != database.MsgchainTypeMemorist {
+	if entry.initiator != database.MsgchainTypeCommander || entry.executor != database.MsgchainTypeLogAnalyst {
 		t.Errorf("logged as %s -> %s, want primary_agent -> memorist", entry.initiator, entry.executor)
 	}
 	if entry.filter != `{"doc_type":"memory","flow_id":"42","task_id":"7"}` {
@@ -414,7 +414,7 @@ func TestMemory_Handle_AnswersWhetherOrNotTheRetrievalIsLogged(t *testing.T) {
 		},
 		"the log write fails": {
 			ctx: func(ctx context.Context) context.Context {
-				return PutAgentContext(ctx, database.MsgchainTypeMemorist)
+				return PutAgentContext(ctx, database.MsgchainTypeLogAnalyst)
 			},
 			logErr:  errors.New("connection reset by peer"),
 			entries: 1,

@@ -213,43 +213,19 @@ func TestKimi_DefaultProviderConfig_ShipsNoExtraBodyThinkingToggle(t *testing.T)
 }
 
 func TestKimi_DefaultProviderConfig_DisablesThinkingOnTheWireWhereReasoningIsOff(t *testing.T) {
-	off := map[string]any{"mode": "off"}
 	for _, tc := range []struct {
-		name  string
-		opt   pconfig.ProviderOptionsType
-		patch map[string]any
-		keep  string // the thinking.keep a configured extra_body must still carry
+		name string
+		opt  pconfig.ProviderOptionsType
 	}{
 		{name: "the shipped simple agent", opt: pconfig.OptionsTypeSimple},
 		{name: "the shipped simple json agent", opt: pconfig.OptionsTypeSimpleJSON},
 		{name: "the shipped reflector", opt: pconfig.OptionsTypeReflector},
 		{name: "the shipped searcher", opt: pconfig.OptionsTypeSearcher},
-		{name: "the shipped enricher", opt: pconfig.OptionsTypeEnricher},
-		{
-			name:  "an installer switched to reasoning mode off",
-			opt:   pconfig.OptionsTypeInstaller,
-			patch: map[string]any{"reasoning": off},
-		},
-		{
-			name: "an installer switched to reasoning mode off beside a vendor thinking key",
-			opt:  pconfig.OptionsTypeInstaller,
-			patch: map[string]any{
-				"reasoning":  off,
-				"extra_body": map[string]any{"thinking": map[string]any{"keep": "all"}},
-			},
-			keep: "all",
-		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			body := kimiWireBody(t, tc.opt, tc.patch)
+			body := kimiWireBody(t, tc.opt, nil)
 			if got := kimiThinkingType(body); got != "disabled" {
 				t.Errorf("thinking.type = %q, want \"disabled\"; body=%v", got, body)
-			}
-			if tc.keep == "" {
-				return
-			}
-			if wire, _ := body["thinking"].(map[string]any); wire["keep"] != tc.keep {
-				t.Errorf("thinking.keep = %v on the wire, want the configured %s; body=%v", wire["keep"], tc.keep, body)
 			}
 		})
 	}
@@ -264,7 +240,6 @@ func TestKimi_DefaultProviderConfig_KeepsTemperatureOffTheWireForNonThinkingAgen
 		{name: "the shipped simple json agent", opt: pconfig.OptionsTypeSimpleJSON},
 		{name: "the shipped reflector", opt: pconfig.OptionsTypeReflector},
 		{name: "the shipped searcher", opt: pconfig.OptionsTypeSearcher},
-		{name: "the shipped enricher", opt: pconfig.OptionsTypeEnricher},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			body := kimiWireBody(t, tc.opt, nil)

@@ -109,7 +109,7 @@ const usageStatsByModel: ResultOf<typeof UsageStatsByModelDocument> = {
 };
 
 const usageStatsByAgentType: ResultOf<typeof UsageStatsByAgentTypeDocument> = {
-    usageStatsByAgentType: [entity('AgentTypeUsageStats', { agentType: AgentType.Pentester, stats: usageStats(1) })],
+    usageStatsByAgentType: [entity('AgentTypeUsageStats', { agentType: AgentType.Commander, stats: usageStats(1) })],
 };
 
 const toolcallsStatsTotal: ResultOf<typeof ToolcallsStatsTotalDocument> = {

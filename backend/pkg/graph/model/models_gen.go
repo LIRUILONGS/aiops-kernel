@@ -91,31 +91,23 @@ type AgentsConfig struct {
 	Assistant    *AgentConfig `json:"assistant"`
 	Generator    *AgentConfig `json:"generator"`
 	Refiner      *AgentConfig `json:"refiner"`
-	Adviser      *AgentConfig `json:"adviser"`
 	Reflector    *AgentConfig `json:"reflector"`
 	Searcher     *AgentConfig `json:"searcher"`
-	Enricher     *AgentConfig `json:"enricher"`
-	Coder        *AgentConfig `json:"coder"`
-	Installer    *AgentConfig `json:"installer"`
-	Pentester    *AgentConfig `json:"pentester"`
 }
 
 type AgentsPrompts struct {
-	PrimaryAgent  *AgentPrompt  `json:"primaryAgent"`
-	Assistant     *AgentPrompt  `json:"assistant"`
-	Pentester     *AgentPrompts `json:"pentester"`
-	Coder         *AgentPrompts `json:"coder"`
-	Installer     *AgentPrompts `json:"installer"`
-	Searcher      *AgentPrompts `json:"searcher"`
-	Memorist      *AgentPrompts `json:"memorist"`
-	Adviser       *AgentPrompts `json:"adviser"`
-	Generator     *AgentPrompts `json:"generator"`
-	Refiner       *AgentPrompts `json:"refiner"`
-	Reporter      *AgentPrompts `json:"reporter"`
-	Reflector     *AgentPrompts `json:"reflector"`
-	Enricher      *AgentPrompts `json:"enricher"`
-	ToolCallFixer *AgentPrompts `json:"toolCallFixer"`
-	Summarizer    *AgentPrompt  `json:"summarizer"`
+	Assistant      *AgentPrompt  `json:"assistant"`
+	Generator      *AgentPrompts `json:"generator"`
+	Refiner        *AgentPrompts `json:"refiner"`
+	Reporter       *AgentPrompts `json:"reporter"`
+	Reflector      *AgentPrompts `json:"reflector"`
+	ToolCallFixer  *AgentPrompts `json:"toolCallFixer"`
+	Summarizer     *AgentPrompt  `json:"summarizer"`
+	Commander      *AgentPrompt  `json:"commander"`
+	Triage         *AgentPrompt  `json:"triage"`
+	LogAnalyst     *AgentPrompt  `json:"logAnalyst"`
+	MetricsAnalyst *AgentPrompt  `json:"metricsAnalyst"`
+	ChangeAnalyst  *AgentPrompt  `json:"changeAnalyst"`
 }
 
 type Assistant struct {
@@ -393,13 +385,8 @@ type ProviderTestResult struct {
 	Assistant    *AgentTestResult `json:"assistant"`
 	Generator    *AgentTestResult `json:"generator"`
 	Refiner      *AgentTestResult `json:"refiner"`
-	Adviser      *AgentTestResult `json:"adviser"`
 	Reflector    *AgentTestResult `json:"reflector"`
 	Searcher     *AgentTestResult `json:"searcher"`
-	Enricher     *AgentTestResult `json:"enricher"`
-	Coder        *AgentTestResult `json:"coder"`
-	Installer    *AgentTestResult `json:"installer"`
-	Pentester    *AgentTestResult `json:"pentester"`
 }
 
 type ProviderUsageStats struct {
@@ -588,9 +575,6 @@ type ToolsPrompts struct {
 	ChooseUserLanguage       *DefaultPrompt `json:"chooseUserLanguage"`
 	CollectToolCallID        *DefaultPrompt `json:"collectToolCallId"`
 	DetectToolCallIDPattern  *DefaultPrompt `json:"detectToolCallIdPattern"`
-	MonitorAgentExecution    *DefaultPrompt `json:"monitorAgentExecution"`
-	PlanAgentTask            *DefaultPrompt `json:"planAgentTask"`
-	WrapAgentTask            *DefaultPrompt `json:"wrapAgentTask"`
 }
 
 type UpdateAPITokenInput struct {
@@ -673,40 +657,30 @@ type VersionInfo struct {
 type AgentConfigType string
 
 const (
+	AgentConfigTypePrimaryAgent AgentConfigType = "primary_agent"
+	AgentConfigTypeSearcher     AgentConfigType = "searcher"
 	AgentConfigTypeSimple       AgentConfigType = "simple"
 	AgentConfigTypeSimpleJSON   AgentConfigType = "simple_json"
-	AgentConfigTypePrimaryAgent AgentConfigType = "primary_agent"
 	AgentConfigTypeAssistant    AgentConfigType = "assistant"
 	AgentConfigTypeGenerator    AgentConfigType = "generator"
 	AgentConfigTypeRefiner      AgentConfigType = "refiner"
-	AgentConfigTypeAdviser      AgentConfigType = "adviser"
 	AgentConfigTypeReflector    AgentConfigType = "reflector"
-	AgentConfigTypeSearcher     AgentConfigType = "searcher"
-	AgentConfigTypeEnricher     AgentConfigType = "enricher"
-	AgentConfigTypeCoder        AgentConfigType = "coder"
-	AgentConfigTypeInstaller    AgentConfigType = "installer"
-	AgentConfigTypePentester    AgentConfigType = "pentester"
 )
 
 var AllAgentConfigType = []AgentConfigType{
+	AgentConfigTypePrimaryAgent,
+	AgentConfigTypeSearcher,
 	AgentConfigTypeSimple,
 	AgentConfigTypeSimpleJSON,
-	AgentConfigTypePrimaryAgent,
 	AgentConfigTypeAssistant,
 	AgentConfigTypeGenerator,
 	AgentConfigTypeRefiner,
-	AgentConfigTypeAdviser,
 	AgentConfigTypeReflector,
-	AgentConfigTypeSearcher,
-	AgentConfigTypeEnricher,
-	AgentConfigTypeCoder,
-	AgentConfigTypeInstaller,
-	AgentConfigTypePentester,
 }
 
 func (e AgentConfigType) IsValid() bool {
 	switch e {
-	case AgentConfigTypeSimple, AgentConfigTypeSimpleJSON, AgentConfigTypePrimaryAgent, AgentConfigTypeAssistant, AgentConfigTypeGenerator, AgentConfigTypeRefiner, AgentConfigTypeAdviser, AgentConfigTypeReflector, AgentConfigTypeSearcher, AgentConfigTypeEnricher, AgentConfigTypeCoder, AgentConfigTypeInstaller, AgentConfigTypePentester:
+	case AgentConfigTypePrimaryAgent, AgentConfigTypeSearcher, AgentConfigTypeSimple, AgentConfigTypeSimpleJSON, AgentConfigTypeAssistant, AgentConfigTypeGenerator, AgentConfigTypeRefiner, AgentConfigTypeReflector:
 		return true
 	}
 	return false
@@ -736,18 +710,10 @@ func (e AgentConfigType) MarshalGQL(w io.Writer) {
 type AgentType string
 
 const (
-	AgentTypePrimaryAgent   AgentType = "primary_agent"
 	AgentTypeReporter       AgentType = "reporter"
 	AgentTypeGenerator      AgentType = "generator"
 	AgentTypeRefiner        AgentType = "refiner"
 	AgentTypeReflector      AgentType = "reflector"
-	AgentTypeEnricher       AgentType = "enricher"
-	AgentTypeAdviser        AgentType = "adviser"
-	AgentTypeCoder          AgentType = "coder"
-	AgentTypeMemorist       AgentType = "memorist"
-	AgentTypeSearcher       AgentType = "searcher"
-	AgentTypeInstaller      AgentType = "installer"
-	AgentTypePentester      AgentType = "pentester"
 	AgentTypeSummarizer     AgentType = "summarizer"
 	AgentTypeToolCallFixer  AgentType = "tool_call_fixer"
 	AgentTypeAssistant      AgentType = "assistant"
@@ -759,18 +725,10 @@ const (
 )
 
 var AllAgentType = []AgentType{
-	AgentTypePrimaryAgent,
 	AgentTypeReporter,
 	AgentTypeGenerator,
 	AgentTypeRefiner,
 	AgentTypeReflector,
-	AgentTypeEnricher,
-	AgentTypeAdviser,
-	AgentTypeCoder,
-	AgentTypeMemorist,
-	AgentTypeSearcher,
-	AgentTypeInstaller,
-	AgentTypePentester,
 	AgentTypeSummarizer,
 	AgentTypeToolCallFixer,
 	AgentTypeAssistant,
@@ -783,7 +741,7 @@ var AllAgentType = []AgentType{
 
 func (e AgentType) IsValid() bool {
 	switch e {
-	case AgentTypePrimaryAgent, AgentTypeReporter, AgentTypeGenerator, AgentTypeRefiner, AgentTypeReflector, AgentTypeEnricher, AgentTypeAdviser, AgentTypeCoder, AgentTypeMemorist, AgentTypeSearcher, AgentTypeInstaller, AgentTypePentester, AgentTypeSummarizer, AgentTypeToolCallFixer, AgentTypeAssistant, AgentTypeCommander, AgentTypeTriage, AgentTypeLogAnalyst, AgentTypeMetricsAnalyst, AgentTypeChangeAnalyst:
+	case AgentTypeReporter, AgentTypeGenerator, AgentTypeRefiner, AgentTypeReflector, AgentTypeSummarizer, AgentTypeToolCallFixer, AgentTypeAssistant, AgentTypeCommander, AgentTypeTriage, AgentTypeLogAnalyst, AgentTypeMetricsAnalyst, AgentTypeChangeAnalyst:
 		return true
 	}
 	return false
@@ -1097,62 +1055,41 @@ func (e ModelReasoningMode) MarshalGQL(w io.Writer) {
 type PromptType string
 
 const (
-	PromptTypePrimaryAgent             PromptType = "primary_agent"
-	PromptTypeAssistant                PromptType = "assistant"
-	PromptTypePentester                PromptType = "pentester"
-	PromptTypeQuestionPentester        PromptType = "question_pentester"
-	PromptTypeCoder                    PromptType = "coder"
-	PromptTypeQuestionCoder            PromptType = "question_coder"
-	PromptTypeInstaller                PromptType = "installer"
-	PromptTypeQuestionInstaller        PromptType = "question_installer"
-	PromptTypeSearcher                 PromptType = "searcher"
-	PromptTypeQuestionSearcher         PromptType = "question_searcher"
-	PromptTypeMemorist                 PromptType = "memorist"
-	PromptTypeQuestionMemorist         PromptType = "question_memorist"
-	PromptTypeAdviser                  PromptType = "adviser"
-	PromptTypeQuestionAdviser          PromptType = "question_adviser"
-	PromptTypeGenerator                PromptType = "generator"
-	PromptTypeSubtasksGenerator        PromptType = "subtasks_generator"
-	PromptTypeRefiner                  PromptType = "refiner"
-	PromptTypeSubtasksRefiner          PromptType = "subtasks_refiner"
-	PromptTypeReporter                 PromptType = "reporter"
-	PromptTypeTaskReporter             PromptType = "task_reporter"
-	PromptTypeReflector                PromptType = "reflector"
-	PromptTypeQuestionReflector        PromptType = "question_reflector"
-	PromptTypeEnricher                 PromptType = "enricher"
-	PromptTypeQuestionEnricher         PromptType = "question_enricher"
-	PromptTypeToolcallFixer            PromptType = "toolcall_fixer"
-	PromptTypeInputToolcallFixer       PromptType = "input_toolcall_fixer"
-	PromptTypeSummarizer               PromptType = "summarizer"
-	PromptTypeImageChooser             PromptType = "image_chooser"
-	PromptTypeLanguageChooser          PromptType = "language_chooser"
-	PromptTypeFlowDescriptor           PromptType = "flow_descriptor"
-	PromptTypeTaskDescriptor           PromptType = "task_descriptor"
-	PromptTypeExecutionLogs            PromptType = "execution_logs"
-	PromptTypeFullExecutionContext     PromptType = "full_execution_context"
-	PromptTypeShortExecutionContext    PromptType = "short_execution_context"
-	PromptTypeToolCallIDCollector      PromptType = "tool_call_id_collector"
-	PromptTypeToolCallIDDetector       PromptType = "tool_call_id_detector"
-	PromptTypeQuestionExecutionMonitor PromptType = "question_execution_monitor"
-	PromptTypeQuestionTaskPlanner      PromptType = "question_task_planner"
-	PromptTypeTaskAssignmentWrapper    PromptType = "task_assignment_wrapper"
+	PromptTypeCommander             PromptType = "commander"
+	PromptTypeTriage                PromptType = "triage"
+	PromptTypeLogAnalyst            PromptType = "log_analyst"
+	PromptTypeMetricsAnalyst        PromptType = "metrics_analyst"
+	PromptTypeChangeAnalyst         PromptType = "change_analyst"
+	PromptTypeAssistant             PromptType = "assistant"
+	PromptTypeGenerator             PromptType = "generator"
+	PromptTypeSubtasksGenerator     PromptType = "subtasks_generator"
+	PromptTypeRefiner               PromptType = "refiner"
+	PromptTypeSubtasksRefiner       PromptType = "subtasks_refiner"
+	PromptTypeReporter              PromptType = "reporter"
+	PromptTypeTaskReporter          PromptType = "task_reporter"
+	PromptTypeReflector             PromptType = "reflector"
+	PromptTypeQuestionReflector     PromptType = "question_reflector"
+	PromptTypeToolcallFixer         PromptType = "toolcall_fixer"
+	PromptTypeInputToolcallFixer    PromptType = "input_toolcall_fixer"
+	PromptTypeSummarizer            PromptType = "summarizer"
+	PromptTypeImageChooser          PromptType = "image_chooser"
+	PromptTypeLanguageChooser       PromptType = "language_chooser"
+	PromptTypeFlowDescriptor        PromptType = "flow_descriptor"
+	PromptTypeTaskDescriptor        PromptType = "task_descriptor"
+	PromptTypeExecutionLogs         PromptType = "execution_logs"
+	PromptTypeFullExecutionContext  PromptType = "full_execution_context"
+	PromptTypeShortExecutionContext PromptType = "short_execution_context"
+	PromptTypeToolCallIDCollector   PromptType = "tool_call_id_collector"
+	PromptTypeToolCallIDDetector    PromptType = "tool_call_id_detector"
 )
 
 var AllPromptType = []PromptType{
-	PromptTypePrimaryAgent,
+	PromptTypeCommander,
+	PromptTypeTriage,
+	PromptTypeLogAnalyst,
+	PromptTypeMetricsAnalyst,
+	PromptTypeChangeAnalyst,
 	PromptTypeAssistant,
-	PromptTypePentester,
-	PromptTypeQuestionPentester,
-	PromptTypeCoder,
-	PromptTypeQuestionCoder,
-	PromptTypeInstaller,
-	PromptTypeQuestionInstaller,
-	PromptTypeSearcher,
-	PromptTypeQuestionSearcher,
-	PromptTypeMemorist,
-	PromptTypeQuestionMemorist,
-	PromptTypeAdviser,
-	PromptTypeQuestionAdviser,
 	PromptTypeGenerator,
 	PromptTypeSubtasksGenerator,
 	PromptTypeRefiner,
@@ -1161,8 +1098,6 @@ var AllPromptType = []PromptType{
 	PromptTypeTaskReporter,
 	PromptTypeReflector,
 	PromptTypeQuestionReflector,
-	PromptTypeEnricher,
-	PromptTypeQuestionEnricher,
 	PromptTypeToolcallFixer,
 	PromptTypeInputToolcallFixer,
 	PromptTypeSummarizer,
@@ -1175,14 +1110,11 @@ var AllPromptType = []PromptType{
 	PromptTypeShortExecutionContext,
 	PromptTypeToolCallIDCollector,
 	PromptTypeToolCallIDDetector,
-	PromptTypeQuestionExecutionMonitor,
-	PromptTypeQuestionTaskPlanner,
-	PromptTypeTaskAssignmentWrapper,
 }
 
 func (e PromptType) IsValid() bool {
 	switch e {
-	case PromptTypePrimaryAgent, PromptTypeAssistant, PromptTypePentester, PromptTypeQuestionPentester, PromptTypeCoder, PromptTypeQuestionCoder, PromptTypeInstaller, PromptTypeQuestionInstaller, PromptTypeSearcher, PromptTypeQuestionSearcher, PromptTypeMemorist, PromptTypeQuestionMemorist, PromptTypeAdviser, PromptTypeQuestionAdviser, PromptTypeGenerator, PromptTypeSubtasksGenerator, PromptTypeRefiner, PromptTypeSubtasksRefiner, PromptTypeReporter, PromptTypeTaskReporter, PromptTypeReflector, PromptTypeQuestionReflector, PromptTypeEnricher, PromptTypeQuestionEnricher, PromptTypeToolcallFixer, PromptTypeInputToolcallFixer, PromptTypeSummarizer, PromptTypeImageChooser, PromptTypeLanguageChooser, PromptTypeFlowDescriptor, PromptTypeTaskDescriptor, PromptTypeExecutionLogs, PromptTypeFullExecutionContext, PromptTypeShortExecutionContext, PromptTypeToolCallIDCollector, PromptTypeToolCallIDDetector, PromptTypeQuestionExecutionMonitor, PromptTypeQuestionTaskPlanner, PromptTypeTaskAssignmentWrapper:
+	case PromptTypeCommander, PromptTypeTriage, PromptTypeLogAnalyst, PromptTypeMetricsAnalyst, PromptTypeChangeAnalyst, PromptTypeAssistant, PromptTypeGenerator, PromptTypeSubtasksGenerator, PromptTypeRefiner, PromptTypeSubtasksRefiner, PromptTypeReporter, PromptTypeTaskReporter, PromptTypeReflector, PromptTypeQuestionReflector, PromptTypeToolcallFixer, PromptTypeInputToolcallFixer, PromptTypeSummarizer, PromptTypeImageChooser, PromptTypeLanguageChooser, PromptTypeFlowDescriptor, PromptTypeTaskDescriptor, PromptTypeExecutionLogs, PromptTypeFullExecutionContext, PromptTypeShortExecutionContext, PromptTypeToolCallIDCollector, PromptTypeToolCallIDDetector:
 		return true
 	}
 	return false

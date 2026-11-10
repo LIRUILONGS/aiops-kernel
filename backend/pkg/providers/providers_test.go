@@ -305,12 +305,14 @@ func TestProviders_StoresAConfigOnlyWhenEveryGateAcceptsIt(t *testing.T) {
 			c := ac
 			pc := &pconfig.ProviderConfig{}
 			switch slot {
-			case pconfig.OptionsTypeAdviser:
-				pc.Adviser = &c
-			case pconfig.OptionsTypeCoder:
-				pc.Coder = &c
-			case pconfig.OptionsTypePentester:
-				pc.Pentester = &c
+			case pconfig.OptionsTypeGenerator:
+				pc.Generator = &c
+			case pconfig.OptionsTypeRefiner:
+				pc.Refiner = &c
+			case pconfig.OptionsTypeSimple:
+				pc.Simple = &c
+			case pconfig.OptionsTypeReflector:
+				pc.Reflector = &c
 			case pconfig.OptionsTypePrimaryAgent:
 				pc.PrimaryAgent = &c
 			default:
@@ -352,50 +354,50 @@ func TestProviders_StoresAConfigOnlyWhenEveryGateAcceptsIt(t *testing.T) {
 
 		{
 			name: "a named agent model", ptype: provider.ProviderOllama,
-			cfg: agent(pconfig.OptionsTypeCoder, pconfig.AgentConfig{Model: "gpt-4o"}),
+			cfg: agent(pconfig.OptionsTypeRefiner, pconfig.AgentConfig{Model: "gpt-4o"}),
 		},
 		{
 			name: "an agent with no model of its own", ptype: provider.ProviderOllama,
-			cfg: agent(pconfig.OptionsTypeCoder, pconfig.AgentConfig{Model: ""}),
+			cfg: agent(pconfig.OptionsTypeRefiner, pconfig.AgentConfig{Model: ""}),
 		},
 		{
 			name: "an agent model of whitespace only", ptype: provider.ProviderOllama,
-			cfg:     agent(pconfig.OptionsTypeCoder, pconfig.AgentConfig{Model: " \t\n "}),
-			refused: "coder: model must not consist of whitespace only",
+			cfg:     agent(pconfig.OptionsTypeRefiner, pconfig.AgentConfig{Model: " \t\n "}),
+			refused: "refiner: model must not consist of whitespace only",
 		},
 
 		{
 			name: "extra_body enables thinking while reasoning is off", ptype: provider.ProviderOpenAI,
-			cfg: agent(pconfig.OptionsTypeAdviser, pconfig.AgentConfig{
+			cfg: agent(pconfig.OptionsTypeGenerator, pconfig.AgentConfig{
 				Model: "gpt-5.2", Reasoning: off, ExtraBody: map[string]any{"enable_thinking": true},
 			}),
-			refused: "adviser: extra_body enables thinking while reasoning.mode is",
+			refused: "generator: extra_body enables thinking while reasoning.mode is",
 		},
 		{
 			name: "extra_body selects adaptive thinking while reasoning is off", ptype: provider.ProviderOpenAI,
-			cfg: agent(pconfig.OptionsTypeAdviser, pconfig.AgentConfig{
+			cfg: agent(pconfig.OptionsTypeGenerator, pconfig.AgentConfig{
 				Model: "gpt-5.2", Reasoning: off, ExtraBody: map[string]any{"thinking": map[string]any{"type": "adaptive"}},
 			}),
-			refused: "adviser: extra_body enables thinking while reasoning.mode is",
+			refused: "generator: extra_body enables thinking while reasoning.mode is",
 		},
 		{
 			name: "extra_body disables thinking while reasoning asks for it", ptype: provider.ProviderOpenAI,
-			cfg: agent(pconfig.OptionsTypeAdviser, pconfig.AgentConfig{
+			cfg: agent(pconfig.OptionsTypeGenerator, pconfig.AgentConfig{
 				Model:     "gpt-5.2",
 				Reasoning: pconfig.ReasoningConfig{Effort: llms.ReasoningHigh},
 				ExtraBody: map[string]any{"enable_thinking": false},
 			}),
-			refused: "adviser: extra_body disables thinking while the reasoning block requests it",
+			refused: "generator: extra_body disables thinking while the reasoning block requests it",
 		},
 		{
 			name: "reasoning off with an agreeing extra_body disable", ptype: provider.ProviderOpenAI,
-			cfg: agent(pconfig.OptionsTypeAdviser, pconfig.AgentConfig{
+			cfg: agent(pconfig.OptionsTypeGenerator, pconfig.AgentConfig{
 				Model: "gpt-5.2", Reasoning: off, ExtraBody: map[string]any{"thinking": map[string]any{"type": "disabled"}},
 			}),
 		},
 		{
 			name: "reasoning off with a leftover effort and an agreeing extra_body disable", ptype: provider.ProviderOpenAI,
-			cfg: agent(pconfig.OptionsTypeAdviser, pconfig.AgentConfig{
+			cfg: agent(pconfig.OptionsTypeGenerator, pconfig.AgentConfig{
 				Model:     "gpt-5.2",
 				Reasoning: pconfig.ReasoningConfig{Mode: pconfig.ReasoningModeOff, Effort: llms.ReasoningHigh},
 				ExtraBody: map[string]any{"thinking": map[string]any{"type": "disabled"}},
@@ -403,7 +405,7 @@ func TestProviders_StoresAConfigOnlyWhenEveryGateAcceptsIt(t *testing.T) {
 		},
 		{
 			name: "reasoning off beside a vendor key in the extra_body thinking object", ptype: provider.ProviderOpenAI,
-			cfg: agent(pconfig.OptionsTypeAdviser, pconfig.AgentConfig{
+			cfg: agent(pconfig.OptionsTypeGenerator, pconfig.AgentConfig{
 				Model: "gpt-5.2", Reasoning: off, ExtraBody: map[string]any{"thinking": map[string]any{"clear_thinking": false}},
 			}),
 		},
@@ -411,29 +413,29 @@ func TestProviders_StoresAConfigOnlyWhenEveryGateAcceptsIt(t *testing.T) {
 		// Only a door that merges extra_body over its own fields can send the contradiction.
 		{
 			name: "a contradicting extra_body on the anthropic door", ptype: provider.ProviderAnthropic,
-			cfg: agent(pconfig.OptionsTypeCoder, disabledByExtraBody),
+			cfg: agent(pconfig.OptionsTypeRefiner, disabledByExtraBody),
 		},
 		{
 			name: "a contradicting extra_body on the gemini door", ptype: provider.ProviderGemini,
-			cfg: agent(pconfig.OptionsTypeCoder, disabledByExtraBody),
+			cfg: agent(pconfig.OptionsTypeRefiner, disabledByExtraBody),
 		},
 		{
 			name: "a contradicting extra_body on the bedrock door", ptype: provider.ProviderBedrock,
-			cfg: agent(pconfig.OptionsTypeCoder, disabledByExtraBody),
+			cfg: agent(pconfig.OptionsTypeRefiner, disabledByExtraBody),
 		},
 		{
 			name: "a contradicting extra_body on the ollama door", ptype: provider.ProviderOllama,
-			cfg: agent(pconfig.OptionsTypeCoder, disabledByExtraBody),
+			cfg: agent(pconfig.OptionsTypeRefiner, disabledByExtraBody),
 		},
 		{
 			name: "a contradicting extra_body on the custom door", ptype: provider.ProviderCustom,
-			cfg:     agent(pconfig.OptionsTypeCoder, disabledByExtraBody),
-			refused: "coder: extra_body disables thinking while the reasoning block requests it",
+			cfg:     agent(pconfig.OptionsTypeRefiner, disabledByExtraBody),
+			refused: "refiner: extra_body disables thinking while the reasoning block requests it",
 		},
 		{
 			name: "a contradicting extra_body on the glm door", ptype: provider.ProviderGLM,
-			cfg:     agent(pconfig.OptionsTypeCoder, disabledByExtraBody),
-			refused: "coder: extra_body disables thinking while the reasoning block requests it",
+			cfg:     agent(pconfig.OptionsTypeRefiner, disabledByExtraBody),
+			refused: "refiner: extra_body disables thinking while the reasoning block requests it",
 		},
 
 		{
@@ -455,47 +457,47 @@ func TestProviders_StoresAConfigOnlyWhenEveryGateAcceptsIt(t *testing.T) {
 
 		{
 			name: "a level on a model that refuses one with tools", ptype: provider.ProviderOpenAI,
-			cfg: agent(pconfig.OptionsTypeCoder, pconfig.AgentConfig{
+			cfg: agent(pconfig.OptionsTypeRefiner, pconfig.AgentConfig{
 				Model: "gpt-5.6-sol", Reasoning: pconfig.ReasoningConfig{Effort: llms.ReasoningMedium},
 			}),
-			refused: `coder: model "gpt-5.6-sol" refuses reasoning effort "medium" on requests with function tools`,
+			refused: `refiner: model "gpt-5.6-sol" refuses reasoning effort "medium" on requests with function tools`,
 		},
 		{
 			name: "a budget on a model that refuses a level with tools", ptype: provider.ProviderOpenAI,
-			cfg: agent(pconfig.OptionsTypePentester, pconfig.AgentConfig{
+			cfg: agent(pconfig.OptionsTypeSimple, pconfig.AgentConfig{
 				Model: "gpt-5.4-mini", Reasoning: pconfig.ReasoningConfig{MaxTokens: 2048},
 			}),
-			refused: `pentester: model "gpt-5.4-mini" refuses a reasoning budget of 2048 tokens on requests with function tools`,
+			refused: `simple: model "gpt-5.4-mini" refuses a reasoning budget of 2048 tokens on requests with function tools`,
 		},
 		{
-			name: "a level on the adviser, whose calls carry no tools", ptype: provider.ProviderOpenAI,
-			cfg: agent(pconfig.OptionsTypeAdviser, pconfig.AgentConfig{
+			name: "a level on the reflector, whose calls carry no tools", ptype: provider.ProviderOpenAI,
+			cfg: agent(pconfig.OptionsTypeReflector, pconfig.AgentConfig{
 				Model: "gpt-5.6-sol", Reasoning: pconfig.ReasoningConfig{Effort: llms.ReasoningXHigh},
 			}),
 		},
 		{
 			name: "thinking turned off on a model that refuses a level with tools", ptype: provider.ProviderOpenAI,
-			cfg: agent(pconfig.OptionsTypeCoder, pconfig.AgentConfig{Model: "gpt-5.6-sol", Reasoning: off}),
+			cfg: agent(pconfig.OptionsTypeRefiner, pconfig.AgentConfig{Model: "gpt-5.6-sol", Reasoning: off}),
 		},
 		{
 			name: "a level on a model that takes one with tools", ptype: provider.ProviderOpenAI,
-			cfg: agent(pconfig.OptionsTypeCoder, pconfig.AgentConfig{
+			cfg: agent(pconfig.OptionsTypeRefiner, pconfig.AgentConfig{
 				Model: "gpt-5.2", Reasoning: pconfig.ReasoningConfig{Effort: llms.ReasoningHigh},
 			}),
 		},
 
 		{
 			name: "off on a model that cannot disable thinking", ptype: provider.ProviderOpenAI,
-			cfg:     agent(pconfig.OptionsTypeAdviser, pconfig.AgentConfig{Model: "o3", Reasoning: off}),
-			refused: `adviser: model "o3" cannot turn reasoning off`,
+			cfg:     agent(pconfig.OptionsTypeGenerator, pconfig.AgentConfig{Model: "o3", Reasoning: off}),
+			refused: `generator: model "o3" cannot turn reasoning off`,
 		},
 		{
 			name: "no mode on a model that cannot disable thinking", ptype: provider.ProviderOpenAI,
-			cfg: agent(pconfig.OptionsTypeAdviser, pconfig.AgentConfig{Model: "o3"}),
+			cfg: agent(pconfig.OptionsTypeGenerator, pconfig.AgentConfig{Model: "o3"}),
 		},
 		{
 			name: "off on a model that can disable thinking", ptype: provider.ProviderOpenAI,
-			cfg: agent(pconfig.OptionsTypeAdviser, pconfig.AgentConfig{Model: "gpt-5.2", Reasoning: off}),
+			cfg: agent(pconfig.OptionsTypeGenerator, pconfig.AgentConfig{Model: "gpt-5.2", Reasoning: off}),
 		},
 	} {
 		for _, update := range []bool{false, true} {
@@ -784,10 +786,10 @@ func TestProviders_TestAgent_RunsTheSimpleAgentOnTheFormsModel(t *testing.T) {
 	require.NoError(t, err)
 	pc := &providerController{cfg: cfg, defaultConfigs: defaultConfigs}
 
-	var coder pconfig.AgentConfig
-	require.NoError(t, json.Unmarshal([]byte(`{"model":"`+formModel+`"}`), &coder))
+	var refiner pconfig.AgentConfig
+	require.NoError(t, json.Unmarshal([]byte(`{"model":"`+formModel+`"}`), &refiner))
 
-	_, err = pc.TestAgent(context.Background(), provider.ProviderCustom, pconfig.OptionsTypeCoder, &coder, &coder)
+	_, err = pc.TestAgent(context.Background(), provider.ProviderCustom, pconfig.OptionsTypeRefiner, &refiner, &refiner)
 	require.NoError(t, err)
 
 	mu.Lock()
