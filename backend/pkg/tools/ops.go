@@ -377,10 +377,10 @@ func (o *opsTools) HandleTrace(ctx context.Context, name string, args json.RawMe
 		return "", Refuse("%s", err.Error())
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, time.Duration(seconds)*time.Second+traceOverhead)
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Duration(seconds)*time.Second+traceOverhead)
 	defer cancel()
 
-	res, err := client.RunTrace(ctx, image, script, seconds, o.sandboxNetwork)
+	res, err := client.RunTrace(ctx, image, script, seconds, opsremote.TraceOptions{Network: o.sandboxNetwork})
 	if err != nil {
 		return "", fmt.Errorf("内核追踪执行失败：%w", err)
 	}
@@ -390,8 +390,9 @@ func (o *opsTools) HandleTrace(ctx context.Context, name string, args json.RawMe
 }
 
 // traceOverhead is the room a container start and bpftrace's own startup need on
-// top of the sampling window.
-const traceOverhead = 45 * time.Second
+// top of the sampling window, twice over: a kernel that refuses the narrow shape
+// costs one failed start before the retry opens the window.
+const traceOverhead = 60 * time.Second
 
 // OpsWatchArgs samples one catalogue command across a short window. The command
 // is a catalogue id, not a shell line: what the model chooses is which evidence

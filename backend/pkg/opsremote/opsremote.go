@@ -54,6 +54,10 @@ type Client struct {
 	target  Target
 	client  *ssh.Client
 	timeout time.Duration
+
+	// runStdin is the seam the trace retry is tested through; a nil value means
+	// the real SSH session.
+	runStdin func(ctx context.Context, command, stdin string) (Result, error)
 }
 
 // Dial connects to the target. The caller owns the returned client and must

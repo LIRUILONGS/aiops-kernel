@@ -54,7 +54,7 @@ OpsAGI 是 [PentAGI](https://github.com/vxcontrol/pentagi)（MIT）的分支。�
 
 内核层（`OPSAGI_SANDBOX_BPF` 打开时）：
 
-`ops_trace` — 五个固定程序（`runqlat` / `offcputime` / `biolatency` / `execsnoop` / `tcpconnlat`），程序正文在代码里，模型只选 ID 与采样窗口。容器丢光 capability 后加回 `BPF`、`PERFMON`、`SYS_RESOURCE`、`SYS_ADMIN`（最后一个是 `perf_event_open` 在老内核上的门槛），`/sys/kernel` 只读挂载，仍无网络、不进宿主机 PID 命名空间。
+`ops_trace` — 五个固定程序（`runqlat` / `offcputime` / `biolatency` / `execsnoop` / `tcpconnlat`），程序正文在代码里，模型只选 ID 与采样窗口。容器丢光 capability 后加回 `BPF`、`PERFMON`、`SYS_RESOURCE`，`/sys/kernel` 只读挂载，仍无网络、不进宿主机 PID 命名空间；老内核因为缺 `SYS_ADMIN` 拒绝 `perf_event_open` 时，自动补这一个能力重试一次——第一次永远是最窄的形状。
 
 旁路（直接问监控系统，不经过主机 shell）：
 

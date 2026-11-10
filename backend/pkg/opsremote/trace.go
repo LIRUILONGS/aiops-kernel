@@ -7,28 +7,29 @@ import (
 	"time"
 )
 
-// TraceShape is the container the tracer runs in. /proc and /sys stay read-only,
-// as in every other shape, and the host pid namespace is still not joined: what
-// the BPF programs read is kernel state, which needs no host mount to observe.
-//
-// SYS_ADMIN is here because perf_event_open is gated on it by kernels that do
-// not wire CAP_PERFMON into the check -- this one is Debian 5.10 with
-// perf_event_paranoid=3, where BPF and PERFMON alone get EACCES. It is the one
-// capability that could remount the read-only mounts, so nothing but a catalogue
-// constant ever reaches this shape: the model picks an id, and the text that
-// runs is written here, not by it. SYS_KILL, SYS_PTRACE and a writable host
-// mount stay out either way.
-const TraceShape = "docker run --rm -i" +
-	" --cap-drop=ALL --cap-add=BPF --cap-add=PERFMON --cap-add=SYS_RESOURCE --cap-add=SYS_ADMIN" +
+// traceBaseShape is the container the tracer runs in. /proc and /sys stay
+// read-only, as in every other shape, and the host pid namespace is still not
+// joined: what the BPF programs read is kernel state, which needs no host mount
+// to observe.
+const traceBaseShape = "docker run --rm -i" +
+	" --cap-drop=ALL --cap-add=BPF --cap-add=PERFMON --cap-add=SYS_RESOURCE" +
 	" --security-opt=no-new-privileges --pids-limit=256 --cpus=1 --memory=256m" +
 	" --network=none --read-only" +
 	" -v /sys/kernel/debug:/sys/kernel/debug:ro -v /sys/kernel/tracing:/sys/kernel/tracing:ro" +
 	" -v /sys/kernel/btf:/sys/kernel/btf:ro"
 
-// traceFlagsWithNetwork is the shape with egress, used only when the image has
-// to fetch bpftrace or the trace itself needs it. It replaces the closed network
-// rather than adding a second --network, which docker refuses.
-const traceFlagsWithNetwork = "--network=bridge"
+// traceSysAdminFlag is the fallback, not the default: kernels that do not wire
+// CAP_PERFMON into the perf_event_open check want SYS_ADMIN, and it is the one
+// capability that could remount those read-only mounts. A run starts without it
+// and earns it only by being refused, so a host that does not need it never
+// hands it out. Nothing the model writes reaches this shape either way: it
+// picks a catalogue id, and the program text is a constant beside it.
+const traceSysAdminFlag = " --cap-add=SYS_ADMIN"
+
+// traceNetworkFlag replaces the closed network rather than adding a second
+// --network, which docker refuses. Egress is only for an image that has to
+// fetch bpftrace, and only when the operator allowed it.
+const traceNetworkFlag = "--network=bridge"
 
 // TraceDefaultSeconds bounds one trace when the caller gives no duration: long
 // enough for a histogram to fill, short enough to stay inside a diagnosis.
@@ -121,10 +122,17 @@ func ClampTraceSeconds(seconds int) int {
 	return seconds
 }
 
+// TraceOptions carries the two decisions the operator makes for a run: whether
+// the box may reach out, and whether it starts with the wider capability.
+type TraceOptions struct {
+	Network  bool
+	Escalate bool
+}
+
 // TraceCommand is the remote command line for one trace: fixed flags, a
 // validated image, a catalogue program and a duration. Nothing the agent wrote
 // reaches the shell that starts docker -- the script travels on stdin.
-func TraceCommand(image string, script TraceScript, seconds int, network bool) (string, error) {
+func TraceCommand(image string, script TraceScript, seconds int, opts TraceOptions) (string, error) {
 	image = strings.TrimSpace(image)
 	if !sandboxImagePattern.MatchString(image) {
 		return "", fmt.Errorf("镜像名不合法：%q", image)
@@ -133,19 +141,46 @@ func TraceCommand(image string, script TraceScript, seconds int, network bool) (
 		return "", fmt.Errorf("采样窗口必须在 3 到 %d 秒之间", TraceMaxSeconds)
 	}
 
-	flags := TraceShape
-	if network {
-		flags = strings.Replace(flags, "--network=none", traceFlagsWithNetwork, 1)
+	flags := traceBaseShape
+	if opts.Network {
+		flags = strings.Replace(flags, "--network=none", traceNetworkFlag, 1)
+	}
+	if opts.Escalate {
+		flags = strings.Replace(flags, " --security-opt=", traceSysAdminFlag+" --security-opt=", 1)
 	}
 
 	return flags + " " + image + " " + sandboxScriptPath, nil
 }
 
-// RunTrace runs one catalogue program inside the trace shape. A run that
-// outlives its deadline is killed by name, because a trace that keeps running
-// keeps costing the host it is watching.
-func (c *Client) RunTrace(ctx context.Context, image string, script TraceScript, seconds int, network bool) (Result, error) {
-	command, err := TraceCommand(image, script, seconds, network)
+// TraceGate reports the one failure a wider capability actually fixes: the
+// kernel refusing perf_event_open to a container that holds BPF and PERFMON but
+// not SYS_ADMIN. Every other error is left alone, because escalating on a bad
+// image or a bad program would only buy the same failure with more privilege.
+func TraceGate(res Result) bool {
+	out := res.Stderr + res.Stdout
+
+	return strings.Contains(out, "perf_event_open") && strings.Contains(out, "Permission denied")
+}
+
+// RunTrace runs one catalogue program, and retries once with SYS_ADMIN when the
+// kernel asked for it. The first attempt is the narrow one on every host, so a
+// kernel that honours CAP_PERFMON never sees the wider shape; the retry costs
+// one failed start, which happens before the sampling window opens.
+func (c *Client) RunTrace(ctx context.Context, image string, script TraceScript, seconds int, opts TraceOptions) (Result, error) {
+	res, err := c.runTrace(ctx, image, script, seconds, opts)
+	if opts.Escalate || ctx.Err() != nil || !TraceGate(res) {
+		return res, err
+	}
+
+	opts.Escalate = true
+
+	return c.runTrace(ctx, image, script, seconds, opts)
+}
+
+// runTrace is one attempt. A run that outlives its deadline is killed by name,
+// because a trace that keeps running keeps costing the host it is watching.
+func (c *Client) runTrace(ctx context.Context, image string, script TraceScript, seconds int, opts TraceOptions) (Result, error) {
+	command, err := TraceCommand(image, script, seconds, opts)
 	if err != nil {
 		return Result{}, err
 	}
@@ -154,7 +189,13 @@ func (c *Client) RunTrace(ctx context.Context, image string, script TraceScript,
 	if name != "opsagi-trace-" {
 		command = strings.Replace(command, "docker run --rm -i", "docker run --rm -i --name "+name, 1)
 	}
-	res, err := c.RunStdin(ctx, command, TraceProgram(script, seconds))
+
+	run := c.runStdin
+	if run == nil {
+		run = c.RunStdin
+	}
+
+	res, err := run(ctx, command, TraceProgram(script, seconds))
 	if err != nil && ctx.Err() != nil && name != "opsagi-trace-" {
 		cleanup, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()

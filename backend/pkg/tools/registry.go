@@ -575,7 +575,8 @@ var registryDefinitions = map[string]llms.FunctionDefinition{
 		Description: "在目标主机上跑一段 eBPF 程序，看 /proc 快照看不到的那一层：调度延迟、off-CPU 阻塞、块设备 IO 延迟、进程创建、TCP 建连延迟。" +
 			"script 是固定目录里的 ID（" + strings.Join(traceIDs(), "、") + "），程序正文在代码里，你选的是问题不是代码。" +
 			"seconds 是采样窗口，取 3 到 30 秒，默认 10；窗口越长直方图越满，但也越贵。" +
-			"容器形状由代码固定：先丢光能力再加回 BPF / PERFMON / SYS_RESOURCE / SYS_ADMIN（最后一个是 perf_event_open 在老内核上的门槛），宿主机的 /sys/kernel 只读挂载，不进宿主机 PID 命名空间，无网络。" +
+			"容器形状由代码固定：先丢光能力再加回 BPF / PERFMON / SYS_RESOURCE，宿主机的 /sys/kernel 只读挂载，不进宿主机 PID 命名空间，无网络。" +
+			"如果内核因为缺 SYS_ADMIN 拒绝 perf_event_open，会自动补上这一个能力重试一次（第一次永远是最窄的那个形状）——这一步失败发生在采样窗口打开之前，代价只是一次启动。" +
 			"镜像里必须有 bpftrace，默认用 quay.io/iovisor/bpftrace。" +
 			"它是采样不是监控，一秒钟的结论不要写成五分钟的结论；写 evidence 时把窗口和直方图的峰值一起写进去。" +
 			"这个工具只在操作员打开内核追踪（OPSAGI_SANDBOX_BPF）时出现：BPF 要的能力比采集容器多，那条边界由他们划。",
