@@ -46,7 +46,7 @@ simple_json:
     output: 0.50
     cache_read: 0.03
 
-primary_agent:
+commander:
   model: "glm-5.3"
   temperature: 1.0
   top_p: 0.95
@@ -131,7 +131,7 @@ reflector:
     output: 0.50
     cache_read: 0.03
 
-searcher:
+analyst:
   model: "glm-5.3-flash"
   temperature: 1.0
   top_p: 0.95

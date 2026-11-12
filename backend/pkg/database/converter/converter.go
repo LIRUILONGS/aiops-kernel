@@ -677,12 +677,12 @@ func ConvertProviderConfigToGqlModel(cfg *pconfig.ProviderConfig) *model.AgentsC
 	return &model.AgentsConfig{
 		Simple:       ConvertAgentConfigToGqlModel(cfg.Simple),
 		SimpleJSON:   ConvertAgentConfigToGqlModel(cfg.SimpleJSON),
-		PrimaryAgent: ConvertAgentConfigToGqlModel(cfg.PrimaryAgent),
+		Commander: ConvertAgentConfigToGqlModel(cfg.Commander),
 		Assistant:    ConvertAgentConfigToGqlModel(cfg.Assistant),
 		Generator:    ConvertAgentConfigToGqlModel(cfg.Generator),
 		Refiner:      ConvertAgentConfigToGqlModel(cfg.Refiner),
 		Reflector:    ConvertAgentConfigToGqlModel(cfg.Reflector),
-		Searcher:     ConvertAgentConfigToGqlModel(cfg.Searcher),
+		Analyst:     ConvertAgentConfigToGqlModel(cfg.Analyst),
 	}
 }
 
@@ -777,12 +777,12 @@ func ConvertAgentsConfigFromGqlModel(cfg *model.AgentsConfig) *pconfig.ProviderC
 	pc := &pconfig.ProviderConfig{
 		Simple:       ConvertAgentConfigFromGqlModel(cfg.Simple),
 		SimpleJSON:   ConvertAgentConfigFromGqlModel(cfg.SimpleJSON),
-		PrimaryAgent: ConvertAgentConfigFromGqlModel(cfg.PrimaryAgent),
+		Commander: ConvertAgentConfigFromGqlModel(cfg.Commander),
 		Assistant:    ConvertAgentConfigFromGqlModel(cfg.Assistant),
 		Generator:    ConvertAgentConfigFromGqlModel(cfg.Generator),
 		Refiner:      ConvertAgentConfigFromGqlModel(cfg.Refiner),
 		Reflector:    ConvertAgentConfigFromGqlModel(cfg.Reflector),
-		Searcher:     ConvertAgentConfigFromGqlModel(cfg.Searcher),
+		Analyst:     ConvertAgentConfigFromGqlModel(cfg.Analyst),
 	}
 
 	rawConfig, err := json.Marshal(pc)
@@ -929,12 +929,12 @@ func ConvertProviderTestResults(results tester.ProviderTestResults) *model.Provi
 	return &model.ProviderTestResult{
 		Simple:       ConvertTestResults(results.Simple),
 		SimpleJSON:   ConvertTestResults(results.SimpleJSON),
-		PrimaryAgent: ConvertTestResults(results.PrimaryAgent),
+		Commander: ConvertTestResults(results.Commander),
 		Assistant:    ConvertTestResults(results.Assistant),
 		Generator:    ConvertTestResults(results.Generator),
 		Refiner:      ConvertTestResults(results.Refiner),
 		Reflector:    ConvertTestResults(results.Reflector),
-		Searcher:     ConvertTestResults(results.Searcher),
+		Analyst:     ConvertTestResults(results.Analyst),
 	}
 }
 

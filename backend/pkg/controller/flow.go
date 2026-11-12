@@ -234,7 +234,7 @@ func buildFlowWorker(
 
 	flow, err = fwc.db.UpdateFlow(ctx, database.UpdateFlowParams{
 		Title:              flowProvider.Title(),
-		Model:              flowProvider.Model(pconfig.OptionsTypePrimaryAgent),
+		Model:              flowProvider.Model(pconfig.OptionsTypeCommander),
 		Language:           flowProvider.Language(),
 		ToolCallIDTemplate: flowProvider.ToolCallIDTemplate(),
 		Functions:          functionsBlob,
@@ -1200,7 +1200,7 @@ func (fw *flowWorker) switchProvider(ctx context.Context, prv provider.Provider)
 		ModelProviderName:  prv.Name().String(),
 		ModelProviderType:  database.ProviderType(prv.Type()),
 		ToolCallIDTemplate: tcIDTemplate,
-		Model:              prv.Model(pconfig.OptionsTypePrimaryAgent),
+		Model:              prv.Model(pconfig.OptionsTypeCommander),
 		ID:                 fw.flowCtx.FlowID,
 	})
 	if err != nil {
@@ -1210,7 +1210,7 @@ func (fw *flowWorker) switchProvider(ctx context.Context, prv provider.Provider)
 
 	logger.WithFields(logrus.Fields{
 		"new_tool_call_id_template": tcIDTemplate,
-		"new_model":                 prv.Model(pconfig.OptionsTypePrimaryAgent),
+		"new_model":                 prv.Model(pconfig.OptionsTypeCommander),
 	}).Info("provider switched successfully")
 
 	if containers, err := fw.flowCtx.DB.GetFlowContainers(ctx, fw.flowCtx.FlowID); err == nil {

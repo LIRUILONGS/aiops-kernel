@@ -1369,12 +1369,12 @@ function TestResultsDialog({ handleOpenChange, isOpen, results }: TestResultsDia
 }
 
 const agentTypesMap: Record<string, AgentConfigType> = {
+    analyst: AgentConfigType.Analyst,
     assistant: AgentConfigType.Assistant,
+    commander: AgentConfigType.Commander,
     generator: AgentConfigType.Generator,
-    primaryAgent: AgentConfigType.PrimaryAgent,
     refiner: AgentConfigType.Refiner,
     reflector: AgentConfigType.Reflector,
-    searcher: AgentConfigType.Searcher,
     simple: AgentConfigType.Simple,
     simpleJson: AgentConfigType.SimpleJson,
 };

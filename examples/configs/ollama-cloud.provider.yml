@@ -46,7 +46,7 @@ simple_json:
   max_tokens: 8192
   json: true
 
-primary_agent:
+commander:
   model: "deepseek-v4.1-flash:cloud"
   temperature: 1
   top_p: 0.95
@@ -74,13 +74,6 @@ refiner:
   n: 1
   max_tokens: 32768
 
-adviser:
-  model: "kimi-k3:cloud"
-  temperature: 1
-  top_p: 0.95
-  n: 1
-  max_tokens: 16384
-
 reflector:
   model: "minimax-m2.7:cloud"
   temperature: 1
@@ -88,37 +81,9 @@ reflector:
   n: 1
   max_tokens: 8192
 
-searcher:
+analyst:
   model: "deepseek-v4.1-flash:cloud"
   temperature: 1
   top_p: 0.95
   n: 1
   max_tokens: 8192
-
-enricher:
-  model: "minimax-m2.7:cloud"
-  temperature: 1
-  top_p: 0.95
-  n: 1
-  max_tokens: 4096
-
-coder:
-  model: "kimi-k2.7-code:cloud"
-  temperature: 1
-  top_p: 0.95
-  n: 1
-  max_tokens: 20480
-
-installer:
-  model: "kimi-k2.7-code:cloud"
-  temperature: 1
-  top_p: 0.95
-  n: 1
-  max_tokens: 16384
-
-pentester:
-  model: "deepseek-v4.1-flash:cloud"
-  temperature: 1
-  top_p: 0.95
-  n: 1
-  max_tokens: 16384

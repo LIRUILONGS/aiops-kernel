@@ -22,7 +22,7 @@ func TestProvider_SetSequentialResponses_AnswersInCallOrderAheadOfContentKeys(t 
 		call func(t *testing.T, p *Provider) (*llms.ContentResponse, error)
 	}{
 		{"a tool call", func(t *testing.T, p *Provider) (*llms.ContentResponse, error) {
-			return p.CallWithTools(t.Context(), pconfig.OptionsTypePrimaryAgent, chain, tool, nil)
+			return p.CallWithTools(t.Context(), pconfig.OptionsTypeCommander, chain, tool, nil)
 		}},
 		{"a call carrying extra options", func(t *testing.T, p *Provider) (*llms.ContentResponse, error) {
 			return p.CallWithExtraOptions(t.Context(), pconfig.OptionsTypeSimple, chain, nil, nil, llms.WithTemperature(0.25))

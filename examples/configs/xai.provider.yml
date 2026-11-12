@@ -21,7 +21,7 @@ simple_json:
     output: 2.50
     cache_read: 0.2
 
-primary_agent:
+commander:
   model: grok-4.3
   n: 1
   max_tokens: 16384
@@ -57,15 +57,6 @@ refiner:
     output: 2.50
     cache_read: 0.20
 
-adviser:
-  model: grok-4.3
-  n: 1
-  max_tokens: 16384
-  price:
-    input: 1.25
-    output: 2.50
-    cache_read: 0.20
-
 reflector:
   model: grok-4.20-0309-non-reasoning
   temperature: 0.3
@@ -77,7 +68,7 @@ reflector:
     output: 2.50
     cache_read: 0.2
 
-searcher:
+analyst:
   model: grok-4.3
   n: 1
   max_tokens: 8192
@@ -85,41 +76,3 @@ searcher:
     input: 1.25
     output: 2.50
     cache_read: 0.2
-
-enricher:
-  model: grok-4.20-0309-non-reasoning
-  temperature: 0.3
-  top_p: 0.9
-  n: 1
-  max_tokens: 8192
-  price:
-    input: 1.25
-    output: 2.50
-    cache_read: 0.2
-
-coder:
-  model: grok-4.3
-  n: 1
-  max_tokens: 20480
-  price:
-    input: 1.25
-    output: 2.50
-    cache_read: 0.20
-
-installer:
-  model: grok-4.3
-  n: 1
-  max_tokens: 16384
-  price:
-    input: 1.25
-    output: 2.50
-    cache_read: 0.20
-
-pentester:
-  model: grok-4.3
-  n: 1
-  max_tokens: 16384
-  price:
-    input: 1.25
-    output: 2.50
-    cache_read: 0.20

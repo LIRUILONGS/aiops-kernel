@@ -85,7 +85,7 @@ func TestOllama_DefaultProviderConfig_ReadsTheConfiguredFileOverTheEmbeddedOne(t
 			// The assistant is left out: its embedded block equals the primary agent's, which it falls back to.
 			name: "no configured file takes the embedded config",
 			maxTokens: map[pconfig.ProviderOptionsType]int{
-				pconfig.OptionsTypeSimple: 8192, pconfig.OptionsTypeSimpleJSON: 4096, pconfig.OptionsTypePrimaryAgent: 16384,
+				pconfig.OptionsTypeSimple: 8192, pconfig.OptionsTypeSimpleJSON: 4096, pconfig.OptionsTypeCommander: 16384,
 				pconfig.OptionsTypeGenerator: 20480, pconfig.OptionsTypeRefiner: 16384,
 			},
 		},
@@ -261,8 +261,8 @@ searcher:
 			serverURL: "https://ollama.com",
 			want: map[pconfig.ProviderOptionsType]*pconfig.PriceInfo{
 				pconfig.OptionsTypeSimple:       {Input: 0.06, Output: 0.24},
-				pconfig.OptionsTypePrimaryAgent: {Input: 0.95, Output: 4.00, CacheRead: 0.16},
-				pconfig.OptionsTypeSearcher:     {Input: 0.30, Output: 1.20, CacheRead: 0.006},
+				pconfig.OptionsTypeCommander: {Input: 0.95, Output: 4.00, CacheRead: 0.16},
+				pconfig.OptionsTypeAnalyst:     {Input: 0.30, Output: 1.20, CacheRead: 0.006},
 			},
 		},
 		{
@@ -270,8 +270,8 @@ searcher:
 			serverURL: "http://localhost:11434",
 			want: map[pconfig.ProviderOptionsType]*pconfig.PriceInfo{
 				pconfig.OptionsTypeSimple:       nil,
-				pconfig.OptionsTypePrimaryAgent: nil,
-				pconfig.OptionsTypeSearcher:     nil,
+				pconfig.OptionsTypeCommander: nil,
+				pconfig.OptionsTypeAnalyst:     nil,
 			},
 		},
 	} {

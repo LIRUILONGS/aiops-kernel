@@ -32,11 +32,11 @@ func TestXai_DefaultToolRolesUseTheReplayedModelAndItsPrice(t *testing.T) {
 	}
 
 	for _, role := range []pconfig.ProviderOptionsType{
-		pconfig.OptionsTypePrimaryAgent,
+		pconfig.OptionsTypeCommander,
 		pconfig.OptionsTypeAssistant,
 		pconfig.OptionsTypeGenerator,
 		pconfig.OptionsTypeRefiner,
-		pconfig.OptionsTypeSearcher,
+		pconfig.OptionsTypeAnalyst,
 	} {
 		options := llms.CallOptions{}
 		for _, option := range cfg.GetOptionsForType(role) {

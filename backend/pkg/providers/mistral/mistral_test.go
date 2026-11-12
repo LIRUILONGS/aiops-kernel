@@ -57,8 +57,8 @@ func TestMistral_DefaultProviderConfig_SendsEffortHighOnlyFromReasoningAgents(t 
 		}},
 		{agents: []pconfig.ProviderOptionsType{
 			pconfig.OptionsTypeSimple, pconfig.OptionsTypeSimpleJSON,
-			pconfig.OptionsTypePrimaryAgent, pconfig.OptionsTypeAssistant,
-			pconfig.OptionsTypeReflector, pconfig.OptionsTypeSearcher,
+			pconfig.OptionsTypeCommander, pconfig.OptionsTypeAssistant,
+			pconfig.OptionsTypeReflector, pconfig.OptionsTypeAnalyst,
 		}},
 	} {
 		for _, opt := range tc.agents {

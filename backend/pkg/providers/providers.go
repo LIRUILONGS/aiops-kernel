@@ -961,8 +961,8 @@ func (pc *providerController) TestAgent(
 		testConfig.Simple = config
 	case pconfig.OptionsTypeSimpleJSON:
 		testConfig.SimpleJSON = config
-	case pconfig.OptionsTypePrimaryAgent:
-		testConfig.PrimaryAgent = config
+	case pconfig.OptionsTypeCommander:
+		testConfig.Commander = config
 	case pconfig.OptionsTypeAssistant:
 		testConfig.Assistant = config
 	case pconfig.OptionsTypeGenerator:
@@ -971,8 +971,8 @@ func (pc *providerController) TestAgent(
 		testConfig.Refiner = config
 	case pconfig.OptionsTypeReflector:
 		testConfig.Reflector = config
-	case pconfig.OptionsTypeSearcher:
-		testConfig.Searcher = config
+	case pconfig.OptionsTypeAnalyst:
+		testConfig.Analyst = config
 	default:
 		return result, fmt.Errorf("unsupported agent type: %s", agentType)
 	}
@@ -1012,8 +1012,8 @@ func (pc *providerController) TestAgent(
 		result = results.Simple
 	case pconfig.OptionsTypeSimpleJSON:
 		result = results.SimpleJSON
-	case pconfig.OptionsTypePrimaryAgent:
-		result = results.PrimaryAgent
+	case pconfig.OptionsTypeCommander:
+		result = results.Commander
 	case pconfig.OptionsTypeAssistant:
 		result = results.Assistant
 	case pconfig.OptionsTypeGenerator:
@@ -1022,8 +1022,8 @@ func (pc *providerController) TestAgent(
 		result = results.Refiner
 	case pconfig.OptionsTypeReflector:
 		result = results.Reflector
-	case pconfig.OptionsTypeSearcher:
-		result = results.Searcher
+	case pconfig.OptionsTypeAnalyst:
+		result = results.Analyst
 	default:
 		return result, fmt.Errorf("unexpected agent type: %s", agentType)
 	}
@@ -1097,8 +1097,8 @@ func (pc *providerController) patchProviderConfig(
 	if config.SimpleJSON == nil {
 		config.SimpleJSON = defaultCfg.SimpleJSON
 	}
-	if config.PrimaryAgent == nil {
-		config.PrimaryAgent = defaultCfg.PrimaryAgent
+	if config.Commander == nil {
+		config.Commander = defaultCfg.Commander
 	}
 	if config.Assistant == nil {
 		config.Assistant = defaultCfg.Assistant
@@ -1112,8 +1112,8 @@ func (pc *providerController) patchProviderConfig(
 	if config.Reflector == nil {
 		config.Reflector = defaultCfg.Reflector
 	}
-	if config.Searcher == nil {
-		config.Searcher = defaultCfg.Searcher
+	if config.Analyst == nil {
+		config.Analyst = defaultCfg.Analyst
 	}
 
 	config.SetDefaultOptions(defaultCfg.GetDefaultOptions())

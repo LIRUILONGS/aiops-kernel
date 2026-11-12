@@ -1604,13 +1604,13 @@ The `OPSAGI_OLLAMA_SERVER_CONFIG_PATH` environment variable maps your host confi
 **Example custom configuration** (`my-ollama-config.yml`):
 
 ```yaml
-primary_agent:
+commander:
   model: "deepseek-v4-flash:cloud"
   temperature: 1.0
   top_p: 0.95
   max_tokens: 32768
 
-coder:
+analyst:
   model: "kimi-k2.7-code:cloud"
   temperature: 1.0
   max_tokens: 20480
@@ -3362,7 +3362,7 @@ go run cmd/ctester/*.go -config ../examples/configs/openrouter.provider.yml -ver
 go run cmd/ctester/*.go -config ../examples/configs/deepinfra.provider.yml -report ../test-report.md
 
 # Test specific agent types only
-go run cmd/ctester/*.go -agents simple,simple_json,primary_agent -verbose
+go run cmd/ctester/*.go -agents simple,simple_json,commander -verbose
 
 # Test specific test groups only
 go run cmd/ctester/*.go -groups basic,advanced -verbose
@@ -3380,7 +3380,7 @@ docker run --rm -v $(pwd)/.env:/opt/opsagi/.env local/opsagi /opt/opsagi/bin/cte
 docker run --rm \
   -v $(pwd)/.env:/opt/opsagi/.env \
   -v $(pwd)/my-config.yml:/opt/opsagi/config.yml \
-  local/opsagi /opt/opsagi/bin/ctester -config /opt/opsagi/config.yml -agents simple,primary_agent,coder -verbose
+  local/opsagi /opt/opsagi/bin/ctester -config /opt/opsagi/config.yml -agents simple,commander,analyst -verbose
 
 # Generate a detailed report
 docker run --rm \
@@ -3611,7 +3611,7 @@ If you already have a running OpsAGI container and want to test the current conf
 docker exec -it opsagi /opt/opsagi/bin/ctester -verbose
 
 # Test specific agent types with deterministic ordering
-docker exec -it opsagi /opt/opsagi/bin/ctester -agents simple,primary_agent,pentester -groups basic,knowledge -verbose
+docker exec -it opsagi /opt/opsagi/bin/ctester -agents simple,commander,analyst -groups basic,knowledge -verbose
 
 # Generate a report file inside the container
 docker exec -it opsagi /opt/opsagi/bin/ctester -report /opt/opsagi/data/agent-test-report.md
@@ -3639,13 +3639,13 @@ Agents are tested in the following deterministic order:
 
 1. **simple** - Basic completion tasks
 2. **simple_json** - JSON-structured responses
-3. **primary_agent** - Main reasoning agent
+3. **commander** - Main reasoning agent
 4. **assistant** - Interactive assistant mode
 5. **generator** - Content generation
 6. **refiner** - Content refinement and improvement
 7. **adviser** - Expert advice and consultation
 8. **reflector** - Self-reflection and analysis
-9. **searcher** - Information gathering and search
+9. **analyst** - The evidence analysts' model
 10. **enricher** - Data enrichment and expansion
 11. **coder** - Code generation and analysis
 12. **installer** - Installation and setup tasks

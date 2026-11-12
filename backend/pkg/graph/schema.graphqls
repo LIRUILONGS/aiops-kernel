@@ -117,8 +117,8 @@ enum AgentType {
 
 # AI agent type for provider configuration
 enum AgentConfigType {
-  primary_agent
-  searcher
+  commander
+  analyst
   simple
   simple_json
   assistant
@@ -572,12 +572,12 @@ type AgentTestResult {
 type ProviderTestResult {
   simple: AgentTestResult!
   simpleJson: AgentTestResult!
-  primaryAgent: AgentTestResult!
+  commander: AgentTestResult!
   assistant: AgentTestResult!
   generator: AgentTestResult!
   refiner: AgentTestResult!
   reflector: AgentTestResult!
-  searcher: AgentTestResult!
+  analyst: AgentTestResult!
 }
 
 # ==================== Analytics & Usage Statistics Types ====================
@@ -825,12 +825,12 @@ type AgentConfig {
 type AgentsConfig {
   simple: AgentConfig!
   simpleJson: AgentConfig!
-  primaryAgent: AgentConfig!
+  commander: AgentConfig!
   assistant: AgentConfig!
   generator: AgentConfig!
   refiner: AgentConfig!
   reflector: AgentConfig!
-  searcher: AgentConfig!
+  analyst: AgentConfig!
 }
 
 # ==================== Input Types ====================
@@ -875,12 +875,12 @@ input AgentConfigInput {
 input AgentsConfigInput {
   simple: AgentConfigInput!
   simpleJson: AgentConfigInput!
-  primaryAgent: AgentConfigInput!
+  commander: AgentConfigInput!
   assistant: AgentConfigInput!
   generator: AgentConfigInput!
   refiner: AgentConfigInput!
   reflector: AgentConfigInput!
-  searcher: AgentConfigInput!
+  analyst: AgentConfigInput!
 }
 
 # ==================== Knowledge (Vector Store) Types ====================

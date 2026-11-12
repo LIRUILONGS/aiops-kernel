@@ -16,7 +16,7 @@ simple_json:
   n: 1
   max_tokens: 32768
 
-primary_agent:
+commander:
   model: "Qwen/Qwen3-32B"
   temperature: 0.6
   top_k: 20
@@ -52,15 +52,6 @@ refiner:
   n: 1
   max_tokens: 32768
 
-adviser:
-  model: "Qwen/Qwen3-32B"
-  temperature: 0.6
-  top_k: 20
-  top_p: 0.95
-  min_p: 0.0
-  n: 1
-  max_tokens: 32768
-
 reflector:
   model: "Qwen/Qwen3-32B"
   temperature: 0.6
@@ -70,43 +61,7 @@ reflector:
   n: 1
   max_tokens: 32768
 
-searcher:
-  model: "Qwen/Qwen3-32B"
-  temperature: 0.6
-  top_k: 20
-  top_p: 0.95
-  min_p: 0.0
-  n: 1
-  max_tokens: 32768
-
-enricher:
-  model: "Qwen/Qwen3-32B"
-  temperature: 0.6
-  top_k: 20
-  top_p: 0.95
-  min_p: 0.0
-  n: 1
-  max_tokens: 32768
-
-coder:
-  model: "Qwen/Qwen3-32B"
-  temperature: 0.6
-  top_k: 20
-  top_p: 0.95
-  min_p: 0.0
-  n: 1
-  max_tokens: 32768
-
-installer:
-  model: "Qwen/Qwen3-32B"
-  temperature: 0.6
-  top_k: 20
-  top_p: 0.95
-  min_p: 0.0
-  n: 1
-  max_tokens: 32768
-
-pentester:
+analyst:
   model: "Qwen/Qwen3-32B"
   temperature: 0.6
   top_k: 20

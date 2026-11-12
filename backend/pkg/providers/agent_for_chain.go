@@ -7,7 +7,7 @@ import (
 
 var agentByChain = map[database.MsgchainType]pconfig.ProviderOptionsType{
 	database.MsgchainTypeAssistant:      pconfig.OptionsTypeAssistant,
-	database.MsgchainTypeCommander:      pconfig.OptionsTypePrimaryAgent,
+	database.MsgchainTypeCommander:      pconfig.OptionsTypeCommander,
 	database.MsgchainTypeGenerator:      pconfig.OptionsTypeGenerator,
 	database.MsgchainTypeRefiner:        pconfig.OptionsTypeRefiner,
 	database.MsgchainTypeReflector:      pconfig.OptionsTypeReflector,
@@ -15,7 +15,7 @@ var agentByChain = map[database.MsgchainType]pconfig.ProviderOptionsType{
 	database.MsgchainTypeSummarizer:     pconfig.OptionsTypeSimple,
 	database.MsgchainTypeToolCallFixer:  pconfig.OptionsTypeSimpleJSON,
 	database.MsgchainTypeTriage:         pconfig.OptionsTypeSimple,
-	database.MsgchainTypeLogAnalyst:     pconfig.OptionsTypeSearcher,
-	database.MsgchainTypeMetricsAnalyst: pconfig.OptionsTypeSearcher,
-	database.MsgchainTypeChangeAnalyst:  pconfig.OptionsTypeSearcher,
+	database.MsgchainTypeLogAnalyst:     pconfig.OptionsTypeAnalyst,
+	database.MsgchainTypeMetricsAnalyst: pconfig.OptionsTypeAnalyst,
+	database.MsgchainTypeChangeAnalyst:  pconfig.OptionsTypeAnalyst,
 }

@@ -19,7 +19,7 @@ simple_json:
     input: 0.4
     output: 1.6
 
-primary_agent:
+commander:
   model: "o4-mini"
   n: 1
   max_tokens: 16384
@@ -53,14 +53,6 @@ refiner:
     input: 2.0
     output: 8.0
 
-adviser:
-  model: "o4-mini"
-  n: 1
-  max_tokens: 8192
-  price:
-    input: 1.1
-    output: 4.4
-
 reflector:
   model: "o4-mini"
   n: 1
@@ -69,7 +61,7 @@ reflector:
     input: 1.1
     output: 4.4
 
-searcher:
+analyst:
   model: "gpt-4.1-mini"
   temperature: 0.7
   top_p: 0.8
@@ -78,41 +70,3 @@ searcher:
   price:
     input: 0.4
     output: 1.6
-
-enricher:
-  model: "gpt-4.1-mini"
-  temperature: 0.7
-  top_p: 0.8
-  n: 1
-  max_tokens: 8192
-  price:
-    input: 0.4
-    output: 1.6
-
-coder:
-  model: "gpt-4.1"
-  temperature: 0.2
-  top_p: 0.1
-  n: 1
-  max_tokens: 20480
-  price:
-    input: 2.0
-    output: 8.0
-
-installer:
-  model: "gpt-4.1"
-  temperature: 0.2
-  top_p: 0.1
-  n: 1
-  max_tokens: 16384
-  price:
-    input: 2.0
-    output: 8.0
-
-pentester:
-  model: "o4-mini"
-  n: 1
-  max_tokens: 8192
-  price:
-    input: 1.1
-    output: 4.4

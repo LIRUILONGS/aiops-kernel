@@ -1029,7 +1029,7 @@ func TestPerformer_PerformAgentChain_WritesAMissingScopeToGraphitiAsADash(t *tes
 		},
 		{
 			name:    "an agent the assistant started has neither a task nor a subtask",
-			agent:   pconfig.OptionsTypeSearcher,
+			agent:   pconfig.OptionsTypeAnalyst,
 			barrier: "search_result",
 			want: []performerGraphitiEpisode{
 				{

@@ -155,7 +155,7 @@ func TestCustom_DefaultProviderConfig_ReadsTheAgentsFromTheFileOrTheEnvironment(
 			cfg:  config.Config{LLMServerModel: "gpt-4o-mini", LLMServerConfig: file},
 			want: map[pconfig.ProviderOptionsType]customAgent{
 				pconfig.OptionsTypeSimple:       {model: "gpt-3.5-turbo", maxTokens: 2000},
-				pconfig.OptionsTypePrimaryAgent: {model: "gpt-4", maxTokens: 16384},
+				pconfig.OptionsTypeCommander: {model: "gpt-4", maxTokens: 16384},
 				pconfig.OptionsTypeRefiner:      {model: "gpt-4o-mini", maxTokens: 16384},
 			},
 		},

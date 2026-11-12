@@ -24,12 +24,12 @@ export type AgentConfigInput = {
 };
 
 export enum AgentConfigType {
+    Analyst = 'analyst',
     Assistant = 'assistant',
+    Commander = 'commander',
     Generator = 'generator',
-    PrimaryAgent = 'primary_agent',
     Refiner = 'refiner',
     Reflector = 'reflector',
-    Searcher = 'searcher',
     Simple = 'simple',
     SimpleJson = 'simple_json',
 }
@@ -50,12 +50,12 @@ export enum AgentType {
 }
 
 export type AgentsConfigInput = {
+    analyst: AgentConfigInput;
     assistant: AgentConfigInput;
+    commander: AgentConfigInput;
     generator: AgentConfigInput;
-    primaryAgent: AgentConfigInput;
     refiner: AgentConfigInput;
     reflector: AgentConfigInput;
-    searcher: AgentConfigInput;
     simple: AgentConfigInput;
     simpleJson: AgentConfigInput;
 };
@@ -491,12 +491,12 @@ export type AgentTestResultFragmentFragment = { tests: Array<TestResultFragmentF
 export type ProviderTestResultFragmentFragment = {
     simple: AgentTestResultFragmentFragment;
     simpleJson: AgentTestResultFragmentFragment;
-    primaryAgent: AgentTestResultFragmentFragment;
+    commander: AgentTestResultFragmentFragment;
     assistant: AgentTestResultFragmentFragment;
     generator: AgentTestResultFragmentFragment;
     refiner: AgentTestResultFragmentFragment;
     reflector: AgentTestResultFragmentFragment;
-    searcher: AgentTestResultFragmentFragment;
+    analyst: AgentTestResultFragmentFragment;
 };
 
 export type ModelConfigFragmentFragment = {
@@ -529,12 +529,12 @@ export type ProviderConfigFragmentFragment = {
 export type AgentsConfigFragmentFragment = {
     simple: AgentConfigFragmentFragment;
     simpleJson: AgentConfigFragmentFragment;
-    primaryAgent: AgentConfigFragmentFragment;
+    commander: AgentConfigFragmentFragment;
     assistant: AgentConfigFragmentFragment;
     generator: AgentConfigFragmentFragment;
     refiner: AgentConfigFragmentFragment;
     reflector: AgentConfigFragmentFragment;
-    searcher: AgentConfigFragmentFragment;
+    analyst: AgentConfigFragmentFragment;
 };
 
 export type AgentConfigFragmentFragment = {
@@ -1983,7 +1983,7 @@ export const ProviderTestResultFragmentFragmentDoc = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'primaryAgent' },
+                        name: { kind: 'Name', value: 'commander' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [
@@ -2033,7 +2033,7 @@ export const ProviderTestResultFragmentFragmentDoc = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'searcher' },
+                        name: { kind: 'Name', value: 'analyst' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [
@@ -2217,7 +2217,7 @@ export const AgentsConfigFragmentFragmentDoc = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'primaryAgent' },
+                        name: { kind: 'Name', value: 'commander' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [
@@ -2267,7 +2267,7 @@ export const AgentsConfigFragmentFragmentDoc = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'searcher' },
+                        name: { kind: 'Name', value: 'analyst' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [
@@ -2437,7 +2437,7 @@ export const ProviderConfigFragmentFragmentDoc = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'primaryAgent' },
+                        name: { kind: 'Name', value: 'commander' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [
@@ -2487,7 +2487,7 @@ export const ProviderConfigFragmentFragmentDoc = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'searcher' },
+                        name: { kind: 'Name', value: 'analyst' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [
@@ -3939,7 +3939,7 @@ export const SettingsProvidersDocument = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'primaryAgent' },
+                        name: { kind: 'Name', value: 'commander' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [
@@ -3989,7 +3989,7 @@ export const SettingsProvidersDocument = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'searcher' },
+                        name: { kind: 'Name', value: 'analyst' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [
@@ -8376,7 +8376,7 @@ export const TestProviderDocument = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'primaryAgent' },
+                        name: { kind: 'Name', value: 'commander' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [
@@ -8426,7 +8426,7 @@ export const TestProviderDocument = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'searcher' },
+                        name: { kind: 'Name', value: 'analyst' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [
@@ -8581,7 +8581,7 @@ export const CreateProviderDocument = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'primaryAgent' },
+                        name: { kind: 'Name', value: 'commander' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [
@@ -8631,7 +8631,7 @@ export const CreateProviderDocument = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'searcher' },
+                        name: { kind: 'Name', value: 'analyst' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [
@@ -8808,7 +8808,7 @@ export const UpdateProviderDocument = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'primaryAgent' },
+                        name: { kind: 'Name', value: 'commander' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [
@@ -8858,7 +8858,7 @@ export const UpdateProviderDocument = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'searcher' },
+                        name: { kind: 'Name', value: 'analyst' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [
@@ -11005,7 +11005,7 @@ export const ProviderCreatedDocument = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'primaryAgent' },
+                        name: { kind: 'Name', value: 'commander' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [
@@ -11055,7 +11055,7 @@ export const ProviderCreatedDocument = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'searcher' },
+                        name: { kind: 'Name', value: 'analyst' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [
@@ -11195,7 +11195,7 @@ export const ProviderUpdatedDocument = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'primaryAgent' },
+                        name: { kind: 'Name', value: 'commander' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [
@@ -11245,7 +11245,7 @@ export const ProviderUpdatedDocument = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'searcher' },
+                        name: { kind: 'Name', value: 'analyst' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [
@@ -11385,7 +11385,7 @@ export const ProviderDeletedDocument = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'primaryAgent' },
+                        name: { kind: 'Name', value: 'commander' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [
@@ -11435,7 +11435,7 @@ export const ProviderDeletedDocument = {
                     },
                     {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'searcher' },
+                        name: { kind: 'Name', value: 'analyst' },
                         selectionSet: {
                             kind: 'SelectionSet',
                             selections: [

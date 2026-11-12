@@ -64,7 +64,7 @@ simple_json:
     output: 4.00
     cache_read: 0.16
 
-primary_agent:
+commander:
   model: kimi-k2.7-code-highspeed
   temperature: 1.0
   top_p: 0.95
@@ -135,7 +135,7 @@ reflector:
     output: 4.00
     cache_read: 0.16
 
-searcher:
+analyst:
   model: kimi-k2.6
   temperature: 0.6
   top_p: 0.95

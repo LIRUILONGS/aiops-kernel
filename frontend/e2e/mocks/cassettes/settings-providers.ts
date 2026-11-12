@@ -46,16 +46,16 @@ const agentConfig = (model = 'e2e-model'): AgentConfigFragmentFragment =>
 const agentsConfig = (model?: string): AgentsConfigFragmentFragment =>
     entity('AgentsConfig', {
         adviser: agentConfig(model),
+        analyst: agentConfig(model),
         assistant: agentConfig(model),
         coder: agentConfig(model),
+        commander: agentConfig(model),
         enricher: agentConfig(model),
         generator: agentConfig(model),
         installer: agentConfig(model),
         pentester: agentConfig(model),
-        primaryAgent: agentConfig(model),
         refiner: agentConfig(model),
         reflector: agentConfig(model),
-        searcher: agentConfig(model),
         simple: agentConfig(model),
         simpleJson: agentConfig(model),
     });
@@ -257,16 +257,16 @@ export const agentTestResult = (result = true): AgentTestResultFragmentFragment 
 export const providerTestResult = (): ProviderTestResultFragmentFragment =>
     entity('ProviderTestResult', {
         adviser: agentTestResult(),
+        analyst: agentTestResult(),
         assistant: agentTestResult(),
         coder: agentTestResult(),
+        commander: agentTestResult(),
         enricher: agentTestResult(),
         generator: agentTestResult(),
         installer: agentTestResult(),
         pentester: agentTestResult(false),
-        primaryAgent: agentTestResult(),
         refiner: agentTestResult(),
         reflector: agentTestResult(),
-        searcher: agentTestResult(),
         simple: agentTestResult(),
         simpleJson: agentTestResult(),
     });

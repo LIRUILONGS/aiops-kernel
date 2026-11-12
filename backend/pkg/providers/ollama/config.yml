@@ -11,7 +11,7 @@ simple_json:
   max_tokens: 4096
   json: true
 
-primary_agent:
+commander:
   temperature: 1.0
   top_p: 0.9
   n: 1
@@ -41,7 +41,7 @@ reflector:
   n: 1
   max_tokens: 4096
 
-searcher:
+analyst:
   temperature: 1.0
   top_p: 0.95
   n: 1

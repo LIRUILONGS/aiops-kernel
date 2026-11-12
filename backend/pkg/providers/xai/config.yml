@@ -38,7 +38,7 @@ simple_json:
     output: 2.50
     cache_read: 0.2
 
-primary_agent:
+commander:
   model: grok-4.3
   n: 1
   max_tokens: 16384
@@ -85,7 +85,7 @@ reflector:
     output: 2.50
     cache_read: 0.2
 
-searcher:
+analyst:
   model: grok-4.3
   n: 1
   max_tokens: 8192

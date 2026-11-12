@@ -237,7 +237,7 @@ func buildAssistantWorker(
 
 	updated, err := awc.db.UpdateAssistant(ctx, database.UpdateAssistantParams{
 		Title:              assistantProvider.Title(),
-		Model:              assistantProvider.Model(pconfig.OptionsTypePrimaryAgent),
+		Model:              assistantProvider.Model(pconfig.OptionsTypeCommander),
 		Language:           assistantProvider.Language(),
 		ToolCallIDTemplate: assistantProvider.ToolCallIDTemplate(),
 		Functions:          functionsBlob,

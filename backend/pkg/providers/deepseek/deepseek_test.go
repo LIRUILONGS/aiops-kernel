@@ -220,7 +220,7 @@ func TestDeepseek_DefaultProviderConfig_DisablesThinkingOnTheWireWhereReasoningI
 		{name: "the shipped simple agent", opt: pconfig.OptionsTypeSimple},
 		{name: "the shipped simple json agent", opt: pconfig.OptionsTypeSimpleJSON},
 		{name: "the shipped reflector", opt: pconfig.OptionsTypeReflector},
-		{name: "the shipped searcher", opt: pconfig.OptionsTypeSearcher},
+		{name: "the shipped analyst", opt: pconfig.OptionsTypeAnalyst},
 		{
 			name:  "an assistant switched to reasoning mode off",
 			opt:   pconfig.OptionsTypeAssistant,

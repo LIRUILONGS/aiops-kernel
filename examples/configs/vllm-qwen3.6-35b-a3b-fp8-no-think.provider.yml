@@ -38,7 +38,7 @@ simple_json:
     chat_template_kwargs:
       enable_thinking: false
 
-primary_agent:
+commander:
   model: "Qwen/Qwen3.6-35B-A3B-FP8"
   temperature: 1.0
   top_k: 20
@@ -94,20 +94,6 @@ refiner:
     chat_template_kwargs:
       enable_thinking: false
 
-adviser:
-  model: "Qwen/Qwen3.6-35B-A3B-FP8"
-  temperature: 1.0
-  top_k: 20
-  top_p: 0.95
-  min_p: 0.0
-  presence_penalty: 1.5
-  repetition_penalty: 1.0
-  n: 1
-  max_tokens: 32768
-  extra_body:
-    chat_template_kwargs:
-      enable_thinking: false
-
 reflector:
   model: "Qwen/Qwen3.6-35B-A3B-FP8"
   temperature: 1.0
@@ -122,67 +108,11 @@ reflector:
     chat_template_kwargs:
       enable_thinking: false
 
-searcher:
+analyst:
   model: "Qwen/Qwen3.6-35B-A3B-FP8"
   temperature: 0.7
   top_k: 20
   top_p: 0.8
-  min_p: 0.0
-  presence_penalty: 1.5
-  repetition_penalty: 1.0
-  n: 1
-  max_tokens: 32768
-  extra_body:
-    chat_template_kwargs:
-      enable_thinking: false
-
-enricher:
-  model: "Qwen/Qwen3.6-35B-A3B-FP8"
-  temperature: 0.7
-  top_k: 20
-  top_p: 0.8
-  min_p: 0.0
-  presence_penalty: 1.5
-  repetition_penalty: 1.0
-  n: 1
-  max_tokens: 32768
-  extra_body:
-    chat_template_kwargs:
-      enable_thinking: false
-
-coder:
-  model: "Qwen/Qwen3.6-35B-A3B-FP8"
-  temperature: 1.0
-  top_k: 20
-  top_p: 0.95
-  min_p: 0.0
-  presence_penalty: 1.5
-  repetition_penalty: 1.0
-  n: 1
-  max_tokens: 32768
-  extra_body:
-    chat_template_kwargs:
-      enable_thinking: false
-
-installer:
-  model: "Qwen/Qwen3.6-35B-A3B-FP8"
-  temperature: 1.0
-  top_k: 20
-  top_p: 0.95
-  min_p: 0.0
-  presence_penalty: 1.5
-  repetition_penalty: 1.0
-  n: 1
-  max_tokens: 32768
-  extra_body:
-    chat_template_kwargs:
-      enable_thinking: false
-
-pentester:
-  model: "Qwen/Qwen3.6-35B-A3B-FP8"
-  temperature: 1.0
-  top_k: 20
-  top_p: 0.95
   min_p: 0.0
   presence_penalty: 1.5
   repetition_penalty: 1.0

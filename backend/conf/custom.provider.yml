@@ -19,7 +19,7 @@ simple_json:
     input: 0.4
     output: 1.6
 
-primary_agent:
+commander:
   model: "glm-5.3-flash" # o4-mini
   n: 1
   max_tokens: 4000
@@ -59,16 +59,6 @@ refiner:
     input: 2.0
     output: 8.0
 
-adviser:
-  model: "glm-5.3-flash" # o4-mini
-  n: 1
-  max_tokens: 4000
-  reasoning:
-    effort: medium
-  price:
-    input: 1.1
-    output: 4.4
-
 reflector:
   model: "glm-5.3-flash" # o4-mini
   n: 1
@@ -79,7 +69,7 @@ reflector:
     input: 1.1
     output: 4.4
 
-searcher:
+analyst:
   model: "glm-5.3-flash"
   temperature: 0.7
   top_p: 0.8
@@ -88,43 +78,3 @@ searcher:
   price:
     input: 0.4
     output: 1.6
-
-enricher:
-  model: "glm-5.3-flash"
-  temperature: 0.7
-  top_p: 0.8
-  n: 1
-  max_tokens: 4000
-  price:
-    input: 0.4
-    output: 1.6
-
-coder:
-  model: "glm-5.3-flash"
-  temperature: 0.2
-  top_p: 0.1
-  n: 1
-  max_tokens: 6000
-  price:
-    input: 2.0
-    output: 8.0
-
-installer:
-  model: "glm-5.3-flash"
-  temperature: 0.2
-  top_p: 0.1
-  n: 1
-  max_tokens: 6000
-  price:
-    input: 2.0
-    output: 8.0
-
-pentester:
-  model: "glm-5.3-flash" # o4-mini
-  n: 1
-  max_tokens: 4000
-  reasoning:
-    effort: low
-  price:
-    input: 1.1
-    output: 4.4

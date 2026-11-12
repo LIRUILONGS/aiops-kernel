@@ -19,7 +19,7 @@ simple_json:
     input: 0.14
     output: 1.4
 
-primary_agent:
+commander:
   model: "moonshotai/kimi-k2.6"
   temperature: 1.0
   n: 1
@@ -55,15 +55,6 @@ refiner:
     input: 1.0
     output: 3.0
 
-adviser:
-  model: "deepseek-ai/deepseek-v4-pro"
-  temperature: 1.0
-  n: 1
-  max_tokens: 4000
-  price:
-    input: 1.0
-    output: 3.0
-
 reflector:
   model: "Qwen/Qwen3-Next-80B-A3B-Instruct"
   temperature: 1.0
@@ -73,7 +64,7 @@ reflector:
     input: 0.14
     output: 1.4
 
-searcher:
+analyst:
   model: "qwen/qwen3-32b"
   temperature: 1.0
   n: 1
@@ -81,39 +72,3 @@ searcher:
   price:
     input: 0.1
     output: 0.3
-
-enricher:
-  model: "qwen/qwen3-32b"
-  temperature: 1.0
-  n: 1
-  max_tokens: 6000
-  price:
-    input: 0.1
-    output: 0.3
-
-coder:
-  model: "anthropic/claude-sonnet-4.6"
-  temperature: 1.0
-  n: 1
-  max_tokens: 8000
-  price:
-    input: 3.3
-    output: 16.5
-
-installer:
-  model: "google/gemini-3.5-flash"
-  temperature: 1.0
-  n: 1
-  max_tokens: 6000
-  price:
-    input: 0.3
-    output: 2.5
-
-pentester:
-  model: "moonshotai/kimi-k2.6"
-  temperature: 1.0
-  n: 1
-  max_tokens: 6000
-  price:
-    input: 0.4
-    output: 2.0

@@ -16,7 +16,7 @@ func TestProviders_Valid_RefusesExactlyTheInvalidField(t *testing.T) {
 		Name:         "my-provider",
 		Type:         "openai",
 		DefaultModel: "gpt-4o",
-		Models:       []ModelInfo{{Name: "gpt-4o", AgentTypes: []string{"primary_agent"}}},
+		Models:       []ModelInfo{{Name: "gpt-4o", AgentTypes: []string{"commander"}}},
 	}
 	name := "updated"
 

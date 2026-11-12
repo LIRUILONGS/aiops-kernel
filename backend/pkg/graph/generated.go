@@ -126,14 +126,14 @@ type ComplexityRoot struct {
 	}
 
 	AgentsConfig struct {
-		Assistant    func(childComplexity int) int
-		Generator    func(childComplexity int) int
-		PrimaryAgent func(childComplexity int) int
-		Refiner      func(childComplexity int) int
-		Reflector    func(childComplexity int) int
-		Searcher     func(childComplexity int) int
-		Simple       func(childComplexity int) int
-		SimpleJSON   func(childComplexity int) int
+		Analyst    func(childComplexity int) int
+		Assistant  func(childComplexity int) int
+		Commander  func(childComplexity int) int
+		Generator  func(childComplexity int) int
+		Refiner    func(childComplexity int) int
+		Reflector  func(childComplexity int) int
+		Simple     func(childComplexity int) int
+		SimpleJSON func(childComplexity int) int
 	}
 
 	AgentsPrompts struct {
@@ -423,14 +423,14 @@ type ComplexityRoot struct {
 	}
 
 	ProviderTestResult struct {
-		Assistant    func(childComplexity int) int
-		Generator    func(childComplexity int) int
-		PrimaryAgent func(childComplexity int) int
-		Refiner      func(childComplexity int) int
-		Reflector    func(childComplexity int) int
-		Searcher     func(childComplexity int) int
-		Simple       func(childComplexity int) int
-		SimpleJSON   func(childComplexity int) int
+		Analyst    func(childComplexity int) int
+		Assistant  func(childComplexity int) int
+		Commander  func(childComplexity int) int
+		Generator  func(childComplexity int) int
+		Refiner    func(childComplexity int) int
+		Reflector  func(childComplexity int) int
+		Simple     func(childComplexity int) int
+		SimpleJSON func(childComplexity int) int
 	}
 
 	ProviderUsageStats struct {
@@ -1258,6 +1258,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.AgentTypeUsageStats.Stats(childComplexity), true
 
+	case "AgentsConfig.analyst":
+		if e.complexity.AgentsConfig.Analyst == nil {
+			break
+		}
+
+		return e.complexity.AgentsConfig.Analyst(childComplexity), true
+
 	case "AgentsConfig.assistant":
 		if e.complexity.AgentsConfig.Assistant == nil {
 			break
@@ -1265,19 +1272,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.AgentsConfig.Assistant(childComplexity), true
 
+	case "AgentsConfig.commander":
+		if e.complexity.AgentsConfig.Commander == nil {
+			break
+		}
+
+		return e.complexity.AgentsConfig.Commander(childComplexity), true
+
 	case "AgentsConfig.generator":
 		if e.complexity.AgentsConfig.Generator == nil {
 			break
 		}
 
 		return e.complexity.AgentsConfig.Generator(childComplexity), true
-
-	case "AgentsConfig.primaryAgent":
-		if e.complexity.AgentsConfig.PrimaryAgent == nil {
-			break
-		}
-
-		return e.complexity.AgentsConfig.PrimaryAgent(childComplexity), true
 
 	case "AgentsConfig.refiner":
 		if e.complexity.AgentsConfig.Refiner == nil {
@@ -1292,13 +1299,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AgentsConfig.Reflector(childComplexity), true
-
-	case "AgentsConfig.searcher":
-		if e.complexity.AgentsConfig.Searcher == nil {
-			break
-		}
-
-		return e.complexity.AgentsConfig.Searcher(childComplexity), true
 
 	case "AgentsConfig.simple":
 		if e.complexity.AgentsConfig.Simple == nil {
@@ -2846,6 +2846,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProviderConfig.UpdatedAt(childComplexity), true
 
+	case "ProviderTestResult.analyst":
+		if e.complexity.ProviderTestResult.Analyst == nil {
+			break
+		}
+
+		return e.complexity.ProviderTestResult.Analyst(childComplexity), true
+
 	case "ProviderTestResult.assistant":
 		if e.complexity.ProviderTestResult.Assistant == nil {
 			break
@@ -2853,19 +2860,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProviderTestResult.Assistant(childComplexity), true
 
+	case "ProviderTestResult.commander":
+		if e.complexity.ProviderTestResult.Commander == nil {
+			break
+		}
+
+		return e.complexity.ProviderTestResult.Commander(childComplexity), true
+
 	case "ProviderTestResult.generator":
 		if e.complexity.ProviderTestResult.Generator == nil {
 			break
 		}
 
 		return e.complexity.ProviderTestResult.Generator(childComplexity), true
-
-	case "ProviderTestResult.primaryAgent":
-		if e.complexity.ProviderTestResult.PrimaryAgent == nil {
-			break
-		}
-
-		return e.complexity.ProviderTestResult.PrimaryAgent(childComplexity), true
 
 	case "ProviderTestResult.refiner":
 		if e.complexity.ProviderTestResult.Refiner == nil {
@@ -2880,13 +2887,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ProviderTestResult.Reflector(childComplexity), true
-
-	case "ProviderTestResult.searcher":
-		if e.complexity.ProviderTestResult.Searcher == nil {
-			break
-		}
-
-		return e.complexity.ProviderTestResult.Searcher(childComplexity), true
 
 	case "ProviderTestResult.simple":
 		if e.complexity.ProviderTestResult.Simple == nil {
@@ -11187,8 +11187,8 @@ func (ec *executionContext) fieldContext_AgentsConfig_simpleJson(_ context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _AgentsConfig_primaryAgent(ctx context.Context, field graphql.CollectedField, obj *model.AgentsConfig) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AgentsConfig_primaryAgent(ctx, field)
+func (ec *executionContext) _AgentsConfig_commander(ctx context.Context, field graphql.CollectedField, obj *model.AgentsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentsConfig_commander(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -11201,7 +11201,7 @@ func (ec *executionContext) _AgentsConfig_primaryAgent(ctx context.Context, fiel
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.PrimaryAgent, nil
+		return obj.Commander, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -11218,7 +11218,7 @@ func (ec *executionContext) _AgentsConfig_primaryAgent(ctx context.Context, fiel
 	return ec.marshalNAgentConfig2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentConfig(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AgentsConfig_primaryAgent(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AgentsConfig_commander(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AgentsConfig",
 		Field:      field,
@@ -11587,8 +11587,8 @@ func (ec *executionContext) fieldContext_AgentsConfig_reflector(_ context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _AgentsConfig_searcher(ctx context.Context, field graphql.CollectedField, obj *model.AgentsConfig) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AgentsConfig_searcher(ctx, field)
+func (ec *executionContext) _AgentsConfig_analyst(ctx context.Context, field graphql.CollectedField, obj *model.AgentsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentsConfig_analyst(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -11601,7 +11601,7 @@ func (ec *executionContext) _AgentsConfig_searcher(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Searcher, nil
+		return obj.Analyst, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -11618,7 +11618,7 @@ func (ec *executionContext) _AgentsConfig_searcher(ctx context.Context, field gr
 	return ec.marshalNAgentConfig2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentConfig(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AgentsConfig_searcher(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AgentsConfig_analyst(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AgentsConfig",
 		Field:      field,
@@ -19286,8 +19286,8 @@ func (ec *executionContext) fieldContext_Mutation_testProvider(ctx context.Conte
 				return ec.fieldContext_ProviderTestResult_simple(ctx, field)
 			case "simpleJson":
 				return ec.fieldContext_ProviderTestResult_simpleJson(ctx, field)
-			case "primaryAgent":
-				return ec.fieldContext_ProviderTestResult_primaryAgent(ctx, field)
+			case "commander":
+				return ec.fieldContext_ProviderTestResult_commander(ctx, field)
 			case "assistant":
 				return ec.fieldContext_ProviderTestResult_assistant(ctx, field)
 			case "generator":
@@ -19296,8 +19296,8 @@ func (ec *executionContext) fieldContext_Mutation_testProvider(ctx context.Conte
 				return ec.fieldContext_ProviderTestResult_refiner(ctx, field)
 			case "reflector":
 				return ec.fieldContext_ProviderTestResult_reflector(ctx, field)
-			case "searcher":
-				return ec.fieldContext_ProviderTestResult_searcher(ctx, field)
+			case "analyst":
+				return ec.fieldContext_ProviderTestResult_analyst(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ProviderTestResult", field.Name)
 		},
@@ -21220,8 +21220,8 @@ func (ec *executionContext) fieldContext_ProviderConfig_agents(_ context.Context
 				return ec.fieldContext_AgentsConfig_simple(ctx, field)
 			case "simpleJson":
 				return ec.fieldContext_AgentsConfig_simpleJson(ctx, field)
-			case "primaryAgent":
-				return ec.fieldContext_AgentsConfig_primaryAgent(ctx, field)
+			case "commander":
+				return ec.fieldContext_AgentsConfig_commander(ctx, field)
 			case "assistant":
 				return ec.fieldContext_AgentsConfig_assistant(ctx, field)
 			case "generator":
@@ -21230,8 +21230,8 @@ func (ec *executionContext) fieldContext_ProviderConfig_agents(_ context.Context
 				return ec.fieldContext_AgentsConfig_refiner(ctx, field)
 			case "reflector":
 				return ec.fieldContext_AgentsConfig_reflector(ctx, field)
-			case "searcher":
-				return ec.fieldContext_AgentsConfig_searcher(ctx, field)
+			case "analyst":
+				return ec.fieldContext_AgentsConfig_analyst(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type AgentsConfig", field.Name)
 		},
@@ -21423,8 +21423,8 @@ func (ec *executionContext) fieldContext_ProviderTestResult_simpleJson(_ context
 	return fc, nil
 }
 
-func (ec *executionContext) _ProviderTestResult_primaryAgent(ctx context.Context, field graphql.CollectedField, obj *model.ProviderTestResult) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ProviderTestResult_primaryAgent(ctx, field)
+func (ec *executionContext) _ProviderTestResult_commander(ctx context.Context, field graphql.CollectedField, obj *model.ProviderTestResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProviderTestResult_commander(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -21437,7 +21437,7 @@ func (ec *executionContext) _ProviderTestResult_primaryAgent(ctx context.Context
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.PrimaryAgent, nil
+		return obj.Commander, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -21454,7 +21454,7 @@ func (ec *executionContext) _ProviderTestResult_primaryAgent(ctx context.Context
 	return ec.marshalNAgentTestResult2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentTestResult(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_ProviderTestResult_primaryAgent(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ProviderTestResult_commander(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ProviderTestResult",
 		Field:      field,
@@ -21663,8 +21663,8 @@ func (ec *executionContext) fieldContext_ProviderTestResult_reflector(_ context.
 	return fc, nil
 }
 
-func (ec *executionContext) _ProviderTestResult_searcher(ctx context.Context, field graphql.CollectedField, obj *model.ProviderTestResult) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ProviderTestResult_searcher(ctx, field)
+func (ec *executionContext) _ProviderTestResult_analyst(ctx context.Context, field graphql.CollectedField, obj *model.ProviderTestResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProviderTestResult_analyst(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -21677,7 +21677,7 @@ func (ec *executionContext) _ProviderTestResult_searcher(ctx context.Context, fi
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Searcher, nil
+		return obj.Analyst, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -21694,7 +21694,7 @@ func (ec *executionContext) _ProviderTestResult_searcher(ctx context.Context, fi
 	return ec.marshalNAgentTestResult2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentTestResult(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_ProviderTestResult_searcher(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ProviderTestResult_analyst(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ProviderTestResult",
 		Field:      field,
@@ -37451,7 +37451,7 @@ func (ec *executionContext) unmarshalInputAgentsConfigInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"simple", "simpleJson", "primaryAgent", "assistant", "generator", "refiner", "reflector", "searcher"}
+	fieldsInOrder := [...]string{"simple", "simpleJson", "commander", "assistant", "generator", "refiner", "reflector", "analyst"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -37472,13 +37472,13 @@ func (ec *executionContext) unmarshalInputAgentsConfigInput(ctx context.Context,
 				return it, err
 			}
 			it.SimpleJSON = data
-		case "primaryAgent":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("primaryAgent"))
+		case "commander":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commander"))
 			data, err := ec.unmarshalNAgentConfigInput2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentConfig(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.PrimaryAgent = data
+			it.Commander = data
 		case "assistant":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assistant"))
 			data, err := ec.unmarshalNAgentConfigInput2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentConfig(ctx, v)
@@ -37507,13 +37507,13 @@ func (ec *executionContext) unmarshalInputAgentsConfigInput(ctx context.Context,
 				return it, err
 			}
 			it.Reflector = data
-		case "searcher":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("searcher"))
+		case "analyst":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("analyst"))
 			data, err := ec.unmarshalNAgentConfigInput2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐAgentConfig(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Searcher = data
+			it.Analyst = data
 		}
 	}
 
@@ -38441,8 +38441,8 @@ func (ec *executionContext) _AgentsConfig(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "primaryAgent":
-			out.Values[i] = ec._AgentsConfig_primaryAgent(ctx, field, obj)
+		case "commander":
+			out.Values[i] = ec._AgentsConfig_commander(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -38466,8 +38466,8 @@ func (ec *executionContext) _AgentsConfig(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "searcher":
-			out.Values[i] = ec._AgentsConfig_searcher(ctx, field, obj)
+		case "analyst":
+			out.Values[i] = ec._AgentsConfig_analyst(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -40461,8 +40461,8 @@ func (ec *executionContext) _ProviderTestResult(ctx context.Context, sel ast.Sel
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "primaryAgent":
-			out.Values[i] = ec._ProviderTestResult_primaryAgent(ctx, field, obj)
+		case "commander":
+			out.Values[i] = ec._ProviderTestResult_commander(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -40486,8 +40486,8 @@ func (ec *executionContext) _ProviderTestResult(ctx context.Context, sel ast.Sel
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "searcher":
-			out.Values[i] = ec._ProviderTestResult_searcher(ctx, field, obj)
+		case "analyst":
+			out.Values[i] = ec._ProviderTestResult_analyst(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

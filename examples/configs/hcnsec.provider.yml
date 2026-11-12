@@ -52,7 +52,7 @@ simple_json:
     output: 1.11
     cache_read: 0.02
 
-primary_agent:
+commander:
   model: "MiniMax-M2.7"
   temperature: 1.0
   top_p: 0.95
@@ -100,18 +100,6 @@ refiner:
     output: 1.33
     cache_read: 0.07
 
-adviser:
-  model: "MiniMax-M2.7"
-  temperature: 1.0
-  top_p: 0.95
-  top_k: 40
-  n: 1
-  max_tokens: 16384
-  price:
-    input: 0.33
-    output: 1.33
-    cache_read: 0.07
-
 reflector:
   model: "Qwen3.6-35B-A3B"
   temperature: 1.0
@@ -127,7 +115,7 @@ reflector:
     output: 1.11
     cache_read: 0.02
 
-searcher:
+analyst:
   model: "Qwen3.6-35B-A3B"
   temperature: 1.0
   top_k: 20
@@ -137,70 +125,6 @@ searcher:
   repetition_penalty: 1.0
   n: 1
   max_tokens: 4096
-  extra_body:
-    chat_template_kwargs:
-      enable_thinking: true
-  reasoning:
-    effort: high
-  price:
-    input: 0.17
-    output: 1.11
-    cache_read: 0.02
-
-enricher:
-  model: "Qwen3.6-35B-A3B"
-  temperature: 1.0
-  top_k: 20
-  top_p: 0.95
-  min_p: 0.0
-  presence_penalty: 1.5
-  repetition_penalty: 1.0
-  n: 1
-  max_tokens: 8192
-  extra_body:
-    chat_template_kwargs:
-      enable_thinking: true
-  reasoning:
-    effort: high
-  price:
-    input: 0.17
-    output: 1.11
-    cache_read: 0.02
-
-coder:
-  model: "MiniMax-M2.7"
-  temperature: 1.0
-  top_p: 0.95
-  top_k: 40
-  n: 1
-  max_tokens: 20480
-  price:
-    input: 0.33
-    output: 1.33
-    cache_read: 0.07
-
-installer:
-  model: "MiniMax-M2.7"
-  temperature: 1.0
-  top_p: 0.95
-  top_k: 40
-  n: 1
-  max_tokens: 16384
-  price:
-    input: 0.33
-    output: 1.33
-    cache_read: 0.07
-
-pentester:
-  model: "Qwen3.6-35B-A3B"
-  temperature: 1.0
-  top_k: 20
-  top_p: 0.95
-  min_p: 0.0
-  presence_penalty: 1.5
-  repetition_penalty: 1.0
-  n: 1
-  max_tokens: 16384
   extra_body:
     chat_template_kwargs:
       enable_thinking: true

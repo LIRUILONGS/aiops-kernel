@@ -211,7 +211,7 @@ fragment providerTestResultFragment on ProviderTestResult {
     simpleJson {
         ...agentTestResultFragment
     }
-    primaryAgent {
+    commander {
         ...agentTestResultFragment
     }
     assistant {
@@ -226,7 +226,7 @@ fragment providerTestResultFragment on ProviderTestResult {
     reflector {
         ...agentTestResultFragment
     }
-    searcher {
+    analyst {
         ...agentTestResultFragment
     }
 }
@@ -275,7 +275,7 @@ fragment agentsConfigFragment on AgentsConfig {
     simpleJson {
         ...agentConfigFragment
     }
-    primaryAgent {
+    commander {
         ...agentConfigFragment
     }
     assistant {
@@ -290,7 +290,7 @@ fragment agentsConfigFragment on AgentsConfig {
     reflector {
         ...agentConfigFragment
     }
-    searcher {
+    analyst {
         ...agentConfigFragment
     }
 }

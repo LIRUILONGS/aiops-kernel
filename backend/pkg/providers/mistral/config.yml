@@ -29,7 +29,7 @@ simple_json:
     output: 0.60
     cache_read: 0.015
 
-primary_agent:
+commander:
   model: mistral-large-latest
   temperature: 0.7
   top_p: 0.95
@@ -88,7 +88,7 @@ reflector:
     output: 0.60
     cache_read: 0.015
 
-searcher:
+analyst:
   model: mistral-small-latest
   temperature: 0.5
   top_p: 0.9

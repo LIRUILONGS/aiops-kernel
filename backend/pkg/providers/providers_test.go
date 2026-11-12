@@ -313,8 +313,8 @@ func TestProviders_StoresAConfigOnlyWhenEveryGateAcceptsIt(t *testing.T) {
 				pc.Simple = &c
 			case pconfig.OptionsTypeReflector:
 				pc.Reflector = &c
-			case pconfig.OptionsTypePrimaryAgent:
-				pc.PrimaryAgent = &c
+			case pconfig.OptionsTypeCommander:
+				pc.Commander = &c
 			default:
 				panic("no slot for " + slot)
 			}
@@ -440,19 +440,19 @@ func TestProviders_StoresAConfigOnlyWhenEveryGateAcceptsIt(t *testing.T) {
 
 		{
 			name: "a budget the model takes none of, sent with no prefix", ptype: provider.ProviderGLM,
-			cfg:     agent(pconfig.OptionsTypePrimaryAgent, glmBudget),
-			refused: `primary_agent: model "glm-5-turbo" takes no thinking budget`,
+			cfg:     agent(pconfig.OptionsTypeCommander, glmBudget),
+			refused: `commander: model "glm-5-turbo" takes no thinking budget`,
 		},
 		{
 			name: "a budget the model takes none of, sent behind the zai prefix", ptype: provider.ProviderGLM,
 			env:     config.Config{GLMProvider: "zai"},
-			cfg:     agent(pconfig.OptionsTypePrimaryAgent, glmBudget),
-			refused: `primary_agent: model "zai/glm-5-turbo" takes no thinking budget`,
+			cfg:     agent(pconfig.OptionsTypeCommander, glmBudget),
+			refused: `commander: model "zai/glm-5-turbo" takes no thinking budget`,
 		},
 		{
 			name: "the same budget behind a prefix whose model takes one", ptype: provider.ProviderGLM,
 			env: config.Config{GLMProvider: "dashscope"},
-			cfg: agent(pconfig.OptionsTypePrimaryAgent, glmBudget),
+			cfg: agent(pconfig.OptionsTypeCommander, glmBudget),
 		},
 
 		{

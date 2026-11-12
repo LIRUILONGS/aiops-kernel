@@ -96,11 +96,11 @@ func TestAgentForChain_AgentByChain_BorrowsAConfiguredAgentForChainsWithoutOwnCo
 		database.MsgchainTypeReporter:       pconfig.OptionsTypeSimple,
 		database.MsgchainTypeSummarizer:     pconfig.OptionsTypeSimple,
 		database.MsgchainTypeToolCallFixer:  pconfig.OptionsTypeSimpleJSON,
-		database.MsgchainTypeCommander:      pconfig.OptionsTypePrimaryAgent,
+		database.MsgchainTypeCommander:      pconfig.OptionsTypeCommander,
 		database.MsgchainTypeTriage:         pconfig.OptionsTypeSimple,
-		database.MsgchainTypeLogAnalyst:     pconfig.OptionsTypeSearcher,
-		database.MsgchainTypeMetricsAnalyst: pconfig.OptionsTypeSearcher,
-		database.MsgchainTypeChangeAnalyst:  pconfig.OptionsTypeSearcher,
+		database.MsgchainTypeLogAnalyst:     pconfig.OptionsTypeAnalyst,
+		database.MsgchainTypeMetricsAnalyst: pconfig.OptionsTypeAnalyst,
+		database.MsgchainTypeChangeAnalyst:  pconfig.OptionsTypeAnalyst,
 	}
 
 	for chain, got := range agentByChain {

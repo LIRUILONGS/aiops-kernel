@@ -141,25 +141,25 @@ func (c *CallUsage) String() string {
 type ProviderOptionsType string
 
 const (
-	OptionsTypePrimaryAgent ProviderOptionsType = "primary_agent"
+	OptionsTypeCommander    ProviderOptionsType = "commander"
 	OptionsTypeAssistant    ProviderOptionsType = "assistant"
 	OptionsTypeSimple       ProviderOptionsType = "simple"
 	OptionsTypeSimpleJSON   ProviderOptionsType = "simple_json"
 	OptionsTypeGenerator    ProviderOptionsType = "generator"
 	OptionsTypeRefiner      ProviderOptionsType = "refiner"
-	OptionsTypeSearcher     ProviderOptionsType = "searcher"
+	OptionsTypeAnalyst      ProviderOptionsType = "analyst"
 	OptionsTypeReflector    ProviderOptionsType = "reflector"
 )
 
 var AllAgentTypes = []ProviderOptionsType{
 	OptionsTypeSimple,
 	OptionsTypeSimpleJSON,
-	OptionsTypePrimaryAgent,
+	OptionsTypeCommander,
 	OptionsTypeAssistant,
 	OptionsTypeGenerator,
 	OptionsTypeRefiner,
 	OptionsTypeReflector,
-	OptionsTypeSearcher,
+	OptionsTypeAnalyst,
 }
 
 func (opt ProviderOptionsType) UsesTools() bool {
@@ -296,12 +296,20 @@ type ProviderConfig struct {
 	Name           string            `json:"name,omitempty" yaml:"name,omitempty"`
 	Simple         *AgentConfig      `json:"simple,omitempty" yaml:"simple,omitempty"`
 	SimpleJSON     *AgentConfig      `json:"simple_json,omitempty" yaml:"simple_json,omitempty"`
-	PrimaryAgent   *AgentConfig      `json:"primary_agent,omitempty" yaml:"primary_agent,omitempty"`
+	Commander      *AgentConfig      `json:"commander,omitempty" yaml:"commander,omitempty"`
 	Assistant      *AgentConfig      `json:"assistant,omitempty" yaml:"assistant,omitempty"`
 	Generator      *AgentConfig      `json:"generator,omitempty" yaml:"generator,omitempty"`
 	Refiner        *AgentConfig      `json:"refiner,omitempty" yaml:"refiner,omitempty"`
 	Reflector      *AgentConfig      `json:"reflector,omitempty" yaml:"reflector,omitempty"`
-	Searcher       *AgentConfig      `json:"searcher,omitempty" yaml:"searcher,omitempty"`
+	Analyst        *AgentConfig      `json:"analyst,omitempty" yaml:"analyst,omitempty"`
+
+	// PrimaryAgent and Searcher exist so a config written before the buckets were
+	// renamed still loads: handleLegacyConfig folds them into Commander and
+	// Analyst and clears them, so a config this package writes carries only the
+	// new names.
+	PrimaryAgent *AgentConfig `json:"primary_agent,omitempty" yaml:"primary_agent,omitempty"`
+	Searcher     *AgentConfig `json:"searcher,omitempty" yaml:"searcher,omitempty"`
+
 	defaultOptions []llms.CallOption `json:"-" yaml:"-"`
 	rawConfig      []byte            `json:"-" yaml:"-"`
 }
@@ -313,9 +321,9 @@ type ProviderConfig struct {
 // so it never rejects a valid provider-specific config.
 func (pc *ProviderConfig) Validate() error {
 	agents := map[string]*AgentConfig{
-		"simple": pc.Simple, "simple_json": pc.SimpleJSON, "primary_agent": pc.PrimaryAgent,
+		"simple": pc.Simple, "simple_json": pc.SimpleJSON, "commander": pc.Commander,
 		"assistant": pc.Assistant, "generator": pc.Generator, "refiner": pc.Refiner,
-		"reflector": pc.Reflector, "searcher": pc.Searcher,
+		"reflector": pc.Reflector, "analyst": pc.Analyst,
 	}
 	for name, ac := range agents {
 		if ac == nil {
@@ -513,17 +521,12 @@ func extraBodyThinkingIntent(extra map[string]any) (on, off bool) {
 const EmptyProviderConfigRaw = `{
   "simple": {},
   "simple_json": {},
-  "primary_agent": {},
+  "commander": {},
   "assistant": {},
   "generator": {},
   "refiner": {},
-  "adviser": {},
   "reflector": {},
-  "searcher": {},
-  "enricher": {},
-  "coder": {},
-  "installer": {},
-  "pentester": {}
+  "analyst": {}
 }`
 
 func LoadConfig(configPath string, defaultOptions []llms.CallOption) (*ProviderConfig, error) {
@@ -787,37 +790,36 @@ func (mc ModelConfig) MarshalYAML() (any, error) {
 	return aux, nil
 }
 
-// handleLegacyConfig provides backward compatibility for old config format
-// where "agent" was used instead of "primary_agent"
+// handleLegacyConfig folds every name an older config may use for a bucket into
+// the bucket it now names: primary_agent into commander, searcher into analyst,
+// and the older still "agent" into commander.
 func handleLegacyConfig(config *ProviderConfig, data []byte) {
-	// only process if PrimaryAgent is not set
-	if config.PrimaryAgent != nil {
-		// still handle assistant backward compatibility
-		if config.Assistant == nil {
-			config.Assistant = config.PrimaryAgent
+	if config.Commander == nil {
+		config.Commander = config.PrimaryAgent
+	}
+	config.PrimaryAgent = nil
+
+	if config.Analyst == nil {
+		config.Analyst = config.Searcher
+	}
+	config.Searcher = nil
+
+	if config.Commander == nil {
+		type LegacyProviderConfig struct {
+			Agent *AgentConfig `json:"agent,omitempty" yaml:"agent,omitempty"`
 		}
-		return
-	}
 
-	// define legacy config structure with old "agent" field
-	type LegacyProviderConfig struct {
-		Agent *AgentConfig `json:"agent,omitempty" yaml:"agent,omitempty"`
-	}
+		var legacyConfig LegacyProviderConfig
 
-	var legacyConfig LegacyProviderConfig
-
-	if err := yaml.Unmarshal(data, &legacyConfig); err != nil {
-		if err := json.Unmarshal(data, &legacyConfig); err != nil {
-			return
+		if err := yaml.Unmarshal(data, &legacyConfig); err == nil {
+			config.Commander = legacyConfig.Agent
+		} else if err := json.Unmarshal(data, &legacyConfig); err == nil {
+			config.Commander = legacyConfig.Agent
 		}
-	}
-
-	if legacyConfig.Agent != nil {
-		config.PrimaryAgent = legacyConfig.Agent
 	}
 
 	if config.Assistant == nil {
-		config.Assistant = config.PrimaryAgent
+		config.Assistant = config.Commander
 	}
 }
 
@@ -1111,8 +1113,8 @@ func (pc *ProviderConfig) GetOptionsForType(optType ProviderOptionsType) []llms.
 		agentConfig = pc.Simple
 	case OptionsTypeSimpleJSON:
 		return pc.buildSimpleJSONOptions()
-	case OptionsTypePrimaryAgent:
-		agentConfig = pc.PrimaryAgent
+	case OptionsTypeCommander:
+		agentConfig = pc.Commander
 	case OptionsTypeAssistant:
 		return pc.buildAssistantOptions()
 	case OptionsTypeGenerator:
@@ -1121,8 +1123,8 @@ func (pc *ProviderConfig) GetOptionsForType(optType ProviderOptionsType) []llms.
 		agentConfig = pc.Refiner
 	case OptionsTypeReflector:
 		agentConfig = pc.Reflector
-	case OptionsTypeSearcher:
-		agentConfig = pc.Searcher
+	case OptionsTypeAnalyst:
+		agentConfig = pc.Analyst
 	default:
 		return nil
 	}
@@ -1145,7 +1147,7 @@ func (pc *ProviderConfig) layerOverDefaults(options []llms.CallOption) []llms.Ca
 }
 
 // AgentConfigForType returns the agent config for opt, applying the
-// SimpleJSON→Simple and Assistant→PrimaryAgent fallbacks. Returns nil for an
+// SimpleJSON→Simple and Assistant→Commander fallbacks. Returns nil for an
 // unset slot or unknown type.
 func (pc *ProviderConfig) AgentConfigForType(optType ProviderOptionsType) *AgentConfig {
 	if pc == nil {
@@ -1160,21 +1162,21 @@ func (pc *ProviderConfig) AgentConfigForType(optType ProviderOptionsType) *Agent
 			return pc.SimpleJSON
 		}
 		return pc.Simple
-	case OptionsTypePrimaryAgent:
-		return pc.PrimaryAgent
+	case OptionsTypeCommander:
+		return pc.Commander
 	case OptionsTypeAssistant:
 		if pc.Assistant != nil {
 			return pc.Assistant
 		}
-		return pc.PrimaryAgent
+		return pc.Commander
 	case OptionsTypeGenerator:
 		return pc.Generator
 	case OptionsTypeRefiner:
 		return pc.Refiner
 	case OptionsTypeReflector:
 		return pc.Reflector
-	case OptionsTypeSearcher:
-		return pc.Searcher
+	case OptionsTypeAnalyst:
+		return pc.Analyst
 	default:
 		return nil
 	}
@@ -1267,12 +1269,12 @@ func (pc *ProviderConfig) BuildOptionsMap() map[ProviderOptionsType][]llms.CallO
 	options := map[ProviderOptionsType][]llms.CallOption{
 		OptionsTypeSimple:       pc.GetOptionsForType(OptionsTypeSimple),
 		OptionsTypeSimpleJSON:   pc.GetOptionsForType(OptionsTypeSimpleJSON),
-		OptionsTypePrimaryAgent: pc.GetOptionsForType(OptionsTypePrimaryAgent),
+		OptionsTypeCommander: pc.GetOptionsForType(OptionsTypeCommander),
 		OptionsTypeAssistant:    pc.GetOptionsForType(OptionsTypeAssistant),
 		OptionsTypeGenerator:    pc.GetOptionsForType(OptionsTypeGenerator),
 		OptionsTypeRefiner:      pc.GetOptionsForType(OptionsTypeRefiner),
 		OptionsTypeReflector:    pc.GetOptionsForType(OptionsTypeReflector),
-		OptionsTypeSearcher:     pc.GetOptionsForType(OptionsTypeSearcher),
+		OptionsTypeAnalyst:     pc.GetOptionsForType(OptionsTypeAnalyst),
 	}
 
 	return options
@@ -1307,5 +1309,5 @@ func (pc *ProviderConfig) buildAssistantOptions() []llms.CallOption {
 		return pc.layerOverDefaults(options)
 	}
 
-	return pc.layerOverDefaults(pc.PrimaryAgent.BuildOptions())
+	return pc.layerOverDefaults(pc.Commander.BuildOptions())
 }

@@ -938,7 +938,7 @@ func (fp *flowProvider) PutInputToAgentChain(ctx context.Context, msgChainID int
 		"input":        input[:min(len(input), 1000)],
 	})
 
-	return fp.processChain(ctx, pconfig.OptionsTypePrimaryAgent, msgChainID, logger,
+	return fp.processChain(ctx, pconfig.OptionsTypeCommander, msgChainID, logger,
 		func(chain []llms.MessageContent) ([]llms.MessageContent, error) {
 			return fp.updateMsgChainResult(chain, tools.AskUserToolName, input)
 		},
@@ -957,7 +957,7 @@ func (fp *flowProvider) EnsureChainConsistency(ctx context.Context, msgChainID i
 		"msg_chain_id": msgChainID,
 	})
 
-	return fp.processChain(ctx, pconfig.OptionsTypePrimaryAgent, msgChainID, logger,
+	return fp.processChain(ctx, pconfig.OptionsTypeCommander, msgChainID, logger,
 		func(chain []llms.MessageContent) ([]llms.MessageContent, error) {
 			return fp.ensureChainConsistency(chain)
 		},

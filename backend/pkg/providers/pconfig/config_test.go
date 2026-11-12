@@ -34,6 +34,11 @@ func configResolve(options []llms.CallOption) llms.CallOptions {
 }
 
 // configAgentFields reads the agent slots off the struct: a hardcoded list would defeat the comparison with AllAgentTypes.
+// legacyAgentNames are the names a config written before the buckets were renamed
+// still uses. handleLegacyConfig folds them into Commander and Analyst, so they
+// are read but never offered as a bucket of their own.
+var legacyAgentNames = map[ProviderOptionsType]bool{"primary_agent": true, "searcher": true}
+
 func configAgentFields(t *testing.T) map[ProviderOptionsType]string {
 	t.Helper()
 
@@ -51,6 +56,9 @@ func configAgentFields(t *testing.T) map[ProviderOptionsType]string {
 		if tag == "" {
 			t.Fatalf("agent field %s carries no yaml name", field.Name)
 		}
+		if legacyAgentNames[ProviderOptionsType(tag)] {
+			continue
+		}
 		found[ProviderOptionsType(tag)] = field.Name
 	}
 
@@ -63,12 +71,12 @@ func configAgentFields(t *testing.T) map[ProviderOptionsType]string {
 var configAgentCallsCarryTools = map[ProviderOptionsType]bool{
 	OptionsTypeSimple:       true,
 	OptionsTypeSimpleJSON:   false,
-	OptionsTypePrimaryAgent: true,
+	OptionsTypeCommander: true,
 	OptionsTypeAssistant:    true,
 	OptionsTypeGenerator:    true,
 	OptionsTypeRefiner:      true,
 	OptionsTypeReflector:    false,
-	OptionsTypeSearcher:     true,
+	OptionsTypeAnalyst:     true,
 }
 
 // configChatServer answers every chat completion, so an error from the door is a refusal raised before sending.
@@ -179,7 +187,7 @@ func TestConfig_AgentConfigForType_ResolvesEveryAgentToItsOwnConfig(t *testing.T
 func TestConfig_AgentConfigForType_FallsBackToTheStandInOfAnUnsetAgent(t *testing.T) {
 	config := &ProviderConfig{
 		Simple:       &AgentConfig{Model: "simple-model"},
-		PrimaryAgent: &AgentConfig{Model: "primary-model"},
+		Commander: &AgentConfig{Model: "primary-model"},
 	}
 
 	for _, tt := range []struct {
@@ -565,7 +573,7 @@ func TestConfig_GetOptionsForType_LayersTheAgentBlockOverTheSharedDefaults(t *te
 		{name: "an agent type no config knows", config: simpleBlock, defaults: shared, agent: "invalid"},
 		{name: "a block without shared defaults", config: simpleBlock, agent: OptionsTypeSimple, count: 3,
 			want: llms.CallOptions{Model: configPtr("test-model"), MaxTokens: configPtr(100), Temperature: configPtr(0.7)}},
-		{name: "an unset agent without shared defaults", config: simpleBlock, agent: OptionsTypePrimaryAgent},
+		{name: "an unset agent without shared defaults", config: simpleBlock, agent: OptionsTypeCommander},
 		{name: "a block over the shared defaults", config: simpleBlock, defaults: shared, agent: OptionsTypeSimple, count: 6,
 			want: llms.CallOptions{Model: configPtr("test-model"), MaxTokens: configPtr(100), Temperature: configPtr(0.7)}},
 		{name: "a value the block leaves out takes the default or stays off the wire without one",
@@ -573,34 +581,34 @@ func TestConfig_GetOptionsForType_LayersTheAgentBlockOverTheSharedDefaults(t *te
 			defaults: []llms.CallOption{llms.WithModel("shared-model"), llms.WithMaxTokens(4096)}, agent: OptionsTypeSimple,
 			count: 3, want: llms.CallOptions{Model: configPtr("test-model"), MaxTokens: configPtr(4096)}},
 		{name: "an unset agent takes the shared defaults", config: simpleBlock, defaults: shared,
-			agent: OptionsTypePrimaryAgent, count: 3, want: sharedAnd(0.3, nil)},
+			agent: OptionsTypeCommander, count: 3, want: sharedAnd(0.3, nil)},
 		{
 			name:     "a block naming some values keeps the shared rest",
-			config:   `{"primary_agent":{"model":"agent-model","temperature":0.9,"reasoning":{"mode":"off"}}}`,
-			defaults: shared, agent: OptionsTypePrimaryAgent, count: 6,
+			config:   `{"commander":{"model":"agent-model","temperature":0.9,"reasoning":{"mode":"off"}}}`,
+			defaults: shared, agent: OptionsTypeCommander, count: 6,
 			want: llms.CallOptions{Model: configPtr("agent-model"), MaxTokens: configPtr(4096), Temperature: configPtr(0.9), Reasoning: off},
 		},
 		{name: "a block naming only reasoning off keeps the shared settings",
-			config:   `{"primary_agent":{"reasoning":{"mode":"off"}}}`,
-			defaults: shared, agent: OptionsTypePrimaryAgent, count: 4, want: sharedAnd(0.3, off)},
+			config:   `{"commander":{"reasoning":{"mode":"off"}}}`,
+			defaults: shared, agent: OptionsTypeCommander, count: 4, want: sharedAnd(0.3, off)},
 		{name: "a block naming only a budget keeps the shared settings",
-			config:   `{"primary_agent":{"reasoning":{"mode":"budget","max_tokens":2048}}}`,
-			defaults: shared, agent: OptionsTypePrimaryAgent, count: 4, want: sharedAnd(0.3, &llms.ReasoningConfig{Tokens: 2048})},
+			config:   `{"commander":{"reasoning":{"mode":"budget","max_tokens":2048}}}`,
+			defaults: shared, agent: OptionsTypeCommander, count: 4, want: sharedAnd(0.3, &llms.ReasoningConfig{Tokens: 2048})},
 		{name: "a block naming only an effort keeps the shared settings",
-			config:   `{"primary_agent":{"reasoning":{"mode":"effort","effort":"low"}}}`,
-			defaults: shared, agent: OptionsTypePrimaryAgent, count: 4, want: sharedAnd(0.3, &llms.ReasoningConfig{Effort: llms.ReasoningLow})},
+			config:   `{"commander":{"reasoning":{"mode":"effort","effort":"low"}}}`,
+			defaults: shared, agent: OptionsTypeCommander, count: 4, want: sharedAnd(0.3, &llms.ReasoningConfig{Effort: llms.ReasoningLow})},
 		{name: "a block naming only adaptive keeps the shared settings",
-			config:   `{"primary_agent":{"reasoning":{"mode":"adaptive"}}}`,
-			defaults: shared, agent: OptionsTypePrimaryAgent, count: 3, want: sharedAnd(0.3, nil)},
+			config:   `{"commander":{"reasoning":{"mode":"adaptive"}}}`,
+			defaults: shared, agent: OptionsTypeCommander, count: 3, want: sharedAnd(0.3, nil)},
 		{name: "simple_json falls back to simple and asks for json", config: `{"simple":{"reasoning":{"mode":"off"}}}`,
 			defaults: shared, agent: OptionsTypeSimpleJSON, count: 5,
 			want: llms.CallOptions{Model: configPtr("shared-model"), MaxTokens: configPtr(4096), Temperature: configPtr(0.3),
 				Reasoning: off, JSONMode: true}},
 		{name: "an assistant block that sets nothing falls back to the primary agent",
-			config:   `{"assistant":{},"primary_agent":{"reasoning":{"mode":"off"}}}`,
+			config:   `{"assistant":{},"commander":{"reasoning":{"mode":"off"}}}`,
 			defaults: shared, agent: OptionsTypeAssistant, count: 4, want: sharedAnd(0.3, off)},
 		{name: "a legacy agent block configures the primary agent", config: `{"agent":{"temperature":0.7}}`,
-			defaults: shared, agent: OptionsTypePrimaryAgent, count: 4, want: sharedAnd(0.7, nil)},
+			defaults: shared, agent: OptionsTypeCommander, count: 4, want: sharedAnd(0.7, nil)},
 		{name: "a legacy agent block configures the assistant", config: `{"agent":{"temperature":0.7}}`,
 			defaults: shared, agent: OptionsTypeAssistant, count: 4, want: sharedAnd(0.7, nil)},
 		{name: "an assistant block of its own", config: `{"assistant":{"temperature":0.7}}`,
@@ -713,7 +721,7 @@ func TestConfig_HandleLegacyConfig_ReadsTheLegacyAgentBlock(t *testing.T) {
 		{
 			name: "a primary_agent block wins over the legacy one",
 			file: "new_format.json",
-			content: `{"primary_agent":{"model":"new-model","max_tokens":400,"temperature":0.6},` +
+			content: `{"commander":{"model":"new-model","max_tokens":400,"temperature":0.6},` +
 				`"agent":{"model":"old-model","max_tokens":200,"temperature":0.8}}`,
 			primary:       &AgentConfig{Model: "new-model", MaxTokens: 400, Temperature: 0.6},
 			sameAssistant: true,
@@ -748,10 +756,10 @@ func TestConfig_HandleLegacyConfig_ReadsTheLegacyAgentBlock(t *testing.T) {
 				require.NoError(t, err)
 				require.NotNil(t, cfg)
 
-				configAssertAgent(t, "primary agent", tt.primary, cfg.PrimaryAgent)
+				configAssertAgent(t, "commander", tt.primary, cfg.Commander)
 				configAssertAgent(t, "simple", tt.simple, cfg.Simple)
 				if tt.sameAssistant {
-					assert.Same(t, cfg.PrimaryAgent, cfg.Assistant, "the assistant runs on the primary agent's block")
+					assert.Same(t, cfg.Commander, cfg.Assistant, "the assistant runs on the commander's block")
 				} else {
 					configAssertAgent(t, "assistant", tt.assistant, cfg.Assistant)
 				}
@@ -821,7 +829,7 @@ func TestConfig_UsesAdaptiveThinking_FollowsTheDoorDefaultModelWhenTheBlockNames
 	require.NoError(t, err)
 
 	for _, opt := range []ProviderOptionsType{
-		OptionsTypeSimple, OptionsTypeSimpleJSON, OptionsTypePrimaryAgent, OptionsTypeAssistant, OptionsTypeRefiner,
+		OptionsTypeSimple, OptionsTypeSimpleJSON, OptionsTypeCommander, OptionsTypeAssistant, OptionsTypeRefiner,
 	} {
 		assert.True(t, pc.UsesAdaptiveThinking(adaptiveOnly, opt), opt)
 	}
@@ -1283,6 +1291,29 @@ func TestConfig_ValidateThinkingAgreement_RefusesAnExtraBodyToggleThatContradict
 				return
 			}
 			assert.EqualError(t, err, tc.want)
+		})
+	}
+}
+
+func TestConfig_LoadConfigData_FoldsThePreRenameBucketNames(t *testing.T) {
+	for _, tt := range []struct {
+		name   string
+		config string
+	}{
+		{name: "yaml", config: "primary_agent:\n  model: commander-model\nsearcher:\n  model: analyst-model\n"},
+		{name: "json", config: `{"primary_agent":{"model":"commander-model"},"searcher":{"model":"analyst-model"}}`},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg, err := LoadConfigData([]byte(tt.config), nil)
+			require.NoError(t, err)
+
+			require.NotNil(t, cfg.Commander)
+			assert.Equal(t, "commander-model", cfg.Commander.Model)
+			require.NotNil(t, cfg.Analyst)
+			assert.Equal(t, "analyst-model", cfg.Analyst.Model)
+			assert.Nil(t, cfg.PrimaryAgent, "the pre-rename field is cleared so a rewritten config carries one name")
+			assert.Nil(t, cfg.Searcher, "the pre-rename field is cleared so a rewritten config carries one name")
+			assert.Same(t, cfg.Commander, cfg.Assistant, "the assistant still falls back to the commander's block")
 		})
 	}
 }

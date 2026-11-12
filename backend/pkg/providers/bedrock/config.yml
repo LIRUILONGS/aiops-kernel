@@ -21,7 +21,7 @@ simple_json:
     output: 0.6
 
 # Primary agent - multimodal with thinking capabilities
-primary_agent:
+commander:
   model: us.anthropic.claude-sonnet-4-5-20250929-v1:0
   temperature: 1.0
   n: 1
@@ -90,7 +90,7 @@ reflector:
     cache_write: 1.375
 
 # Searcher - information retrieval, high-frequency calls
-searcher:
+analyst:
   model: us.anthropic.claude-haiku-4-5-20251001-v1:0
   temperature: 1.0
   n: 1

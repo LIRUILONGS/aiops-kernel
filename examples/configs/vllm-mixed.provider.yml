@@ -46,7 +46,7 @@ simple_json:
     chat_template_kwargs:
       enable_thinking: false
 
-primary_agent:
+commander:
   model: "DeepSeek-V4-Flash"
   temperature: 1.0
   top_p: 1.0
@@ -98,19 +98,6 @@ refiner:
       thinking: true
       reasoning_effort: high
 
-adviser:
-  model: "DeepSeek-V4-Flash"
-  temperature: 1.0
-  top_p: 1.0
-  n: 1
-  max_tokens: 32768
-  reasoning:
-    effort: high
-  extra_body:
-    chat_template_kwargs:
-      thinking: true
-      reasoning_effort: high
-
 reflector:
   model: "Qwen/Qwen3.8-27B-FP8"
   temperature: 1.0
@@ -125,7 +112,7 @@ reflector:
     chat_template_kwargs:
       enable_thinking: false
 
-searcher:
+analyst:
   model: "Qwen/Qwen3.8-27B-FP8"
   temperature: 0.7
   top_k: 20
@@ -138,52 +125,3 @@ searcher:
   extra_body:
     chat_template_kwargs:
       enable_thinking: false
-
-enricher:
-  model: "Qwen/Qwen3.8-27B-FP8"
-  temperature: 0.7
-  top_k: 20
-  top_p: 0.8
-  min_p: 0.0
-  presence_penalty: 1.5
-  repetition_penalty: 1.0
-  n: 1
-  max_tokens: 32768
-  extra_body:
-    chat_template_kwargs:
-      enable_thinking: false
-
-coder:
-  model: "Qwen/Qwen3.8-27B-FP8"
-  temperature: 0.6
-  top_k: 20
-  top_p: 0.95
-  min_p: 0.0
-  presence_penalty: 0.0
-  repetition_penalty: 1.0
-  n: 1
-  max_tokens: 32768
-
-installer:
-  model: "Qwen/Qwen3.8-27B-FP8"
-  temperature: 0.6
-  top_k: 20
-  top_p: 0.95
-  min_p: 0.0
-  presence_penalty: 0.0
-  repetition_penalty: 1.0
-  n: 1
-  max_tokens: 32768
-
-pentester:
-  model: "DeepSeek-V4-Flash"
-  temperature: 1.0
-  top_p: 1.0
-  n: 1
-  max_tokens: 32768
-  reasoning:
-    effort: high
-  extra_body:
-    chat_template_kwargs:
-      thinking: true
-      reasoning_effort: high

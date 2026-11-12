@@ -21,7 +21,7 @@ simple_json:
     cache_read: 0.1
     cache_write: 1.25
 
-primary_agent:
+commander:
   model: claude-sonnet-5
   temperature: 1.0
   n: 1
@@ -88,7 +88,7 @@ reflector:
     cache_read: 0.1
     cache_write: 1.25
 
-searcher:
+analyst:
   model: claude-haiku-4-5
   temperature: 1.0
   n: 1

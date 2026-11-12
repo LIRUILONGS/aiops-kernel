@@ -51,7 +51,7 @@ simple_json:
     chat_template_kwargs:
       enable_thinking: false
 
-primary_agent:
+commander:
   model: "z-ai/glm-5.1"
   temperature: 1.0
   top_p: 0.95
@@ -95,17 +95,6 @@ refiner:
       enable_thinking: true
       clear_thinking: false
 
-adviser:
-  model: "z-ai/glm-5.1"
-  temperature: 1.0
-  top_p: 0.95
-  n: 1
-  max_tokens: 16384
-  extra_body:
-    chat_template_kwargs:
-      enable_thinking: true
-      clear_thinking: false
-
 reflector:
   model: "z-ai/glm-5.1"
   temperature: 0.6
@@ -116,7 +105,7 @@ reflector:
     chat_template_kwargs:
       enable_thinking: false
 
-searcher:
+analyst:
   model: "z-ai/glm-5.1"
   temperature: 0.6
   top_p: 0.95
@@ -125,46 +114,3 @@ searcher:
   extra_body:
     chat_template_kwargs:
       enable_thinking: false
-
-enricher:
-  model: "z-ai/glm-5.1"
-  temperature: 0.6
-  top_p: 0.95
-  n: 1
-  max_tokens: 16384
-  extra_body:
-    chat_template_kwargs:
-      enable_thinking: false
-
-coder:
-  model: "z-ai/glm-5.1"
-  temperature: 0.6
-  top_p: 0.95
-  n: 1
-  max_tokens: 16384
-  extra_body:
-    chat_template_kwargs:
-      enable_thinking: true
-      clear_thinking: false
-
-installer:
-  model: "z-ai/glm-5.1"
-  temperature: 0.6
-  top_p: 0.95
-  n: 1
-  max_tokens: 16384
-  extra_body:
-    chat_template_kwargs:
-      enable_thinking: true
-      clear_thinking: false
-
-pentester:
-  model: "z-ai/glm-5.1"
-  temperature: 0.6
-  top_p: 0.95
-  n: 1
-  max_tokens: 16384
-  extra_body:
-    chat_template_kwargs:
-      enable_thinking: true
-      clear_thinking: false

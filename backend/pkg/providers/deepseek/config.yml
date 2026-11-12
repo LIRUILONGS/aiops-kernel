@@ -37,7 +37,7 @@ simple_json:
     output: 1.20
     cache_read: 0.006
 
-primary_agent:
+commander:
   model: deepseek-v4-pro
   n: 1
   max_tokens: 16384
@@ -94,7 +94,7 @@ reflector:
     output: 1.20
     cache_read: 0.006
 
-searcher:
+analyst:
   model: deepseek-flash
   temperature: 0.5
   top_p: 0.9

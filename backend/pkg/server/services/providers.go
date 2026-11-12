@@ -53,7 +53,7 @@ func (s *ProviderService) GetProviders(c *gin.Context) {
 		providerInfos[i] = models.ProviderInfo{
 			Name:         name.String(),
 			Type:         models.ProviderType(prv.Type()),
-			DefaultModel: prv.Model(pconfig.OptionsTypePrimaryAgent),
+			DefaultModel: prv.Model(pconfig.OptionsTypeCommander),
 			Models:       buildModelInfos(prv),
 		}
 	}

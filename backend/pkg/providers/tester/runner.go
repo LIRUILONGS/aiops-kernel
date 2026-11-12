@@ -437,12 +437,12 @@ func groupResults(responses []testResponse) ProviderTestResults {
 	return ProviderTestResults{
 		Simple:       AgentTestResults(resultMap[pconfig.OptionsTypeSimple]),
 		SimpleJSON:   AgentTestResults(resultMap[pconfig.OptionsTypeSimpleJSON]),
-		PrimaryAgent: AgentTestResults(resultMap[pconfig.OptionsTypePrimaryAgent]),
+		Commander: AgentTestResults(resultMap[pconfig.OptionsTypeCommander]),
 		Assistant:    AgentTestResults(resultMap[pconfig.OptionsTypeAssistant]),
 		Generator:    AgentTestResults(resultMap[pconfig.OptionsTypeGenerator]),
 		Refiner:      AgentTestResults(resultMap[pconfig.OptionsTypeRefiner]),
 		Reflector:    AgentTestResults(resultMap[pconfig.OptionsTypeReflector]),
-		Searcher:     AgentTestResults(resultMap[pconfig.OptionsTypeSearcher]),
+		Analyst:     AgentTestResults(resultMap[pconfig.OptionsTypeAnalyst]),
 	}
 }
 

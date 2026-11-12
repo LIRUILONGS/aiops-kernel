@@ -85,14 +85,14 @@ type AgentTypeUsageStats struct {
 }
 
 type AgentsConfig struct {
-	Simple       *AgentConfig `json:"simple"`
-	SimpleJSON   *AgentConfig `json:"simpleJson"`
-	PrimaryAgent *AgentConfig `json:"primaryAgent"`
-	Assistant    *AgentConfig `json:"assistant"`
-	Generator    *AgentConfig `json:"generator"`
-	Refiner      *AgentConfig `json:"refiner"`
-	Reflector    *AgentConfig `json:"reflector"`
-	Searcher     *AgentConfig `json:"searcher"`
+	Simple     *AgentConfig `json:"simple"`
+	SimpleJSON *AgentConfig `json:"simpleJson"`
+	Commander  *AgentConfig `json:"commander"`
+	Assistant  *AgentConfig `json:"assistant"`
+	Generator  *AgentConfig `json:"generator"`
+	Refiner    *AgentConfig `json:"refiner"`
+	Reflector  *AgentConfig `json:"reflector"`
+	Analyst    *AgentConfig `json:"analyst"`
 }
 
 type AgentsPrompts struct {
@@ -379,14 +379,14 @@ type ProviderConfig struct {
 }
 
 type ProviderTestResult struct {
-	Simple       *AgentTestResult `json:"simple"`
-	SimpleJSON   *AgentTestResult `json:"simpleJson"`
-	PrimaryAgent *AgentTestResult `json:"primaryAgent"`
-	Assistant    *AgentTestResult `json:"assistant"`
-	Generator    *AgentTestResult `json:"generator"`
-	Refiner      *AgentTestResult `json:"refiner"`
-	Reflector    *AgentTestResult `json:"reflector"`
-	Searcher     *AgentTestResult `json:"searcher"`
+	Simple     *AgentTestResult `json:"simple"`
+	SimpleJSON *AgentTestResult `json:"simpleJson"`
+	Commander  *AgentTestResult `json:"commander"`
+	Assistant  *AgentTestResult `json:"assistant"`
+	Generator  *AgentTestResult `json:"generator"`
+	Refiner    *AgentTestResult `json:"refiner"`
+	Reflector  *AgentTestResult `json:"reflector"`
+	Analyst    *AgentTestResult `json:"analyst"`
 }
 
 type ProviderUsageStats struct {
@@ -657,19 +657,19 @@ type VersionInfo struct {
 type AgentConfigType string
 
 const (
-	AgentConfigTypePrimaryAgent AgentConfigType = "primary_agent"
-	AgentConfigTypeSearcher     AgentConfigType = "searcher"
-	AgentConfigTypeSimple       AgentConfigType = "simple"
-	AgentConfigTypeSimpleJSON   AgentConfigType = "simple_json"
-	AgentConfigTypeAssistant    AgentConfigType = "assistant"
-	AgentConfigTypeGenerator    AgentConfigType = "generator"
-	AgentConfigTypeRefiner      AgentConfigType = "refiner"
-	AgentConfigTypeReflector    AgentConfigType = "reflector"
+	AgentConfigTypeCommander  AgentConfigType = "commander"
+	AgentConfigTypeAnalyst    AgentConfigType = "analyst"
+	AgentConfigTypeSimple     AgentConfigType = "simple"
+	AgentConfigTypeSimpleJSON AgentConfigType = "simple_json"
+	AgentConfigTypeAssistant  AgentConfigType = "assistant"
+	AgentConfigTypeGenerator  AgentConfigType = "generator"
+	AgentConfigTypeRefiner    AgentConfigType = "refiner"
+	AgentConfigTypeReflector  AgentConfigType = "reflector"
 )
 
 var AllAgentConfigType = []AgentConfigType{
-	AgentConfigTypePrimaryAgent,
-	AgentConfigTypeSearcher,
+	AgentConfigTypeCommander,
+	AgentConfigTypeAnalyst,
 	AgentConfigTypeSimple,
 	AgentConfigTypeSimpleJSON,
 	AgentConfigTypeAssistant,
@@ -680,7 +680,7 @@ var AllAgentConfigType = []AgentConfigType{
 
 func (e AgentConfigType) IsValid() bool {
 	switch e {
-	case AgentConfigTypePrimaryAgent, AgentConfigTypeSearcher, AgentConfigTypeSimple, AgentConfigTypeSimpleJSON, AgentConfigTypeAssistant, AgentConfigTypeGenerator, AgentConfigTypeRefiner, AgentConfigTypeReflector:
+	case AgentConfigTypeCommander, AgentConfigTypeAnalyst, AgentConfigTypeSimple, AgentConfigTypeSimpleJSON, AgentConfigTypeAssistant, AgentConfigTypeGenerator, AgentConfigTypeRefiner, AgentConfigTypeReflector:
 		return true
 	}
 	return false

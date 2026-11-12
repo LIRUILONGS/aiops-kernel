@@ -72,12 +72,12 @@ func TestRunner_GroupResults_FilesEachAgentsResultsUnderItsOwnField(t *testing.T
 		return map[pconfig.ProviderOptionsType]AgentTestResults{
 			pconfig.OptionsTypeSimple:       r.Simple,
 			pconfig.OptionsTypeSimpleJSON:   r.SimpleJSON,
-			pconfig.OptionsTypePrimaryAgent: r.PrimaryAgent,
+			pconfig.OptionsTypeCommander: r.Commander,
 			pconfig.OptionsTypeAssistant:    r.Assistant,
 			pconfig.OptionsTypeGenerator:    r.Generator,
 			pconfig.OptionsTypeRefiner:      r.Refiner,
 			pconfig.OptionsTypeReflector:    r.Reflector,
-			pconfig.OptionsTypeSearcher:     r.Searcher,
+			pconfig.OptionsTypeAnalyst:     r.Analyst,
 		}
 	}
 
@@ -243,7 +243,7 @@ func TestRunner_CollectTestRequests_BuildsARegistryCaseAfreshForEachAgent(t *tes
   expected: "ok"
   streaming: true
 `)),
-		WithAgentTypes(pconfig.OptionsTypeSimple, pconfig.OptionsTypePrimaryAgent),
+		WithAgentTypes(pconfig.OptionsTypeSimple, pconfig.OptionsTypeCommander),
 		WithGroups(cases.TestGroupBasic),
 		WithParallelWorkers(1),
 	)
@@ -251,13 +251,13 @@ func TestRunner_CollectTestRequests_BuildsARegistryCaseAfreshForEachAgent(t *tes
 		t.Fatalf("run: %v", err)
 	}
 
-	if len(results.Simple) != 1 || len(results.PrimaryAgent) != 1 {
-		t.Fatalf("want one result per agent, got simple=%d primary=%d", len(results.Simple), len(results.PrimaryAgent))
+	if len(results.Simple) != 1 || len(results.Commander) != 1 {
+		t.Fatalf("want one result per agent, got simple=%d primary=%d", len(results.Simple), len(results.Commander))
 	}
 	if !results.Simple[0].Reasoning {
 		t.Fatalf("the first agent's answer carried reasoning, so this half proves nothing")
 	}
-	if results.PrimaryAgent[0].Reasoning {
+	if results.Commander[0].Reasoning {
 		t.Error("the second agent reports reasoning its own answer never carried: the case instance is shared")
 	}
 }
@@ -265,7 +265,7 @@ func TestRunner_CollectTestRequests_BuildsARegistryCaseAfreshForEachAgent(t *tes
 func TestRunner_CollectTestRequests_BuildsTheFileEditCaseAfreshForEachAgent(t *testing.T) {
 	emptyRegistry := testerRegistry(t, "[]")
 	config := &testConfig{
-		agentTypes:     []pconfig.ProviderOptionsType{pconfig.OptionsTypePrimaryAgent, pconfig.OptionsTypeRefiner, pconfig.OptionsTypeGenerator},
+		agentTypes:     []pconfig.ProviderOptionsType{pconfig.OptionsTypeCommander, pconfig.OptionsTypeRefiner, pconfig.OptionsTypeGenerator},
 		groups:         []cases.TestGroup{cases.TestGroupAdvanced},
 		customRegistry: emptyRegistry,
 	}
@@ -491,7 +491,7 @@ func TestRunner_ExecuteTest_CallsAMultiTurnCaseAgainUntilItStops(t *testing.T) {
 			recorder.SetSequentialResponses(tt.responses...)
 
 			result, err := executeTest(t.Context(), testRequest{
-				agentType: pconfig.OptionsTypePrimaryAgent,
+				agentType: pconfig.OptionsTypeCommander,
 				testCase:  tc,
 				provider:  recorder,
 			})

@@ -10,7 +10,7 @@ simple_json:
   n: 1
   max_tokens: 40000
 
-primary_agent:
+commander:
   model: "qwq:32b-fp16-tc"
   n: 1
   max_tokens: 40000
@@ -30,37 +30,12 @@ refiner:
   n: 1
   max_tokens: 40000
 
-adviser:
-  model: "qwq:32b-fp16-tc"
-  n: 1
-  max_tokens: 40000
-
 reflector:
   model: "qwq:32b-fp16-tc"
   n: 1
   max_tokens: 40000
 
-searcher:
-  model: "qwq:32b-fp16-tc"
-  n: 1
-  max_tokens: 40000
-
-enricher:
-  model: "qwq:32b-fp16-tc"
-  n: 1
-  max_tokens: 40000
-
-coder:
-  model: "qwq:32b-fp16-tc"
-  n: 1
-  max_tokens: 40000
-
-installer:
-  model: "qwq:32b-fp16-tc"
-  n: 1
-  max_tokens: 40000
-
-pentester:
+analyst:
   model: "qwq:32b-fp16-tc"
   n: 1
   max_tokens: 40000
