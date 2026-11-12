@@ -362,7 +362,6 @@ func (fp *flowProvider) GenerateSubtasks(ctx context.Context, taskID int64) ([]t
 		},
 		"system": {
 			"SubtaskListToolName":     tools.SubtaskListToolName,
-			"SearchToolName":          tools.SearchToolName,
 			"TerminalToolName":        tools.TerminalToolName,
 			"FileToolName":            tools.FileToolName,
 			"BrowserToolName":         tools.BrowserToolName,
@@ -454,7 +453,6 @@ func (fp *flowProvider) RefineSubtasks(ctx context.Context, taskID int64) ([]too
 		"system": {
 			"SubtaskPatchToolName":    tools.SubtaskPatchToolName,
 			"SubtaskListToolName":     tools.SubtaskListToolName,
-			"SearchToolName":          tools.SearchToolName,
 			"TerminalToolName":        tools.TerminalToolName,
 			"FileToolName":            tools.FileToolName,
 			"BrowserToolName":         tools.BrowserToolName,

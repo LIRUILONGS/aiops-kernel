@@ -331,7 +331,7 @@ func (s *AnalyticsService) GetSystemUsage(c *gin.Context) {
 	for _, stat := range functionStats {
 		isAgent := false
 		if toolType, exists := toolTypeMapping[stat.FunctionName]; exists {
-			isAgent = toolType == tools.AgentToolType || toolType == tools.StoreAgentResultToolType
+			isAgent = toolType == tools.StoreAgentResultToolType
 		}
 
 		resp.ToolcallsStatsByFunction = append(resp.ToolcallsStatsByFunction, models.FunctionToolcallsStats{
@@ -909,7 +909,7 @@ func (s *AnalyticsService) GetFlowUsage(c *gin.Context) {
 	for _, stat := range functionStats {
 		isAgent := false
 		if toolType, exists := toolTypeMapping[stat.FunctionName]; exists {
-			isAgent = toolType == tools.AgentToolType || toolType == tools.StoreAgentResultToolType
+			isAgent = toolType == tools.StoreAgentResultToolType
 		}
 
 		resp.ToolcallsStatsByFunctionForFlow = append(resp.ToolcallsStatsByFunctionForFlow, models.FunctionToolcallsStats{

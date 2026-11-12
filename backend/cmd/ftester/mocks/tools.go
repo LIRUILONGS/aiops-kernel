@@ -344,63 +344,6 @@ func MockResponse(funcName string, args json.RawMessage) (string, error) {
 
 		resultObj = builder.String()
 
-	case tools.SearchToolName:
-		var searchArgs tools.ComplexSearch
-		if err := json.Unmarshal(args, &searchArgs); err != nil {
-			return "", fmt.Errorf("error unmarshaling complex search arguments: %w", err)
-		}
-
-		terminal.PrintMock("Complex search:")
-		terminal.PrintKeyValue("Question", searchArgs.Question)
-
-		resultObj = fmt.Sprintf("# Comprehensive Search Results for: '%s'\n\n## Summary\nThis is a comprehensive answer to your complex question based on multiple search engines and memory sources. The researcher team has compiled the most relevant information from various sources.\n\n## Key Findings\n1. Finding one: Important information related to your query\n2. Finding two: Additional context that helps answer your question\n3. Finding three: Specific details from technical documentation\n\n## Sources\n- Web search (Google, DuckDuckGo)\n- Technical documentation\n- Academic papers\n- Long-term memory results\n\n## Conclusion\nBased on all available information, here is the complete answer to your question with code examples, command samples, and specific technical details as requested.", searchArgs.Question)
-
-	case tools.SearchResultToolName:
-		var searchResultArgs tools.SearchResult
-		if err := json.Unmarshal(args, &searchResultArgs); err != nil {
-			return "", fmt.Errorf("error unmarshaling search result arguments: %w", err)
-		}
-
-		terminal.PrintMock("Search result received:")
-		terminal.PrintKeyValueFormat("Content length", "%d chars", len(searchResultArgs.Result))
-
-		resultObj = map[string]any{
-			"status":  "success",
-			"message": "Search results processed and delivered successfully",
-		}
-
-	case tools.MemoristToolName:
-		var memoristArgs tools.MemoristAction
-		if err := json.Unmarshal(args, &memoristArgs); err != nil {
-			return "", fmt.Errorf("error unmarshaling memorist arguments: %w", err)
-		}
-
-		terminal.PrintMock("Memorist question:")
-		terminal.PrintKeyValue("Question", memoristArgs.Question)
-
-		if memoristArgs.TaskID != nil {
-			terminal.PrintKeyValueFormat("Task ID", "%d", memoristArgs.TaskID.Int64())
-		}
-		if memoristArgs.SubtaskID != nil {
-			terminal.PrintKeyValueFormat("Subtask ID", "%d", memoristArgs.SubtaskID.Int64())
-		}
-
-		resultObj = fmt.Sprintf("# Archivist Memory Results\n\n## Question\n%s\n\n## Retrieved Information\nThe archivist has searched through all past work and tasks and found the following relevant information:\n\n1. On [date], a similar task was performed with the following approach...\n2. The team previously encountered this issue and resolved it by...\n3. Related documentation was created during project [X] that explains...\n\n## Historical Context\nThis question relates to work that was done approximately [time period] ago, and involved the following components and techniques...\n\n## Recommended Next Steps\nBased on historical information, the most effective approach would be to...", memoristArgs.Question)
-
-	case tools.MemoristResultToolName:
-		var memoristResultArgs tools.MemoristResult
-		if err := json.Unmarshal(args, &memoristResultArgs); err != nil {
-			return "", fmt.Errorf("error unmarshaling memorist result arguments: %w", err)
-		}
-
-		terminal.PrintMock("Memorist result received:")
-		terminal.PrintKeyValueFormat("Content length", "%d chars", len(memoristResultArgs.Result))
-
-		resultObj = map[string]any{
-			"status":  "success",
-			"message": "Memory search results processed and delivered successfully",
-		}
-
 	case tools.SearchInMemoryToolName:
 		var searchMemoryArgs tools.SearchInMemoryAction
 		if err := json.Unmarshal(args, &searchMemoryArgs); err != nil {

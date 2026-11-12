@@ -519,7 +519,7 @@ func TestHelpers_ToolCallIDTemplateOrDefault_NeverYieldsAnEmptyTemplate(t *testi
 			got := toolCallIDTemplateOrDefault(tt.detected)
 
 			assert.Equal(t, tt.want, got)
-			assert.NotEmpty(t, templates.GenerateFromPattern(got, tools.AdviceToolName), "the template must yield an ID")
+			assert.NotEmpty(t, templates.GenerateFromPattern(got, tools.TriageToolName), "the template must yield an ID")
 		})
 	}
 }

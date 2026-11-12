@@ -1154,7 +1154,7 @@ func isAgentTool(functionName string) bool {
 	if !exists {
 		return false
 	}
-	return toolType == tools.AgentToolType || toolType == tools.StoreAgentResultToolType
+	return toolType == tools.StoreAgentResultToolType
 }
 
 // ConvertFunctionToolcallsStats converts function toolcalls stats to GraphQL model

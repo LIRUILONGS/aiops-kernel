@@ -12,15 +12,6 @@ import (
 const (
 	FinalyToolName             = "done"
 	AskUserToolName            = "ask"
-	MaintenanceToolName        = "maintenance"
-	MaintenanceResultToolName  = "maintenance_result"
-	CoderToolName              = "coder"
-	CodeResultToolName         = "code_result"
-	PentesterToolName          = "pentester"
-	HackResultToolName         = "hack_result"
-	AdviceToolName             = "advice"
-	MemoristToolName           = "memorist"
-	MemoristResultToolName     = "memorist_result"
 	BrowserToolName            = "browser"
 	GoogleToolName             = "google"
 	DuckDuckGoToolName         = "duckduckgo"
@@ -31,9 +22,6 @@ const (
 	SearxngToolName            = "searxng"
 	SploitusToolName           = "sploitus"
 	WebSearchToolName          = "web_search"
-	SearchToolName             = "search"
-	SearchResultToolName       = "search_result"
-	EnricherResultToolName     = "enricher_result"
 	SearchInMemoryToolName     = "search_in_memory"
 	SearchGuideToolName        = "search_guide"
 	StoreGuideToolName         = "store_guide"
@@ -87,7 +75,6 @@ const (
 	EnvironmentToolType
 	SearchNetworkToolType
 	SearchVectorDbToolType
-	AgentToolType
 	StoreAgentResultToolType
 	StoreVectorDbToolType
 	BarrierToolType
@@ -101,8 +88,6 @@ func (t ToolType) String() string {
 		return "search_network"
 	case SearchVectorDbToolType:
 		return "search_vector_db"
-	case AgentToolType:
-		return "agent"
 	case StoreAgentResultToolType:
 		return "store_agent_result"
 	case StoreVectorDbToolType:
@@ -125,15 +110,6 @@ func GetToolType(name string) ToolType {
 var toolsTypeMapping = map[string]ToolType{
 	FinalyToolName:             BarrierToolType,
 	AskUserToolName:            BarrierToolType,
-	MaintenanceToolName:        AgentToolType,
-	MaintenanceResultToolName:  StoreAgentResultToolType,
-	CoderToolName:              AgentToolType,
-	CodeResultToolName:         StoreAgentResultToolType,
-	PentesterToolName:          AgentToolType,
-	HackResultToolName:         StoreAgentResultToolType,
-	AdviceToolName:             AgentToolType,
-	MemoristToolName:           AgentToolType,
-	MemoristResultToolName:     StoreAgentResultToolType,
 	BrowserToolName:            SearchNetworkToolType,
 	GoogleToolName:             SearchNetworkToolType,
 	DuckDuckGoToolName:         SearchNetworkToolType,
@@ -144,9 +120,6 @@ var toolsTypeMapping = map[string]ToolType{
 	SearxngToolName:            SearchNetworkToolType,
 	SploitusToolName:           SearchNetworkToolType,
 	WebSearchToolName:          SearchNetworkToolType,
-	SearchToolName:             AgentToolType,
-	SearchResultToolName:       StoreAgentResultToolType,
-	EnricherResultToolName:     StoreAgentResultToolType,
 	SearchInMemoryToolName:     SearchVectorDbToolType,
 	SearchGuideToolName:        SearchVectorDbToolType,
 	StoreGuideToolName:         StoreVectorDbToolType,
@@ -203,7 +176,6 @@ var allowedSummarizingToolsResult = []string{
 var allowedStoringInMemoryTools = []string{
 	TerminalToolName,
 	FileToolName,
-	SearchToolName,
 	GoogleToolName,
 	DuckDuckGoToolName,
 	TavilyToolName,
@@ -213,10 +185,6 @@ var allowedStoringInMemoryTools = []string{
 	SearxngToolName,
 	SploitusToolName,
 	WebSearchToolName,
-	MaintenanceToolName,
-	CoderToolName,
-	PentesterToolName,
-	AdviceToolName,
 }
 
 var registryDefinitions = map[string]llms.FunctionDefinition{
@@ -250,19 +218,6 @@ var registryDefinitions = map[string]llms.FunctionDefinition{
 			"Supports add (create new subtask at position), remove (delete by ID), modify (update title/description), " +
 			"and reorder (move to different position) operations. Use empty operations array if no changes needed.",
 		Parameters: reflector.Reflect(&SubtaskPatch{}),
-	},
-	SearchToolName: {
-		Name: SearchToolName,
-		Description: "Search in a different search engines in the internet and long-term memory " +
-			"by your complex question to the researcher team member, also you can add some instructions to get result " +
-			"in a specific format or structure or content type like " +
-			"code or command samples, manuals, guides, exploits, vulnerability details, repositories, libraries, etc.",
-		Parameters: reflector.Reflect(&ComplexSearch{}),
-	},
-	SearchResultToolName: {
-		Name:        SearchResultToolName,
-		Description: "Send the complex search result as a answer for the user question to the user",
-		Parameters:  reflector.Reflect(&SearchResult{}),
 	},
 	BrowserToolName: {
 		Name:        BrowserToolName,
@@ -332,11 +287,6 @@ var registryDefinitions = map[string]llms.FunctionDefinition{
 			"do NOT choose or name a specific engine. Queries must be short, keyword-focused, and in English.",
 		Parameters: reflector.Reflect(&WebSearchAction{}),
 	},
-	EnricherResultToolName: {
-		Name:        EnricherResultToolName,
-		Description: "Send the enriched user's question with additional information to the user",
-		Parameters:  reflector.Reflect(&EnricherResult{}),
-	},
 	SearchInMemoryToolName: {
 		Name: SearchInMemoryToolName,
 		Description: "Search in the vector database (long-term memory) for relevant information by providing one or more semantically rich, " +
@@ -402,51 +352,6 @@ var registryDefinitions = map[string]llms.FunctionDefinition{
 			"Use this to avoid repeating failed approaches, reuse successful exploitation techniques, understand entity relationships, " +
 			"and build on previous findings within the same penetration testing engagement.",
 		Parameters: reflector.Reflect(&GraphitiSearchAction{}),
-	},
-	MemoristToolName: {
-		Name:        MemoristToolName,
-		Description: "Call to Archivist team member who remember all the information about the past work and made tasks and can answer your question about it",
-		Parameters:  reflector.Reflect(&MemoristAction{}),
-	},
-	MemoristResultToolName: {
-		Name:        MemoristResultToolName,
-		Description: "Send the search in long-term memory result as a answer for the user question to the user",
-		Parameters:  reflector.Reflect(&MemoristResult{}),
-	},
-	MaintenanceToolName: {
-		Name:        MaintenanceToolName,
-		Description: "Call to DevOps team member to maintain local environment and tools inside the docker container",
-		Parameters:  reflector.Reflect(&MaintenanceAction{}),
-	},
-	MaintenanceResultToolName: {
-		Name:        MaintenanceResultToolName,
-		Description: "Send the maintenance result to the user with task status and fully detailed report about using the result",
-		Parameters:  reflector.Reflect(&TaskResult{}),
-	},
-	CoderToolName: {
-		Name:        CoderToolName,
-		Description: "Call to developer team member to write a code for the specific task",
-		Parameters:  reflector.Reflect(&CoderAction{}),
-	},
-	CodeResultToolName: {
-		Name:        CodeResultToolName,
-		Description: "Send the code result to the user with execution status and fully detailed report about using the result",
-		Parameters:  reflector.Reflect(&CodeResult{}),
-	},
-	PentesterToolName: {
-		Name:        PentesterToolName,
-		Description: "Call to pentester team member to perform a penetration test or looking for vulnerabilities and weaknesses",
-		Parameters:  reflector.Reflect(&PentesterAction{}),
-	},
-	HackResultToolName: {
-		Name:        HackResultToolName,
-		Description: "Send the penetration test result to the user with detailed report",
-		Parameters:  reflector.Reflect(&HackResult{}),
-	},
-	AdviceToolName: {
-		Name:        AdviceToolName,
-		Description: "Get more complex answer from the mentor about some issue or difficult situation",
-		Parameters:  reflector.Reflect(&AskAdvice{}),
 	},
 	AskUserToolName: {
 		Name:        AskUserToolName,
@@ -673,12 +578,10 @@ func getMessageType(name string) database.MsglogType {
 		return database.MsglogTypeFile
 	case BrowserToolName:
 		return database.MsglogTypeBrowser
-	case MemoristToolName, SearchToolName, GoogleToolName, DuckDuckGoToolName, TavilyToolName, FirecrawlToolName,
+	case GoogleToolName, DuckDuckGoToolName, TavilyToolName, FirecrawlToolName,
 		TraversaalToolName, PerplexityToolName, SearxngToolName, SploitusToolName, WebSearchToolName,
 		SearchGuideToolName, SearchAnswerToolName, SearchCodeToolName, SearchInMemoryToolName, GraphitiSearchToolName:
 		return database.MsglogTypeSearch
-	case AdviceToolName:
-		return database.MsglogTypeAdvice
 	case AskUserToolName:
 		return database.MsglogTypeAsk
 	case FinalyToolName:

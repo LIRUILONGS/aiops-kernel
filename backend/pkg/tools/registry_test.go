@@ -21,7 +21,6 @@ func TestRegistry_ToolType_StringNamesEveryType(t *testing.T) {
 		{"the environment type", EnvironmentToolType, "environment"},
 		{"the network search type", SearchNetworkToolType, "search_network"},
 		{"the vector search type", SearchVectorDbToolType, "search_vector_db"},
-		{"the agent type", AgentToolType, "agent"},
 		{"the agent result type", StoreAgentResultToolType, "store_agent_result"},
 		{"the vector store type", StoreVectorDbToolType, "store_vector_db"},
 		{"the barrier type", BarrierToolType, "barrier"},
@@ -57,13 +56,8 @@ func TestRegistry_GetToolType_ClassifiesEachTool(t *testing.T) {
 		{name: "the search orchestrator searches the network", toolName: WebSearchToolName, want: SearchNetworkToolType},
 		{name: "the memory search reads the vector store", toolName: SearchInMemoryToolName, want: SearchVectorDbToolType},
 		{name: "the knowledge graph search reads the vector store", toolName: GraphitiSearchToolName, want: SearchVectorDbToolType},
-		{name: "the search agent is an agent", toolName: SearchToolName, want: AgentToolType},
-		{name: "the maintenance agent is an agent", toolName: MaintenanceToolName, want: AgentToolType},
-		{name: "the coder is an agent", toolName: CoderToolName, want: AgentToolType},
-		{name: "the pentester is an agent", toolName: PentesterToolName, want: AgentToolType},
 		{name: "finishing is a barrier", toolName: FinalyToolName, want: BarrierToolType},
 		{name: "asking the user is a barrier", toolName: AskUserToolName, want: BarrierToolType},
-		{name: "reporting the code result stores an agent result", toolName: CodeResultToolName, want: StoreAgentResultToolType},
 		{name: "storing a guide writes the vector store", toolName: StoreGuideToolName, want: StoreVectorDbToolType},
 		{name: "an unknown tool has no type", toolName: "nonexistent_tool", want: NoneToolType},
 		{name: "an empty name has no type", toolName: "", want: NoneToolType},
@@ -188,7 +182,7 @@ func TestRegistry_GetMessageType_PicksTheLogTypeOfATool(t *testing.T) {
 		{"a browser call logs as browser", BrowserToolName, database.MsglogTypeBrowser},
 		{"a search engine call logs as search", GoogleToolName, database.MsglogTypeSearch},
 		{"a search orchestrator call logs as search", WebSearchToolName, database.MsglogTypeSearch},
-		{"asking the adviser logs as advice", AdviceToolName, database.MsglogTypeAdvice},
+		{"a triage delegation logs as an agent result", TriageToolName, database.MsglogTypeThoughts},
 		{"asking the user logs as ask", AskUserToolName, database.MsglogTypeAsk},
 		{"finishing logs as done", FinalyToolName, database.MsglogTypeDone},
 		{"an unknown tool logs as thoughts", "unknown_tool", database.MsglogTypeThoughts},
@@ -256,8 +250,8 @@ func TestRegistry_AllowedToolListsNameKnownToolsOnce(t *testing.T) {
 	if !slices.Contains(allowedSummarizingToolsResult, BrowserToolName) {
 		t.Errorf("allowedSummarizingToolsResult must contain %q", BrowserToolName)
 	}
-	if !slices.Contains(allowedStoringInMemoryTools, SearchToolName) {
-		t.Errorf("allowedStoringInMemoryTools must contain %q", SearchToolName)
+	if !slices.Contains(allowedStoringInMemoryTools, WebSearchToolName) {
+		t.Errorf("allowedStoringInMemoryTools must contain %q", WebSearchToolName)
 	}
 }
 

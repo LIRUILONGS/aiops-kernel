@@ -140,12 +140,6 @@ func (ap *assistantProvider) PerformAgentChain(ctx context.Context) error {
 		"msg_chain_id": ap.msgChainID,
 	})
 
-	useAgents, err := ap.getAssistantUseAgents(ctx)
-	if err != nil {
-		logger.WithError(err).Error("failed to get assistant use agents")
-		return fmt.Errorf("failed to get assistant use agents: %w", err)
-	}
-
 	msgChain, err := ap.fp.DB().GetMsgChain(ctx, ap.msgChainID)
 	if err != nil {
 		logger.WithError(err).Error("failed to get primary agent msg chain")
@@ -174,7 +168,6 @@ func (ap *assistantProvider) PerformAgentChain(ctx context.Context) error {
 	ctx, _ = executorAgent.Observation(ctx)
 
 	cfg := tools.AssistantExecutorConfig{
-		UseAgents:   useAgents,
 		Summarizer:  ap.fp.GetSummarizeResultHandler(nil, nil),
 		FlowManager: ap.buildFlowManagerHandlers(),
 	}
@@ -260,10 +253,6 @@ func (ap *assistantProvider) updateAssistantChain(
 	ast.AppendHumanMessage(humanPrompt)
 
 	return ast.Messages(), nil
-}
-
-func (ap *assistantProvider) getAssistantUseAgents(ctx context.Context) (bool, error) {
-	return ap.fp.DB().GetAssistantUseAgents(ctx, ap.id)
 }
 
 func (ap *assistantProvider) getAssistantSystemPrompt(ctx context.Context) (string, error) {

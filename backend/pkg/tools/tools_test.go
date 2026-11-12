@@ -572,24 +572,18 @@ func toolsAgentExecutorCases() ([]toolsAgentExecutorCase, func(ExecutorHandler) 
 		PatchSubtasks: func(context.Context, int64, SubtaskPatch) error { return nil },
 		WaitFlow:      func(context.Context) error { return nil },
 	}
-	assistant := func(useAgents bool) func(*flowToolsExecutor, bool, string) (ContextToolsExecutor, error) {
-		return func(fte *flowToolsExecutor, everyService bool, without string) (ContextToolsExecutor, error) {
-			cfg := AssistantExecutorConfig{
-				UseAgents: useAgents,
-				Adviser:   h("Adviser"), Coder: h("Coder"), Installer: h("Installer"),
-				Memorist: h("Memorist"), Pentester: h("Pentester"), Searcher: h("Searcher"),
-			}
-			if everyService {
-				cfg.FlowManager = flowManager
-			}
-			return fte.GetAssistantExecutor(toolsWithout(cfg, without))
+	assistant := func(fte *flowToolsExecutor, everyService bool, _ string) (ContextToolsExecutor, error) {
+		cfg := AssistantExecutorConfig{}
+		if everyService {
+			cfg.FlowManager = flowManager
 		}
+		return fte.GetAssistantExecutor(cfg)
 	}
 
 	return []toolsAgentExecutorCase{
 		{
 			factory: "GetAssistantExecutor",
-			build:   assistant(false),
+			build:   assistant,
 			tools: map[string]string{
 				"terminal": "", "file": "", "browser": "", "web_search": "",
 				"search_in_memory": "", "search_guide": "", "search_answer": "", "search_code": "",
@@ -599,118 +593,8 @@ func toolsAgentExecutorCases() ([]toolsAgentExecutorCase, func(ExecutorHandler) 
 				"browser", "web_search", "search_in_memory", "search_guide", "search_answer", "search_code",
 				"stop_flow", "submit_flow_input", "patch_flow_subtasks", "wait_flow_completion",
 			},
-			required: []string{"Adviser", "Coder", "Installer", "Memorist", "Pentester", "Searcher"},
+			required: []string{},
 			sandbox:  true,
-		},
-		{
-			factory: "GetAssistantExecutor",
-			variant: "using agents",
-			build:   assistant(true),
-			tools: map[string]string{
-				"terminal": "", "file": "", "browser": "", "web_search": "",
-				"advice": "Adviser", "coder": "Coder", "maintenance": "Installer",
-				"memorist": "Memorist", "pentester": "Pentester", "search": "Searcher",
-				"get_flow_status": "", "stop_flow": "", "submit_flow_input": "", "patch_flow_subtasks": "", "wait_flow_completion": "",
-			},
-			optional: []string{
-				"browser", "web_search", "stop_flow", "submit_flow_input", "patch_flow_subtasks", "wait_flow_completion",
-			},
-			sandbox: true,
-		},
-		{
-			factory: "GetPrimaryExecutor",
-			build: func(fte *flowToolsExecutor, _ bool, without string) (ContextToolsExecutor, error) {
-				return fte.GetPrimaryExecutor(toolsWithout(PrimaryExecutorConfig{
-					TaskID: task, SubtaskID: subtask,
-					Barrier: h("Barrier"), Adviser: h("Adviser"), Coder: h("Coder"), Installer: h("Installer"),
-					Memorist: h("Memorist"), Pentester: h("Pentester"), Searcher: h("Searcher"),
-				}, without))
-			},
-			tools: map[string]string{
-				"done": "Barrier", "ask": "Barrier", "advice": "Adviser", "coder": "Coder",
-				"maintenance": "Installer", "memorist": "Memorist", "pentester": "Pentester", "search": "Searcher",
-			},
-			optional: []string{"ask"},
-			barriers: []string{"done", "ask"},
-			required: []string{"Barrier", "Adviser", "Coder", "Installer", "Memorist", "Pentester", "Searcher"},
-			task:     task, subtask: subtask,
-		},
-		{
-			factory: "GetInstallerExecutor",
-			build: func(fte *flowToolsExecutor, _ bool, without string) (ContextToolsExecutor, error) {
-				return fte.GetInstallerExecutor(toolsWithout(InstallerExecutorConfig{
-					TaskID: &task, SubtaskID: &subtask,
-					MaintenanceResult: h("MaintenanceResult"), Adviser: h("Adviser"),
-					Memorist: h("Memorist"), Searcher: h("Searcher"),
-				}, without))
-			},
-			tools: map[string]string{
-				"maintenance_result": "MaintenanceResult", "advice": "Adviser", "memorist": "Memorist", "search": "Searcher",
-				"terminal": "", "file": "", "browser": "", "store_guide": "", "search_guide": "",
-			},
-			optional: []string{"browser", "store_guide", "search_guide"},
-			barriers: []string{"maintenance_result"},
-			required: []string{"MaintenanceResult", "Adviser", "Memorist", "Searcher"},
-			sandbox:  true,
-			task:     task, subtask: subtask,
-		},
-		{
-			factory: "GetCoderExecutor",
-			build: func(fte *flowToolsExecutor, _ bool, without string) (ContextToolsExecutor, error) {
-				return fte.GetCoderExecutor(toolsWithout(CoderExecutorConfig{
-					TaskID: &task, SubtaskID: &subtask,
-					CodeResult: h("CodeResult"), Adviser: h("Adviser"), Installer: h("Installer"),
-					Memorist: h("Memorist"), Searcher: h("Searcher"),
-				}, without))
-			},
-			tools: map[string]string{
-				"code_result": "CodeResult", "advice": "Adviser", "maintenance": "Installer",
-				"memorist": "Memorist", "search": "Searcher",
-				"terminal": "", "file": "", "browser": "", "search_code": "", "store_code": "", "graphiti_search": "",
-			},
-			optional: []string{"browser", "search_code", "store_code", "graphiti_search"},
-			barriers: []string{"code_result"},
-			required: []string{"CodeResult", "Adviser", "Installer", "Memorist", "Searcher"},
-			sandbox:  true,
-			task:     task, subtask: subtask,
-		},
-		{
-			factory: "GetPentesterExecutor",
-			build: func(fte *flowToolsExecutor, _ bool, without string) (ContextToolsExecutor, error) {
-				return fte.GetPentesterExecutor(toolsWithout(PentesterExecutorConfig{
-					TaskID: &task, SubtaskID: &subtask,
-					HackResult: h("HackResult"), Adviser: h("Adviser"), Coder: h("Coder"),
-					Installer: h("Installer"), Memorist: h("Memorist"), Searcher: h("Searcher"),
-				}, without))
-			},
-			tools: map[string]string{
-				"hack_result": "HackResult", "advice": "Adviser", "coder": "Coder", "maintenance": "Installer",
-				"memorist": "Memorist", "search": "Searcher",
-				"terminal": "", "file": "", "browser": "", "store_guide": "", "search_guide": "",
-				"graphiti_search": "", "web_search": "",
-			},
-			optional: []string{"browser", "store_guide", "search_guide", "graphiti_search", "web_search"},
-			barriers: []string{"hack_result"},
-			required: []string{"HackResult", "Adviser", "Coder", "Installer", "Memorist", "Searcher"},
-			sandbox:  true,
-			task:     task, subtask: subtask,
-		},
-		{
-			factory: "GetSearcherExecutor",
-			build: func(fte *flowToolsExecutor, _ bool, without string) (ContextToolsExecutor, error) {
-				return fte.GetSearcherExecutor(toolsWithout(SearcherExecutorConfig{
-					TaskID: &task, SubtaskID: &subtask,
-					SearchResult: h("SearchResult"), Memorist: h("Memorist"),
-				}, without))
-			},
-			tools: map[string]string{
-				"search_result": "SearchResult", "memorist": "Memorist",
-				"browser": "", "web_search": "", "search_answer": "", "store_answer": "",
-			},
-			optional: []string{"browser", "web_search", "search_answer", "store_answer"},
-			barriers: []string{"search_result"},
-			required: []string{"SearchResult", "Memorist"},
-			task:     task, subtask: subtask,
 		},
 		{
 			factory: "GetGeneratorExecutor",
@@ -737,39 +621,6 @@ func toolsAgentExecutorCases() ([]toolsAgentExecutorCase, func(ExecutorHandler) 
 			barriers: []string{"subtask_patch"},
 			required: []string{"SubtaskPatch"},
 			task:     task,
-		},
-		{
-			factory: "GetMemoristExecutor",
-			build: func(fte *flowToolsExecutor, _ bool, without string) (ContextToolsExecutor, error) {
-				return fte.GetMemoristExecutor(toolsWithout(MemoristExecutorConfig{
-					TaskID: &task, SubtaskID: &subtask, SearchResult: h("SearchResult"),
-				}, without))
-			},
-			tools: map[string]string{
-				"memorist_result": "SearchResult", "terminal": "", "file": "", "search_in_memory": "", "graphiti_search": "",
-			},
-			optional: []string{"search_in_memory", "graphiti_search"},
-			barriers: []string{"memorist_result"},
-			required: []string{"SearchResult"},
-			sandbox:  true,
-			task:     task, subtask: subtask,
-		},
-		{
-			factory: "GetEnricherExecutor",
-			build: func(fte *flowToolsExecutor, _ bool, without string) (ContextToolsExecutor, error) {
-				return fte.GetEnricherExecutor(toolsWithout(EnricherExecutorConfig{
-					TaskID: &task, SubtaskID: &subtask, EnricherResult: h("EnricherResult"),
-				}, without))
-			},
-			tools: map[string]string{
-				"enricher_result": "EnricherResult", "terminal": "", "file": "",
-				"search_in_memory": "", "graphiti_search": "", "browser": "",
-			},
-			optional: []string{"search_in_memory", "graphiti_search", "browser"},
-			barriers: []string{"enricher_result"},
-			required: []string{"EnricherResult"},
-			sandbox:  true,
-			task:     task, subtask: subtask,
 		},
 		{
 			factory: "GetReporterExecutor",
@@ -936,21 +787,9 @@ func TestTools_GetExecutors_BindTheTerminalToTheFlowSandbox(t *testing.T) {
 // Covers the Get*Executor factories; subtests are keyed by factory.
 func TestTools_GetExecutors_RequireWhatTheyUse(t *testing.T) {
 	messages := map[string]string{
-		"Barrier":           "barrier (done) handler is required",
-		"Adviser":           "adviser handler is required",
-		"Coder":             "coder handler is required",
-		"Installer":         "installer handler is required",
-		"Memorist":          "memorist handler is required",
-		"Pentester":         "pentester handler is required",
-		"Searcher":          "searcher handler is required",
-		"MaintenanceResult": "maintenance result handler is required",
-		"CodeResult":        "code result handler is required",
-		"HackResult":        "hack result handler is required",
-		"SearchResult":      "search result handler is required",
-		"SubtaskList":       "subtask list handler is required",
-		"SubtaskPatch":      "subtask patch handler is required",
-		"EnricherResult":    "enricher result handler is required",
-		"ReportResult":      "report result handler is required",
+		"SubtaskList":  "subtask list handler is required",
+		"SubtaskPatch": "subtask patch handler is required",
+		"ReportResult": "report result handler is required",
 	}
 	errLookup := errors.New("sql: connection is already closed")
 

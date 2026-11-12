@@ -42,18 +42,17 @@ func converterTakesNoThinkingDepth(info *model.ModelReasoningInfo) bool {
 	return info != nil && info.TakesNoThinkingDepth != nil && *info.TakesNoThinkingDepth
 }
 
-func TestConverter_IsAgentTool_RecognisesAgentAndAgentResultTools(t *testing.T) {
+func TestConverter_IsAgentTool_RecognisesAgentResultTools(t *testing.T) {
 	tests := []struct {
 		name          string
 		functionNames []string
 		expected      bool
 	}{
-		{"a delegation to another agent", []string{"coder", "pentester", "maintenance", "memorist", "search", "advice"}, true},
 		{
 			"a tool an agent stores its result through",
 			[]string{
-				"code_result", "hack_result", "maintenance_result", "memorist_result", "search_result",
-				"enricher_result", "report_result", "subtask_list", "subtask_patch",
+				"report_result", "subtask_list", "subtask_patch", "triage_result", "log_finding",
+				"metric_finding", "change_finding", "triage", "log_analyst", "metrics_analyst", "change_analyst",
 			},
 			true,
 		},

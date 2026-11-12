@@ -73,32 +73,6 @@ func (w *toolObservationWrapper) end(result string, err error, durationSeconds f
 	w.observation.End(opts...)
 }
 
-// agentObservationWrapper wraps AGENT observation
-type agentObservationWrapper struct {
-	context     context.Context
-	observation langfuse.Agent
-}
-
-func (w *agentObservationWrapper) ctx() context.Context {
-	return w.context
-}
-
-func (w *agentObservationWrapper) end(result string, err error, durationSeconds float64) {
-	opts := []langfuse.AgentOption{
-		langfuse.WithAgentOutput(result),
-	}
-	if err != nil {
-		opts = append(opts,
-			langfuse.WithAgentStatus(err.Error()),
-			langfuse.WithAgentLevel(langfuse.ObservationLevelError),
-		)
-	} else {
-		opts = append(opts,
-			langfuse.WithAgentStatus("success"),
-		)
-	}
-	w.observation.End(opts...)
-}
 
 // spanObservationWrapper wraps SPAN observation (used for barrier tools)
 type spanObservationWrapper struct {
@@ -325,33 +299,6 @@ func (ce *customExecutor) createToolObservation(ctx context.Context, name string
 	}
 }
 
-func (ce *customExecutor) createAgentObservation(ctx context.Context, name string, args json.RawMessage) observationWrapper {
-	ctx, observation := obs.Observer.NewObservation(ctx)
-	metadata := langfuse.Metadata{
-		"agent_name":    name,
-		"tool_category": GetToolType(name).String(),
-		"flow_id":       ce.flowID,
-	}
-	if ce.taskID != nil {
-		metadata["task_id"] = *ce.taskID
-	}
-	if ce.subtaskID != nil {
-		metadata["subtask_id"] = *ce.subtaskID
-	}
-
-	agent := observation.Agent(
-		langfuse.WithAgentName(name),
-		langfuse.WithAgentInput(args),
-		langfuse.WithAgentMetadata(metadata),
-	)
-	ctx, _ = agent.Observation(ctx)
-
-	return &agentObservationWrapper{
-		context:     ctx,
-		observation: agent,
-	}
-}
-
 func (ce *customExecutor) createSpanObservation(ctx context.Context, name string, args json.RawMessage) observationWrapper {
 	ctx, observation := obs.Observer.NewObservation(ctx)
 	metadata := langfuse.Metadata{
@@ -433,8 +380,6 @@ func (ce *customExecutor) Execute(
 	switch toolType {
 	case EnvironmentToolType, SearchNetworkToolType, StoreAgentResultToolType, StoreVectorDbToolType:
 		obsWrapper = ce.createToolObservation(ctx, obsName, args)
-	case AgentToolType:
-		obsWrapper = ce.createAgentObservation(ctx, obsName, args)
 	case BarrierToolType:
 		obsWrapper = ce.createSpanObservation(ctx, obsName, args)
 	case SearchVectorDbToolType:

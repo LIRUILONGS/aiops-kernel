@@ -578,7 +578,6 @@ func (t *tester) showGeneralHelp() error {
 		tools.EnvironmentToolType:    "Work with terminal and files (work with environment)",
 		tools.SearchNetworkToolType:  "Search in the internet",
 		tools.SearchVectorDbToolType: "Search in the Vector DB",
-		tools.AgentToolType:          "Agents",
 	}
 
 	// Process each type in the order we want to display them
@@ -586,7 +585,6 @@ func (t *tester) showGeneralHelp() error {
 		tools.SearchNetworkToolType,
 		tools.EnvironmentToolType,
 		tools.SearchVectorDbToolType,
-		tools.AgentToolType,
 	} {
 		// Get type name
 		typeName, ok := typeNames[toolType]
@@ -675,7 +673,7 @@ func (t *tester) needsTeminalPrepare(funcName string) bool {
 	}
 
 	// For all other functions, no preparation is needed instead of terminal or agents functions
-	return terminalFunctions[funcName] || tools.GetToolTypeMapping()[funcName] == tools.AgentToolType
+	return terminalFunctions[funcName]
 }
 
 // wrapErrorEndSpan wraps an error with an end span in langfuse

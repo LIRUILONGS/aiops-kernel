@@ -95,7 +95,6 @@ func (fp *flowProvider) performAgentChain(
 	}
 
 	groupID := fp.cfg.GroupID(fp.flowID)
-	toolTypeMapping := tools.GetToolTypeMapping()
 
 	var maxCallsLimit int
 	switch optAgentType {
@@ -217,11 +216,9 @@ func (fp *flowProvider) performAgentChain(
 				ctx, optAgentType, chainID, idx, result, detector, executor, taskID, subtaskID, chain,
 			)
 
-			if toolTypeMapping[funcName] != tools.AgentToolType {
-				fp.storeToolExecutionToGraphiti(
-					ctx, groupID, optAgentType, toolCall, response, err, executor, taskID, subtaskID, chainID,
-				)
-			}
+			fp.storeToolExecutionToGraphiti(
+				ctx, groupID, optAgentType, toolCall, response, err, executor, taskID, subtaskID, chainID,
+			)
 
 			if err != nil {
 				obs.LogErrorOrCancel(logger.WithFields(logrus.Fields{

@@ -590,119 +590,60 @@ func TestExecutor_Execute_StopsSummarizingWhenTheFlowStops(t *testing.T) {
 	}
 }
 
-func TestExecutor_Execute_AnonymizesWhatEveryAgentStoresInMemory(t *testing.T) {
+func TestExecutor_Execute_AnonymizesWhatTheAssistantStoresInMemory(t *testing.T) {
 	obs.InitObserver(context.Background(), nil, nil, []logrus.Level{})
 
-	handler := func(context.Context, string, json.RawMessage) (string, error) { return "done", nil }
+	conn := &fakeVectorConn{}
+	store := newFakeVectorStore(t, conn, &fakeEmbedder{})
 
-	cases := map[string]struct {
-		agent database.MsgchainType
-		build func(fte *flowToolsExecutor) (ContextToolsExecutor, error)
-	}{
-		"assistant": {
-			agent: database.MsgchainTypeAssistant,
-			build: func(fte *flowToolsExecutor) (ContextToolsExecutor, error) {
-				return fte.GetAssistantExecutor(AssistantExecutorConfig{
-					Adviser: handler, Coder: handler, Installer: handler,
-					Memorist: handler, Pentester: handler, Searcher: handler,
-				})
-			},
+	log := &recordingVectorStoreLog{}
+	fte := &flowToolsExecutor{
+		flowID: 1,
+		cfg:    &config.Config{},
+		db:     &fakeContainerDB{row: &database.Container{ID: 1, LocalID: sql.NullString{String: "primary", Valid: true}}},
+		docker: &fakeDockerClient{
+			isRunning:      true,
+			execCreateResp: client.ExecCreateResult{ID: "exec"},
+			attachOutput:   []byte("inet " + secretHost + "/24 scope global eth0"),
 		},
-		"installer": {
-			agent: database.MsgchainTypeTriage,
-			build: func(fte *flowToolsExecutor) (ContextToolsExecutor, error) {
-				return fte.GetInstallerExecutor(InstallerExecutorConfig{
-					Adviser: handler, Memorist: handler, Searcher: handler, MaintenanceResult: handler,
-				})
-			},
-		},
-		"coder": {
-			agent: database.MsgchainTypeReporter,
-			build: func(fte *flowToolsExecutor) (ContextToolsExecutor, error) {
-				return fte.GetCoderExecutor(CoderExecutorConfig{
-					Adviser: handler, Installer: handler, Memorist: handler, Searcher: handler, CodeResult: handler,
-				})
-			},
-		},
-		"pentester": {
-			agent: database.MsgchainTypeChangeAnalyst,
-			build: func(fte *flowToolsExecutor) (ContextToolsExecutor, error) {
-				return fte.GetPentesterExecutor(PentesterExecutorConfig{
-					Adviser: handler, Coder: handler, Installer: handler,
-					Memorist: handler, Searcher: handler, HackResult: handler,
-				})
-			},
-		},
-		"memorist": {
-			agent: database.MsgchainTypeLogAnalyst,
-			build: func(fte *flowToolsExecutor) (ContextToolsExecutor, error) {
-				return fte.GetMemoristExecutor(MemoristExecutorConfig{SearchResult: handler})
-			},
-		},
-		"enricher": {
-			agent: database.MsgchainTypeTriage,
-			build: func(fte *flowToolsExecutor) (ContextToolsExecutor, error) {
-				return fte.GetEnricherExecutor(EnricherExecutorConfig{EnricherResult: handler})
-			},
-		},
+		tlp:      &recordingTermLog{},
+		mlp:      &executorMsgLog{},
+		tclp:     &executorToolCallLog{},
+		vslp:     log,
+		store:    store,
+		replacer: hostReplacer{},
 	}
 
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			conn := &fakeVectorConn{}
-			store := newFakeVectorStore(t, conn, &fakeEmbedder{})
+	executor, err := fte.GetAssistantExecutor(AssistantExecutorConfig{})
+	if err != nil {
+		t.Fatalf("building the executor: %v", err)
+	}
 
-			log := &recordingVectorStoreLog{}
-			fte := &flowToolsExecutor{
-				flowID: 1,
-				cfg:    &config.Config{},
-				db:     &fakeContainerDB{row: &database.Container{ID: 1, LocalID: sql.NullString{String: "primary", Valid: true}}},
-				docker: &fakeDockerClient{
-					isRunning:      true,
-					execCreateResp: client.ExecCreateResult{ID: "exec"},
-					attachOutput:   []byte("inet " + secretHost + "/24 scope global eth0"),
-				},
-				tlp:      &recordingTermLog{},
-				mlp:      &executorMsgLog{},
-				tclp:     &executorToolCallLog{},
-				vslp:     log,
-				store:    store,
-				replacer: hostReplacer{},
-			}
+	args := mustJSON(map[string]any{
+		"input": "ip addr | grep " + secretHost, "cwd": "", "detach": false, "timeout": 0,
+		"message": "Check which interface carries the address.",
+	})
+	ctx := PutAgentContext(t.Context(), database.MsgchainTypeAssistant)
 
-			executor, err := tc.build(fte)
-			if err != nil {
-				t.Fatalf("building the executor: %v", err)
-			}
+	if _, err := executor.Execute(ctx, 1, "call-1", TerminalToolName, TerminalToolName, "", args); err != nil {
+		t.Fatalf("the terminal call failed: %v", err)
+	}
 
-			args := mustJSON(map[string]any{
-				"input": "ip addr | grep " + secretHost, "cwd": "", "detach": false, "timeout": 0,
-				"message": "Check which interface carries the address.",
-			})
-			ctx := PutAgentContext(t.Context(), tc.agent)
+	if len(conn.added) == 0 || len(log.entries) == 0 || log.entries[len(log.entries)-1].result == "" {
+		t.Fatal("the terminal result never reached the vector store, so this case proves nothing")
+	}
 
-			if _, err := executor.Execute(ctx, 1, "call-1", TerminalToolName, TerminalToolName, "", args); err != nil {
-				t.Fatalf("the terminal call failed: %v", err)
-			}
-
-			if len(conn.added) == 0 || len(log.entries) == 0 || log.entries[len(log.entries)-1].result == "" {
-				t.Fatal("the terminal result never reached the vector store, so this case proves nothing")
-			}
-
-			for _, doc := range conn.added {
-				if written := fmt.Sprint(doc.args...); strings.Contains(written, secretHost) {
-					t.Errorf("the vector store received %s verbatim: %q", secretHost, written)
-				}
-			}
-			for _, entry := range log.entries {
-				if strings.Contains(entry.query, secretHost) || strings.Contains(entry.result, secretHost) {
-					t.Errorf("the vector store log carries %s verbatim: query %q, result %q", secretHost, entry.query, entry.result)
-				}
-			}
-		})
+	for _, doc := range conn.added {
+		if written := fmt.Sprint(doc.args...); strings.Contains(written, secretHost) {
+			t.Errorf("the vector store received %s verbatim: %q", secretHost, written)
+		}
+	}
+	for _, entry := range log.entries {
+		if strings.Contains(entry.query, secretHost) || strings.Contains(entry.result, secretHost) {
+			t.Errorf("the vector store log carries %s verbatim: query %q, result %q", secretHost, entry.query, entry.result)
+		}
 	}
 }
-
 func TestExecutor_Execute_StoresAMemoryToolResultUnderItsScope(t *testing.T) {
 	taskID, subtaskID := int64(2), int64(3)
 
@@ -805,9 +746,8 @@ func TestExecutor_Execute_ObservesEachToolTypeUnderTheCallersTrace(t *testing.T)
 	}{
 		{name: "an environment tool is a tool", tool: TerminalToolName, opens: "tool-create", nameKey: "tool_name"},
 		{name: "a network search is a tool", tool: BrowserToolName, opens: "tool-create", nameKey: "tool_name"},
-		{name: "an agent's result is a tool", tool: HackResultToolName, opens: "tool-create", nameKey: "tool_name"},
+		{name: "a report result is a tool", tool: ReportResultToolName, opens: "tool-create", nameKey: "tool_name"},
 		{name: "a vector-store write is a tool", tool: StoreGuideToolName, opens: "tool-create", nameKey: "tool_name"},
-		{name: "an agent is an agent", tool: CoderToolName, opens: "agent-create", nameKey: "agent_name"},
 		{name: "a barrier is a span", tool: FinalyToolName, opens: "span-create", nameKey: "barrier_name"},
 		{name: "a vector-store search opens nothing", tool: SearchInMemoryToolName},
 		{name: "a tool with no type opens nothing", tool: "custom_tool"},
@@ -930,7 +870,7 @@ func TestExecutor_IsFunctionExists_AnswersFromTheHandlers(t *testing.T) {
 	}
 
 	for name, want := range map[string]bool{
-		TerminalToolName: true, FinalyToolName: true, AskUserToolName: false, AdviceToolName: false,
+		TerminalToolName: true, FinalyToolName: true, AskUserToolName: false, DiagnosisToolName: false,
 	} {
 		if got := ce.IsFunctionExists(name); got != want {
 			t.Errorf("IsFunctionExists(%q) = %v, want %v", name, got, want)
@@ -1337,7 +1277,7 @@ func TestExecutor_RecordToolActivity_MirrorsAConclusionAsItsHeadline(t *testing.
 func TestExecutor_RecordExecutedCommand_KeepsConclusionsOutOfTheTerminalLog(t *testing.T) {
 	t.Parallel()
 
-	for _, name := range []string{DiagnosisToolName, OptimizationResultToolName, MemoristToolName, TriageResultToolName} {
+	for _, name := range []string{DiagnosisToolName, OptimizationResultToolName, LogFindingToolName, TriageResultToolName} {
 		if telemetryName(name) {
 			t.Errorf("%s is a conclusion, not something that ran on a machine", name)
 		}

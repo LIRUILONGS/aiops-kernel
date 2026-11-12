@@ -200,18 +200,6 @@ type TerminalAction struct {
 	Message string `json:"message" jsonschema:"required,title=Terminal command message" jsonschema_description:"Engagement-log entry — a 1-2 short sentence running commentary explaining what you intend to achieve by running this command. Written in the engagement language declared by your system prompt."`
 }
 
-type AskAdvice struct {
-	Question string `json:"question" jsonschema:"required" jsonschema_description:"Technical-channel payload — detailed question for the senior mentor describing the issue and what you need to figure out. Always written in English; never translated."`
-	Code     string `json:"code" jsonschema_description:"Technical-channel excerpt — optional code snippet relevant to the question. Preserve verbatim; do not translate code or comments."`
-	Output   string `json:"output" jsonschema_description:"Technical-channel excerpt — optional stdout/stderr excerpt relevant to the question. Preserve verbatim."`
-	Message  string `json:"message" jsonschema:"required,title=Ask advice message" jsonschema_description:"Engagement-log entry — a 1-2 short sentence running commentary explaining what you are asking the mentor and why. Written in the engagement language declared by your system prompt."`
-}
-
-type ComplexSearch struct {
-	Question string `json:"question" jsonschema:"required" jsonschema_description:"Technical-channel payload — research question for the researcher specialist with full context, target content type, and required structure. Always written in English; never translated."`
-	Message  string `json:"message" jsonschema:"required,title=Search query message" jsonschema_description:"Engagement-log entry — a 1-2 short sentence running commentary summarizing the research question. Written in the engagement language declared by your system prompt."`
-}
-
 type SearchAction struct {
 	Query      string `json:"query" jsonschema:"required" jsonschema_description:"Technical-channel payload — query for the specific search engine (google, duckduckgo, tavily, traversaal, perplexity, serper, etc.). ALWAYS written in English regardless of the engagement language: internet sources are predominantly indexed in English and non-English queries return poor or empty results. Short and exact queries return better results."`
 	MaxResults Int64  `json:"max_results" jsonschema:"required,type=integer" jsonschema_description:"Maximum number of results to return (minimum 1; maximum 10; default 5)"`
@@ -257,23 +245,6 @@ type GraphitiSearchAction struct {
 	MinMentions    *Int64   `json:"min_mentions,omitempty" jsonschema:"title=Minimum Mentions,type=integer" jsonschema_description:"Minimum episode mentions (default: 2, for successful_tools)"`
 	RecencyWindow  String   `json:"recency_window,omitempty" jsonschema:"type=string,enum=1h,enum=6h,enum=24h,enum=7d" jsonschema_description:"How far back to search (default: 24h, for recent_context)"`
 	Message        string   `json:"message" jsonschema:"required,title=Search message" jsonschema_description:"Engagement-log entry — a 1-2 short sentence running commentary summarizing the search query and expected results. Written in the engagement language declared by your system prompt."`
-}
-
-type EnricherResult struct {
-	Result  string `json:"result" jsonschema:"required,title=Enricher result" jsonschema_description:"Technical-channel payload — fully detailed enrichment report (or error explanation) returned to the calling agent for further reasoning. Always written in English; never translated."`
-	Message string `json:"message" jsonschema:"required,title=Enricher result message" jsonschema_description:"Engagement-log entry — a 1-2 short sentence running commentary with a short view of the enriched data. Written in the engagement language declared by your system prompt."`
-}
-
-type MemoristAction struct {
-	Question  string `json:"question" jsonschema:"required" jsonschema_description:"Technical-channel payload — question for complex search in previous work, tasks, and calls; include full context of what happened and what you want to find. Always written in English; never translated."`
-	TaskID    *Int64 `json:"task_id,omitempty" jsonschema:"title=Task ID,type=integer" jsonschema_description:"If you know task id you can use it to get more relevant information from the vector database; it will be used as a hard filter for search (optional)"`
-	SubtaskID *Int64 `json:"subtask_id,omitempty" jsonschema:"title=Subtask ID,type=integer" jsonschema_description:"If you know subtask id you can use it to get more relevant information from the vector database; it will be used as a hard filter for search (optional)"`
-	Message   string `json:"message" jsonschema:"required,title=Search message" jsonschema_description:"Engagement-log entry — a 1-2 short sentence running commentary summarizing the question and the path to reach the goal. Written in the engagement language declared by your system prompt."`
-}
-
-type MemoristResult struct {
-	Result  string `json:"result" jsonschema:"required,title=Search in long-term memory result" jsonschema_description:"Technical-channel payload — fully detailed long-term memory search report (or error explanation) returned to the calling agent for further reasoning. Always written in English; never translated."`
-	Message string `json:"message" jsonschema:"required,title=Search in long-term memory result message" jsonschema_description:"Engagement-log entry — a 1-2 short sentence running commentary with a short answer summary. Written in the engagement language declared by your system prompt."`
 }
 
 type SearchInMemoryAction struct {
@@ -322,36 +293,6 @@ type StoreCodeAction struct {
 	Explanation string   `json:"explanation" jsonschema:"required" jsonschema_description:"Technical-channel payload — fully detailed explanation of the code sample (what it does, how it works, why it is useful, libraries/tools used). ALWAYS written in English; the explanation is co-indexed with the code in the team's vector store and shared across all engagements; non-English content becomes unreachable to future searches."`
 	Description string   `json:"description" jsonschema:"required" jsonschema_description:"Technical-channel payload — short description of the code sample as a summary of the explanation; co-indexed in the team's vector store. Always written in English; never translated."`
 	Message     string   `json:"message" jsonschema:"required,title=Store code message" jsonschema_description:"Engagement-log entry — a 1-2 short sentence running commentary summarizing the code sample. Written in the engagement language declared by your system prompt."`
-}
-
-type MaintenanceAction struct {
-	Question string `json:"question" jsonschema:"required" jsonschema_description:"Technical-channel payload — task description for the DevOps team member to maintain the local environment and tools inside the docker container. Always written in English; never translated."`
-	Message  string `json:"message" jsonschema:"required,title=Maintenance task message" jsonschema_description:"Engagement-log entry — a 1-2 short sentence running commentary summarizing the maintenance task. Written in the engagement language declared by your system prompt."`
-}
-
-type MaintenanceResult struct {
-	Result  string `json:"result" jsonschema:"required,title=Maintenance result description" jsonschema_description:"Technical-channel payload — fully detailed maintenance report (or error explanation) returned to the calling agent, with usage instructions for the result. Always written in English; never translated."`
-	Message string `json:"message" jsonschema:"required,title=Maintenance result message" jsonschema_description:"Engagement-log entry — a 1-2 short sentence running commentary with the result and the path to reach the goal. Written in the engagement language declared by your system prompt."`
-}
-
-type CoderAction struct {
-	Question string `json:"question" jsonschema:"required" jsonschema_description:"Technical-channel payload — task description for the developer team member to write code, with detailed explanation of the goal and how to achieve it when not obvious. Always written in English; never translated."`
-	Message  string `json:"message" jsonschema:"required,title=Coder action message" jsonschema_description:"Engagement-log entry — a 1-2 short sentence running commentary summarizing the question and the task. Written in the engagement language declared by your system prompt."`
-}
-
-type CodeResult struct {
-	Result  string `json:"result" jsonschema:"required,title=Code result description" jsonschema_description:"Technical-channel payload — fully detailed code-development report (or error explanation) returned to the calling agent, with usage instructions for the result. Always written in English; never translated."`
-	Message string `json:"message" jsonschema:"required,title=Code result message" jsonschema_description:"Engagement-log entry — a 1-2 short sentence running commentary with the result and the path to reach the goal. Written in the engagement language declared by your system prompt."`
-}
-
-type PentesterAction struct {
-	Question string `json:"question" jsonschema:"required" jsonschema_description:"Technical-channel payload — task description for the pentester team member to perform a penetration test on the local environment and find vulnerabilities and weaknesses in the remote target. Always written in English; never translated."`
-	Message  string `json:"message" jsonschema:"required,title=Pentester action message" jsonschema_description:"Engagement-log entry — a 1-2 short sentence running commentary summarizing the question and the task. Written in the engagement language declared by your system prompt."`
-}
-
-type HackResult struct {
-	Result  string `json:"result" jsonschema:"required,title=Hack result description" jsonschema_description:"Technical-channel payload — fully detailed penetration-test report (or error explanation) returned to the calling agent, with usage instructions for the result. Always written in English; never translated."`
-	Message string `json:"message" jsonschema:"required,title=Hack result message" jsonschema_description:"Engagement-log entry — a 1-2 short sentence running commentary with the result and the path to reach the goal. Written in the engagement language declared by your system prompt."`
 }
 
 // FlowStatusDetail controls the level of detail returned by get_flow_status.
