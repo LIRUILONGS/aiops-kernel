@@ -1975,7 +1975,7 @@ type DockerConfig struct {
 	DockerPublicIP               loader.EnvVar // DOCKER_PUBLIC_IP
 	DockerWorkDir                loader.EnvVar // DOCKER_WORK_DIR
 	DockerDefaultImage           loader.EnvVar // DOCKER_DEFAULT_IMAGE
-	DockerDefaultImageForPentest loader.EnvVar // DOCKER_DEFAULT_IMAGE_FOR_PENTEST
+	OpsagiDefaultSandboxImage loader.EnvVar // OPSAGI_DEFAULT_SANDBOX_IMAGE
 	DockerDefaultImageForTest    loader.EnvVar // DOCKER_DEFAULT_IMAGE_FOR_TEST
 	DockerImageSelectionMode     loader.EnvVar // DOCKER_IMAGE_SELECTION_MODE
 	DockerAllowedImages          loader.EnvVar // DOCKER_ALLOWED_IMAGES
@@ -2009,7 +2009,7 @@ func (c *controller) GetDockerConfig() *DockerConfig {
 		"DOCKER_PUBLIC_IP",
 		"DOCKER_WORK_DIR",
 		"DOCKER_DEFAULT_IMAGE",
-		"DOCKER_DEFAULT_IMAGE_FOR_PENTEST",
+		"OPSAGI_DEFAULT_SANDBOX_IMAGE",
 		"DOCKER_DEFAULT_IMAGE_FOR_TEST",
 		"DOCKER_IMAGE_SELECTION_MODE",
 		"DOCKER_ALLOWED_IMAGES",
@@ -2030,7 +2030,7 @@ func (c *controller) GetDockerConfig() *DockerConfig {
 		DockerPublicIP:               vars["DOCKER_PUBLIC_IP"],
 		DockerWorkDir:                vars["DOCKER_WORK_DIR"],
 		DockerDefaultImage:           vars["DOCKER_DEFAULT_IMAGE"],
-		DockerDefaultImageForPentest: vars["DOCKER_DEFAULT_IMAGE_FOR_PENTEST"],
+		OpsagiDefaultSandboxImage: vars["OPSAGI_DEFAULT_SANDBOX_IMAGE"],
 		DockerDefaultImageForTest:    vars["DOCKER_DEFAULT_IMAGE_FOR_TEST"],
 		DockerImageSelectionMode:     vars["DOCKER_IMAGE_SELECTION_MODE"],
 		DockerAllowedImages:          vars["DOCKER_ALLOWED_IMAGES"],
@@ -2052,7 +2052,7 @@ func (c *controller) GetDockerConfig() *DockerConfig {
 	// basic configuration is considered complete if DOCKER_INSIDE is set or default images are specified
 	config.Configured = config.DockerInside.Value != "" ||
 		config.DockerDefaultImage.Value != "" ||
-		config.DockerDefaultImageForPentest.Value != ""
+		config.OpsagiDefaultSandboxImage.Value != ""
 
 	return config
 }
@@ -2067,7 +2067,7 @@ func (c *controller) UpdateDockerConfig(config *DockerConfig) error {
 		"DOCKER_PUBLIC_IP":                 config.DockerPublicIP.Value,
 		"DOCKER_WORK_DIR":                  config.DockerWorkDir.Value,
 		"DOCKER_DEFAULT_IMAGE":             config.DockerDefaultImage.Value,
-		"DOCKER_DEFAULT_IMAGE_FOR_PENTEST": config.DockerDefaultImageForPentest.Value,
+		"OPSAGI_DEFAULT_SANDBOX_IMAGE": config.OpsagiDefaultSandboxImage.Value,
 		"DOCKER_DEFAULT_IMAGE_FOR_TEST":    config.DockerDefaultImageForTest.Value,
 		"DOCKER_IMAGE_SELECTION_MODE":      config.DockerImageSelectionMode.Value,
 		"DOCKER_ALLOWED_IMAGES":            config.DockerAllowedImages.Value,
@@ -2112,7 +2112,7 @@ func (c *controller) ResetDockerConfig() *DockerConfig {
 		"DOCKER_PUBLIC_IP",
 		"DOCKER_WORK_DIR",
 		"DOCKER_DEFAULT_IMAGE",
-		"DOCKER_DEFAULT_IMAGE_FOR_PENTEST",
+		"OPSAGI_DEFAULT_SANDBOX_IMAGE",
 		"DOCKER_DEFAULT_IMAGE_FOR_TEST",
 		"DOCKER_IMAGE_SELECTION_MODE",
 		"DOCKER_ALLOWED_IMAGES",
@@ -2563,7 +2563,7 @@ func (c *controller) getVariableDescription(varName string) string {
 		"DOCKER_PUBLIC_IP":                 locale.EnvDesc_DOCKER_PUBLIC_IP,
 		"DOCKER_WORK_DIR":                  locale.EnvDesc_DOCKER_WORK_DIR,
 		"DOCKER_DEFAULT_IMAGE":             locale.EnvDesc_DOCKER_DEFAULT_IMAGE,
-		"DOCKER_DEFAULT_IMAGE_FOR_PENTEST": locale.EnvDesc_DOCKER_DEFAULT_IMAGE_FOR_PENTEST,
+		"OPSAGI_DEFAULT_SANDBOX_IMAGE": locale.EnvDesc_OPSAGI_DEFAULT_SANDBOX_IMAGE,
 		"DOCKER_DEFAULT_IMAGE_FOR_TEST":    locale.EnvDesc_DOCKER_DEFAULT_IMAGE_FOR_TEST,
 		"DOCKER_IMAGE_SELECTION_MODE":      locale.EnvDesc_DOCKER_IMAGE_SELECTION_MODE,
 		"DOCKER_ALLOWED_IMAGES":            locale.EnvDesc_DOCKER_ALLOWED_IMAGES,
@@ -2820,7 +2820,7 @@ var criticalVariables = map[string]bool{
 	"DOCKER_NETWORK":                   true,
 	"DOCKER_PUBLIC_IP":                 true,
 	"DOCKER_DEFAULT_IMAGE":             true,
-	"DOCKER_DEFAULT_IMAGE_FOR_PENTEST": true,
+	"OPSAGI_DEFAULT_SANDBOX_IMAGE": true,
 	"DOCKER_DEFAULT_IMAGE_FOR_TEST":    true,
 	"DOCKER_IMAGE_SELECTION_MODE":      true,
 	"DOCKER_ALLOWED_IMAGES":            true,

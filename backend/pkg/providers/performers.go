@@ -360,7 +360,6 @@ func (fp *flowProvider) performSubtasksRefiner(
 
 // performPlanner invokes adviser to create an execution plan for agent tasks
 
-// performMentor invokes adviser to monitor agent execution progress
 
 func (fp *flowProvider) performSimpleChain(
 	ctx context.Context,

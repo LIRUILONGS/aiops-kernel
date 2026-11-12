@@ -42,22 +42,15 @@ The Google AI provider enables OpsAGI to use Google's Gemini language models thr
 
 Each agent type is optimized with specific parameters for Google AI models:
 
-### Basic Agents
-- **Simple**: General-purpose tasks with balanced settings
+### Agents
+- **Simple**: General-purpose tasks with balanced settings; also serves the reporter, the summarizer and triage
 - **Simple JSON**: Structured output generation with JSON formatting
-- **Primary Agent**: Core reasoning with moderate creativity
+- **Commander**: Core reasoning for subtask execution with moderate creativity
+- **Analyst**: The log, metrics and change analysts, with precise settings for reading evidence
 - **Assistant (A)**: User interaction with contextual responses
-
-### Specialized Agents
-- **Generator**: Creative content with higher temperature
-- **Refiner**: Content improvement with focused parameters
-- **Adviser**: Strategic guidance with extended context
+- **Generator**: Subtask planning with higher temperature
+- **Refiner**: Replanning with focused parameters
 - **Reflector**: Analysis and evaluation tasks
-- **Searcher**: Information retrieval with precise settings
-- **Enricher**: Data enhancement and augmentation
-- **Coder**: Programming tasks with minimal temperature
-- **Installer**: System setup with deterministic responses
-- **Pentester**: Security testing with balanced creativity
 
 ## Usage Examples
 
@@ -87,7 +80,7 @@ simple:
     input: 2.50
     output: 10.00
 
-coder:
+generator:
   model: "gemini-2.5-flash"
   temperature: 0.05
   top_p: 0.1

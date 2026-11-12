@@ -12,14 +12,14 @@ func TestImageSelection_Resolve_FallsBackUnlessTheAnswerIsAnAllowedImage(t *test
 	t.Parallel()
 
 	kali := &config.Config{
-		DockerDefaultImageForPentest: "vxcontrol/kali-linux",
+		OpsagiDefaultSandboxImage: "vxcontrol/kali-linux",
 		DockerAllowedImages:          "vxcontrol/kali-linux, debian:latest",
 	}
 	private := &config.Config{
-		DockerDefaultImageForPentest: "vxcontrol/kali-linux",
+		OpsagiDefaultSandboxImage: "vxcontrol/kali-linux",
 		DockerAllowedImages:          "registry.internal:5000/kali, docker.io/library/debian",
 	}
-	open := &config.Config{DockerDefaultImageForPentest: "vxcontrol/kali-linux"}
+	open := &config.Config{OpsagiDefaultSandboxImage: "vxcontrol/kali-linux"}
 
 	tests := []struct {
 		name         string
@@ -41,15 +41,20 @@ func TestImageSelection_Resolve_FallsBackUnlessTheAnswerIsAnAllowedImage(t *test
 		{"another repository on the same registry falls back", private, "debian:latest", "registry.internal:5000/other:1", "vxcontrol/kali-linux", true},
 		{
 			"an allow-list entry that is not an image reference admits nothing",
-			&config.Config{DockerDefaultImageForPentest: "vxcontrol/kali-linux", DockerAllowedImages: "Not An Image!"},
+			&config.Config{OpsagiDefaultSandboxImage: "vxcontrol/kali-linux", DockerAllowedImages: "Not An Image!"},
 			"debian:latest", "node:latest", "vxcontrol/kali-linux", true,
 		},
 		{"no allow-list admits any image", open, "debian:latest", "python:latest", "python:latest", false},
 		{"no allow-list still refuses what is not an image", open, "debian:latest", "not an image reference at all", "vxcontrol/kali-linux", true},
 		{
-			"without a pentest image the default image is the fallback",
+			"the old pentest image name still decides the fallback",
+			&config.Config{DockerDefaultImageForPentest: "vxcontrol/kali-linux:2026.1", DockerAllowedImages: "debian:latest"},
+			"debian:latest", "node:latest", "vxcontrol/kali-linux:2026.1", true,
+		},
+		{
+			"without a sandbox image the shipped default decides",
 			&config.Config{DockerAllowedImages: "debian:latest"},
-			"  Debian:Latest ", "node:latest", "debian:latest", true,
+			"  Debian:Latest ", "node:latest", "vxcontrol/kali-linux", true,
 		},
 	}
 
@@ -64,7 +69,7 @@ func TestImageSelection_Resolve_FallsBackUnlessTheAnswerIsAnAllowedImage(t *test
 	}
 }
 
-func TestImageSelection_PentestImage_PrefersTheConfiguredImageToTheDefault(t *testing.T) {
+func TestImageSelection_SandboxImage_PrefersTheConfiguredImageToTheDefault(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -74,16 +79,16 @@ func TestImageSelection_PentestImage_PrefersTheConfiguredImageToTheDefault(t *te
 		want         string
 	}{
 		{
-			name:         "a configured pentest image",
-			cfg:          &config.Config{DockerImageSelectionMode: ImageSelectionModeFixed, DockerDefaultImageForPentest: "vxcontrol/kali-linux"},
+			name:         "a configured sandbox image",
+			cfg:          &config.Config{DockerImageSelectionMode: ImageSelectionModeFixed, OpsagiDefaultSandboxImage: "vxcontrol/kali-linux"},
 			defaultImage: "debian:latest",
 			want:         "vxcontrol/kali-linux",
 		},
 		{
-			name:         "no pentest image falls back to the normalized default",
+			name:         "no sandbox image falls back to the shipped default",
 			cfg:          &config.Config{DockerImageSelectionMode: ImageSelectionModeFixed, DockerAllowedImages: "debian:latest"},
 			defaultImage: "  Debian:Latest ",
-			want:         "debian:latest",
+			want:         "vxcontrol/kali-linux",
 		},
 	}
 
@@ -115,7 +120,7 @@ func TestImageSelection_SkipsModel_OnlyInFixedMode(t *testing.T) {
 
 			policy := newImagePolicy(&config.Config{
 				DockerImageSelectionMode:     tt.mode,
-				DockerDefaultImageForPentest: "vxcontrol/kali-linux",
+				OpsagiDefaultSandboxImage: "vxcontrol/kali-linux",
 			}, "debian:latest")
 
 			assert.Equal(t, tt.want, policy.skipsModel())
@@ -126,7 +131,7 @@ func TestImageSelection_SkipsModel_OnlyInFixedMode(t *testing.T) {
 func TestImageSelection_IsPentestImage_FollowsTheConfiguredImage(t *testing.T) {
 	t.Parallel()
 
-	hardened := &config.Config{DockerDefaultImageForPentest: "registry.example.com/security/hardened-kali"}
+	hardened := &config.Config{OpsagiDefaultSandboxImage: "registry.example.com/security/hardened-kali"}
 
 	tests := []struct {
 		name  string

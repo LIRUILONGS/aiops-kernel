@@ -26,7 +26,7 @@ func newImagePolicy(cfg *config.Config, defaultImage string) imagePolicy {
 	}
 
 	policy.mode = strings.ToLower(strings.TrimSpace(cfg.DockerImageSelectionMode))
-	policy.pentest = normalizeImage(cfg.DockerDefaultImageForPentest)
+	policy.pentest = normalizeImage(cfg.SandboxImage())
 	for _, name := range strings.Split(cfg.DockerAllowedImages, ",") {
 		if name = normalizeImage(name); name != "" {
 			policy.allowed = append(policy.allowed, name)
@@ -95,7 +95,7 @@ func sameRepository(image, allowed string) bool {
 func (fp *flowProvider) isPentestImage() bool {
 	pentest := pentestDockerImage
 	if fp.cfg != nil {
-		if configured := normalizeImage(fp.cfg.DockerDefaultImageForPentest); configured != "" {
+		if configured := normalizeImage(fp.cfg.SandboxImage()); configured != "" {
 			pentest = configured
 		}
 	}

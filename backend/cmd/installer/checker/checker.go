@@ -48,7 +48,7 @@ const (
 	CadvisorContainerName           = "cadvisor"
 	ClickstoreContainerName         = "clickstore"
 	DefaultImage                    = "debian:latest"
-	DefaultImageForPentest          = "vxcontrol/kali-linux"
+	DefaultSandboxImage          = "vxcontrol/kali-linux"
 	DefaultGraphitiEndpoint         = "http://graphiti:8000"
 	DefaultLangfuseEndpoint         = "http://langfuse-web:3000"
 	DefaultObservabilityEndpoint    = "otelcol:8148"
@@ -411,8 +411,8 @@ func (h *defaultCheckHandler) GatherWorkerInfo(ctx context.Context, c *CheckResu
 	h.workerClient = cli
 	c.WorkerEnvApiAccessible = true
 
-	pentestImage := getEnvVar(h.appState, "DOCKER_DEFAULT_IMAGE_FOR_PENTEST", DefaultImageForPentest)
-	c.WorkerImageExists = checkImageExists(ctx, cli, pentestImage)
+	imageName := sandboxImage(h.appState)
+	c.WorkerImageExists = checkImageExists(ctx, cli, imageName)
 
 	return nil
 }

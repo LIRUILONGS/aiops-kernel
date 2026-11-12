@@ -1869,12 +1869,12 @@ Configuration combines based on scenario: enable both capabilities for full pent
 	// Default images
 	ToolsDockerDefaultImage               = "Default Image"
 	ToolsDockerDefaultImageDesc           = "Default Docker image for general tasks"
-	ToolsDockerDefaultImageForPentest     = "Pentesting Image"
-	ToolsDockerDefaultImageForPentestDesc = "Default Docker image for security testing tasks"
+	ToolsOpsagiDefaultSandboxImage     = "Sandbox Image"
+	ToolsOpsagiDefaultSandboxImageDesc = "Docker image a flow runs in when the model makes no choice"
 	ToolsDockerDefaultImageForTest        = "Sandbox Self-Test Image"
 	ToolsDockerDefaultImageForTestDesc    = "Small image the startup sandbox isolation check runs in"
 	ToolsDockerImageSelectionMode         = "Image Selection Mode"
-	ToolsDockerImageSelectionModeDesc     = "How the worker image is chosen: 'llm' (agent picks) or 'fixed' (always the pentest image)"
+	ToolsDockerImageSelectionModeDesc     = "How the sandbox image is chosen: 'llm' (agent picks) or 'fixed' (always the sandbox image)"
 	ToolsDockerAllowedImages              = "Allowed Images"
 	ToolsDockerAllowedImagesDesc          = "Comma-separated allow-list the agent may pick from (empty: any image)"
 	ToolsDockerInsidePolicyTests          = "Sandbox Isolation Self-Test"
@@ -1954,9 +1954,9 @@ Example: /path/to/workdir/`
 
 Should contain basic utilities and tools for general-purpose tasks. Default: debian:latest`
 
-	ToolsDockerDefaultImageForPentestHelp = `Pentesting Image serves as default for security testing tasks. Should include comprehensive security tools and utilities.
+	ToolsOpsagiDefaultSandboxImageHelp = `Sandbox Image is the image a flow runs in when the model makes no choice or its answer is rejected. It should carry the tools the ops probes expect: a shell, coreutils, procps and curl.
 
-Recommended images include Kali Linux, Parrot Security, or custom security-focused containers. Default: vxcontrol/kali-linux`
+Recommended images include Kali Linux or a custom operations container with those tools. Default: vxcontrol/kali-linux`
 
 	ToolsDockerDefaultImageForTestHelp = `Sandbox Self-Test Image is the small image the startup isolation check runs in and pulls into the sandbox to prove an agent could. Kept small because the check pays for it on every start.
 
@@ -2655,7 +2655,7 @@ const (
 	EnvDesc_DOCKER_PUBLIC_IP                 = "Docker Public IP"
 	EnvDesc_DOCKER_WORK_DIR                  = "Docker Work Directory"
 	EnvDesc_DOCKER_DEFAULT_IMAGE             = "Docker Default Image"
-	EnvDesc_DOCKER_DEFAULT_IMAGE_FOR_PENTEST = "Docker Pentest Image"
+	EnvDesc_OPSAGI_DEFAULT_SANDBOX_IMAGE = "Docker Sandbox Image"
 	EnvDesc_DOCKER_DEFAULT_IMAGE_FOR_TEST    = "Docker Sandbox Self-Test Image"
 	EnvDesc_DOCKER_IMAGE_SELECTION_MODE      = "Docker Image Selection Mode"
 	EnvDesc_DOCKER_ALLOWED_IMAGES            = "Docker Allowed Images"

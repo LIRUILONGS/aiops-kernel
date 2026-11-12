@@ -202,16 +202,6 @@ type ContextToolsExecutor interface {
 	GetToolSchema(name string) (*schema.Schema, error)
 }
 
-type CustomExecutorConfig struct {
-	TaskID      *int64
-	SubtaskID   *int64
-	Builtin     []string
-	Definitions []llms.FunctionDefinition
-	Handlers    map[string]ExecutorHandler
-	Barriers    []string
-	Summarizer  SummarizeHandler
-}
-
 type AssistantExecutorConfig struct {
 	Summarizer  SummarizeHandler
 	FlowManager FlowManagerHandlers
@@ -311,7 +301,6 @@ type FlowToolsExecutor interface {
 
 	Prepare(ctx context.Context) error
 	Release(ctx context.Context) error
-	GetCustomExecutor(cfg CustomExecutorConfig) (ContextToolsExecutor, error)
 	GetAssistantExecutor(cfg AssistantExecutorConfig) (ContextToolsExecutor, error)
 	GetCommanderExecutor(cfg CommanderExecutorConfig) (ContextToolsExecutor, error)
 	GetAnalystExecutor(cfg AnalystExecutorConfig) (ContextToolsExecutor, error)
@@ -727,53 +716,6 @@ func (fte *flowToolsExecutor) Release(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-func (fte *flowToolsExecutor) GetCustomExecutor(cfg CustomExecutorConfig) (ContextToolsExecutor, error) {
-	if len(cfg.Definitions) != len(cfg.Handlers) {
-		return nil, fmt.Errorf("definitions and handlers must have the same length")
-	}
-
-	for _, def := range cfg.Definitions {
-		if _, ok := cfg.Handlers[def.Name]; !ok {
-			return nil, fmt.Errorf("handler for function %s not found", def.Name)
-		}
-	}
-
-	for _, builtin := range cfg.Builtin {
-		if def, ok := fte.definitions[builtin]; !ok {
-			return nil, fmt.Errorf("builtin function %s not found", builtin)
-		} else {
-			cfg.Definitions = append(cfg.Definitions, def)
-			cfg.Handlers[builtin] = fte.handlers[builtin]
-		}
-	}
-
-	barriers := make(map[string]struct{})
-	for _, barrier := range cfg.Barriers {
-		if _, ok := fte.handlers[barrier]; !ok {
-			return nil, fmt.Errorf("barrier function %s not found", barrier)
-		}
-		barriers[barrier] = struct{}{}
-	}
-
-	return &customExecutor{
-		userID:      fte.userID,
-		flowID:      fte.flowID,
-		taskID:      cfg.TaskID,
-		subtaskID:   cfg.SubtaskID,
-		mlp:         fte.mlp,
-		tclp:        fte.tclp,
-		tlp:         fte.tlp,
-		replacer:    fte.replacer,
-		vslp:        fte.vslp,
-		db:          fte.db,
-		store:       fte.store,
-		definitions: cfg.Definitions,
-		handlers:    cfg.Handlers,
-		barriers:    barriers,
-		summarizer:  cfg.Summarizer,
-	}, nil
 }
 
 func (fte *flowToolsExecutor) GetAssistantExecutor(cfg AssistantExecutorConfig) (ContextToolsExecutor, error) {

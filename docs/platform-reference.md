@@ -31,7 +31,7 @@ To check an installation without a host or a model, run the acceptance flow: it 
 python scripts/aiops_acceptance/run.py
 ```
 
-The rest of this file documents the platform OpsAGI inherits, and it is accurate for the parts that were inherited unchanged. Where it describes penetration-testing agents (`pentester`, `coder`, `searcher`, …) that is upstream documentation: those roles still exist in the codebase, but the AIOps chains do not delegate to them.
+The rest of this file documents the platform OpsAGI inherits: providers, configuration, deployment, the database and the CLIs. The agent model it describes at the top is the AIOps one — a commander per subtask, four analysts behind delegation tools, a generator/refiner pair, a reporter — and the penetration-testing roles of the upstream project (`pentester`, `coder`, `searcher`, …) no longer exist in this codebase.
 
 ## Table of Contents
 
@@ -124,7 +124,7 @@ flowchart TB
     classDef system fill:#1168BD,stroke:#0B4884,color:#fff
     classDef external fill:#666666,stroke:#0B4884,color:#fff
 
-    pentester["👤 Security Engineer
+    operator["👤 Security Engineer
     (User of the system)"]
 
     opsagi["✨ OpsAGI
@@ -141,16 +141,16 @@ flowchart TB
     grafana["📈 grafana
     (System Monitoring Dashboard)"]
 
-    pentester --> |Uses HTTPS| opsagi
-    pentester --> |Monitors AI HTTPS| langfuse
-    pentester --> |Monitors System HTTPS| grafana
+    operator --> |Uses HTTPS| opsagi
+    operator --> |Monitors AI HTTPS| langfuse
+    operator --> |Monitors System HTTPS| grafana
     opsagi --> |Tests Various protocols| target
     opsagi --> |Queries HTTPS| llm
     opsagi --> |Searches HTTPS| search
     opsagi --> |Reports HTTPS| langfuse
     opsagi --> |Reports HTTPS| grafana
 
-    class pentester person
+    class operator person
     class opsagi system
     class target,llm,search,langfuse,grafana external
 
@@ -489,71 +489,30 @@ ASSISTANT_SUMMARIZER_KEEP_QA_SECTIONS=3
 <details>
 <summary><b>Advanced Agent Supervision</b> (click to expand)</summary>
 
-OpsAGI includes sophisticated multi-layered agent supervision mechanisms to ensure efficient task execution, prevent infinite loops, and provide intelligent recovery from stuck states:
-
-### Execution Monitoring (Beta)
-- **Automatic Mentor Intervention**: Adviser agent (mentor) is automatically invoked when execution patterns indicate potential issues
-- **Pattern Detection**: Monitors identical tool calls (threshold: 5, configurable) and total tool calls (threshold: 10, configurable)
-- **Progress Analysis**: Evaluates whether agent advances toward subtask objective, detects loops and inefficiencies
-- **Alternative Strategies**: Recommends different approaches when current strategy fails
-- **Information Retrieval Guidance**: Suggests searching for established solutions instead of reinventing
-- **Enhanced Response Format**: Tool responses include both `<original_result>` and `<mentor_analysis>` sections
-- **Configurable**: Enable via `EXECUTION_MONITOR_ENABLED` (default: false), customize thresholds with `EXECUTION_MONITOR_SAME_TOOL_LIMIT` and `EXECUTION_MONITOR_TOTAL_TOOL_LIMIT`
-
-**Best for**: Smaller models (< 32B parameters), complex attack scenarios requiring continuous guidance, preventing agents from getting stuck on single approach
-
-**Performance Impact**: 2-3x increase in execution time and token usage, but delivers **2x improvement in result quality** based on testing with Qwen3.5-27B-FP8
-
-### Intelligent Task Planning (Beta)
-- **Automated Decomposition**: Planner (adviser in planning mode) generates 3-7 specific, actionable steps before specialist agents begin work
-- **Context-Aware Plans**: Analyzes full execution context via enricher agent to create informed plans
-- **Structured Assignment**: Original request wrapped in `<task_assignment>` structure with execution plan and instructions
-- **Scope Management**: Prevents scope creep by keeping agents focused on current subtask only
-- **Enriched Instructions**: Plans highlight critical actions, potential pitfalls, and verification points
-- **Configurable**: Enable via `AGENT_PLANNING_STEP_ENABLED` (default: false)
-
-**Best for**: Models < 32B parameters, complex penetration testing workflows, improving success rates on sophisticated tasks
-
-**Enhanced Adviser Configuration**: Works exceptionally well when adviser agent uses stronger model or enhanced settings. Example: using same base model with maximum reasoning mode for adviser (see [`vllm-qwen3.5-27b-fp8.provider.yml`](examples/configs/vllm-qwen3.5-27b-fp8.provider.yml)) enables comprehensive task analysis and strategic planning from identical model architecture.
-
-**Performance Impact**: Adds planning overhead but significantly improves completion rates and reduces redundant work
+OpsAGI bounds every agent chain by a tool-call limit and steers a chain that is about to run out back to a conclusion. There is no separate mentor or planner agent: the commander decides which evidence face comes next, and the analysts answer from their own tool subsets.
 
 ### Tool Call Limits (Always Active)
-- **Hard Limits**: Prevent runaway executions regardless of supervision mode status
+- **Hard Limits**: Prevent runaway executions
 - **Differentiated by Agent Type**:
-  - General agents (Assistant, Primary Agent, Pentester, Coder, Installer): `MAX_GENERAL_AGENT_TOOL_CALLS` (default: 100)
-  - Limited agents (Searcher, Enricher, Memorist, Generator, Reporter, Adviser, Reflector, Planner): `MAX_LIMITED_AGENT_TOOL_CALLS` (default: 20)
-- **Graceful Termination**: Reflector guides agents to proper completion when approaching limits
-- **Resource Protection**: Ensures system stability and prevents resource exhaustion
+  - General agents (assistant, commander): `MAX_GENERAL_AGENT_TOOL_CALLS` (default: 100)
+  - Focused agents (triage, the three analysts, generator, refiner, reporter, reflector, summarizer, tool_call_fixer): `MAX_LIMITED_AGENT_TOOL_CALLS` (default: 20)
+- **Graceful Termination**: The last three iterations are a shutdown grace period — the model is told to finish, and a chain with no exit left is ended
+- **Resource Protection**: Every iteration is one more model call; the limit is what keeps a stuck chain from spending the flow's budget
 
 ### Reflector Integration (Always Active)
-- **Automatic Correction**: Invoked when LLM fails to generate tool calls after 3 attempts
-- **Strategic Guidance**: Analyzes failures and guides agents toward proper tool usage or barrier tools (`done`, `ask`)
-- **Recovery Mechanism**: Provides contextual guidance based on specific failure patterns
-- **Limit Enforcement**: Coordinates graceful termination when tool call limits are reached
+- **Automatic Correction**: Invoked when the model answers in prose when the chain required a tool call
+- **Strategic Guidance**: Analyzes the failure and points at the exit tool the chain actually offers (`diagnosis`, `optimization_result`, an analyst finding tool, `done`, `ask`)
+- **Recovery Mechanism**: Provides contextual guidance based on the specific failure
+- **Limit Enforcement**: Coordinates the shutdown grace period when a chain reaches its limit
 
-### Recommendations for Open Source Models
+### Context Compaction (Always Active)
+- **Summarizer**: Replaces the middle of a chain with a summary that keeps the last messages and the tool-call structure, so a long investigation does not overflow the context window
+- **Repeating Detection**: Notices the same call repeated unchanged and nudges the agent off it
+- **Tool Call Repair**: Repairs arguments that do not parse against the tool's schema before the round is lost
 
-**Must-Have for Models < 32B Parameters**:
-Testing with Qwen3.5-27B-FP8 demonstrates that enabling both Execution Monitoring and Task Planning is **essential** for smaller open source models:
-- **Quality Improvement**: 2x better results compared to baseline execution without supervision
-- **Loop Prevention**: Significantly reduces infinite loops and redundant work
-- **Attack Diversity**: Encourages exploration of multiple attack vectors instead of fixating on single approach
-- **Air-Gapped Deployments**: Enables production-grade autonomous pentesting in closed network environments with local LLM inference
+### Recommendations for Smaller Models
 
-**Trade-offs**:
-- Token consumption: 2-3x increase due to mentor/planner invocations
-- Execution time: 2-3x longer due to analysis and planning steps
-- Result quality: 2x improvement in completeness, accuracy, and attack coverage
-- Model requirements: Works best when adviser uses enhanced configuration (higher reasoning parameters, stronger model variant, or different model)
-
-**Configuration Strategy**:
-For optimal performance with smaller models, configure adviser agent with enhanced settings:
-- Use same model with maximum reasoning mode (example: [`vllm-qwen3.5-27b-fp8.provider.yml`](examples/configs/vllm-qwen3.5-27b-fp8.provider.yml))
-- Or use stronger model for adviser while keeping base model for other agents
-- Adjust monitoring thresholds based on task complexity and model capabilities
-
-
+A model below about 32B parameters tends to lose the thread of a multi-step investigation. What helps is not a second supervising agent but a narrower tool list: give the analysts their evidence subsets (which the executors already do), keep the plan short, and raise `MAX_GENERAL_AGENT_TOOL_CALLS` only when the model consistently uses the extra iterations rather than repeating one probe.
 
 </details>
 
@@ -1579,11 +1538,11 @@ OLLAMA_SERVER_CONFIG_PATH=/opt/opsagi/conf/ollama-cloud.provider.yml
 ```
 
 The pre-built `ollama-cloud.provider.yml` configuration includes optimized model assignments for all agent types:
-- **Simple/Reflector/Enricher**: `minimax-m2.7:cloud` - Reliable low-latency utility model
-- **Simple JSON/Primary Agent/Assistant/Pentester/Searcher**: `deepseek-v4.1-flash:cloud` - Efficient long-context model at the same input/output rate as MiniMax M2.7
-- **Generator/Adviser**: `kimi-k3:cloud` - Flagship long-horizon planning and knowledge-work model
+- **Simple/Reflector/Analyst**: `minimax-m2.7:cloud` - Reliable low-latency utility model
+- **Simple JSON/Commander/Assistant**: `deepseek-v4.1-flash:cloud` - Efficient long-context model at the same input/output rate as MiniMax M2.7
+- **Generator/Refiner**: `kimi-k3:cloud` - Flagship long-horizon planning model
 - **Refiner**: `glm-5.3:cloud` - Flagship coding and agentic model
-- **Coder/Installer**: `kimi-k2.7-code:cloud` - Coding-specialized long-context model
+- **Analyst**: `kimi-k2.7-code:cloud` - Long-context evidence reader
 
 **Custom Configuration (Advanced)**
 
@@ -1728,7 +1687,7 @@ OpsAGI supports 32 OpenAI models with tool calling, streaming, reasoning modes, 
 | Model ID              | Thinking | Reasoning Effort            | Price (Input/Output/Cache) | Use Case                                        |
 | --------------------- | -------- | ---------------------------- | -------------------------- | ----------------------------------------------- |
 | `gpt-5.6-sol`         | ✅        | low/medium/high/xhigh        | $5.00/$30.00/$0.50         | Frontier model for complex professional work, most demanding autonomous pentesting, sophisticated exploit chain development, deep multi-stage attack simulation |
-| `gpt-5.6-terra`*      | ✅        | low/medium/high/xhigh        | $2.50/$15.00/$0.25         | Balances intelligence and cost; multi-phase security assessments, coordinated multi-tool pentesting (generator/refiner/adviser/coder default) |
+| `gpt-5.6-terra`*      | ✅        | low/medium/high/xhigh        | $2.50/$15.00/$0.25         | Balances intelligence and cost; multi-phase security assessments, coordinated multi-tool pentesting (generator/refiner default) |
 | `gpt-5.6-luna`        | ✅        | low/medium/high/xhigh        | $1.00/$6.00/$0.10          | Optimized for cost-sensitive, high-volume workloads; rapid reconnaissance, bulk vulnerability scanning, real-time monitoring |
 
 **GPT-5.5 Series - Frontier (Dec 2025 knowledge cutoff, 1.05M context, 128K max output)**
@@ -1743,8 +1702,8 @@ OpsAGI supports 32 OpenAI models with tool calling, streaming, reasoning modes, 
 | Model ID              | Thinking | Reasoning Effort         | Price (Input/Output/Cache) | Use Case                                        |
 | --------------------- | -------- | -------------------------- | -------------------------- | ----------------------------------------------- |
 | `gpt-5.4`             | ✅        | low/medium/high/xhigh      | $2.50/$15.00/$0.25          | Best intelligence at scale for agentic, coding, and professional workflows; maximum cognitive depth for pentesting |
-| `gpt-5.4-mini`*       | ✅        | low/medium/high/xhigh      | $0.75/$4.50/$0.075          | Strongest mini model for coding, computer use, subagents (primary_agent/assistant/reflector/installer/pentester default) |
-| `gpt-5.4-nano`*       | ✅        | low/medium/high/xhigh      | $0.20/$1.25/$0.02           | Cheapest GPT-5.4-class model for simple, high-volume tasks (simple/simple_json/searcher/enricher default) |
+| `gpt-5.4-mini`*       | ✅        | low/medium/high/xhigh      | $0.75/$4.50/$0.075          | Strongest mini model for coding, computer use, subagents (commander/assistant/reflector default) |
+| `gpt-5.4-nano`*       | ✅        | low/medium/high/xhigh      | $0.20/$1.25/$0.02           | Cheapest GPT-5.4-class model for simple, high-volume tasks (simple/simple_json/analyst default) |
 
 **GPT-5.2 Series - Previous Flagship Agentic**
 
@@ -1820,8 +1779,8 @@ These models were marked deprecated by OpenAI. OpsAGI keeps them defined only so
 > - Use `gpt-4.1` series for general intelligence and function calling without reasoning
 
 **Reasoning Configuration**:
-- **Reasoning forced off by default**: every default agent assigned `gpt-5.4-mini` or `gpt-5.6-terra` (primary_agent, assistant, generator, refiner, adviser, reflector, coder, installer, pentester) sets `reasoning: {mode: off}` — this genuinely disables reasoning, it is not simply "low effort". OpsAGI calls OpenAI exclusively through `/v1/chat/completions` (never `/v1/responses`), and this endpoint rejects requests that combine function tools with these models' default-on thinking; forcing thinking off is required for tool calls to work reliably (see the investigation notes in [`backend/pkg/providers/openai/config.yml`](backend/pkg/providers/openai/config.yml)).
-- **No override needed for `gpt-5.4-nano`**: used for simple, simple_json, searcher, and enricher, this tier does not default to thinking on, so tools attach without conflict and no `reasoning` override is required.
+- **Reasoning forced off by default**: every default agent assigned `gpt-5.4-mini` or `gpt-5.6-terra` (commander, assistant, generator, refiner, reflector) sets `reasoning: {mode: off}` — this genuinely disables reasoning, it is not simply "low effort". OpsAGI calls OpenAI exclusively through `/v1/chat/completions` (never `/v1/responses`), and this endpoint rejects requests that combine function tools with these models' default-on thinking; forcing thinking off is required for tool calls to work reliably (see the investigation notes in [`backend/pkg/providers/openai/config.yml`](backend/pkg/providers/openai/config.yml)).
+- **No override needed for `gpt-5.4-nano`**: used for simple, simple_json, and analyst, this tier does not default to thinking on, so tools attach without conflict and no `reasoning` override is required.
 - **Manual tuning available**: outside the default assignments, GPT-5.6/5.5/5.4/5.2 series models expose explicit reasoning effort levels (`low`/`medium`/`high`/`xhigh`, plus `none` on GPT-5.5) for custom agent configs that need variable reasoning depth with tool calling disabled or via `/v1/responses`.
 
 **Key Features**:
@@ -1884,7 +1843,7 @@ OpsAGI supports 9 Claude models with tool calling, streaming, extended thinking,
 
 | Model ID                 | Thinking | Release Date | Price (Input/Output/Cache R/W) | Use Case                                        |
 | ------------------------ | -------- | ------------ | ------------------------------ | ----------------------------------------------- |
-| `claude-sonnet-5`*       | ✅        | Jul 2026     | $3.00/$15.00/$0.30/$3.75       | Best combination of speed and intelligence for coding, agents, and professional work at scale. Adaptive thinking only (manual budget thinking rejected); sampling parameters not supported. Default model for primary agent, assistant, coder, adviser, installer, pentester |
+| `claude-sonnet-5`*       | ✅        | Jul 2026     | $3.00/$15.00/$0.30/$3.75       | Best combination of speed and intelligence for coding, agents, and professional work at scale. Adaptive thinking only (manual budget thinking rejected); sampling parameters not supported. Default model for commander and assistant |
 | `claude-fable-5`         | ✅        | Jun 2026     | $10.00/$50.00/$1.00/$12.50     | Anthropic's most capable widely released model for long-running agents and the most demanding reasoning workloads. Adaptive thinking always on (budget thinking and an explicit disable are rejected); sampling parameters not supported |
 
 **Claude 4 Series**
@@ -1895,7 +1854,7 @@ OpsAGI supports 9 Claude models with tool calling, streaming, extended thinking,
 | `claude-opus-4-7`        | ✅        | Apr 2026     | $5.00/$25.00/$0.50/$6.25       | Advanced software engineering and long-running agentic security analysis. Adaptive thinking only (manual budget thinking rejected) |
 | `claude-sonnet-4-6`      | ✅        | Feb 2026     | $3.00/$15.00/$0.30/$3.75       | Best speed/intelligence balance with adaptive thinking. Multi-phase security assessments, intelligent vulnerability analysis, real-time threat hunting |
 | `claude-opus-4-6`        | ✅        | Feb 2026     | $5.00/$25.00/$0.50/$6.25       | Most intelligent model for autonomous agents and coding. Extended + adaptive thinking for complex exploit development, multi-stage attack simulation |
-| `claude-haiku-4-5`*      | ❌        | Oct 2025     | $1.00/$5.00/$0.10/$1.25        | Fast and efficient model with exceptional function calling and low latency, no thinking support. Default model for simple, simple_json, reflector, searcher, enricher; high-frequency scanning, real-time monitoring, bulk automated testing |
+| `claude-haiku-4-5`*      | ❌        | Oct 2025     | $1.00/$5.00/$0.10/$1.25        | Fast and efficient model with exceptional function calling and low latency, no thinking support. Default model for simple, simple_json, reflector, analyst; high-frequency scanning, real-time monitoring, bulk automated testing |
 
 **Legacy Models - Still Supported**
 
@@ -1907,10 +1866,10 @@ OpsAGI supports 9 Claude models with tool calling, streaming, extended thinking,
 **Prices**: Per 1M tokens. Cache pricing includes both Read and Write costs.
 
 **Extended Thinking Configuration** (default agent config, see [`backend/pkg/providers/anthropic/config.yml`](backend/pkg/providers/anthropic/config.yml)):
-- **Generator / Refiner** (`claude-opus-4-8`): adaptive reasoning at `xhigh`/`high` effort for maximum reasoning depth on complex exploit development
-- **Primary agent, assistant, coder, adviser, installer, pentester** (`claude-sonnet-5`): adaptive reasoning (adviser at `xhigh` effort) for balanced code analysis and vulnerability research
-- **Reflector, searcher** (`claude-haiku-4-5`): fixed reasoning budget of 1024 tokens for focused reasoning on specific tasks
-- **Simple, simple_json, enricher** (`claude-haiku-4-5`): no thinking, optimized for speed
+- **Generator / Refiner** (`claude-opus-4-8`): adaptive reasoning at `xhigh`/`high` effort for maximum depth on a multi-step plan
+- **Commander, assistant** (`claude-sonnet-5`): adaptive reasoning for balanced execution and tool use
+- **Reflector** (`claude-haiku-4-5`): fixed reasoning budget of 1024 tokens for focused correction
+- **Simple, simple_json, analyst** (`claude-haiku-4-5`): no thinking, optimized for speed
 
 **Key Features**:
 - **Extended Thinking**: All Claude 4.5+ models support configurable chain-of-thought reasoning depths for complex security analysis
@@ -1956,7 +1915,7 @@ OpsAGI lists 14 Gemini model IDs that responded through the tested API endpoint.
 | `gemini-3.7-flash` | ✅ | 1M | $0.75/$3.75/$0.075 | API responds; 10/10 saved generator calls were content-filtered; former default |
 | `gemini-3.6-flash` | ✅ | 1M | $0.75/$3.75/$0.075 | API responds; 10/10 saved generator calls returned text without a tool |
 | `gemini-3.5-flash` | ✅ | 1M | $1.5/$9/$0.15 | API responds; 10/10 saved generator calls returned text without a tool |
-| `gemini-3.5-flash-lite`* | ✅ | 1M | $0.3/$2.5/$0.03 | Complex-role default; eight direct plans and two after a safe `memorist` continuation |
+| `gemini-3.5-flash-lite`* | ✅ | 1M | $0.3/$2.5/$0.03 | Commander, assistant and planning default; eight direct plans and two after a safe delegation continuation |
 | `gemini-3.1-pro-preview` | ✅ | 1M | $2/$12/$0.2 | API responds; 10/10 saved generator calls returned text without a tool |
 | `gemini-3.1-pro-preview-customtools` | ✅ | 1M | $2/$12/$0.2 | API responds; 10/10 saved generator calls returned text without a tool |
 | `gemini-3.1-flash-lite`* | ✅ | 1M | $0.25/$1.5/$0.025 | Simple-role default; direct plan on all ten saved generator chains |
@@ -1970,15 +1929,15 @@ OpsAGI lists 14 Gemini model IDs that responded through the tested API endpoint.
 **Prices**: Per 1M tokens. Google [limits Gemini 2.5 access for new projects](https://ai.google.dev/gemini-api/docs/models/gemini-2.5-pro), so OpsAGI uses the tested 3.1 Flash-Lite as its fallback and simple-role default. Existing custom 2.5 configurations remain usable where the project has access.
 
 **Default Model Assignments (config.yml)**:
-- **`gemini-3.1-flash-lite`** - `simple`, `simple_json`, `reflector`, `searcher`, `enricher`
-- **`gemini-3.5-flash-lite`** - `primary_agent`, `assistant`, `generator`, `refiner`, `adviser`, `coder`, `installer`, `pentester`
+- **`gemini-3.1-flash-lite`** - `simple`, `simple_json`, `reflector`, `analyst`
+- **`gemini-3.5-flash-lite`** - `commander`, `assistant`, `generator`, `refiner`
 
-Both default models passed a basic API/configuration smoke for every role. [Google reports stronger agentic and coding performance for 3.5 Flash-Lite than 3.1 Flash-Lite](https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-3-6-flash-3-5-flash-lite-3-5-flash-cyber/); OpsAGI's saved production chains cover generator and reflector only, so the smoke does not establish semantic quality or multi-turn reliability for other roles. On two saved generator chains, 3.5 Flash-Lite first chose the allowed `memorist` tool and called `subtask_list` after a synthetic tool response; no real tool was executed in that continuation.
+Both default models passed a basic API/configuration smoke for every role. [Google reports stronger agentic and coding performance for 3.5 Flash-Lite than 3.1 Flash-Lite](https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-3-6-flash-3-5-flash-lite-3-5-flash-cyber/); OpsAGI's saved production chains cover generator and reflector only, so the smoke does not establish semantic quality or multi-turn reliability for other roles. On two saved generator chains, 3.5 Flash-Lite first chose one of the allowed delegation tools and called `subtask_list` after a synthetic tool response; no real tool was executed in that continuation.
 
 **Reasoning Effort Levels**:
-- **High**: Deeper reasoning for planning and review (`primary_agent`, `generator`, `refiner`, `adviser`)
-- **Medium**: Balanced reasoning for execution roles (`assistant`, `coder`, `installer`, `pentester`)
-- **Not set**: No thinking setting is sent and the model's own default applies (`simple`, `simple_json`, `reflector`, `searcher`, `enricher`)
+- **High**: Deeper reasoning for planning and review (`generator`, `refiner`)
+- **Medium**: Balanced reasoning for execution roles (`commander`, `assistant`)
+- **Not set**: No thinking setting is sent and the model's own default applies (`simple`, `simple_json`, `reflector`, `analyst`)
 
 ### AWS Bedrock Provider Configuration
 
@@ -2162,17 +2121,16 @@ OpsAGI supports 2 DeepSeek V4 models with tool calling, streaming, hybrid thinki
 
 **Default Agent Configuration**:
 
-Strategy: prefer `deepseek-v4-flash` (12x cheaper input, 12x cheaper output) as the workhorse for utility/lightweight agents; reserve `deepseek-v4-pro` for complex multi-step reasoning. The `installer` agent runs on Flash with thinking enabled because environment setup tasks (shell commands, config edits) rarely require pro-level reasoning. Run A/B tests on your own workloads before promoting more agents to Pro.
+Strategy: prefer `deepseek-flash` (12x cheaper input, 12x cheaper output) as the workhorse for the utility roles; reserve `deepseek-v4-pro` for the chains that reason over evidence. Run A/B tests on your own workloads before promoting more buckets to Pro.
 
 | Agent Role                                  | Default Model        | Thinking | Reasoning Effort | Max Output | Temperature | Top P |
 | ------------------------------------------- | -------------------- | -------- | ---------------- | ---------- | ----------- | ----- |
 | Generator / Refiner                         | `deepseek-v4-pro`    | Enabled  | High             | 32768      | (auto)      | (auto) |
-| Coder                                       | `deepseek-v4-pro`    | Enabled  | High             | 20480      | (auto)      | (auto) |
-| Primary Agent / Assistant / Pentester       | `deepseek-v4-pro`    | Enabled  | High             | 16384      | (auto)      | (auto) |
-| Adviser (mentor/planner)                    | `deepseek-v4-pro`    | Enabled  | High             | 8192       | (auto)      | (auto) |
-| Installer                                   | `deepseek-v4-flash`  | Enabled  | High             | 12288      | (auto)      | (auto) |
-| Reflector / Searcher / Enricher             | `deepseek-v4-flash`  | Disabled | —                | 4096       | 0.5         | 0.9   |
-| Simple / Simple JSON                        | `deepseek-v4-flash`  | Disabled | —                | 2048       | 0.3         | 0.9   |
+| Commander / Assistant                       | `deepseek-v4-pro`    | Enabled  | High             | 16384      | (auto)      | (auto) |
+| Analyst                                     | `deepseek-flash`     | Disabled | —                | 4096       | 0.5         | 0.9   |
+| Reflector                                   | `deepseek-flash`     | Disabled | —                | 8192       | 0.5         | 0.9   |
+| Simple                                      | `deepseek-flash`     | Disabled | —                | 8192       | 0.3         | 0.9   |
+| Simple JSON                                 | `deepseek-flash`     | Disabled | —                | 4096       | 0.3         | 0.9   |
 
 > **Note**: DeepSeek ignores `presence_penalty` and `frequency_penalty` on both models. While thinking runs, `temperature` has no effect and langchaingo drops it, but `top_p` is sent and applied (values below 0.95 are raised to 0.95); in non-thinking mode `top_p` is fixed at 1.0, so langchaingo drops it and sends `temperature` instead. The thinking agents leave both unset, shown as "(auto)" in the table above.
 
@@ -2274,12 +2232,11 @@ Strategy: `glm-5.3` for critical reasoning and `glm-5.3-flash` for inexpensive u
 | Agent Role                          | Default Model | Thinking | Temperature | Top P | Max Output |
 | ----------------------------------- | ------------- | -------- | ----------- | ----- | ---------- |
 | Generator / Refiner                 | `glm-5.3`       | Max      | 1.0         | 0.95  | 32768      |
-| Coder                               | `glm-5.3`       | Max      | 1.0         | 0.95  | 20480      |
-| Adviser / Pentester                 | `glm-5.3`       | Max      | 1.0         | 0.95  | 16384      |
-| Primary Agent                       | `glm-5.3`       | High     | 1.0         | 0.95  | 16384      |
-| Assistant / Installer               | `glm-5.3-flash` | High     | 1.0         | 0.95  | 16384      |
-| Simple / Reflector                  | `glm-5.3-flash` | Low      | 1.0         | 0.95  | 8192       |
-| Searcher / Enricher / Simple JSON   | `glm-5.3-flash` | Low      | 1.0         | 0.95  | 4096       |
+| Commander                           | `glm-5.3`       | High     | 1.0         | 0.95  | 16384      |
+| Assistant                           | `glm-5.3-flash` | High     | 1.0         | 0.95  | 16384      |
+| Analyst                             | `glm-5.3-flash` | Low      | 1.0         | 0.95  | 4096       |
+| Reflector                           | `glm-5.3-flash` | Low      | 1.0         | 0.95  | 8192       |
+| Simple / Simple JSON                | `glm-5.3-flash` | Low      | 1.0         | 0.95  | 4096       |
 
 All default roles use Z.AI's recommended `temperature: 1.0` and `top_p: 0.95`. The full provider replay passed 288 of 289 cases; the sole failure was a transient gateway timeout and its focused retry passed.
 
@@ -2339,14 +2296,14 @@ OpsAGI supports the four current Kimi models with tool calling, streaming, conte
 
 | Model ID   | Thinking | Multimodal | Context | Price (Input Miss / Output / Cache Hit) | Use Case                                                |
 | ---------- | -------- | ---------- | ------- | --------------------------------------- | ------------------------------------------------------- |
-| `kimi-k3`* | ✅ always | ✅          | 1M      | $3.00 / $15.00 / $0.30                  | Flagship for long-horizon coding and knowledge work; used by adviser with `reasoning_effort: max` |
+| `kimi-k3`* | ✅ always | ✅          | 1M      | $3.00 / $15.00 / $0.30                  | Flagship for long-horizon planning and knowledge work |
 
 **Kimi K2.7 Code Series - Coding-Focused**
 
 | Model ID                    | Thinking | Multimodal | Context | Price (Input Miss / Output / Cache Hit) | Use Case                                                |
 | ---------------------------- | -------- | ---------- | ------- | --------------------------------------- | ------------------------------------------------------- |
-| `kimi-k2.7-code`*            | ✅ always | ✅          | 256K    | $0.95 / $4.00 / $0.19                   | Coding-focused model used by generator, refiner, coder, and pentester |
-| `kimi-k2.7-code-highspeed`*  | ✅ always | ✅          | 256K    | $1.90 / $8.00 / $0.38                   | Same model as `kimi-k2.7-code` with higher output throughput (~180-260 tokens/s) (primary_agent/assistant default) |
+| `kimi-k2.7-code`*            | ✅ always | ✅          | 256K    | $0.95 / $4.00 / $0.19                   | Coding-focused model used by generator and refiner |
+| `kimi-k2.7-code-highspeed`*  | ✅ always | ✅          | 256K    | $1.90 / $8.00 / $0.38                   | Same model as `kimi-k2.7-code` with higher output throughput (~180-260 tokens/s) (commander/assistant default) |
 
 **Kimi K2.6 - Multimodal Model**
 
@@ -2364,17 +2321,14 @@ OpsAGI supports the four current Kimi models with tool calling, streaming, conte
 
 **Default Agent Configuration**:
 
-Strategy: `kimi-k2.6` handles utility and installer work, `kimi-k2.7-code-highspeed` serves the primary/assistant loop, `kimi-k2.7-code` serves tool-heavy generator/refiner/coder/pentester roles, and `kimi-k3` handles adviser reasoning. This configuration passed all 294 conformance cases.
+Strategy: `kimi-k2.6` handles the utility roles, `kimi-k2.7-code-highspeed` serves the commander/assistant loop, and `kimi-k2.7-code` serves the planning pair. This configuration passed all 294 conformance cases.
 
 | Agent Role                                   | Default Model               | Thinking              | Temperature | Top P | Max Output |
 | -------------------------------------------- | --------------------------- | --------------------- | ----------- | ----- | ---------- |
-| Adviser (mentor/planner)                     | `kimi-k3`                   | Always (effort=max)   | 1.0         | 0.95  | 8192       |
 | Generator / Refiner                          | `kimi-k2.7-code`            | Always (keep=all)     | 1.0         | 0.95  | 32768      |
-| Coder                                        | `kimi-k2.7-code`            | Enabled (keep=all)    | 1.0         | 0.95  | 20480      |
-| Pentester                                    | `kimi-k2.7-code`            | Enabled (keep=all)    | 1.0         | 0.95  | 16384      |
-| Primary Agent / Assistant                    | `kimi-k2.7-code-highspeed`  | Enabled (keep=all)    | 1.0         | 0.95  | 16384      |
-| Installer                                    | `kimi-k2.6`                 | Enabled               | 1.0         | 0.95  | 16384      |
-| Reflector / Searcher / Enricher              | `kimi-k2.6`                 | Disabled              | 0.6         | 0.95  | 4096       |
+| Commander / Assistant                        | `kimi-k2.7-code-highspeed`  | Enabled (keep=all)    | 1.0         | 0.95  | 16384      |
+| Analyst                                      | `kimi-k2.6`                 | Enabled               | 0.6         | 0.95  | 4096       |
+| Reflector                                    | `kimi-k2.6`                 | Disabled              | 0.6         | 0.95  | 4096       |
 | Simple                                       | `kimi-k2.6`                 | Disabled              | 0.6         | 0.95  | 8192       |
 | Simple JSON                                  | `kimi-k2.6`                 | Disabled              | 0.6         | 0.95  | 4096       |
 
@@ -2556,11 +2510,11 @@ These models share the OpenAI-compatible Qwen door. Availability differs by plat
 **Default Agent Configuration**:
 | Agent Role                                                                   | Default Model       | Tier      |
 | ---------------------------------------------------------------------------- | ------------------- | --------- |
-| `simple`, `simple_json`, `reflector`, `searcher`, `enricher`                 | `qwen3.6-flash`     | Utility   |
-| `primary_agent`, `assistant`, `coder`, `installer`, `pentester`              | `deepseek-v4.1-flash` | Workhorse |
-| `generator`, `refiner`, `adviser`                                            | `deepseek-v4-pro`   | Planning  |
+| `simple`, `simple_json`, `reflector`, `analyst`  | `qwen3.6-flash`       | Utility   |
+| `commander`, `assistant`                         | `deepseek-v4.1-flash` | Workhorse |
+| `generator`, `refiner`                           | `deepseek-v4-pro`     | Planning  |
 
-The role configuration must run unchanged behind `qwen_cloud/` and `dashscope/`. Qwen 3.6 Flash handles utility calls, DeepSeek V4.1 Flash provides the lower-cost workhorse tier, and DeepSeek V4 Pro remains on planning and advice. Thinking controls are left at provider defaults because Qwen Cloud does not accept the same disable operation that DashScope supports.
+The role configuration must run unchanged behind `qwen_cloud/` and `dashscope/`. Qwen 3.6 Flash handles utility calls, DeepSeek V4.1 Flash provides the lower-cost workhorse tier, and DeepSeek V4 Pro remains on planning. Thinking controls are left at provider defaults because Qwen Cloud does not accept the same disable operation that DashScope supports.
 
 **Key Features**:
 - **Agent-Centric Design**: Qwen3.7-Max is purpose-built for long-horizon autonomous execution and tool invocation
@@ -2701,7 +2655,7 @@ XAI_PROVIDER=xai  # Adds prefix to model names (xai/grok-4.3) for LiteLLM
 
 #### Supported Models
 
-OpsAGI lists seven xAI Chat Completions model IDs that responded through the tested API. Catalogue availability does not imply suitability as an agent default. The bundled configuration uses `grok-4.3` for tool-heavy roles, including `searcher`, and `grok-4.20-0309-non-reasoning` for `simple`, `simple_json`, `reflector`, and `enricher`; the exact bindings are in `backend/pkg/providers/xai/config.yml`. In saved generator chains, `grok-4.3` called `subtask_list` directly on all nine, whereas `grok-4.6` returned text without a tool call on all nine. The [full replay matrix](MODEL_REPLAY_RESULTS.md) records outcomes and limitations. The Responses-only multi-agent model is not listed because OpsAGI agents supply their own client-side tools.
+OpsAGI lists seven xAI Chat Completions model IDs that responded through the tested API. Catalogue availability does not imply suitability as an agent default. The bundled configuration uses `grok-4.3` for the tool-heavy buckets — commander, assistant, generator, refiner and analyst — and `grok-4.20-0309-non-reasoning` for `simple`, `simple_json` and `reflector`; the exact bindings are in `backend/pkg/providers/xai/config.yml`. In saved generator chains, `grok-4.3` called `subtask_list` directly on all nine, whereas `grok-4.6` returned text without a tool call on all nine. The [full replay matrix](MODEL_REPLAY_RESULTS.md) records outcomes and limitations. The Responses-only multi-agent model is not listed because OpsAGI agents supply their own client-side tools.
 
 | Model ID | Context | Price (Input/Output) | Reasons | Saved-chain result |
 | --- | --- | --- | --- | --- |
@@ -3069,16 +3023,16 @@ OpsAGI allows you to configure Docker image selection for executing various task
 | ---------------------------------- | ---------------------- | ----------------------------------------------------------- |
 | `OPSAGI_IMAGE`                    | `local/opsagi:latest` | Docker image used for the main OpsAGI application service |
 | `DOCKER_DEFAULT_IMAGE`             | `debian:latest`        | Default Docker image for general tasks and ambiguous cases  |
-| `DOCKER_DEFAULT_IMAGE_FOR_PENTEST` | `vxcontrol/kali-linux` | Default Docker image for security/penetration testing tasks |
+| `OPSAGI_DEFAULT_SANDBOX_IMAGE` | `vxcontrol/kali-linux` | Image a flow runs in when no choice is made |
 | `DOCKER_ALLOWED_IMAGES`            | empty                  | Comma-separated allow-list the selected image must belong to |
-| `DOCKER_IMAGE_SELECTION_MODE`      | `llm`                  | `llm` lets the model pick the image, `fixed` always uses the pentest image |
+| `DOCKER_IMAGE_SELECTION_MODE`      | `llm`                  | `llm` lets the model pick the image, `fixed` always uses the sandbox image |
 
-`OPSAGI_IMAGE` changes the image used by the main `opsagi` service in `docker-compose.yml`. The `DOCKER_DEFAULT_IMAGE` and `DOCKER_DEFAULT_IMAGE_FOR_PENTEST` variables only affect automatic worker image selection for task execution inside OpsAGI. They do not rewrite the rest of the Compose stack, so services such as `pgvector`, `scraper`, and the optional `graphiti` stack still use the image references defined in the compose files.
+`OPSAGI_IMAGE` changes the image used by the main `opsagi` service in `docker-compose.yml`. The `DOCKER_DEFAULT_IMAGE` and `OPSAGI_DEFAULT_SANDBOX_IMAGE` variables only affect automatic sandbox image selection for task execution inside OpsAGI. They do not rewrite the rest of the Compose stack, so services such as `pgvector`, `scraper`, and the optional `graphiti` stack still use the image references defined in the compose files.
 
-`DOCKER_DEFAULT_IMAGE` and `DOCKER_DEFAULT_IMAGE_FOR_PENTEST` are suggestions the model receives in the image selection prompt, not limits: on their own they do not stop a model from answering with some other image. Two settings turn them into limits:
+`DOCKER_DEFAULT_IMAGE` and `OPSAGI_DEFAULT_SANDBOX_IMAGE` are suggestions the model receives in the image selection prompt, not limits: on their own they do not stop a model from answering with some other image. Two settings turn them into limits:
 
 - **`DOCKER_ALLOWED_IMAGES`** restricts the choice. An answer outside the list is discarded and the pentest image is used instead. An entry without a tag admits any tag of that repository, so `vxcontrol/kali-linux` also admits `vxcontrol/kali-linux:2026.1`. While the list is empty the model may pick any image, which is the default behaviour.
-- **`DOCKER_IMAGE_SELECTION_MODE=fixed`** removes the choice altogether: the flow always runs in `DOCKER_DEFAULT_IMAGE_FOR_PENTEST` and no model call is made. Use it when weaker or local models answer with the wrong environment.
+- **`DOCKER_IMAGE_SELECTION_MODE=fixed`** removes the choice altogether: the flow always runs in `OPSAGI_DEFAULT_SANDBOX_IMAGE` and no model call is made. Use it when weaker or local models answer with the wrong environment.
 
 Regardless of these settings, an answer that is not a usable image reference never reaches Docker: the flow falls back to the pentest image and the rejected answer is logged.
 
@@ -3098,7 +3052,7 @@ OPSAGI_IMAGE=registry.example.com/security/opsagi:latest
 DOCKER_DEFAULT_IMAGE=mycompany/custom-debian:latest
 
 # Using a specialized image for penetration testing
-DOCKER_DEFAULT_IMAGE_FOR_PENTEST=mycompany/pentest-tools:v2.0
+OPSAGI_DEFAULT_SANDBOX_IMAGE=mycompany/ops-tools:v2.0
 ```
 
 > [!NOTE]
@@ -3639,24 +3593,19 @@ Agents are tested in the following deterministic order:
 
 1. **simple** - Basic completion tasks
 2. **simple_json** - JSON-structured responses
-3. **commander** - Main reasoning agent
-4. **assistant** - Interactive assistant mode
-5. **generator** - Content generation
-6. **refiner** - Content refinement and improvement
-7. **adviser** - Expert advice and consultation
-8. **reflector** - Self-reflection and analysis
-9. **analyst** - The evidence analysts' model
-10. **enricher** - Data enrichment and expansion
-11. **coder** - Code generation and analysis
-12. **installer** - Installation and setup tasks
-13. **pentester** - Penetration testing and security assessment
+3. **commander** - Subtask execution
+4. **analyst** - Evidence reading for the three analysts
+5. **assistant** - Interactive assistant mode
+6. **generator** - Subtask planning
+7. **refiner** - Replanning
+8. **reflector** - Self-reflection and correction
 
 ### Available Test Groups
 
 - **basic** - Fundamental completion and prompt response tests
 - **advanced** - Complex reasoning and function calling tests
 - **json** - JSON format validation and structure tests (specifically designed for `simple_json` agent)
-- **knowledge** - Domain-specific cybersecurity and penetration testing knowledge tests
+- **knowledge** - Domain-specific AIOps and incident-diagnosis knowledge tests
 
 > **Note**: The `json` test group is specifically designed for the `simple_json` agent type, while all other agents are tested with `basic`, `advanced`, and `knowledge` groups. This specialization ensures optimal testing coverage for each agent's intended purpose.
 
@@ -3945,8 +3894,8 @@ go run cmd/ftester/main.go terminal -command "ls -la" -message "List files"
 # Using a real flow context
 go run cmd/ftester/main.go -flow 123 terminal -command "whoami" -message "Check user"
 
-# Testing AI agent in specific task/subtask context
-go run cmd/ftester/main.go -flow 123 -task 456 -subtask 789 pentester -message "Find vulnerabilities"
+# Testing an agent in a specific task/subtask context
+go run cmd/ftester/main.go -flow 123 -task 456 -subtask 789 triage -message "Classify this alert"
 ```
 
 #### Interactive Mode
@@ -3987,13 +3936,13 @@ go run cmd/ftester/main.go browser
 - **search_answer**: Find answers to questions in vector database
 - **search_code**: Find code examples in vector database
 
-### AI Agent Functions
-- **advice**: Get expert advice from an AI agent
-- **coder**: Request code generation or modification
-- **maintenance**: Run system maintenance tasks
-- **memorist**: Store and organize information in vector database
-- **pentester**: Perform security tests and vulnerability analysis
-- **search**: Complex search across multiple sources
+### Delegation and Conclusion Functions
+- **triage**: Hand the alert to the triage analyst
+- **log_analyst**: Hand the log face to the log analyst
+- **metrics_analyst**: Hand the metrics face to the metrics analyst
+- **change_analyst**: Hand the change face to the change analyst
+- **diagnosis**: File an incident verdict (the commander's exit)
+- **optimization_result**: File a performance verdict (the commander's exit)
 
 ### Utility Functions
 - **describe**: Show information about flows, tasks, and subtasks

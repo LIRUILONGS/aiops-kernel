@@ -77,6 +77,15 @@ func getEnvVar(appState state.State, key, defaultValue string) string {
 	return defaultValue
 }
 
+// sandboxImage resolves the flow sandbox image, accepting the name the setting
+// shipped under so an installation created before the rename still pulls it.
+func sandboxImage(appState state.State) string {
+	if image := getEnvVar(appState, "OPSAGI_DEFAULT_SANDBOX_IMAGE", ""); image != "" {
+		return image
+	}
+	return getEnvVar(appState, "DOCKER_DEFAULT_IMAGE_FOR_PENTEST", DefaultSandboxImage)
+}
+
 // getProxyURL retrieves the proxy URL from application state if configured
 func getProxyURL(appState state.State) string {
 	if appState == nil {

@@ -434,7 +434,7 @@ These settings control how OpsAGI interacts with Docker, which is used for termi
 | DockerPublicIP               | `DOCKER_PUBLIC_IP`                 | `0.0.0.0`              | Public IP address for Docker containers' port bindings (bridge mode only) |
 | DockerWorkDir                | `DOCKER_WORK_DIR`                  | *(none)*               | Custom working directory inside Docker containers |
 | DockerDefaultImage           | `DOCKER_DEFAULT_IMAGE`             | `debian:latest`        | Default Docker image for containers when specific images fail |
-| DockerDefaultImageForPentest | `DOCKER_DEFAULT_IMAGE_FOR_PENTEST` | `vxcontrol/kali-linux` | Default Docker image for penetration testing tasks |
+| OpsagiDefaultSandboxImage | `OPSAGI_DEFAULT_SANDBOX_IMAGE` | `vxcontrol/kali-linux` | Image a flow runs in when the model makes no choice or its answer is rejected. `DOCKER_DEFAULT_IMAGE_FOR_PENTEST` is the name this setting shipped under and is still read when the new one is empty. |
 | TerminalToolTimeout          | `TERMINAL_TOOL_TIMEOUT`            | `1200`                 | Default execution timeout in seconds applied when an agent requests `timeout=0` or a negative value. Accepted range: `1`–`10800` (3 hours). Values `<= 0` or above `10800` are clamped to the 3-hour maximum. Negative values are treated identically to `0`. |
 
 ### Worker Docker Access (`DOCKER_INSIDE_*`)
@@ -1500,9 +1500,7 @@ The assistant summarizer configuration is designed to provide more memory for co
 
 ## Functions Configuration
 
-These settings control which tools are available to AI agents and allow adding custom external functions. The Functions API enables fine-grained control over agent capabilities by selectively disabling built-in tools or extending functionality with custom integrations.
-
-For provider-neutral OSINT enrichment ideas that could be exposed through external functions, see [OSINT Integration Scenarios for OpsAGI Agents](../../examples/proposals/osint-integration-scenarios.md).
+A flow or an assistant may carry a `functions` block. It is stored with the flow, returned by the API and accepted on create; the executors build their tool lists from the role, not from this block, so nothing in it changes what an agent can call in this build.
 
 | Field     | Type                 | Description                                                     |
 | --------- | -------------------- | --------------------------------------------------------------- |
@@ -1510,190 +1508,9 @@ For provider-neutral OSINT enrichment ideas that could be exposed through extern
 | disabled  | DisableFunction[]    | List of built-in functions to disable for specific agent types  |
 | functions | ExternalFunction[]   | List of custom external functions to add to agent capabilities  |
 
-### DisableFunction Structure
+`DisableFunction` is `{name, context}` and `ExternalFunction` is `{name, url, timeout, context, schema}`. `context` is validated against `agent adviser coder searcher generator memorist enricher reporter assistant`; that list is the validator's and still carries names the AIOps chains do not have. Nothing reads the field: a `functions` block is parsed, validated and stored on the flow, and no executor consults it. Both types implement `Scan` so the JSON column survives a round trip.
 
-Allows disabling specific built-in functions for certain agent contexts, providing security and control over agent capabilities.
-
-| Field   | Type     | Description                                                                    |
-| ------- | -------- | ------------------------------------------------------------------------------ |
-| name    | string   | Name of the built-in function to disable (e.g., `terminal`, `browser`, `file`) |
-| context | string[] | Agent contexts where the function should be disabled (optional)                |
-
-**Available Agent Contexts**: `agent`, `adviser`, `coder`, `searcher`, `generator`, `memorist`, `enricher`, `reporter`, `assistant`
-
-When `context` is empty or omitted, the function is disabled for all agents.
-
-### ExternalFunction Structure
-
-Allows adding custom external functions that agents can call via HTTP endpoints, enabling integration with external tools and services.
-
-| Field   | Type          | Description                                                        |
-| ------- | ------------- | ------------------------------------------------------------------ |
-| name    | string        | Name of the custom function (must be unique)                       |
-| url     | string        | HTTP(S) URL endpoint for the function                              |
-| timeout | int64         | Timeout in seconds for function execution (default: 60)            |
-| context | string[]      | Agent contexts where the function is available (optional)          |
-| schema  | Schema object | JSON schema defining function parameters and description (OpenAI format) |
-
-**Available Agent Contexts**: Same as DisableFunction (`agent`, `adviser`, `coder`, `searcher`, `generator`, `memorist`, `enricher`, `reporter`, `assistant`)
-
-When `context` is empty or omitted, the function is available to all agents.
-
-### Usage Details
-
-The Functions configuration is typically provided when creating a flow through the API:
-
-```go
-// Example from pkg/tools/tools.go
-type Functions struct {
-    Token    *string            `json:"token,omitempty"`
-    Disabled []DisableFunction  `json:"disabled,omitempty"`
-    Function []ExternalFunction `json:"functions,omitempty"`
-}
-```
-
-These settings are used in `pkg/tools/tools.go` to configure available tools for each agent type:
-
-- **Token**: Used for authenticating requests to external function endpoints:
-  ```go
-  // The token is passed in the Authorization header when calling external functions
-  req.Header.Set("Authorization", "Bearer " + *functions.Token)
-  ```
-
-- **Disabled**: Filters out built-in functions for specific agent contexts:
-  ```go
-  // Check if function is disabled for current agent context
-  for _, disabled := range functions.Disabled {
-      if disabled.Name == functionName && 
-         (len(disabled.Context) == 0 || contains(disabled.Context, agentType)) {
-          // Skip this function
-      }
-  }
-  ```
-
-- **Functions**: Adds custom external functions to agent capabilities:
-  ```go
-  // Register external functions as available tools
-  for _, externalFunc := range functions.Function {
-      if len(externalFunc.Context) == 0 || contains(externalFunc.Context, agentType) {
-          definitions = append(definitions, externalFunc.Schema)
-          handlers[externalFunc.Name] = createExternalHandler(externalFunc)
-      }
-  }
-  ```
-
-### Example Configuration
-
-```json
-{
-  "token": "secret-api-token-for-external-functions",
-  "disabled": [
-    {
-      "name": "terminal",
-      "context": ["searcher", "enricher"]
-    },
-    {
-      "name": "browser",
-      "context": ["memorist"]
-    },
-    {
-      "name": "file"
-    }
-  ],
-  "functions": [
-    {
-      "name": "custom_vulnerability_scan",
-      "url": "https://scanner.example.com/api/v1/scan",
-      "timeout": 120,
-      "context": ["pentester", "coder"],
-      "schema": {
-        "type": "function",
-        "function": {
-          "name": "custom_vulnerability_scan",
-          "description": "Perform a custom vulnerability scan on the target",
-          "parameters": {
-            "type": "object",
-            "properties": {
-              "target": {
-                "type": "string",
-                "description": "Target IP address or domain to scan"
-              },
-              "scan_type": {
-                "type": "string",
-                "enum": ["quick", "full", "stealth"],
-                "description": "Type of scan to perform"
-              }
-            },
-            "required": ["target"]
-          }
-        }
-      }
-    },
-    {
-      "name": "query_threat_intelligence",
-      "url": "https://threatintel.example.com/api/query",
-      "timeout": 30,
-      "context": ["searcher", "adviser"],
-      "schema": {
-        "type": "function",
-        "function": {
-          "name": "query_threat_intelligence",
-          "description": "Query threat intelligence database for IoCs and TTPs",
-          "parameters": {
-            "type": "object",
-            "properties": {
-              "indicator": {
-                "type": "string",
-                "description": "IP, domain, hash, or other indicator to search"
-              },
-              "indicator_type": {
-                "type": "string",
-                "enum": ["ip", "domain", "hash", "url"],
-                "description": "Type of indicator"
-              }
-            },
-            "required": ["indicator", "indicator_type"]
-          }
-        }
-      }
-    }
-  ]
-}
-```
-
-### Security Considerations
-
-- **Token Security**: Store the `token` value securely and use HTTPS endpoints for external functions
-- **Function Validation**: External functions should validate all inputs and return structured error messages
-- **Timeout Configuration**: Set appropriate timeouts to prevent long-running operations from blocking agents
-- **Context Restriction**: Use the `context` field to limit which agents can access sensitive functions
-- **URL Validation**: Ensure external function URLs are trusted and properly secured
-
-### Built-in Functions Reference
-
-Common built-in functions that can be disabled:
-
-- `terminal` - Execute shell commands in containers
-- `file` - Read and write files in containers
-- `browser` - Browse websites and take screenshots
-- `search_in_memory` - Search vector memory store
-- `search_guide` - Search knowledge guides
-- `search_answer` - Search for answers
-- `search_code` - Search code repositories
-- `store_guide` - Store knowledge guides
-- `store_answer` - Store answers
-- `store_code` - Store code snippets
-- `google` - Google Search
-- `duckduckgo` - DuckDuckGo Search
-- `tavily` - Tavily Search
-- `firecrawl` - Firecrawl Search
-- `traversaal` - Traversaal Search
-- `perplexity` - Perplexity Search
-- `searxng` - SearXNG Search
-- `sploitus` - Sploitus Exploit Search
-- `graphiti_search` - Graphiti Knowledge Graph Search
-
-The specific functions available depend on the agent type and system configuration.
+The tool list of each chain is fixed by its executor: the commander gets the ops probes, the analysts get their evidence subsets, the assistant gets the environment and memory tools. A tool that must not be offered to a role is removed from that role's executor, which is the only place that decides.
 
 ## Search Engine Settings
 
@@ -2000,164 +1817,29 @@ Installer assets include `docker-compose-graphiti.yml` and the `graphiti` preset
 
 Models and call parameters belong to the provider YAML presets, selected by `GRAPHITI_LLM_CLIENT_TYPE`; they are not fields in the OpsAGI Go configuration. `GRAPHITI_MODEL_NAME` is obsolete. Refer operators to the README instead of duplicating the sidecar's tuning reference here.
 
-## Agent Supervision Settings
+## Agent Tool Call Limits
 
-These settings control the agent supervision system, including execution monitoring and tool call limits for different agent types.
+Two settings bound how many tool calls a chain may make. There is no separate supervision, mentor or planner step: a chain ends when its agent calls an exit tool, and the limit is the guard for the case where it does not.
 
-| Option                         | Environment Variable                | Default Value | Description                                                            |
-| ------------------------------ | ----------------------------------- | ------------- | ---------------------------------------------------------------------- |
-| ExecutionMonitorEnabled        | `EXECUTION_MONITOR_ENABLED`         | `false`       | Enable automatic execution monitoring (mentor/adviser supervision)     |
-| ExecutionMonitorSameToolLimit  | `EXECUTION_MONITOR_SAME_TOOL_LIMIT` | `5`           | Threshold for consecutive identical tool calls before mentor review    |
-| ExecutionMonitorTotalToolLimit | `EXECUTION_MONITOR_TOTAL_TOOL_LIMIT`| `10`          | Threshold for total tool calls before mentor review                    |
-| MaxGeneralAgentToolCalls       | `MAX_GENERAL_AGENT_TOOL_CALLS`      | `100`         | Maximum tool calls for general agents (Assistant, Primary, Pentester, Coder, Installer) |
-| MaxLimitedAgentToolCalls       | `MAX_LIMITED_AGENT_TOOL_CALLS`      | `20`          | Maximum tool calls for limited agents (Searcher, Enricher, etc.)       |
-| AgentPlanningStepEnabled       | `AGENT_PLANNING_STEP_ENABLED`       | `false`       | Enable automatic task planning for specialist agents                   |
+| Option                    | Environment Variable           | Default Value | Description                                                    |
+| ------------------------- | ------------------------------ | ------------- | -------------------------------------------------------------- |
+| MaxGeneralAgentToolCalls  | `MAX_GENERAL_AGENT_TOOL_CALLS` | `100`         | Tool calls in a commander or assistant chain                    |
+| MaxLimitedAgentToolCalls  | `MAX_LIMITED_AGENT_TOOL_CALLS` | `20`          | Tool calls in every other role's chain                          |
 
-### Usage Details
+`pkg/providers/performer.go` picks the limit by the agent's configuration bucket:
 
-The agent supervision settings are used in `pkg/providers/providers.go` and `pkg/providers/performer.go` to configure supervision mechanisms:
+```go
+switch optAgentType {
+case pconfig.OptionsTypeAssistant, pconfig.OptionsTypeCommander:
+    maxCallsLimit = max(fp.maxGACallsLimit, maxAgentShutdownIterations*2)
+default:
+    maxCallsLimit = max(fp.maxLACallsLimit, maxAgentShutdownIterations*2)
+}
+```
 
-- **ExecutionMonitorEnabled**: Controls whether execution monitoring (mentor) is active:
-  ```go
-  buildMonitor: func() *executionMonitor {
-      return &executionMonitor{
-          enabled:        pc.cfg.ExecutionMonitorEnabled,
-          sameThreshold:  pc.cfg.ExecutionMonitorSameToolLimit,
-          totalThreshold: pc.cfg.ExecutionMonitorTotalToolLimit,
-      }
-  }
-  ```
+A value of zero or below falls back to the built-in constant (`maxGeneralAgentChainIterations` 100, `maxLimitedAgentChainIterations` 20). Whatever is configured is raised to at least six, because the last three iterations are a shutdown grace period: the model is told to finish, then the chain is ended. A configuration below six would leave no room to answer.
 
-- **ExecutionMonitorSameToolLimit**: Sets the threshold for identical consecutive tool calls:
-  ```go
-  // In executionMonitor.shouldInvokeMentor
-  if emd.sameToolCount >= emd.sameThreshold {
-      // Invoke mentor (adviser agent) for execution review
-  }
-  ```
-  When an agent calls the same tool this many times consecutively, the execution monitor automatically invokes the mentor (adviser agent) to analyze progress and provide guidance.
-
-- **ExecutionMonitorTotalToolLimit**: Sets the threshold for total tool calls:
-  ```go
-  // In executionMonitor.shouldInvokeMentor
-  if emd.totalCallCount >= emd.totalThreshold {
-      // Invoke mentor (adviser agent) for execution review
-  }
-  ```
-  When an agent makes this many total tool calls since the last mentor review, the execution monitor automatically invokes the mentor to prevent inefficient loops and provide strategic guidance.
-
-- **MaxGeneralAgentToolCalls**: Maximum iterations for general-purpose agents with full capabilities:
-  ```go
-  // In performAgentChain
-  switch optAgentType {
-  case pconfig.OptionsTypeAssistant, pconfig.OptionsTypePrimaryAgent,
-      pconfig.OptionsTypePentester, pconfig.OptionsTypeCoder, pconfig.OptionsTypeInstaller:
-      if fp.maxGACallsLimit <= 0 {
-          maxCallsLimit = maxGeneralAgentChainIterations // fallback: 100
-      } else {
-          maxCallsLimit = max(fp.maxGACallsLimit, maxAgentShutdownIterations*2)
-      }
-  }
-  ```
-  General agents (Assistant, Primary Agent, Pentester, Coder, Installer) are designed for complex, multi-step workflows and have a higher tool call limit to complete sophisticated tasks.
-
-- **MaxLimitedAgentToolCalls**: Maximum iterations for specialized, limited-scope agents:
-  ```go
-  // In performAgentChain
-  default:
-      if fp.maxLACallsLimit <= 0 {
-          maxCallsLimit = maxLimitedAgentChainIterations // fallback: 20
-      } else {
-          maxCallsLimit = max(fp.maxLACallsLimit, maxAgentShutdownIterations*2)
-      }
-  }
-  ```
-  Limited agents (Searcher, Enricher, Memorist, Generator, Reporter, Adviser, Reflector, Planner) are designed for focused, specific tasks and have a lower tool call limit to ensure efficient execution.
-
-- **AgentPlanningStepEnabled**: Controls automatic task planning for specialist agents:
-  ```go
-  // In flowProvider initialization
-  planning: pc.cfg.AgentPlanningStepEnabled
-  
-  // Used when invoking specialist agents
-  if fp.planning {
-      // Generate execution plan via planner before specialist execution
-  }
-  ```
-  When enabled, the planner (adviser in planning mode) generates a structured 3-7 step execution plan before specialist agents (Pentester, Coder, Installer) begin their work, improving task completion rates and preventing scope creep.
-
-These settings enable:
-- **Automatic supervision**: Mentor reviews execution patterns to detect loops and inefficiencies
-- **Graceful termination**: Reflector guides agents to proper completion when approaching limits
-- **Differentiated capabilities**: General agents have more autonomy for complex workflows
-- **Efficient execution**: Limited agents stay focused on their specific scope
-- **Strategic planning**: Automatic task decomposition for better execution quality
-
-### Supervision System Integration
-
-The supervision settings work together as a comprehensive system:
-
-1. **Execution Monitoring** (via ExecutionMonitor settings):
-   - Detects repetitive patterns (same tool called N times)
-   - Detects excessive exploration (total tools called N times)
-   - Automatically invokes mentor for guidance and correction
-   - Resets counters after mentor review
-
-2. **Tool Call Limits** (via MaxGeneralAgentToolCalls and MaxLimitedAgentToolCalls):
-   - Prevents runaway executions with hard limits
-   - Invokes reflector for graceful termination near limit
-   - Different limits for different agent capabilities
-   - Ensures system stability and resource efficiency
-
-3. **Task Planning** (via AgentPlanningStepEnabled):
-   - Generates structured execution plans before specialist work
-   - Prevents scope creep and maintains focus
-   - Improves success rates for complex tasks
-   - Provides clear verification points
-
-### Recommended Settings
-
-1. **Production Environment**:
-   ```
-   ExecutionMonitorEnabled: false
-   ExecutionMonitorSameToolLimit: 5
-   ExecutionMonitorTotalToolLimit: 10
-   MaxGeneralAgentToolCalls: 100
-   MaxLimitedAgentToolCalls: 20
-   AgentPlanningStepEnabled: false
-   ```
-   Default settings provide stable execution without beta features.
-
-2. **High-Complexity Workflows**:
-   ```
-   ExecutionMonitorEnabled: false
-   ExecutionMonitorSameToolLimit: 7
-   ExecutionMonitorTotalToolLimit: 15
-   MaxGeneralAgentToolCalls: 150
-   MaxLimitedAgentToolCalls: 30
-   AgentPlanningStepEnabled: false
-   ```
-   Increased limits for tasks requiring extensive exploration and iteration.
-
-3. **Resource-Constrained Environment**:
-   ```
-   ExecutionMonitorEnabled: false
-   ExecutionMonitorSameToolLimit: 3
-   ExecutionMonitorTotalToolLimit: 7
-   MaxGeneralAgentToolCalls: 50
-   MaxLimitedAgentToolCalls: 15
-   AgentPlanningStepEnabled: false
-   ```
-   Tighter limits to reduce resource usage.
-
-4. **Debugging Mode**:
-   ```
-   ExecutionMonitorEnabled: false
-   MaxGeneralAgentToolCalls: 200
-   MaxLimitedAgentToolCalls: 50
-   AgentPlanningStepEnabled: false
-   ```
-   Disabled supervision for debugging to observe natural agent behavior.
+The commander and the assistant are the "general" roles because they orchestrate: the commander decides which evidence face comes next and delegates, the assistant may run a whole troubleshooting conversation. Every other role is focused — an analyst, the reporter, the generator, the refiner, the reflector — and a limit of 20 is a guard against looping, not a budget it is expected to spend.
 
 ## AIOps Evidence Surfaces
 

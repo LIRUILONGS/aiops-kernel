@@ -142,8 +142,7 @@ type flowProvider struct {
 	image    string
 	title    string
 	language string
-	askUser  bool
-	planning bool
+	askUser bool
 
 	tcIDTemplate string
 

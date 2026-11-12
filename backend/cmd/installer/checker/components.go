@@ -322,7 +322,7 @@ func (h *defaultCheckHandler) workerComponent(ctx context.Context, c *CheckResul
 		return nil
 	}
 
-	configured := getEnvVar(h.appState, "DOCKER_DEFAULT_IMAGE_FOR_PENTEST", DefaultImageForPentest)
+	configured := sandboxImage(h.appState)
 	info := getImageInfo(ctx, h.workerClient, configured)
 	if info == nil || info.Name == "" {
 		return nil

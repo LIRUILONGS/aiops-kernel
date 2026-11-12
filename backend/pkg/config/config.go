@@ -63,8 +63,14 @@ type Config struct {
 	DockerPublicIP               string `env:"DOCKER_PUBLIC_IP" envDefault:"0.0.0.0"`
 	DockerWorkDir                string `env:"DOCKER_WORK_DIR"`
 	DockerPortsBase              int    `env:"DOCKER_PORTS_BASE" envDefault:"28000"`
-	DockerDefaultImage           string `env:"DOCKER_DEFAULT_IMAGE" envDefault:"debian:latest"`
-	DockerDefaultImageForPentest string `env:"DOCKER_DEFAULT_IMAGE_FOR_PENTEST" envDefault:"vxcontrol/kali-linux"`
+	DockerDefaultImage string `env:"DOCKER_DEFAULT_IMAGE" envDefault:"debian:latest"`
+
+	// OpsagiDefaultSandboxImage is the image a flow runs in when the model makes
+	// no choice or its answer is rejected. DOCKER_DEFAULT_IMAGE_FOR_PENTEST is
+	// the name it shipped under, read through SandboxImage so an existing .env
+	// keeps working.
+	OpsagiDefaultSandboxImage    string `env:"OPSAGI_DEFAULT_SANDBOX_IMAGE"`
+	DockerDefaultImageForPentest string `env:"DOCKER_DEFAULT_IMAGE_FOR_PENTEST"`
 
 	// DockerDefaultImageForTest is the worker the startup sandbox check runs in,
 	// and the image it pulls into the sandbox to prove an agent could. It is a
@@ -347,17 +353,9 @@ type Config struct {
 	GraphitiTimeout int    `env:"GRAPHITI_TIMEOUT" envDefault:"30"`
 	GraphitiURL     string `env:"GRAPHITI_URL"`
 
-	// === Agent Execution Monitoring ===
-	ExecutionMonitorEnabled        bool `env:"EXECUTION_MONITOR_ENABLED" envDefault:"false"`
-	ExecutionMonitorSameToolLimit  int  `env:"EXECUTION_MONITOR_SAME_TOOL_LIMIT" envDefault:"5"`
-	ExecutionMonitorTotalToolLimit int  `env:"EXECUTION_MONITOR_TOTAL_TOOL_LIMIT" envDefault:"10"`
-
 	// === Agent Tool Execution Limits ===
 	MaxGeneralAgentToolCalls int `env:"MAX_GENERAL_AGENT_TOOL_CALLS" envDefault:"100"`
 	MaxLimitedAgentToolCalls int `env:"MAX_LIMITED_AGENT_TOOL_CALLS" envDefault:"20"`
-
-	// === Agent Planning Phase Configuration ===
-	AgentPlanningStepEnabled bool `env:"AGENT_PLANNING_STEP_ENABLED" envDefault:"false"`
 
 	// === Database Configuration ===
 	DatabaseURL string `env:"DATABASE_URL" envDefault:"postgres://opsagiuser:opsagipass@pgvector:5432/opsagidb?sslmode=disable"`
@@ -445,6 +443,25 @@ func ensureLicenseKey(config *Config) {
 }
 
 // WorkerPortsBase returns the base port for the worker container
+// DefaultSandboxImage is the image a flow runs in when nothing else decides.
+const DefaultSandboxImage = "vxcontrol/kali-linux"
+
+// SandboxImage resolves the flow sandbox image from OPSAGI_DEFAULT_SANDBOX_IMAGE,
+// falling back to the DOCKER_DEFAULT_IMAGE_FOR_PENTEST name it replaced so an
+// existing .env keeps its value.
+func (c *Config) SandboxImage() string {
+	if c == nil {
+		return DefaultSandboxImage
+	}
+	if c.OpsagiDefaultSandboxImage != "" {
+		return c.OpsagiDefaultSandboxImage
+	}
+	if c.DockerDefaultImageForPentest != "" {
+		return c.DockerDefaultImageForPentest
+	}
+	return DefaultSandboxImage
+}
+
 func (c *Config) WorkerPortsBase() int {
 	if c == nil {
 		return 28000

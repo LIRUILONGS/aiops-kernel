@@ -120,7 +120,8 @@ func clearConfigEnv(t *testing.T) {
 		"DOCKER_INSIDE_HOST", "DOCKER_INSIDE_TLS_VERIFY", "DOCKER_INSIDE_CERT_PATH",
 		"DOCKER_INSIDE_POLICY_TESTS",
 		"DOCKER_DEFAULT_IMAGE_FOR_TEST",
-		"DOCKER_PUBLIC_IP", "DOCKER_WORK_DIR", "DOCKER_DEFAULT_IMAGE", "DOCKER_DEFAULT_IMAGE_FOR_PENTEST", "TERMINAL_TOOL_TIMEOUT",
+		"DOCKER_PUBLIC_IP", "DOCKER_WORK_DIR", "DOCKER_DEFAULT_IMAGE",
+		"OPSAGI_DEFAULT_SANDBOX_IMAGE", "DOCKER_DEFAULT_IMAGE_FOR_PENTEST", "TERMINAL_TOOL_TIMEOUT",
 		"SERVER_PORT", "SERVER_HOST", "SERVER_USE_SSL", "SERVER_SSL_KEY", "SERVER_SSL_CRT",
 		"STATIC_URL", "STATIC_DIR", "CORS_ORIGINS", "COOKIE_SIGNING_SALT",
 		"SCRAPER_PUBLIC_URL", "SCRAPER_PRIVATE_URL",
@@ -164,9 +165,7 @@ func clearConfigEnv(t *testing.T) {
 		"PROXY_URL", "EXTERNAL_SSL_CA_PATH", "EXTERNAL_SSL_INSECURE", "HTTP_CLIENT_TIMEOUT",
 		"OTEL_HOST", "LANGFUSE_BASE_URL", "LANGFUSE_PROJECT_ID", "LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY",
 		"GRAPHITI_ENABLED", "GRAPHITI_TIMEOUT", "GRAPHITI_URL",
-		"EXECUTION_MONITOR_ENABLED", "EXECUTION_MONITOR_SAME_TOOL_LIMIT", "EXECUTION_MONITOR_TOTAL_TOOL_LIMIT",
 		"MAX_GENERAL_AGENT_TOOL_CALLS", "MAX_LIMITED_AGENT_TOOL_CALLS",
-		"AGENT_PLANNING_STEP_ENABLED",
 	}
 	for _, v := range envVars {
 		t.Setenv(v, "")
@@ -191,7 +190,7 @@ func TestConfig_NewConfig_FillsDefaultsForAnEmptyEnvironment(t *testing.T) {
 	assert.Equal(t, 600, config.HTTPClientTimeout)
 	assert.Equal(t, 1200, config.TerminalToolTimeout)
 	assert.Equal(t, "debian:latest", config.DockerDefaultImage)
-	assert.Equal(t, "vxcontrol/kali-linux", config.DockerDefaultImageForPentest)
+	assert.Equal(t, "vxcontrol/kali-linux", config.SandboxImage())
 
 	assert.Equal(t, "openai", config.EmbeddingProvider)
 	assert.Equal(t, 512, config.EmbeddingBatchSize)
@@ -230,12 +229,31 @@ func TestConfig_NewConfig_FillsDefaultsForAnEmptyEnvironment(t *testing.T) {
 	assert.Equal(t, 5, config.WebSearchInternalMaxSites)
 	assert.Equal(t, 10240, config.WebSearchInternalMaxSiteBytes)
 
-	assert.Equal(t, false, config.ExecutionMonitorEnabled)
-	assert.Equal(t, 5, config.ExecutionMonitorSameToolLimit)
-	assert.Equal(t, 10, config.ExecutionMonitorTotalToolLimit)
 	assert.Equal(t, 100, config.MaxGeneralAgentToolCalls)
 	assert.Equal(t, 20, config.MaxLimitedAgentToolCalls)
-	assert.Equal(t, false, config.AgentPlanningStepEnabled)
+}
+
+func TestConfig_SandboxImage_PrefersTheNewNameAndKeepsTheOldOne(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		cfg  *Config
+		want string
+	}{
+		{"the new name wins", &Config{OpsagiDefaultSandboxImage: "registry.example.com/ops:1", DockerDefaultImageForPentest: "vxcontrol/kali-linux"}, "registry.example.com/ops:1"},
+		{"the old name still resolves", &Config{DockerDefaultImageForPentest: "vxcontrol/kali-linux:2026.1"}, "vxcontrol/kali-linux:2026.1"},
+		{"neither name falls back to the shipped default", &Config{}, "vxcontrol/kali-linux"},
+		{"a nil config falls back", nil, "vxcontrol/kali-linux"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			assert.Equal(t, tt.want, tt.cfg.SandboxImage())
+		})
+	}
 }
 
 func TestConfig_NewConfig_ReadsTheEnvironment(t *testing.T) {
@@ -250,12 +268,8 @@ func TestConfig_NewConfig_ReadsTheEnvironment(t *testing.T) {
 			"STATIC_URL":                         "https://example.com/static",
 			"HTTP_CLIENT_TIMEOUT":                "300",
 			"TERMINAL_TOOL_TIMEOUT":              "900",
-			"EXECUTION_MONITOR_ENABLED":          "true",
-			"EXECUTION_MONITOR_SAME_TOOL_LIMIT":  "7",
-			"EXECUTION_MONITOR_TOTAL_TOOL_LIMIT": "15",
 			"MAX_GENERAL_AGENT_TOOL_CALLS":       "150",
 			"MAX_LIMITED_AGENT_TOOL_CALLS":       "30",
-			"AGENT_PLANNING_STEP_ENABLED":        "true",
 		} {
 			t.Setenv(name, value)
 		}
@@ -272,12 +286,8 @@ func TestConfig_NewConfig_ReadsTheEnvironment(t *testing.T) {
 		assert.Equal(t, "/static", config.StaticURL.Path)
 		assert.Equal(t, 300, config.HTTPClientTimeout)
 		assert.Equal(t, 900, config.TerminalToolTimeout)
-		assert.Equal(t, true, config.ExecutionMonitorEnabled)
-		assert.Equal(t, 7, config.ExecutionMonitorSameToolLimit)
-		assert.Equal(t, 15, config.ExecutionMonitorTotalToolLimit)
 		assert.Equal(t, 150, config.MaxGeneralAgentToolCalls)
 		assert.Equal(t, 30, config.MaxLimitedAgentToolCalls)
-		assert.Equal(t, true, config.AgentPlanningStepEnabled)
 	})
 
 	t.Run("zero timeouts are kept rather than defaulted", func(t *testing.T) {

@@ -113,7 +113,7 @@ const (
 ### Installation & Content Management
 - **Download(stack)**:
   - opsagi: `docker compose pull`; graphiti/langfuse/observability: the same, but only in embedded mode (external/disabled stacks are skipped)
-  - worker: `docker pull ${DOCKER_DEFAULT_IMAGE_FOR_PENTEST}` (default 6GB+), then refresh worker and update facts
+  - worker: `docker pull ${OPSAGI_DEFAULT_SANDBOX_IMAGE}` (default 6GB+; the old `DOCKER_DEFAULT_IMAGE_FOR_PENTEST` is still read), then refresh worker and update facts
   - installer: download and verify the offered installer build (no-op when already current, error when the update server is unreachable) — see *Installer self-update* below
   - compose: the four compose stacks in order
   - all: compose stacks, then worker, then installer
@@ -224,7 +224,7 @@ Each specialized file should contain business-logic level methods that directly 
   - `updateStack(stack)` / `downloadStack(stack)` - the only two operations that fetch, and the two that write the chosen image references first
   - `removeStack(stack)` / `purgeStack(stack)` / `purgeImagesStack(stack)` - `down`, `down -v`, `down --rmi all -v`
 - **docker.go**:
-  - `pullWorkerImage()` - download pentest image (DOCKER_DEFAULT_IMAGE_FOR_PENTEST: vxcontrol/kali-linux)
+  - `pullWorkerImage()` - download the sandbox image (OPSAGI_DEFAULT_SANDBOX_IMAGE: vxcontrol/kali-linux)
   - `pullDefaultImage()` - download general image (DOCKER_DEFAULT_IMAGE: debian:latest)
   - `removeWorkerContainers()` - cleanup running worker containers (ports 28000-32000 range)
   - `purgeWorkerImages()` - complete image removal including fallback images
@@ -276,7 +276,7 @@ Each specialized file should contain business-logic level methods that directly 
 - **Monitoring**: LANGFUSE_BASE_URL, LANGFUSE_PROJECT_ID, OTEL_HOST
 - **Docker config**: DOCKER_HOST, OPSAGI_DOCKER_CERT_PATH (host path), DOCKER_TLS_VERIFY, DOCKER_CERT_PATH (container path, managed)
 - **Deployment modes**: envs determine embedded vs external vs disabled
-- **Worker images**: DOCKER_DEFAULT_IMAGE (debian:latest), DOCKER_DEFAULT_IMAGE_FOR_PENTEST (vxcontrol/kali-linux)
+- **Worker images**: DOCKER_DEFAULT_IMAGE (debian:latest), OPSAGI_DEFAULT_SANDBOX_IMAGE (vxcontrol/kali-linux)
 - **Path migration**: DoMigrateSettings() migrates old DOCKER_CERT_PATH/LLM_SERVER_CONFIG_PATH/OLLAMA_SERVER_CONFIG_PATH/BEDROCK_CONFIG_PATH to OPSAGI_* variants on startup
 
 ### Error Handling Strategy

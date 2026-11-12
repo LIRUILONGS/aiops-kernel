@@ -1114,22 +1114,6 @@ func extractAgentPromptFromChain(chain []llms.MessageContent) string {
 	return strings.Join(parts, "\n")
 }
 
-// formatEnhancedToolResponse formats tool response with optional mentor analysis
-func formatEnhancedToolResponse(originalResult, mentorAnalysis string) string {
-	if mentorAnalysis == "" {
-		return originalResult
-	}
-
-	return fmt.Sprintf(`<enhanced_response>
-<original_result>
-%s
-</original_result>
-
-<mentor_analysis>
-%s
-</mentor_analysis>
-</enhanced_response>`, originalResult, mentorAnalysis)
-}
 
 func extractHistoryFromHumanMessage(msg *llms.MessageContent) string {
 	if msg == nil {

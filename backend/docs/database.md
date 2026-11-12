@@ -193,14 +193,14 @@ PostgreSQL enums are migrated explicitly and generated as Go string types in `mo
 | `TOKEN_STATUS` | `active`, `revoked` |
 | `USER_STATUS` | `created`, `active`, `blocked` |
 | `USER_TYPE` | `local`, `oauth` |
-| `MSGCHAIN_TYPE` | `primary_agent`, `reporter`, `generator`, `refiner`, `reflector`, `enricher`, `adviser`, `coder`, `memorist`, `searcher`, `installer`, `pentester`, `summarizer`, `tool_call_fixer`, `assistant` |
+| `MSGCHAIN_TYPE` | `commander`, `triage`, `log_analyst`, `metrics_analyst`, `change_analyst`, `reporter`, `generator`, `refiner`, `reflector`, `summarizer`, `tool_call_fixer`, `assistant` |
 | `MSGLOG_TYPE` | `answer`, `report`, `thoughts`, `browser`, `terminal`, `file`, `search`, `advice`, `ask`, `input`, `done` |
 | `MSGLOG_RESULT_FORMAT` | `plain`, `markdown`, `terminal` |
 | `TERMLOG_TYPE` | `stdin`, `stdout`, `stderr` |
 | `VECSTORE_ACTION_TYPE` | `retrieve`, `store` |
 | `PROVIDER_TYPE` | `openai`, `anthropic`, `gemini`, `bedrock`, `ollama`, `custom`, `deepseek`, `glm`, `kimi`, `qwen`, `minimax`, `mistral`, `xai` |
 | `SEARCHENGINE_TYPE` | `google`, `tavily`, `firecrawl`, `traversaal`, `browser`, `duckduckgo`, `perplexity`, `searxng`, `sploitus` |
-| `PROMPT_TYPE` | Agent/system prompt keys from `primary_agent` through `task_assignment_wrapper` (full list in `models.go`) |
+| `PROMPT_TYPE` | Agent/system prompt keys, `commander` through `tool_call_id_detector` (full list in `models.go`) |
 
 Never add an enum value only in Go code. Add or replace the PostgreSQL enum in a goose migration, regenerate sqlc, and update backend validation where applicable. Provider and search-engine additions have additional project steps documented in `CLAUDE.md`.
 

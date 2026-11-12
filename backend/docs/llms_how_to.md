@@ -923,7 +923,7 @@ messages = [
     {Role: "human", Parts: ["Find SQL injection"]},
     {Role: "ai", Parts: [
         {Text: "", Reasoning: {Content: "...", Signature: "..."}},  // Gemini thinking
-        {ToolCall: {Name: "pentester", Reasoning: {...}}},          // With thought_signature
+        {ToolCall: {Name: "web_search", Reasoning: {...}}},        // With thought_signature
     ]},
     {Role: "tool", Parts: [{Response: "...50KB of results..."}]},  // Large response
 ]

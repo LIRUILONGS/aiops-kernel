@@ -434,12 +434,14 @@ func (d *dockerOperationsImpl) tenantPrefix() string {
 }
 
 func (d *dockerOperationsImpl) getWorkerImageName() string {
-	envVar, exists := d.processor.state.GetVar("DOCKER_DEFAULT_IMAGE_FOR_PENTEST")
-	if exists && envVar.Value != "" {
-		return envVar.Value
-	}
-	if envVar.Default != "" {
-		return envVar.Default
+	for _, name := range []string{"OPSAGI_DEFAULT_SANDBOX_IMAGE", "DOCKER_DEFAULT_IMAGE_FOR_PENTEST"} {
+		envVar, exists := d.processor.state.GetVar(name)
+		if exists && envVar.Value != "" {
+			return envVar.Value
+		}
+		if exists && envVar.Default != "" {
+			return envVar.Default
+		}
 	}
 	return "vxcontrol/kali-linux:latest"
 }

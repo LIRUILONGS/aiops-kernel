@@ -112,7 +112,7 @@ The Docker client is configured through several environment variables defined in
 | `DOCKER_PUBLIC_IP` | `0.0.0.0` | Public IP for port binding (bridge mode only) |
 | `DOCKER_WORK_DIR` | | Custom work directory path on host |
 | `DOCKER_DEFAULT_IMAGE` | `debian:latest` | Fallback image if AI-selected image fails |
-| `DOCKER_DEFAULT_IMAGE_FOR_PENTEST` | `vxcontrol/kali-linux` | Default Docker image for penetration testing tasks |
+| `OPSAGI_DEFAULT_SANDBOX_IMAGE` | `vxcontrol/kali-linux` | Image a flow runs in when no choice is made; `DOCKER_DEFAULT_IMAGE_FOR_PENTEST` is still read as the old name |
 | `DATA_DIR` | `./data` | Local data directory for file operations |
 
 ### Configuration Structure
@@ -133,8 +133,10 @@ type Config struct {
     DockerPublicIP               string `env:"DOCKER_PUBLIC_IP" envDefault:"0.0.0.0"`
     DockerWorkDir                string `env:"DOCKER_WORK_DIR"`
     DockerPortsBase              int    `env:"DOCKER_PORTS_BASE" envDefault:"28000"`
-    DockerDefaultImage           string `env:"DOCKER_DEFAULT_IMAGE" envDefault:"debian:latest"`
-    DockerDefaultImageForPentest string `env:"DOCKER_DEFAULT_IMAGE_FOR_PENTEST" envDefault:"vxcontrol/kali-linux"`
+    DockerDefaultImage        string `env:"DOCKER_DEFAULT_IMAGE" envDefault:"debian:latest"`
+    OpsagiDefaultSandboxImage string `env:"OPSAGI_DEFAULT_SANDBOX_IMAGE"`
+    // Deprecated: read through Config.SandboxImage().
+    DockerDefaultImageForPentest string `env:"DOCKER_DEFAULT_IMAGE_FOR_PENTEST"`
     DataDir                      string `env:"DATA_DIR" envDefault:"./data"`
 }
 ```
@@ -517,7 +519,7 @@ Why this exact set, rather than a minimal `NET_RAW`-only list:
 | `KILL` | Signal other processes inside the container |
 | `SYS_CHROOT` | chroot-based isolation within the sandbox |
 | `AUDIT_WRITE` | Lets `sudo`/`sshd` write audit-log entries instead of warning |
-| `SYS_PTRACE` | Not a Docker default — added so `gdb`/`strace`/`ltrace`/dynamic binary analysis (`pwndbg`, `radare2`) work for the Coder Agent's exploit-development role. Without it, `ptrace()` and friends (`process_vm_readv`/`writev`, `kcmp`) stay blocked by Docker's *default seccomp profile*, which independently gates them behind `CAP_SYS_PTRACE` — no custom seccomp profile is needed to unblock them, since moby/containerd auto-extend the default profile's syscall allow-list to match added capabilities. Scope stays contained to the sandbox: `ptrace` only works within the container's own PID namespace, never against host or sibling-container processes. |
+| `SYS_PTRACE` | Not a Docker default — added so `strace`/`ltrace`/`gdb` and inspection of a running process work inside the sandbox. Without it, `ptrace()` and friends (`process_vm_readv`/`writev`, `kcmp`) stay blocked by Docker's *default seccomp profile*, which independently gates them behind `CAP_SYS_PTRACE` — no custom seccomp profile is needed to unblock them, since moby/containerd auto-extend the default profile's syscall allow-list to match added capabilities. Scope stays contained to the sandbox: `ptrace` only works within the container's own PID namespace, never against host or sibling-container processes. |
 | `NET_ADMIN` (opt-in via `DOCKER_NET_ADMIN`) | Interface/routing/firewall control for advanced network pentesting |
 
 **`MKNOD` is the one deliberate omission** from Docker's default set: creating device nodes has no legitimate use for pentest tooling or package management, and this repository's own dind-hardening research (see [Worker Node Setup](../../examples/guides/worker_node.md) and its [`authz.rego`](../../examples/guides/worker_node/authz.rego)) identifies block-device `mknod` combined with `debugfs` as "the primary confirmed escape vector" for a hostile-code container. `SYS_ADMIN`, `SYS_MODULE`, `SYS_RAWIO`, and `SYS_BOOT` are never granted — none are part of Docker's default set and none are required by any supported workflow.

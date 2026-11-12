@@ -93,10 +93,10 @@ func (m *DockerFormModel) BuildForm() tea.Cmd {
 		false,
 	))
 
-	fields = append(fields, m.createTextField("docker_default_image_for_pentest",
-		locale.ToolsDockerDefaultImageForPentest,
-		locale.ToolsDockerDefaultImageForPentestDesc,
-		config.DockerDefaultImageForPentest,
+	fields = append(fields, m.createTextField("docker_default_sandbox_image",
+		locale.ToolsOpsagiDefaultSandboxImage,
+		locale.ToolsOpsagiDefaultSandboxImageDesc,
+		config.OpsagiDefaultSandboxImage,
 		false,
 	))
 
@@ -283,7 +283,7 @@ func (m *DockerFormModel) GetCurrentConfiguration() string {
 			m.GetStyles().Warning.Render(locale.StatusNotConfigured)))
 	}
 
-	if config.DockerDefaultImageForPentest.Value != "" {
+	if config.OpsagiDefaultSandboxImage.Value != "" {
 		sections = append(sections, fmt.Sprintf("• Pentest Image: %s",
 			m.GetStyles().Success.Render(locale.StatusConfigured)))
 	} else {
@@ -359,8 +359,8 @@ func (m *DockerFormModel) GetHelpContent() string {
 			sections = append(sections, locale.ToolsDockerWorkDirHelp)
 		case "docker_default_image":
 			sections = append(sections, locale.ToolsDockerDefaultImageHelp)
-		case "docker_default_image_for_pentest":
-			sections = append(sections, locale.ToolsDockerDefaultImageForPentestHelp)
+		case "docker_default_sandbox_image":
+			sections = append(sections, locale.ToolsOpsagiDefaultSandboxImageHelp)
 		case "docker_default_image_for_test":
 			sections = append(sections, locale.ToolsDockerDefaultImageForTestHelp)
 		case "docker_image_selection_mode":
@@ -401,7 +401,7 @@ func (m *DockerFormModel) HandleSave() error {
 		DockerPublicIP:               config.DockerPublicIP,
 		DockerWorkDir:                config.DockerWorkDir,
 		DockerDefaultImage:           config.DockerDefaultImage,
-		DockerDefaultImageForPentest: config.DockerDefaultImageForPentest,
+		OpsagiDefaultSandboxImage: config.OpsagiDefaultSandboxImage,
 		DockerDefaultImageForTest:    config.DockerDefaultImageForTest,
 		DockerImageSelectionMode:     config.DockerImageSelectionMode,
 		DockerAllowedImages:          config.DockerAllowedImages,
@@ -447,8 +447,8 @@ func (m *DockerFormModel) HandleSave() error {
 			newConfig.DockerWorkDir.Value = value
 		case "docker_default_image":
 			newConfig.DockerDefaultImage.Value = value
-		case "docker_default_image_for_pentest":
-			newConfig.DockerDefaultImageForPentest.Value = value
+		case "docker_default_sandbox_image":
+			newConfig.OpsagiDefaultSandboxImage.Value = value
 		case "docker_default_image_for_test":
 			newConfig.DockerDefaultImageForTest.Value = value
 		case "docker_image_selection_mode":

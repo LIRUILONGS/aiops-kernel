@@ -319,7 +319,7 @@ func (pc *providerController) NewFlowProvider(
 	if !policy.skipsModel() {
 		imageTmpl, err := prompter.RenderTemplate(templates.PromptTypeImageChooser, map[string]any{
 			"DefaultImage":           pc.docker.GetDefaultImage(),
-			"DefaultImageForPentest": pc.cfg.DockerDefaultImageForPentest,
+			"DefaultImageForPentest": pc.cfg.SandboxImage(),
 			"Input":                  input,
 		})
 		if err != nil {
@@ -387,7 +387,6 @@ func (pc *providerController) NewFlowProvider(
 		title:           title,
 		language:        language,
 		askUser:         askUser,
-		planning:        pc.cfg.AgentPlanningStepEnabled,
 		tcIDTemplate:    toolCallIDTemplateOrDefault(tcIDTemplate),
 		prompter:        prompter,
 		executor:        executor,
@@ -430,7 +429,6 @@ func (pc *providerController) LoadFlowProvider(
 		title:           title,
 		language:        language,
 		askUser:         askUser,
-		planning:        pc.cfg.AgentPlanningStepEnabled,
 		tcIDTemplate:    toolCallIDTemplateOrDefault(tcIDTemplate),
 		prompter:        prompter,
 		executor:        executor,

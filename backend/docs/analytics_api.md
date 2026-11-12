@@ -58,8 +58,8 @@ GraphQL API for system analytics and statistics monitoring. This document covers
   - **EXCLUDES** Assistant msgchain lifetime (only active toolcall time counted)
 
 **Why not sum of toolcalls:**
-- Primary Agent calls Coder Agent → Coder calls Terminal
-- Summing toolcalls would count Terminal execution twice (in Coder time AND separately)
+- The commander delegates to an analyst → the analyst calls its own evidence tools
+- Summing toolcalls counts the analyst's evidence once inside the delegation call and once again on its own, so it would double-count
 - Linear time gives accurate wall-clock duration
 
 **Overlap compensation:**
@@ -82,28 +82,29 @@ GraphQL API for system analytics and statistics monitoring. This document covers
 ### Agent Type Breakdown
 
 **Important distinction:**
-- `primary_agent`: Main orchestrator for subtasks
+- `commander`: Executes every subtask (runs once per subtask, the main orchestrator)
+- `triage`, `log_analyst`, `metrics_analyst`, `change_analyst`: Delegated analysts (run inside a commander chain, once per delegation)
 - `generator`: Creates subtask plans (runs once per task, before subtasks)
 - `refiner`: Updates subtask plans (runs between subtasks, can run multiple times)
 - `reporter`: Generates final task reports
+- `reflector`, `summarizer`, `tool_call_fixer`: Correction and context roles (run on demand)
 - `assistant`: Interactive mode (can have long idle periods)
-- Specialist agents: `coder`, `pentester`, `installer`, `searcher`, `memorist`, `adviser`
 
 **Usage interpretation:**
 - High `generator` usage = complex task decomposition
 - High `refiner` usage = adaptive planning (many plan adjustments)
-- High specialist usage = delegated work (Primary Agent using team members)
+- High analyst usage = delegated work (the commander using its analysts)
 
 ### Agent vs Non-Agent Tools (`isAgent` field)
 
 The `isAgent` field in `FunctionToolcallsStats` categorizes tools into two types:
 
 **Agent Tools (`isAgent: true`):**
-- Delegation to AI agents (e.g., `coder`, `pentester`, `searcher`)
-- Store results from agent execution (e.g., `coder_result`, `hack_result`)
-- Execution time represents delegation overhead + agent decision time
+- Delegation to another agent chain: `triage`, `log_analyst`, `metrics_analyst`, `change_analyst`
+- Filing an agent's result: `diagnosis`, `optimization_result`, `triage_result`, `log_finding`, `metric_finding`, `change_finding`, `report_result`, `subtask_list`, `subtask_patch`
+- Execution time represents delegation overhead + the agent's decision time
 - Does NOT include nested tool calls made by the agent
-- Examples: `coder`, `pentester`, `installer`, `searcher`, `memorist`, `adviser`
+- Every tool in this group is a `StoreAgentResultToolType` in `pkg/tools`, which is what the `isAgent` classifier keys on
 
 **Non-Agent Tools (`isAgent: false`):**
 - Direct tool execution (e.g., `terminal`, `browser`, `file`)
@@ -332,17 +333,17 @@ query SystemOverview {
 - Insights: Choose optimal models for different tasks
 
 **Agent Performance:**
-- `usageStatsByAgentType`: Resource consumption by agent role
+- `usageStatsByAgentType`: Resource consumption by agent role (see the role list above)
 - Chart: Horizontal bar chart showing usage by agent
 - Insights: Understand which agents consume most resources
 
 **Tool Usage Patterns:**
 - `toolcallsStatsByFunction`: Top tool functions by usage and duration
-- **Agent Classification:** The `isAgent` field indicates if the function is an agent delegation tool
-  - Agent tools (e.g., `coder`, `pentester`) show their own execution time
+- **Agent Classification:** The `isAgent` field indicates whether the function delegates to an agent or files an agent's result
+  - Agent tools (e.g., `triage`, `log_analyst`) show their own execution time
   - Does NOT include time of nested calls they make
-  - Example: `coder` toolcall = time for Coder Agent to decide + delegate, not terminal commands
-  - Non-agent tools (e.g., `terminal`, `browser`) show direct execution time
+  - Example: a `log_analyst` toolcall is the time the analyst spent reading logs, not the separate `ops_logs` toolcalls it made
+  - Non-agent tools (e.g., `ops_logs`, `prom_query`) show direct execution time
 - Chart: Table with sortable columns (count, duration, average, agent type)
 - Metrics:
   - Slowest tools: Sort by `avgDurationSeconds`
@@ -718,17 +719,16 @@ query CostAttribution {
 ```
 
 **Interpretation:**
-- `primary_agent`: Orchestration overhead
+- `commander`: Orchestration overhead (its own tool calls only)
 - `generator`: Planning cost (usually low, runs once per task)
 - `refiner`: Replanning cost (high value = many adjustments)
-- `pentester`: Security testing operations
-- `coder`: Development work
-- `searcher`: Research and information gathering
+- `triage`, `log_analyst`, `metrics_analyst`, `change_analyst`: Evidence gathering per face
+- `reporter`: Report writing cost (runs once per task)
 
 **Cost optimization:**
 - High generator cost → simplify task descriptions
 - High refiner cost → improve initial planning (fewer adjustments needed)
-- High searcher cost → use memory tools more (cheaper than web search)
+- High analyst cost → narrow the analyst's evidence toolset, or give the commander a tighter plan so fewer faces are pulled
 
 ### Example 3: Detecting Inefficient Flows
 
@@ -754,7 +754,7 @@ query DetectInefficiency {
 - High `terminal` avg → long commands, consider timeout tuning
 - High `browser` avg → slow websites, consider caching
 - High `tavily`/`perplexity` avg → deep research, optimize queries
-- High agent tools (`coder`, `pentester`) avg → complex delegated work
+- High agent tools (`triage`, `log_analyst`) avg → complex delegated work, or an analyst looping before it files its finding
 
 ### Example 4: Understanding Task Complexity
 
@@ -823,9 +823,7 @@ query TaskComplexity($flowId: ID!) {
 ### Known Limitations
 
 **Current limitations:**
-1. **Historical data:** Subtasks created before this update may have:
-   - Missing primary_agent subtask_id (known bug, now fixed)
-   - Use linear time fallback (still accurate)
+1. **Historical data:** Subtasks created before the commander became the only subtask executor may have no `commander` chain; their duration falls back to linear time.
 
 2. **Running entities:** Duration calculated as `created_at → now`
    - Updates as entity continues execution
@@ -837,7 +835,7 @@ query TaskComplexity($flowId: ID!) {
 
 **Edge cases handled:**
 - ✅ Batch-created subtasks (overlap compensation)
-- ✅ Missing primary_agent msgchain (fallback to linear time)
+- ✅ Missing commander msgchain (fallback to linear time)
 - ✅ Subtasks in waiting status (excluded from duration)
 - ✅ Flow-level toolcalls without task binding (counted separately)
 - ✅ Generator/Refiner without subtask binding (counted in task duration)
@@ -881,7 +879,7 @@ query CheckFlowStatus($flowId: ID!) {
 - **Toolcalls duration:** Sum of all toolcall times (includes nested calls)
 - **Execution duration:** Wall-clock time (linear)
 - Nested agent calls cause toolcalls > execution
-- Example: Primary Agent (100s) calls Coder (30s), toolcalls = 130s, execution = 100s
+- Example: the commander (100s) delegates to `log_analyst` (30s); toolcalls = 130s, execution = 100s
 
 ### "Count doesn't match my expectations"
 

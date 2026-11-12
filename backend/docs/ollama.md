@@ -84,7 +84,7 @@ To download new models: `ollama pull <model-name>`
 - **Model caching**: Use only configured models without API calls (when load disabled)
 - **Local inference**: No API keys required, models run locally
 - **Auto model pulling**: Models are automatically downloaded when needed (when enabled)
-- **Agent specialization**: Different agent types (assistant, coder, pentester) with optimized settings
+- **Agent specialization**: Different agent types (commander, analyst, generator) with optimized settings
 - **Tool support**: Supports function calling for compatible models
 - **Streaming**: Real-time response streaming
 - **Custom configuration**: Override default settings with YAML config files
@@ -96,11 +96,11 @@ The provider supports all OpsAGI agent types with optimized configurations:
 
 - `simple`: General purpose chat (temperature: 0.2)
 - `assistant`: AI assistant tasks (temperature: 0.2)
-- `coder`: Code generation (temperature: 0.1, max tokens: 6000)
-- `pentester`: Security testing (temperature: 0.3, max tokens: 8000)
+- `generator`: Subtask planning (temperature: 0.1, max tokens: 6000)
+- `commander`: Subtask execution (temperature: 0.3, max tokens: 8000)
 - `generator`: Content generation (temperature: 0.4)
 - `refiner`: Content refinement (temperature: 0.3)
-- `searcher`: Information searching (temperature: 0.2, max tokens: 3000)
+- `analyst`: Evidence reading (temperature: 0.2, max tokens: 3000)
 - And more...
 
 ## Custom Configuration
@@ -115,7 +115,7 @@ simple:
   n: 1
   max_tokens: 4000
 
-coder:
+generator:
   model: "deepseek-r1:8b"
   temperature: 0.1
   top_p: 0.2
