@@ -16,11 +16,12 @@ INSERT INTO subtasks (
   status,
   title,
   description,
-  task_id
+  task_id,
+  plan_mode
 ) VALUES (
-  $1, $2, $3, $4
+  $1, $2, $3, $4, $5
 )
-RETURNING id, status, title, description, result, task_id, created_at, updated_at, context
+RETURNING id, status, title, description, result, task_id, created_at, updated_at, context, plan_mode
 `
 
 type CreateSubtaskParams struct {
@@ -28,6 +29,7 @@ type CreateSubtaskParams struct {
 	Title       string        `json:"title"`
 	Description string        `json:"description"`
 	TaskID      int64         `json:"task_id"`
+	PlanMode    string        `json:"plan_mode"`
 }
 
 func (q *Queries) CreateSubtask(ctx context.Context, arg CreateSubtaskParams) (Subtask, error) {
@@ -36,6 +38,7 @@ func (q *Queries) CreateSubtask(ctx context.Context, arg CreateSubtaskParams) (S
 		arg.Title,
 		arg.Description,
 		arg.TaskID,
+		arg.PlanMode,
 	)
 	var i Subtask
 	err := row.Scan(
@@ -48,6 +51,7 @@ func (q *Queries) CreateSubtask(ctx context.Context, arg CreateSubtaskParams) (S
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Context,
+		&i.PlanMode,
 	)
 	return i, err
 }
@@ -74,7 +78,7 @@ func (q *Queries) DeleteSubtasks(ctx context.Context, ids []int64) error {
 
 const getFlowSubtask = `-- name: GetFlowSubtask :one
 SELECT
-  s.id, s.status, s.title, s.description, s.result, s.task_id, s.created_at, s.updated_at, s.context
+  s.id, s.status, s.title, s.description, s.result, s.task_id, s.created_at, s.updated_at, s.context, s.plan_mode
 FROM subtasks s
 INNER JOIN tasks t ON s.task_id = t.id
 INNER JOIN flows f ON t.flow_id = f.id
@@ -99,13 +103,14 @@ func (q *Queries) GetFlowSubtask(ctx context.Context, arg GetFlowSubtaskParams) 
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Context,
+		&i.PlanMode,
 	)
 	return i, err
 }
 
 const getFlowSubtasks = `-- name: GetFlowSubtasks :many
 SELECT
-  s.id, s.status, s.title, s.description, s.result, s.task_id, s.created_at, s.updated_at, s.context
+  s.id, s.status, s.title, s.description, s.result, s.task_id, s.created_at, s.updated_at, s.context, s.plan_mode
 FROM subtasks s
 INNER JOIN tasks t ON s.task_id = t.id
 INNER JOIN flows f ON t.flow_id = f.id
@@ -132,6 +137,7 @@ func (q *Queries) GetFlowSubtasks(ctx context.Context, flowID int64) ([]Subtask,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Context,
+			&i.PlanMode,
 		); err != nil {
 			return nil, err
 		}
@@ -148,7 +154,7 @@ func (q *Queries) GetFlowSubtasks(ctx context.Context, flowID int64) ([]Subtask,
 
 const getFlowTaskSubtasks = `-- name: GetFlowTaskSubtasks :many
 SELECT
-  s.id, s.status, s.title, s.description, s.result, s.task_id, s.created_at, s.updated_at, s.context
+  s.id, s.status, s.title, s.description, s.result, s.task_id, s.created_at, s.updated_at, s.context, s.plan_mode
 FROM subtasks s
 INNER JOIN tasks t ON s.task_id = t.id
 INNER JOIN flows f ON t.flow_id = f.id
@@ -180,6 +186,7 @@ func (q *Queries) GetFlowTaskSubtasks(ctx context.Context, arg GetFlowTaskSubtas
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Context,
+			&i.PlanMode,
 		); err != nil {
 			return nil, err
 		}
@@ -196,7 +203,7 @@ func (q *Queries) GetFlowTaskSubtasks(ctx context.Context, arg GetFlowTaskSubtas
 
 const getSubtask = `-- name: GetSubtask :one
 SELECT
-  s.id, s.status, s.title, s.description, s.result, s.task_id, s.created_at, s.updated_at, s.context
+  s.id, s.status, s.title, s.description, s.result, s.task_id, s.created_at, s.updated_at, s.context, s.plan_mode
 FROM subtasks s
 WHERE s.id = $1
 `
@@ -214,13 +221,14 @@ func (q *Queries) GetSubtask(ctx context.Context, id int64) (Subtask, error) {
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Context,
+		&i.PlanMode,
 	)
 	return i, err
 }
 
 const getTaskCompletedSubtasks = `-- name: GetTaskCompletedSubtasks :many
 SELECT
-  s.id, s.status, s.title, s.description, s.result, s.task_id, s.created_at, s.updated_at, s.context
+  s.id, s.status, s.title, s.description, s.result, s.task_id, s.created_at, s.updated_at, s.context, s.plan_mode
 FROM subtasks s
 INNER JOIN tasks t ON s.task_id = t.id
 INNER JOIN flows f ON t.flow_id = f.id
@@ -247,6 +255,7 @@ func (q *Queries) GetTaskCompletedSubtasks(ctx context.Context, taskID int64) ([
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Context,
+			&i.PlanMode,
 		); err != nil {
 			return nil, err
 		}
@@ -263,7 +272,7 @@ func (q *Queries) GetTaskCompletedSubtasks(ctx context.Context, taskID int64) ([
 
 const getTaskPlannedSubtasks = `-- name: GetTaskPlannedSubtasks :many
 SELECT
-  s.id, s.status, s.title, s.description, s.result, s.task_id, s.created_at, s.updated_at, s.context
+  s.id, s.status, s.title, s.description, s.result, s.task_id, s.created_at, s.updated_at, s.context, s.plan_mode
 FROM subtasks s
 INNER JOIN tasks t ON s.task_id = t.id
 INNER JOIN flows f ON t.flow_id = f.id
@@ -290,6 +299,7 @@ func (q *Queries) GetTaskPlannedSubtasks(ctx context.Context, taskID int64) ([]S
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Context,
+			&i.PlanMode,
 		); err != nil {
 			return nil, err
 		}
@@ -306,7 +316,7 @@ func (q *Queries) GetTaskPlannedSubtasks(ctx context.Context, taskID int64) ([]S
 
 const getTaskSubtasks = `-- name: GetTaskSubtasks :many
 SELECT
-  s.id, s.status, s.title, s.description, s.result, s.task_id, s.created_at, s.updated_at, s.context
+  s.id, s.status, s.title, s.description, s.result, s.task_id, s.created_at, s.updated_at, s.context, s.plan_mode
 FROM subtasks s
 INNER JOIN tasks t ON s.task_id = t.id
 INNER JOIN flows f ON t.flow_id = f.id
@@ -333,6 +343,7 @@ func (q *Queries) GetTaskSubtasks(ctx context.Context, taskID int64) ([]Subtask,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Context,
+			&i.PlanMode,
 		); err != nil {
 			return nil, err
 		}
@@ -349,7 +360,7 @@ func (q *Queries) GetTaskSubtasks(ctx context.Context, taskID int64) ([]Subtask,
 
 const getUserFlowSubtasks = `-- name: GetUserFlowSubtasks :many
 SELECT
-  s.id, s.status, s.title, s.description, s.result, s.task_id, s.created_at, s.updated_at, s.context
+  s.id, s.status, s.title, s.description, s.result, s.task_id, s.created_at, s.updated_at, s.context, s.plan_mode
 FROM subtasks s
 INNER JOIN tasks t ON s.task_id = t.id
 INNER JOIN flows f ON t.flow_id = f.id
@@ -382,6 +393,7 @@ func (q *Queries) GetUserFlowSubtasks(ctx context.Context, arg GetUserFlowSubtas
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Context,
+			&i.PlanMode,
 		); err != nil {
 			return nil, err
 		}
@@ -398,7 +410,7 @@ func (q *Queries) GetUserFlowSubtasks(ctx context.Context, arg GetUserFlowSubtas
 
 const getUserFlowTaskSubtasks = `-- name: GetUserFlowTaskSubtasks :many
 SELECT
-  s.id, s.status, s.title, s.description, s.result, s.task_id, s.created_at, s.updated_at, s.context
+  s.id, s.status, s.title, s.description, s.result, s.task_id, s.created_at, s.updated_at, s.context, s.plan_mode
 FROM subtasks s
 INNER JOIN tasks t ON s.task_id = t.id
 INNER JOIN flows f ON t.flow_id = f.id
@@ -432,6 +444,7 @@ func (q *Queries) GetUserFlowTaskSubtasks(ctx context.Context, arg GetUserFlowTa
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Context,
+			&i.PlanMode,
 		); err != nil {
 			return nil, err
 		}
@@ -450,7 +463,7 @@ const updateSubtaskContext = `-- name: UpdateSubtaskContext :one
 UPDATE subtasks
 SET context = $1
 WHERE id = $2
-RETURNING id, status, title, description, result, task_id, created_at, updated_at, context
+RETURNING id, status, title, description, result, task_id, created_at, updated_at, context, plan_mode
 `
 
 type UpdateSubtaskContextParams struct {
@@ -471,6 +484,7 @@ func (q *Queries) UpdateSubtaskContext(ctx context.Context, arg UpdateSubtaskCon
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Context,
+		&i.PlanMode,
 	)
 	return i, err
 }
@@ -479,7 +493,7 @@ const updateSubtaskFailedResult = `-- name: UpdateSubtaskFailedResult :one
 UPDATE subtasks
 SET status = 'failed', result = $1
 WHERE id = $2
-RETURNING id, status, title, description, result, task_id, created_at, updated_at, context
+RETURNING id, status, title, description, result, task_id, created_at, updated_at, context, plan_mode
 `
 
 type UpdateSubtaskFailedResultParams struct {
@@ -500,6 +514,7 @@ func (q *Queries) UpdateSubtaskFailedResult(ctx context.Context, arg UpdateSubta
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Context,
+		&i.PlanMode,
 	)
 	return i, err
 }
@@ -508,7 +523,7 @@ const updateSubtaskFinishedResult = `-- name: UpdateSubtaskFinishedResult :one
 UPDATE subtasks
 SET status = 'finished', result = $1
 WHERE id = $2
-RETURNING id, status, title, description, result, task_id, created_at, updated_at, context
+RETURNING id, status, title, description, result, task_id, created_at, updated_at, context, plan_mode
 `
 
 type UpdateSubtaskFinishedResultParams struct {
@@ -529,6 +544,7 @@ func (q *Queries) UpdateSubtaskFinishedResult(ctx context.Context, arg UpdateSub
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Context,
+		&i.PlanMode,
 	)
 	return i, err
 }
@@ -537,7 +553,7 @@ const updateSubtaskResult = `-- name: UpdateSubtaskResult :one
 UPDATE subtasks
 SET result = $1
 WHERE id = $2
-RETURNING id, status, title, description, result, task_id, created_at, updated_at, context
+RETURNING id, status, title, description, result, task_id, created_at, updated_at, context, plan_mode
 `
 
 type UpdateSubtaskResultParams struct {
@@ -558,6 +574,7 @@ func (q *Queries) UpdateSubtaskResult(ctx context.Context, arg UpdateSubtaskResu
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Context,
+		&i.PlanMode,
 	)
 	return i, err
 }
@@ -566,7 +583,7 @@ const updateSubtaskStatus = `-- name: UpdateSubtaskStatus :one
 UPDATE subtasks
 SET status = $1
 WHERE id = $2
-RETURNING id, status, title, description, result, task_id, created_at, updated_at, context
+RETURNING id, status, title, description, result, task_id, created_at, updated_at, context, plan_mode
 `
 
 type UpdateSubtaskStatusParams struct {
@@ -587,6 +604,7 @@ func (q *Queries) UpdateSubtaskStatus(ctx context.Context, arg UpdateSubtaskStat
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Context,
+		&i.PlanMode,
 	)
 	return i, err
 }

@@ -228,24 +228,26 @@ func validateEnum(field, value string, allowed []string) error {
 // report message and therefore the only place the evidence survives. Markdown
 // first because a human reads it; the JSON block at the end keeps the fields
 // verbatim for whatever parses the row later.
-func (d Diagnosis) Render() (string, error) {
+func (d Diagnosis) Render(lang string) (string, error) {
 	if err := d.Validate(); err != nil {
 		return "", err
 	}
 
+	l := LabelsFor(lang)
+
 	var b strings.Builder
 
-	b.WriteString("## 诊断结论\n\n")
-	fmt.Fprintf(&b, "**根因**：%s\n\n", d.RootCause)
-	fmt.Fprintf(&b, "**置信度**：%.2f\n\n", *d.Confidence)
-	fmt.Fprintf(&b, "**影响面**：%s\n\n", d.BlastRadius)
+	b.WriteString(l.DiagnosisTitle + "\n\n")
+	fmt.Fprintf(&b, "**%s**%s%s\n\n", l.RootCause, l.Sep, d.RootCause)
+	fmt.Fprintf(&b, "**%s**%s%.2f\n\n", l.Confidence, l.Sep, *d.Confidence)
+	fmt.Fprintf(&b, "**%s**%s%s\n\n", l.BlastRadius, l.Sep, d.BlastRadius)
 	if d.NeedsHuman.Bool() {
-		b.WriteString("**需要人工介入**：是\n\n")
+		fmt.Fprintf(&b, "**%s**%s%s\n\n", l.NeedsHuman, l.Sep, l.Yes)
 	} else {
-		b.WriteString("**需要人工介入**：否\n\n")
+		fmt.Fprintf(&b, "**%s**%s%s\n\n", l.NeedsHuman, l.Sep, l.No)
 	}
 
-	b.WriteString("### 证据\n\n")
+	fmt.Fprintf(&b, "### %s\n\n", l.Evidence)
 	for i, item := range d.Evidence {
 		fmt.Fprintf(&b, "%d. **%s** · %s · `%s`\n\n", i+1, item.Source, item.Timestamp, item.Query)
 		for _, line := range strings.Split(item.Excerpt, "\n") {
@@ -254,16 +256,16 @@ func (d Diagnosis) Render() (string, error) {
 		b.WriteString("\n")
 	}
 
-	b.WriteString("### 建议动作\n\n")
-	fmt.Fprintf(&b, "- **动作**：%s\n", d.Recommendation.Action)
-	fmt.Fprintf(&b, "- **风险**：%s\n", d.Recommendation.Risk)
-	fmt.Fprintf(&b, "- **回滚**：%s\n\n", d.Recommendation.Rollback)
+	fmt.Fprintf(&b, "### %s\n\n", l.Recommendation)
+	fmt.Fprintf(&b, "- **%s**%s%s\n", l.Action, l.Sep, d.Recommendation.Action)
+	fmt.Fprintf(&b, "- **%s**%s%s\n", l.Risk, l.Sep, d.Recommendation.Risk)
+	fmt.Fprintf(&b, "- **%s**%s%s\n\n", l.Rollback, l.Sep, d.Recommendation.Rollback)
 
 	payload, err := json.Marshal(d)
 	if err != nil {
 		return "", fmt.Errorf("序列化诊断失败：%w", err)
 	}
-	b.WriteString("### 结构化结果\n\n```json\n")
+	fmt.Fprintf(&b, "### %s\n\n```json\n", l.Structured)
 	b.Write(payload)
 	b.WriteString("\n```\n")
 
@@ -552,40 +554,42 @@ func validateObservedGain(verdict, observed string) error {
 // Render is the text an optimisation becomes once accepted. The verdict is the
 // headline: an operator needs to know whether the change worked before reading
 // why.
-func (o OptimizationResult) Render() (string, error) {
+func (o OptimizationResult) Render(lang string) (string, error) {
 	if err := o.Validate(); err != nil {
 		return "", err
 	}
 
+	l := LabelsFor(lang)
+
 	var b strings.Builder
 
-	b.WriteString("## 性能优化结论\n\n")
-	fmt.Fprintf(&b, "**结论**：%s\n\n", o.Verdict)
-	fmt.Fprintf(&b, "**瓶颈**：%s\n\n", o.Bottleneck)
-	fmt.Fprintf(&b, "**置信度**：%.2f\n\n", *o.Confidence)
-	fmt.Fprintf(&b, "**变更前**：%s\n\n", o.Baseline)
-	fmt.Fprintf(&b, "**建议改动**：%s\n\n", o.Proposal)
-	fmt.Fprintf(&b, "**预期收益**：%s\n\n", o.ExpectedGain)
+	b.WriteString(l.OptimizationTitle + "\n\n")
+	fmt.Fprintf(&b, "**%s**%s%s\n\n", l.Verdict, l.Sep, o.Verdict)
+	fmt.Fprintf(&b, "**%s**%s%s\n\n", l.Bottleneck, l.Sep, o.Bottleneck)
+	fmt.Fprintf(&b, "**%s**%s%.2f\n\n", l.Confidence, l.Sep, *o.Confidence)
+	fmt.Fprintf(&b, "**%s**%s%s\n\n", l.Baseline, l.Sep, o.Baseline)
+	fmt.Fprintf(&b, "**%s**%s%s\n\n", l.Proposal, l.Sep, o.Proposal)
+	fmt.Fprintf(&b, "**%s**%s%s\n\n", l.ExpectedGain, l.Sep, o.ExpectedGain)
 	if o.ObservedGain != "" {
-		fmt.Fprintf(&b, "**实测收益**：%s\n\n", o.ObservedGain)
+		fmt.Fprintf(&b, "**%s**%s%s\n\n", l.ObservedGain, l.Sep, o.ObservedGain)
 	} else {
-		b.WriteString("**实测收益**：未复测\n\n")
+		fmt.Fprintf(&b, "**%s**%s%s\n\n", l.ObservedGain, l.Sep, l.NotMeasured)
 	}
-	fmt.Fprintf(&b, "**回滚**：%s\n\n", o.Rollback)
+	fmt.Fprintf(&b, "**%s**%s%s\n\n", l.Rollback, l.Sep, o.Rollback)
 	if o.MeasuredAgainst != "" {
-		fmt.Fprintf(&b, "**对照目标**：%s\n\n", o.MeasuredAgainst)
+		fmt.Fprintf(&b, "**%s**%s%s\n\n", l.MeasuredAgainst, l.Sep, o.MeasuredAgainst)
 	}
 	if o.MeasuredValue != nil {
-		verdict := "未填"
+		verdict := l.NotFilled
 
 		if o.TargetMet != nil {
-			verdict = ternary(bool(*o.TargetMet), "达标", "未达标")
+			verdict = ternary(bool(*o.TargetMet), l.TargetMet, l.TargetMissed)
 		}
 
-		fmt.Fprintf(&b, "**复测值**：%s（%s）\n\n", formatGoalValue(*o.MeasuredValue), verdict)
+		fmt.Fprintf(&b, "**%s**%s%s%s%s%s\n\n", l.MeasuredValue, l.Sep, formatGoalValue(*o.MeasuredValue), l.ParenOpen, verdict, l.ParenClose)
 	}
 
-	b.WriteString("### 证据\n\n")
+	fmt.Fprintf(&b, "### %s\n\n", l.Evidence)
 	for i, item := range o.Evidence {
 		fmt.Fprintf(&b, "%d. **%s** · %s · `%s`\n\n", i+1, item.Source, item.Timestamp, item.Query)
 		for _, line := range strings.Split(item.Excerpt, "\n") {
@@ -598,29 +602,41 @@ func (o OptimizationResult) Render() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("序列化优化结论失败：%w", err)
 	}
-	b.WriteString("### 结构化结果\n\n```json\n")
+	fmt.Fprintf(&b, "### %s\n\n```json\n", l.Structured)
 	b.Write(payload)
 	b.WriteString("\n```\n")
 
 	return b.String(), nil
 }
 
+// findingLine is one labelled fact under the headline. Triage uses it for the
+// known-pattern verdict, the three evidence analysts for the onset: they are the
+// same slot, and giving the triage verdict a "time" label is what the old
+// call-by-position signature did by accident.
+type findingLine struct {
+	label string
+	value string
+}
+
 // renderFinding is the shape every specialist delegation returns: a headline
 // field, the report, and the evidence the commander can quote into the final
 // diagnosis without re-running anything.
-func renderFinding(title, headline, label, onset, result, message string, evidence []EvidenceItem) string {
+func renderFinding(l reportLabels, title, label, headline string, lines []findingLine, result, message string, evidence []EvidenceItem) string {
 	var b strings.Builder
 
-	fmt.Fprintf(&b, "## %s\n\n", title)
-	fmt.Fprintf(&b, "**%s**：%s\n\n", label, headline)
-	if onset != "" {
-		fmt.Fprintf(&b, "**时间点**：%s\n\n", onset)
+	b.WriteString(title + "\n\n")
+	fmt.Fprintf(&b, "**%s**%s%s\n\n", label, l.Sep, headline)
+	for _, line := range lines {
+		if line.value == "" {
+			continue
+		}
+		fmt.Fprintf(&b, "**%s**%s%s\n\n", line.label, l.Sep, line.value)
 	}
 	b.WriteString(result)
 	b.WriteString("\n")
 
 	if len(evidence) > 0 {
-		b.WriteString("\n### 证据\n\n")
+		fmt.Fprintf(&b, "\n### %s\n\n", l.Evidence)
 		for i, item := range evidence {
 			fmt.Fprintf(&b, "%d. **%s** · %s · `%s`\n\n", i+1, item.Source, item.Timestamp, item.Query)
 			for _, line := range strings.Split(item.Excerpt, "\n") {
@@ -631,40 +647,48 @@ func renderFinding(title, headline, label, onset, result, message string, eviden
 	}
 
 	if message != "" {
-		fmt.Fprintf(&b, "### 交给事故指挥\n\n%s\n", message)
+		fmt.Fprintf(&b, "### %s\n\n%s\n", l.Handover, message)
 	}
 
 	return b.String()
 }
 
-func (r TriageResult) Render() (string, error) {
+func (r TriageResult) Render(lang string) (string, error) {
 	if err := r.Validate(); err != nil {
 		return "", err
 	}
-	known := "未命中已知模式"
+	l := LabelsFor(lang)
+	known := l.PatternMiss
 	if r.KnownPattern.Bool() {
-		known = "命中已知模式"
+		known = l.PatternHit
 	}
-	return renderFinding("分诊结论", r.Severity+" · "+r.BlastRadius, "分级与影响面", known+"；"+r.BlastRadius, r.Result, r.Message, r.Evidence), nil
+	lines := []findingLine{{l.TriageKnownPattern, known}}
+	return renderFinding(l, l.TriageTitle, l.TriageHeadline, r.Severity+" · "+r.BlastRadius, lines, r.Result, r.Message, r.Evidence), nil
 }
 
-func (f LogFinding) Render() (string, error) {
+func (f LogFinding) Render(lang string) (string, error) {
 	if err := f.Validate(); err != nil {
 		return "", err
 	}
-	return renderFinding("日志分析结论", f.Pattern, "错误模式", f.Onset, f.Result, f.Message, f.Evidence), nil
+	l := LabelsFor(lang)
+	lines := []findingLine{{l.Onset, f.Onset}}
+	return renderFinding(l, l.LogTitle, l.LogHeadline, f.Pattern, lines, f.Result, f.Message, f.Evidence), nil
 }
 
-func (f MetricFinding) Render() (string, error) {
+func (f MetricFinding) Render(lang string) (string, error) {
 	if err := f.Validate(); err != nil {
 		return "", err
 	}
-	return renderFinding("指标分析结论", f.Metric, "指标", f.Onset, f.Result, f.Message, f.Evidence), nil
+	l := LabelsFor(lang)
+	lines := []findingLine{{l.Onset, f.Onset}}
+	return renderFinding(l, l.MetricTitle, l.MetricHeadline, f.Metric, lines, f.Result, f.Message, f.Evidence), nil
 }
 
-func (f ChangeFinding) Render() (string, error) {
+func (f ChangeFinding) Render(lang string) (string, error) {
 	if err := f.Validate(); err != nil {
 		return "", err
 	}
-	return renderFinding("变更分析结论", f.Change, "变更", f.Onset, f.Result, f.Message, f.Evidence), nil
+	l := LabelsFor(lang)
+	lines := []findingLine{{l.Onset, f.Onset}}
+	return renderFinding(l, l.ChangeTitle, l.ChangeHeadline, f.Change, lines, f.Result, f.Message, f.Evidence), nil
 }

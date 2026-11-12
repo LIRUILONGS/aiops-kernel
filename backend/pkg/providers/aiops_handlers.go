@@ -127,7 +127,7 @@ func (fp *flowProvider) performAnalyst(
 		SubtaskID: subtaskID,
 		Role:      role,
 		Finding: func(ctx context.Context, name string, args json.RawMessage) (string, error) {
-			rendered, err := renderAnalystFinding(role, args)
+			rendered, err := renderAnalystFinding(role, fp.language, args)
 			if err != nil {
 				return "", err
 			}
@@ -197,32 +197,32 @@ func (fp *flowProvider) performAnalyst(
 // renderAnalystFinding validates a finding before it is accepted, so an
 // incomplete report comes back to the specialist as a refusal it can fix rather
 // than reaching the commander as a half-answer.
-func renderAnalystFinding(role string, args json.RawMessage) (string, error) {
+func renderAnalystFinding(role, lang string, args json.RawMessage) (string, error) {
 	switch role {
 	case tools.TriageToolName:
 		var r tools.TriageResult
 		if err := json.Unmarshal(args, &r); err != nil {
 			return "", fmt.Errorf("failed to unmarshal triage result: %w", err)
 		}
-		return r.Render()
+		return r.Render(lang)
 	case tools.LogAnalystToolName:
 		var f tools.LogFinding
 		if err := json.Unmarshal(args, &f); err != nil {
 			return "", fmt.Errorf("failed to unmarshal log finding: %w", err)
 		}
-		return f.Render()
+		return f.Render(lang)
 	case tools.MetricsAnalystToolName:
 		var f tools.MetricFinding
 		if err := json.Unmarshal(args, &f); err != nil {
 			return "", fmt.Errorf("failed to unmarshal metric finding: %w", err)
 		}
-		return f.Render()
+		return f.Render(lang)
 	case tools.ChangeAnalystToolName:
 		var f tools.ChangeFinding
 		if err := json.Unmarshal(args, &f); err != nil {
 			return "", fmt.Errorf("failed to unmarshal change finding: %w", err)
 		}
-		return f.Render()
+		return f.Render(lang)
 	default:
 		return "", fmt.Errorf("unknown analyst role %q", role)
 	}

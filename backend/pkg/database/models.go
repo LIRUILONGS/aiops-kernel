@@ -340,32 +340,32 @@ func (ns NullMsglogType) Value() (driver.Value, error) {
 type PromptType string
 
 const (
-	PromptTypeCommander                PromptType = "commander"
-	PromptTypeTriage                   PromptType = "triage"
-	PromptTypeLogAnalyst               PromptType = "log_analyst"
-	PromptTypeMetricsAnalyst           PromptType = "metrics_analyst"
-	PromptTypeChangeAnalyst            PromptType = "change_analyst"
-	PromptTypeAssistant                PromptType = "assistant"
-	PromptTypeGenerator                PromptType = "generator"
-	PromptTypeSubtasksGenerator        PromptType = "subtasks_generator"
-	PromptTypeRefiner                  PromptType = "refiner"
-	PromptTypeSubtasksRefiner          PromptType = "subtasks_refiner"
-	PromptTypeReporter                 PromptType = "reporter"
-	PromptTypeTaskReporter             PromptType = "task_reporter"
-	PromptTypeReflector                PromptType = "reflector"
-	PromptTypeQuestionReflector        PromptType = "question_reflector"
-	PromptTypeToolcallFixer            PromptType = "toolcall_fixer"
-	PromptTypeInputToolcallFixer       PromptType = "input_toolcall_fixer"
-	PromptTypeSummarizer               PromptType = "summarizer"
-	PromptTypeImageChooser             PromptType = "image_chooser"
-	PromptTypeLanguageChooser          PromptType = "language_chooser"
-	PromptTypeFlowDescriptor           PromptType = "flow_descriptor"
-	PromptTypeTaskDescriptor           PromptType = "task_descriptor"
-	PromptTypeExecutionLogs            PromptType = "execution_logs"
-	PromptTypeFullExecutionContext     PromptType = "full_execution_context"
-	PromptTypeShortExecutionContext    PromptType = "short_execution_context"
-	PromptTypeToolCallIDCollector      PromptType = "tool_call_id_collector"
-	PromptTypeToolCallIDDetector       PromptType = "tool_call_id_detector"
+	PromptTypeCommander             PromptType = "commander"
+	PromptTypeTriage                PromptType = "triage"
+	PromptTypeLogAnalyst            PromptType = "log_analyst"
+	PromptTypeMetricsAnalyst        PromptType = "metrics_analyst"
+	PromptTypeChangeAnalyst         PromptType = "change_analyst"
+	PromptTypeAssistant             PromptType = "assistant"
+	PromptTypeGenerator             PromptType = "generator"
+	PromptTypeSubtasksGenerator     PromptType = "subtasks_generator"
+	PromptTypeRefiner               PromptType = "refiner"
+	PromptTypeSubtasksRefiner       PromptType = "subtasks_refiner"
+	PromptTypeReporter              PromptType = "reporter"
+	PromptTypeTaskReporter          PromptType = "task_reporter"
+	PromptTypeReflector             PromptType = "reflector"
+	PromptTypeQuestionReflector     PromptType = "question_reflector"
+	PromptTypeToolcallFixer         PromptType = "toolcall_fixer"
+	PromptTypeInputToolcallFixer    PromptType = "input_toolcall_fixer"
+	PromptTypeSummarizer            PromptType = "summarizer"
+	PromptTypeImageChooser          PromptType = "image_chooser"
+	PromptTypeLanguageChooser       PromptType = "language_chooser"
+	PromptTypeFlowDescriptor        PromptType = "flow_descriptor"
+	PromptTypeTaskDescriptor        PromptType = "task_descriptor"
+	PromptTypeExecutionLogs         PromptType = "execution_logs"
+	PromptTypeFullExecutionContext  PromptType = "full_execution_context"
+	PromptTypeShortExecutionContext PromptType = "short_execution_context"
+	PromptTypeToolCallIDCollector   PromptType = "tool_call_id_collector"
+	PromptTypeToolCallIDDetector    PromptType = "tool_call_id_detector"
 )
 
 func (e *PromptType) Scan(src interface{}) error {
@@ -1058,6 +1058,7 @@ type Subtask struct {
 	CreatedAt   sql.NullTime  `json:"created_at"`
 	UpdatedAt   sql.NullTime  `json:"updated_at"`
 	Context     string        `json:"context"`
+	PlanMode    string        `json:"plan_mode"`
 }
 
 type Task struct {

@@ -1,4 +1,4 @@
-﻿-- name: GetSubtaskMsgChains :many
+-- name: GetSubtaskMsgChains :many
 SELECT
   mc.*
 FROM msgchains mc

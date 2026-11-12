@@ -423,14 +423,17 @@ func (d Done) Validate() error {
 // PlanDescription is what the executing agent reads. The hypothesis fields are
 // appended rather than folded into the prose so the model that writes the
 // description cannot drop the signal the plan will be judged against.
-func (i SubtaskInfo) PlanDescription() string {
-	lines := []string{planModeLabel(i.Mode), i.Description}
+func (i SubtaskInfo) PlanDescription(lang string) string {
+	l := PlanLabelsFor(lang)
+
+	lines := []string{i.Description}
 	if i.ExpectedSignal != "" {
-		lines = append(lines, "期望信号："+i.ExpectedSignal)
+		lines = append(lines, l.ExpectedSignal+l.Sep+i.ExpectedSignal)
 	}
 	if i.AssignedTo != "" {
-		lines = append(lines, "建议执行者："+i.AssignedTo)
+		lines = append(lines, l.AssignedTo+l.Sep+i.AssignedTo)
 	}
+
 	return strings.Join(lines, "\n\n")
 }
 
@@ -462,19 +465,12 @@ var aiopsSpecialists = map[string]struct{}{
 	"change_analyst":  {},
 }
 
-// planModePrefix marks the line PlanDescription puts first. It is the only
-// channel the execution side reads the mode from, so it is written once here
-// and read once in the provider rather than re-derived from prose.
+// planModePrefix used to open every plan description; the mode now lives in the
+// subtasks.plan_mode column and this prefix survives only in rows written before
+// that column existed.
 const planModePrefix = "【目标类型："
 
-func planModeLabel(mode string) string {
-	if mode == PlanModeOptimization {
-		return planModePrefix + "性能优化】"
-	}
-	return planModePrefix + "故障诊断】"
-}
-
-// PlanModeOf reads the label back. An unrecognised description is an incident
+// PlanModeOf reads the legacy label. An unrecognised description is an incident
 // by default: that exit at worst wastes a probe, while the performance exit
 // would accept a conclusion nobody measured.
 func PlanModeOf(description string) string {

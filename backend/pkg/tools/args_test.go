@@ -1354,20 +1354,34 @@ func TestArgs_SubtaskInfo_PlanDescriptionKeepsTheHypothesisAndAppendsTheSignal(t
 		ExpectedSignal: "[emerg] unknown directive",
 	}
 
-	got := info.PlanDescription()
-
-	want := "【目标类型：性能优化】\n\n如果是配置错误，nginx 会在启动时以 emerg 退出。\n\n期望信号：[emerg] unknown directive\n\n建议执行者：log_analyst"
-	if got != want {
-		t.Fatalf("plan description = %q, want %q", got, want)
+	tests := []struct {
+		name string
+		lang string
+		want string
+	}{
+		{
+			name: "chinese",
+			lang: "Chinese",
+			want: "如果是配置错误，nginx 会在启动时以 emerg 退出。\n\n期望信号：[emerg] unknown directive\n\n建议执行者：log_analyst",
+		},
+		{
+			name: "english",
+			lang: "English",
+			want: "如果是配置错误，nginx 会在启动时以 emerg 退出。\n\nExpected signal: [emerg] unknown directive\n\nSuggested owner: log_analyst",
+		},
 	}
 
-	if mode := PlanModeOf(got); mode != PlanModeOptimization {
-		t.Errorf("the label PlanDescription writes is not the one PlanModeOf reads: %q", mode)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := info.PlanDescription(tt.lang); got != tt.want {
+				t.Fatalf("plan description = %q, want %q", got, tt.want)
+			}
+		})
 	}
 
 	bare := SubtaskInfo{Title: "t", Description: "d"}
-	if got := bare.PlanDescription(); got != "【目标类型：故障诊断】\n\nd" {
-		t.Errorf("an unlabelled entry must default to an incident, got %q", got)
+	if got := bare.PlanDescription("Chinese"); got != "d" {
+		t.Errorf("an entry without hints is its own description, got %q", got)
 	}
 }
 

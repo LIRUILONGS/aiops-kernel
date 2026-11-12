@@ -33,7 +33,7 @@ import (
 
 const ToolPlaceholder = "Execute operations via function invocation - textual responses are not acceptable for task completion."
 
-const TasksNumberLimit = 15
+const TasksNumberLimit = 5
 
 const (
 	msgGeneratorSizeLimit = 150 * 1024 // 150 KB
@@ -689,8 +689,8 @@ func (fp *flowProvider) PrepareAgentChain(ctx context.Context, taskID, subtaskID
 		ctx, &taskID, &subtaskID, optAgentType, msgChainType, systemAgentTmpl, subtask.Description,
 	)
 	if err != nil {
-		logger.WithError(err).Error("failed to restore primary agent msg chain")
-		return 0, fmt.Errorf("failed to restore primary agent msg chain: %w", err)
+		logger.WithError(err).Error("failed to restore commander msg chain")
+		return 0, fmt.Errorf("failed to restore commander msg chain: %w", err)
 	}
 
 	return msgChainID, nil
@@ -824,7 +824,7 @@ func (fp *flowProvider) PerformAgentChain(ctx context.Context, taskID, subtaskID
 				return "", fmt.Errorf("诊断不完整: %w", err)
 			}
 
-			report, err := diagnosis.Render()
+			report, err := diagnosis.Render(fp.language)
 			if err != nil {
 				loggerFunc.WithError(err).Error("failed to render diagnosis")
 				return "", fmt.Errorf("failed to render diagnosis: %w", err)
@@ -843,7 +843,7 @@ func (fp *flowProvider) PerformAgentChain(ctx context.Context, taskID, subtaskID
 				return "", fmt.Errorf("优化结论不完整: %w", err)
 			}
 
-			report, err := result.Render()
+			report, err := result.Render(fp.language)
 			if err != nil {
 				loggerFunc.WithError(err).Error("failed to render optimization result")
 				return "", fmt.Errorf("failed to render optimization result: %w", err)
@@ -1017,21 +1017,31 @@ func (fp *flowProvider) putAgentLog(
 }
 
 // subtaskMode resolves which chain a subtask belongs to. An explicit flow type
-// outranks the plan's own label: someone who asked for a performance
+// outranks the plan's own mode: someone who asked for a performance
 // investigation should not be handed an incident conclusion because the planner
 // guessed otherwise.
 func (fp *flowProvider) subtaskMode(ctx context.Context, subtask database.Subtask) string {
 	task, err := fp.db.GetTask(ctx, subtask.TaskID)
 	if err != nil {
-		return tools.PlanModeOf(subtask.Description)
+		return subtaskPlanMode(subtask)
 	}
 
 	flow, err := fp.db.GetFlow(ctx, task.FlowID)
 	if err != nil || flow.FlowType == "" || flow.FlowType == tools.FlowTypeAuto {
-		return tools.PlanModeOf(subtask.Description)
+		return subtaskPlanMode(subtask)
 	}
 
 	return flow.FlowType
+}
+
+// subtaskPlanMode falls back to the label older rows carry in their description,
+// because a row written before the column existed has no other record of it.
+func subtaskPlanMode(subtask database.Subtask) string {
+	if subtask.PlanMode != "" {
+		return subtask.PlanMode
+	}
+
+	return tools.PlanModeOf(subtask.Description)
 }
 
 // performanceGoal reads the goal the user declared when the flow was created.

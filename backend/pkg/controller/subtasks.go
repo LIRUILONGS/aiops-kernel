@@ -104,12 +104,19 @@ func (stc *subtaskController) GenerateSubtasks(ctx context.Context) error {
 }
 
 func (stc *subtaskController) createPlannedSubtask(ctx context.Context, info tools.SubtaskInfo) error {
+	mode := info.Mode
+	if mode == "" {
+		mode = tools.PlanModeDiagnosis
+	}
+
 	_, err := stc.taskCtx.DB.CreateSubtask(ctx, database.CreateSubtaskParams{
 		Status:      database.SubtaskStatusCreated,
 		TaskID:      stc.taskCtx.TaskID,
 		Title:       info.Title,
-		Description: info.PlanDescription(),
+		Description: info.PlanDescription(stc.taskCtx.Provider.Language()),
+		PlanMode:    mode,
 	})
+
 	return err
 }
 

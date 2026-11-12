@@ -129,35 +129,49 @@ func TestProvider_SubtaskMode_LetsAnExplicitFlowTypeOutrankThePlan(t *testing.T)
 	)
 
 	tests := []struct {
-		name     string
-		flowType string
-		flowErr  error
-		plan     string
-		want     string
+		name        string
+		flowType    string
+		flowErr     error
+		planMode    string
+		description string
+		want        string
 	}{
 		{
 			name:     "the flow asked for performance, the plan assumed an incident",
 			flowType: "optimization",
-			plan:     incidentPlan,
+			planMode: "diagnosis",
 			want:     "optimization",
 		},
 		{
 			name:     "the flow asked for an incident, the plan assumed performance",
 			flowType: "diagnosis",
-			plan:     perfPlan,
+			planMode: "optimization",
 			want:     "diagnosis",
 		},
 		{
 			name:     "an automatic flow is left to the plan",
 			flowType: "auto",
-			plan:     perfPlan,
+			planMode: "optimization",
 			want:     "optimization",
 		},
 		{
-			name:    "a flow that cannot be read is left to the plan",
-			flowErr: errors.New("gone"),
-			plan:    perfPlan,
-			want:    "optimization",
+			name:        "the column outranks a label a re-plan left in the description",
+			flowType:    "auto",
+			planMode:    "diagnosis",
+			description: perfPlan,
+			want:        "diagnosis",
+		},
+		{
+			name:        "a row written before the column existed is read from its label",
+			flowErr:     errors.New("gone"),
+			description: perfPlan,
+			want:        "optimization",
+		},
+		{
+			name:        "a row with neither record is an incident",
+			flowErr:     errors.New("gone"),
+			description: incidentPlan,
+			want:        "diagnosis",
 		},
 	}
 
@@ -167,7 +181,11 @@ func TestProvider_SubtaskMode_LetsAnExplicitFlowTypeOutrankThePlan(t *testing.T)
 				db: modeQuerier{flow: database.Flow{ID: 3, FlowType: tc.flowType}, flowErr: tc.flowErr},
 			}
 
-			got := fp.subtaskMode(context.Background(), database.Subtask{TaskID: 7, Description: tc.plan})
+			got := fp.subtaskMode(context.Background(), database.Subtask{
+				TaskID:      7,
+				Description: tc.description,
+				PlanMode:    tc.planMode,
+			})
 
 			assert.Equal(t, tc.want, got)
 		})

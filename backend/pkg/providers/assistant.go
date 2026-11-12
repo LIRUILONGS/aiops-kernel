@@ -607,6 +607,7 @@ func (ap *assistantProvider) patchAssistantFlowSubtasks(
 			TaskID:      taskID,
 			Title:       info.Title,
 			Description: info.Description,
+			PlanMode:    tools.PlanModeDiagnosis,
 		}); err != nil {
 			return fmt.Errorf("failed to create subtask %q for task %d: %w", info.Title, taskID, err)
 		}

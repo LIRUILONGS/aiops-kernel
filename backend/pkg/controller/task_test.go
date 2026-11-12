@@ -122,6 +122,12 @@ func (generatorFakeProvider) GetTaskTitle(context.Context, string) (string, erro
 	return "generated title", nil
 }
 
+// The plan text carries language-dependent hint labels, so a fake without a
+// language would panic rather than exercise the controller.
+func (generatorFakeProvider) Language() string {
+	return "English"
+}
+
 func (p generatorFakeProvider) GenerateSubtasks(ctx context.Context, _ int64) ([]tools.SubtaskInfo, error) {
 	if p.cancel != nil {
 		p.cancel()
@@ -153,7 +159,7 @@ func TestTask_AnExplicitlyEmptyGeneratorPlanRunsTheOriginalRequest(t *testing.T)
 	require.Len(t, q.subtasks, 1)
 	assert.Equal(t, database.SubtaskStatusCreated, q.subtasks[0].Status)
 	assert.Equal(t, "generated title", q.subtasks[0].Title)
-	assert.Equal(t, "【目标类型：故障诊断】\n\n"+request, q.subtasks[0].Description,
+	assert.Equal(t, request, q.subtasks[0].Description,
 		"the fallback entry is labelled as an incident, so its subtask gets the diagnosis exit")
 	assert.Empty(t, q.failedResults)
 	require.Len(t, pub.taskSubtasks, 1)

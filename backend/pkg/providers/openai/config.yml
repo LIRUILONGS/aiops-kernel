@@ -1,7 +1,7 @@
 # OpenAI agent configuration.
 #
 # Strategy: gpt-5.4-nano for utility/orchestration (simple/simple_json),
-# gpt-5.4-mini for the primary/assistant loop and lightweight security agents,
+# gpt-5.4-mini for the commander, the assistant and the evidence analysts,
 # gpt-5.6-terra (newest mid-tier flagship, same price as gpt-5.4) for critical
 # reasoning (generator/refiner).
 #

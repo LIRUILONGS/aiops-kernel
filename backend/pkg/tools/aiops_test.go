@@ -172,7 +172,7 @@ func TestAIOps_Diagnosis_ValidateRefusesAnIncompleteConclusion(t *testing.T) {
 func TestAIOps_Diagnosis_RenderKeepsTheEvidenceVerbatim(t *testing.T) {
 	diagnosis := validDiagnosis()
 
-	report, err := diagnosis.Render()
+	report, err := diagnosis.Render("Chinese")
 	if err != nil {
 		t.Fatalf("render: %v", err)
 	}
@@ -199,6 +199,101 @@ func TestAIOps_Diagnosis_RenderKeepsTheEvidenceVerbatim(t *testing.T) {
 	}
 	if embedded.RootCause != diagnosis.RootCause || len(embedded.Evidence) != len(diagnosis.Evidence) {
 		t.Fatalf("embedded json lost fields: %+v", embedded)
+	}
+}
+
+// The scaffolding used to be hardcoded Chinese while the body followed the
+// flow's language, so an English flow reached the operator with Chinese headings
+// over English prose.
+func TestAIOps_Renderer_FollowsTheFlowLanguage(t *testing.T) {
+	evidence := []EvidenceItem{{
+		Source:    "logs",
+		Query:     "ops_logs source=opslab-broken",
+		Timestamp: "2026-11-06T13:40:14Z",
+		Excerpt:   "[emerg] unknown directive",
+	}}
+	knownPattern := Bool(true)
+
+	tests := []struct {
+		name  string
+		render func(lang string) (string, error)
+		wantEN []string
+		wantZH []string
+	}{
+		{
+			name:   "diagnosis",
+			render: validDiagnosis().Render,
+			wantEN: []string{"## Diagnosis", "**Root cause**: ", "**Confidence**: 0.86", "### Evidence", "### Recommendation", "### Structured result"},
+			wantZH: []string{"## 诊断结论", "**根因**：", "**置信度**：0.86", "### 证据", "### 建议动作", "### 结构化结果"},
+		},
+		{
+			name:   "optimisation",
+			render: validOptimization().Render,
+			wantEN: []string{"## Optimisation result", "**Verdict**: improved", "**Before the change**: ", "**Measured gain**: "},
+			wantZH: []string{"## 性能优化结论", "**结论**：improved", "**变更前**：", "**实测收益**："},
+		},
+		{
+			name: "triage",
+			render: (TriageResult{
+				Severity: "high", BlastRadius: "single host", KnownPattern: &knownPattern,
+				Result: "report", Evidence: evidence,
+			}).Render,
+			wantEN: []string{"## Triage", "**Severity and blast radius**: high", "**Known pattern**: known pattern hit"},
+			wantZH: []string{"## 分诊结论", "**分级与影响面**：high", "**已知模式**：命中已知模式"},
+		},
+		{
+			name: "log finding",
+			render: (LogFinding{
+				Pattern: "emerg", Onset: "2026-11-06T13:40:14Z",
+				Result: "report", Evidence: evidence,
+			}).Render,
+			wantEN: []string{"## Log finding", "**Error pattern**: emerg", "**Onset**: 2026-11-06T13:40:14Z"},
+			wantZH: []string{"## 日志分析结论", "**错误模式**：emerg", "**时间点**：2026-11-06T13:40:14Z"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			english, err := tt.render("English")
+			if err != nil {
+				t.Fatalf("render in English: %v", err)
+			}
+			for _, want := range tt.wantEN {
+				if !strings.Contains(english, want) {
+					t.Errorf("English report is missing %q:\n%s", want, english)
+				}
+			}
+			for _, zh := range tt.wantZH {
+				if strings.Contains(english, zh) {
+					t.Errorf("English report carries the Chinese label %q:\n%s", zh, english)
+				}
+			}
+
+			chinese, err := tt.render("Chinese")
+			if err != nil {
+				t.Fatalf("render in Chinese: %v", err)
+			}
+			for _, want := range tt.wantZH {
+				if !strings.Contains(chinese, want) {
+					t.Errorf("Chinese report is missing %q:\n%s", want, chinese)
+				}
+			}
+		})
+	}
+}
+
+// A language the chooser can return but this product has no scaffolding for
+// reads in English: half-translated labels would be worse than one language.
+func TestAIOps_LabelsFor_DefaultsToEnglishForAnUnknownLanguage(t *testing.T) {
+	for _, lang := range []string{"Russian", "English", "", "  "} {
+		if got := LabelsFor(lang); got != englishLabels {
+			t.Errorf("LabelsFor(%q) did not pick the English set", lang)
+		}
+	}
+	for _, lang := range []string{"Chinese", "chinese", "Chinese (Simplified)", "中文"} {
+		if got := LabelsFor(lang); got != chineseLabels {
+			t.Errorf("LabelsFor(%q) did not pick the Chinese set", lang)
+		}
 	}
 }
 
@@ -499,7 +594,7 @@ func TestAIOps_Optimization_RefusesAConclusionThatWasNeverMeasured(t *testing.T)
 }
 
 func TestAIOps_Optimization_RenderLeadsWithTheVerdict(t *testing.T) {
-	report, err := validOptimization().Render()
+	report, err := validOptimization().Render("Chinese")
 	if err != nil {
 		t.Fatalf("Render() refused a valid optimisation: %v", err)
 	}
@@ -514,7 +609,7 @@ func TestAIOps_Optimization_RenderLeadsWithTheVerdict(t *testing.T) {
 	unverified.Verdict = "unverified"
 	unverified.ObservedGain = ""
 
-	report, err = unverified.Render()
+	report, err = unverified.Render("Chinese")
 	if err != nil {
 		t.Fatalf("Render() refused an unverified optimisation: %v", err)
 	}

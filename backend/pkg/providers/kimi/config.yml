@@ -1,8 +1,8 @@
 # Kimi (Moonshot) agent configuration.
 #
 # Strategy: kimi-k2.6 for utility/orchestration, kimi-k2.7-code-highspeed for the
-# primary/assistant loop, kimi-k3 (always-thinking flagship) for advice, and
-# kimi-k2.7-code for generator/refiner.
+# commander and the assistant, kimi-k3 (always-thinking flagship) for the evidence
+# analysts, and kimi-k2.7-code for generator/refiner.
 #
 # Thinking is expressed through the reasoning block, not extra_body: utility kimi-k2.6
 # agents set reasoning.mode "off" (langchaingo emits thinking.type=disabled), kimi-k3

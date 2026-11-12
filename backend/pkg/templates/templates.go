@@ -34,18 +34,18 @@ const (
 	PromptTypeMetricsAnalyst           PromptType = "metrics_analyst"            // locates the inflection point in metric series
 	PromptTypeChangeAnalyst            PromptType = "change_analyst"             // builds the change timeline around the onset
 	PromptTypeAssistant                PromptType = "assistant"                  // interactive AI assistant for user conversations
-	PromptTypeGenerator                PromptType = "generator"                  // creates structured subtask breakdown
+	PromptTypeGenerator                PromptType = "generator"                  // turns an alert into verifiable hypotheses
 	PromptTypeSubtasksGenerator        PromptType = "subtasks_generator"         // human input for task decomposition
-	PromptTypeRefiner                  PromptType = "refiner"                    // optimizes and adjusts planned subtasks
+	PromptTypeRefiner                  PromptType = "refiner"                    // re-plans the remaining hypotheses
 	PromptTypeSubtasksRefiner          PromptType = "subtasks_refiner"           // human input for task refinement
-	PromptTypeReporter                 PromptType = "reporter"                   // generates comprehensive security reports
+	PromptTypeReporter                 PromptType = "reporter"                   // writes the incident closing report
 	PromptTypeTaskReporter             PromptType = "task_reporter"              // human input for result documentation
 	PromptTypeReflector                PromptType = "reflector"                  // analyzes outcomes and suggests improvements
 	PromptTypeQuestionReflector        PromptType = "question_reflector"         // human input for self-assessment
-	PromptTypeToolCallFixer            PromptType = "toolcall_fixer"             // corrects malformed security tool commands
+	PromptTypeToolCallFixer            PromptType = "toolcall_fixer"             // repairs malformed tool call arguments
 	PromptTypeInputToolCallFixer       PromptType = "input_toolcall_fixer"       // human input for tool argument fixing
 	PromptTypeSummarizer               PromptType = "summarizer"                 // condenses long conversations and results
-	PromptTypeImageChooser             PromptType = "image_chooser"              // selects appropriate Docker containers
+	PromptTypeImageChooser             PromptType = "image_chooser"              // chooses the flow sandbox image
 	PromptTypeLanguageChooser          PromptType = "language_chooser"           // determines user's preferred language
 	PromptTypeFlowDescriptor           PromptType = "flow_descriptor"            // generates flow titles from user requests
 	PromptTypeTaskDescriptor           PromptType = "task_descriptor"            // generates task titles from user requests
@@ -205,7 +205,6 @@ var PromptVariables = map[PromptType][]string{
 	},
 	PromptTypeImageChooser: {
 		"DefaultImage",
-		"DefaultImageForPentest",
 		"Input",
 	},
 	PromptTypeLanguageChooser: {
