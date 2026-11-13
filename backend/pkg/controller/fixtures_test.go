@@ -781,12 +781,11 @@ func (p *lifecycleProviders) GraphitiClient() *graphiti.Client { return nil }
 
 func lifecycleAssistantCtx(q database.Querier, provs providers.ProviderController) newAssistantWorkerCtx {
 	return newAssistantWorkerCtx{
-		userID:    7,
-		flowID:    42,
-		input:     "run the scan",
-		prvname:   provider.ProviderName("custom"),
-		prvtype:   provider.ProviderType("custom"),
-		functions: &tools.Functions{},
+		userID:  7,
+		flowID:  42,
+		input:   "run the scan",
+		prvname: provider.ProviderName("custom"),
+		prvtype: provider.ProviderType("custom"),
 		flowWorkerCtx: flowWorkerCtx{
 			db:    q,
 			cfg:   &config.Config{},

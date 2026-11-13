@@ -2,7 +2,6 @@ package worker
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"opsagi/cmd/ftester/mocks"
@@ -42,7 +41,6 @@ type tester struct {
 	flowExecutor tools.FlowToolsExecutor
 	flowProvider providers.FlowProvider
 	proxies      mocks.ProxyProviders
-	functions    *tools.Functions
 }
 
 // NewTester creates a new instance of the tester with all necessary components
@@ -62,11 +60,8 @@ func NewTester(
 		return nil, fmt.Errorf("failed to get provider: %w", err)
 	}
 
-	// Create empty functions definition
-	functions := &tools.Functions{}
-
 	// Initialize tools flowExecutor
-	flowExecutor, err := tools.NewFlowToolsExecutor(db, cfg, dockerClient, functions, userID, flowID)
+	flowExecutor, err := tools.NewFlowToolsExecutor(db, cfg, dockerClient, userID, flowID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create flow tools executor: %w", err)
 	}
@@ -111,7 +106,6 @@ func NewTester(
 		toolExecutor: toolExecutor,
 		flowExecutor: flowExecutor,
 		proxies:      proxies,
-		functions:    functions,
 	}
 	if err := t.initFlowProviderController(); err != nil {
 		return nil, fmt.Errorf("failed to initialize flow provider controller: %w", err)
@@ -174,14 +168,6 @@ func (t *tester) initFlowProviderController() error {
 	// Create a span for tracking the entire worker lifecycle
 	flowSpan := observation.Span(langfuse.WithSpanName("run tester flow worker"))
 	t.ctx, _ = flowSpan.Observation(ctx)
-
-	// Each flow has its own JSON configuration of allowed functions
-	// These determine what tools the AI can access during execution
-	functions := &tools.Functions{}
-	if err := json.Unmarshal(flow.Functions, functions); err != nil {
-		return wrapErrorEndSpan(t.ctx, flowSpan, "failed to unmarshal functions", err)
-	}
-	t.flowExecutor.SetFunctions(functions)
 
 	// Create a prompter for communicating with the AI model
 	// TODO: This will eventually be customized per user/flow

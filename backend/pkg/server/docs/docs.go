@@ -8125,9 +8125,6 @@ const docTemplate = `{
                     "type": "integer",
                     "minimum": 0
                 },
-                "functions": {
-                    "$ref": "#/definitions/tools.Functions"
-                },
                 "id": {
                     "type": "integer",
                     "minimum": 0
@@ -8199,9 +8196,6 @@ const docTemplate = `{
                 "flow_id": {
                     "type": "integer",
                     "minimum": 0
-                },
-                "functions": {
-                    "$ref": "#/definitions/tools.Functions"
                 },
                 "id": {
                     "type": "integer",
@@ -8472,9 +8466,6 @@ const docTemplate = `{
                 "provider"
             ],
             "properties": {
-                "functions": {
-                    "$ref": "#/definitions/tools.Functions"
-                },
                 "input": {
                     "type": "string",
                     "example": "user input for running assistant"
@@ -8502,9 +8493,6 @@ const docTemplate = `{
                 "provider"
             ],
             "properties": {
-                "functions": {
-                    "$ref": "#/definitions/tools.Functions"
-                },
                 "input": {
                     "type": "string",
                     "example": "user input for first task in the flow"
@@ -8637,9 +8625,6 @@ const docTemplate = `{
                 },
                 "deleted_at": {
                     "type": "string"
-                },
-                "functions": {
-                    "$ref": "#/definitions/tools.Functions"
                 },
                 "id": {
                     "type": "integer",
@@ -8790,9 +8775,6 @@ const docTemplate = `{
                 },
                 "deleted_at": {
                     "type": "string"
-                },
-                "functions": {
-                    "$ref": "#/definitions/tools.Functions"
                 },
                 "id": {
                     "type": "integer",
@@ -10605,76 +10587,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/models.Vecstorelog"
                     }
-                }
-            }
-        },
-        "tools.DisableFunction": {
-            "type": "object",
-            "required": [
-                "context",
-                "name"
-            ],
-            "properties": {
-                "context": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "tools.ExternalFunction": {
-            "type": "object",
-            "required": [
-                "context",
-                "name",
-                "schema",
-                "url"
-            ],
-            "properties": {
-                "context": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "schema": {
-                    "type": "object"
-                },
-                "timeout": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "example": 60
-                },
-                "url": {
-                    "type": "string",
-                    "example": "https://example.com/api/v1/function"
-                }
-            }
-        },
-        "tools.Functions": {
-            "type": "object",
-            "properties": {
-                "disabled": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/tools.DisableFunction"
-                    }
-                },
-                "functions": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/tools.ExternalFunction"
-                    }
-                },
-                "token": {
-                    "type": "string"
                 }
             }
         }

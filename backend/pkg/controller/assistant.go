@@ -3,7 +3,6 @@ package controller
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"sync"
@@ -67,7 +66,6 @@ type newAssistantWorkerCtx struct {
 	useAgents bool
 	prvname   provider.ProviderName
 	prvtype   provider.ProviderType
-	functions *tools.Functions
 	resources []database.UserResource
 	fw        FlowWorker
 
@@ -111,7 +109,6 @@ func reserveAssistant(ctx context.Context, awc newAssistantWorkerCtx) (database.
 		ModelProviderType:  database.ProviderType(awc.prvtype),
 		Language:           "English",
 		ToolCallIDTemplate: cast.ToolCallIDTemplate,
-		Functions:          []byte("{}"),
 		FlowID:             awc.flowID,
 		UseAgents:          awc.useAgents,
 	})
@@ -212,7 +209,7 @@ func buildAssistantWorker(
 	if err != nil {
 		return nil, wrapErrorEndSpan(ctx, assistantSpan, "failed to build user prompter", err)
 	}
-	executor, err := tools.NewFlowToolsExecutor(awc.db, awc.cfg, awc.docker, awc.functions, awc.userID, awc.flowID)
+	executor, err := tools.NewFlowToolsExecutor(awc.db, awc.cfg, awc.docker, awc.userID, awc.flowID)
 	if err != nil {
 		return nil, wrapErrorEndSpan(ctx, assistantSpan, "failed to create flow tools executor", err)
 	}
@@ -227,11 +224,6 @@ func buildAssistantWorker(
 		return nil, wrapErrorEndSpan(ctx, assistantSpan, "failed to prepare assistant chain", err)
 	}
 
-	functionsBlob, err := json.Marshal(awc.functions)
-	if err != nil {
-		return nil, wrapErrorEndSpan(ctx, assistantSpan, "failed to marshal functions", err)
-	}
-
 	logger = logger.WithField("msg_chain_id", msgChainID)
 	logger.Info("assistant provider prepared")
 
@@ -240,7 +232,6 @@ func buildAssistantWorker(
 		Model:              assistantProvider.Model(pconfig.OptionsTypeCommander),
 		Language:           assistantProvider.Language(),
 		ToolCallIDTemplate: assistantProvider.ToolCallIDTemplate(),
-		Functions:          functionsBlob,
 		TraceID:            database.StringToNullString(observation.TraceID()),
 		MsgchainID:         database.Int64ToNullInt64(&msgChainID),
 		ID:                 assistant.ID,
@@ -386,11 +377,6 @@ func LoadAssistantWorker(
 	assistantSpan := observation.Span(langfuse.WithSpanName("prepare assistant worker"))
 	ctx, _ = assistantSpan.Observation(ctx)
 
-	functions := &tools.Functions{}
-	if err := json.Unmarshal(assistant.Functions, functions); err != nil {
-		return nil, wrapErrorEndSpan(ctx, assistantSpan, "failed to unmarshal functions", err)
-	}
-
 	pub := awc.subs.NewFlowPublisher(awc.userID, awc.flowID)
 	aslw, err := awc.aslc.NewFlowAssistantLog(ctx, awc.flowID, assistant.ID, pub)
 	if err != nil {
@@ -404,7 +390,7 @@ func LoadAssistantWorker(
 			return nil, wrapErrorEndSpan(ctx, assistantSpan, "failed to build user prompter", err)
 		}
 	}
-	executor, err := tools.NewFlowToolsExecutor(awc.db, awc.cfg, awc.docker, functions, awc.userID, awc.flowID)
+	executor, err := tools.NewFlowToolsExecutor(awc.db, awc.cfg, awc.docker, awc.userID, awc.flowID)
 	if err != nil {
 		return nil, wrapErrorEndSpan(ctx, assistantSpan, "failed to create flow tools executor", err)
 	}

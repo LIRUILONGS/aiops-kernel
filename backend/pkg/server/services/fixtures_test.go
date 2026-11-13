@@ -197,7 +197,6 @@ func setupFlowFileServiceTestDB(t *testing.T) *gorm.DB {
 			model_provider_name TEXT NOT NULL DEFAULT '',
 			model_provider_type TEXT NOT NULL DEFAULT 'openai',
 			language TEXT NOT NULL DEFAULT 'english',
-			functions TEXT NOT NULL DEFAULT '{}',
 			tool_call_id_template TEXT NOT NULL DEFAULT '',
 			trace_id TEXT,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

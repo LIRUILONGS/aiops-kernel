@@ -25,7 +25,6 @@ func TestAssistants_UpdateAssistantStatus_LeavesADeletedAssistantAlone(t *testin
 		ModelProviderName: "p",
 		ModelProviderType: database.ProviderTypeOpenai,
 		Language:          "en",
-		Functions:         json.RawMessage(`{}`),
 		FlowID:            flowID,
 	})
 	if err != nil {

@@ -62,13 +62,7 @@ This document serves as a comprehensive guide to the configuration system in Ops
   - [Assistant Settings](#assistant-settings)
     - [Usage Details](#usage-details-8)
     - [Recommended Assistant Settings for Different Use Cases](#recommended-assistant-settings-for-different-use-cases)
-  - [Functions Configuration](#functions-configuration)
-    - [DisableFunction Structure](#disablefunction-structure)
-    - [ExternalFunction Structure](#externalfunction-structure)
-    - [Usage Details](#usage-details-9)
-    - [Example Configuration](#example-configuration)
-    - [Security Considerations](#security-considerations)
-    - [Built-in Functions Reference](#built-in-functions-reference)
+  - [Tool Selection Per Role](#tool-selection-per-role)
   - [Search Engine Settings](#search-engine-settings)
     - [DuckDuckGo Search](#duckduckgo-search)
     - [Sploitus Search](#sploitus-search)
@@ -1498,19 +1492,9 @@ The assistant summarizer configuration is designed to provide more memory for co
    ```
    More conservative settings for environments with limited resources or smaller context models.
 
-## Functions Configuration
+## Tool Selection Per Role
 
-A flow or an assistant may carry a `functions` block. It is stored with the flow, returned by the API and accepted on create; the executors build their tool lists from the role, not from this block, so nothing in it changes what an agent can call in this build.
-
-| Field     | Type                 | Description                                                     |
-| --------- | -------------------- | --------------------------------------------------------------- |
-| token     | string (optional)    | API token for authenticating external function calls            |
-| disabled  | DisableFunction[]    | List of built-in functions to disable for specific agent types  |
-| functions | ExternalFunction[]   | List of custom external functions to add to agent capabilities  |
-
-`DisableFunction` is `{name, context}` and `ExternalFunction` is `{name, url, timeout, context, schema}`. `context` is validated against `agent adviser coder searcher generator memorist enricher reporter assistant`; that list is the validator's and still carries names the AIOps chains do not have. Nothing reads the field: a `functions` block is parsed, validated and stored on the flow, and no executor consults it. Both types implement `Scan` so the JSON column survives a round trip.
-
-The tool list of each chain is fixed by its executor: the commander gets the ops probes, the analysts get their evidence subsets, the assistant gets the environment and memory tools. A tool that must not be offered to a role is removed from that role's executor, which is the only place that decides.
+Nothing in the configuration decides which tools an agent may call, and a flow or an assistant carries no tool list of its own. Each chain's tool list is fixed by its executor: the commander gets the ops probes, the analysts get their evidence subsets, the assistant gets the environment and memory tools. A tool that must not be offered to a role is removed from that role's executor, which is the only place that decides, so every flow on a build sees the same list.
 
 ## Search Engine Settings
 

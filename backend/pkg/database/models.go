@@ -883,7 +883,6 @@ type Assistant struct {
 	Model              string          `json:"model"`
 	ModelProviderName  string          `json:"model_provider_name"`
 	Language           string          `json:"language"`
-	Functions          json.RawMessage `json:"functions"`
 	TraceID            sql.NullString  `json:"trace_id"`
 	FlowID             int64           `json:"flow_id"`
 	UseAgents          bool            `json:"use_agents"`
@@ -921,21 +920,20 @@ type Container struct {
 }
 
 type Flow struct {
-	ID                 int64           `json:"id"`
-	Status             FlowStatus      `json:"status"`
-	Title              string          `json:"title"`
-	Model              string          `json:"model"`
-	ModelProviderName  string          `json:"model_provider_name"`
-	Language           string          `json:"language"`
-	Functions          json.RawMessage `json:"functions"`
-	UserID             int64           `json:"user_id"`
-	CreatedAt          sql.NullTime    `json:"created_at"`
-	UpdatedAt          sql.NullTime    `json:"updated_at"`
-	DeletedAt          sql.NullTime    `json:"deleted_at"`
-	TraceID            sql.NullString  `json:"trace_id"`
-	ModelProviderType  ProviderType    `json:"model_provider_type"`
-	ToolCallIDTemplate string          `json:"tool_call_id_template"`
-	FlowType           string          `json:"flow_type"`
+	ID                 int64          `json:"id"`
+	Status             FlowStatus     `json:"status"`
+	Title              string         `json:"title"`
+	Model              string         `json:"model"`
+	ModelProviderName  string         `json:"model_provider_name"`
+	Language           string         `json:"language"`
+	UserID             int64          `json:"user_id"`
+	CreatedAt          sql.NullTime   `json:"created_at"`
+	UpdatedAt          sql.NullTime   `json:"updated_at"`
+	DeletedAt          sql.NullTime   `json:"deleted_at"`
+	TraceID            sql.NullString `json:"trace_id"`
+	ModelProviderType  ProviderType   `json:"model_provider_type"`
+	ToolCallIDTemplate string         `json:"tool_call_id_template"`
+	FlowType           string         `json:"flow_type"`
 }
 
 type FlowTemplate struct {

@@ -2,7 +2,6 @@ package services
 
 import (
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"slices"
@@ -372,7 +371,7 @@ func (s *FlowService) CreateFlow(c *gin.Context) {
 
 	// This endpoint predates the flow type; callers that need to choose it use the
 	// GraphQL mutation, so the REST path keeps the planner-decided behaviour.
-	flowID, err := s.fc.CreateFlow(c, int64(uid), createFlow.Input, "auto", prvname, prvtype, createFlow.Functions, dbResources)
+	flowID, err := s.fc.CreateFlow(c, int64(uid), createFlow.Input, "auto", prvname, prvtype, dbResources)
 	if err != nil {
 		logger.FromContext(c).WithError(err).Errorf("error creating flow")
 		response.Error(c, response.ErrInternal, err)
@@ -702,11 +701,6 @@ func (s *FlowService) DeleteFlow(c *gin.Context) {
 }
 
 func convertFlowToDatabase(flow models.Flow) (database.Flow, error) {
-	functions, err := json.Marshal(flow.Functions)
-	if err != nil {
-		return database.Flow{}, err
-	}
-
 	return database.Flow{
 		ID:                 int64(flow.ID),
 		Status:             database.FlowStatus(flow.Status),
@@ -714,7 +708,6 @@ func convertFlowToDatabase(flow models.Flow) (database.Flow, error) {
 		Model:              flow.Model,
 		ModelProviderName:  flow.ModelProviderName,
 		Language:           flow.Language,
-		Functions:          functions,
 		UserID:             int64(flow.UserID),
 		CreatedAt:          database.TimeToNullTime(flow.CreatedAt),
 		UpdatedAt:          database.TimeToNullTime(flow.UpdatedAt),

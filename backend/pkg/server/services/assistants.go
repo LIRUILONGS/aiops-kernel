@@ -1,7 +1,6 @@
 package services
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -329,7 +328,6 @@ func (s *AssistantService) CreateFlowAssistant(c *gin.Context) {
 		createAssistant.UseAgents,
 		prvname,
 		prvtype,
-		createAssistant.Functions,
 		dbResources,
 	)
 	if err != nil {
@@ -618,11 +616,6 @@ func (s *AssistantService) DeleteAssistant(c *gin.Context) {
 }
 
 func convertAssistantToDatabase(assistant models.Assistant) (database.Assistant, error) {
-	functions, err := json.Marshal(assistant.Functions)
-	if err != nil {
-		return database.Assistant{}, err
-	}
-
 	return database.Assistant{
 		ID:                 int64(assistant.ID),
 		Status:             database.AssistantStatus(assistant.Status),
@@ -630,7 +623,6 @@ func convertAssistantToDatabase(assistant models.Assistant) (database.Assistant,
 		Model:              assistant.Model,
 		ModelProviderName:  assistant.ModelProviderName,
 		Language:           assistant.Language,
-		Functions:          functions,
 		TraceID:            database.PtrStringToNullString(assistant.TraceID),
 		FlowID:             int64(assistant.FlowID),
 		UseAgents:          assistant.UseAgents,

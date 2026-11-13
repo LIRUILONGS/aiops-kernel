@@ -37,37 +37,6 @@ type ExecutorHandler func(ctx context.Context, name string, args json.RawMessage
 
 type SummarizeHandler func(ctx context.Context, result string) (string, error)
 
-type Functions struct {
-	Token    *string            `form:"token,omitempty" json:"token,omitempty" validate:"omitempty"`
-	Disabled []DisableFunction  `form:"disabled,omitempty" json:"disabled,omitempty" validate:"omitempty,valid"`
-	Function []ExternalFunction `form:"functions,omitempty" json:"functions,omitempty" validate:"omitempty,valid"`
-}
-
-func (f *Functions) Scan(input any) error {
-	switch v := input.(type) {
-	case string:
-		return json.Unmarshal([]byte(v), f)
-	case []byte:
-		return json.Unmarshal(v, f)
-	case json.RawMessage:
-		return json.Unmarshal(v, f)
-	}
-	return fmt.Errorf("unsupported type of input value to scan")
-}
-
-type DisableFunction struct {
-	Name    string   `form:"name" json:"name" validate:"required"`
-	Context []string `form:"context,omitempty" json:"context,omitempty" validate:"omitempty,dive,oneof=agent adviser coder searcher generator memorist enricher reporter assistant,required"`
-}
-
-type ExternalFunction struct {
-	Name    string        `form:"name" json:"name" validate:"required"`
-	URL     string        `form:"url" json:"url" validate:"required,url" example:"https://example.com/api/v1/function"`
-	Timeout *int64        `form:"timeout,omitempty" json:"timeout,omitempty" validate:"omitempty,min=1" example:"60"`
-	Context []string      `form:"context,omitempty" json:"context,omitempty" validate:"omitempty,dive,oneof=agent adviser coder searcher generator memorist enricher reporter assistant,required"`
-	Schema  schema.Schema `form:"schema" json:"schema" validate:"required" swaggertype:"object"`
-}
-
 type FunctionInfo struct {
 	Name   string
 	Schema string
@@ -184,7 +153,6 @@ type flowToolsExecutor struct {
 	docker         docker.DockerClient
 	primaryID      int64
 	primaryLID     string
-	functions      *Functions
 	replacer       anonymizer.Replacer
 
 	definitions map[string]llms.FunctionDefinition
@@ -216,11 +184,6 @@ type FlowManagerHandlers struct {
 	WaitFlow      func(ctx context.Context) error
 }
 
-
-
-
-
-
 // GeneratorExecutorConfig is the planner. It has no other tool on purpose: a
 // planner that can run commands investigates instead of planning, and the plan
 // is the one artefact this step produces.
@@ -235,8 +198,6 @@ type RefinerExecutorConfig struct {
 	TaskID       int64
 	SubtaskPatch ExecutorHandler
 }
-
-
 
 type ReporterExecutorConfig struct {
 	TaskID       *int64
@@ -288,7 +249,6 @@ type FlowToolsExecutor interface {
 	SetFlowID(flowID int64)
 	SetImage(image string)
 	SetEmbedder(embedder embeddings.Embedder)
-	SetFunctions(functions *Functions)
 	SetScreenshotProvider(sp ScreenshotProvider)
 	SetAgentLogProvider(alp AgentLogProvider)
 	SetMsgLogProvider(mlp MsgLogProvider)
@@ -323,7 +283,6 @@ func NewFlowToolsExecutor(
 	db database.Querier,
 	cfg *config.Config,
 	docker docker.DockerClient,
-	functions *Functions,
 	userID, flowID int64,
 ) (FlowToolsExecutor, error) {
 	// Build the replacer exactly once for the lifetime of the process.
@@ -346,7 +305,6 @@ func NewFlowToolsExecutor(
 	return &flowToolsExecutor{
 		db:          db,
 		docker:      docker,
-		functions:   functions,
 		replacer:    sharedReplacer,
 		cfg:         cfg,
 		flowID:      flowID,
@@ -392,10 +350,6 @@ func (fte *flowToolsExecutor) SetEmbedder(embedder embeddings.Embedder) {
 		return
 	}
 	fte.store = &store
-}
-
-func (fte *flowToolsExecutor) SetFunctions(functions *Functions) {
-	fte.functions = functions
 }
 
 func (fte *flowToolsExecutor) SetScreenshotProvider(scp ScreenshotProvider) {

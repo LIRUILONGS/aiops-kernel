@@ -28,17 +28,17 @@ WHERE f.id = $1 AND f.user_id = $2 AND f.deleted_at IS NULL;
 
 -- name: CreateFlow :one
 INSERT INTO flows (
-  title, status, model, model_provider_name, model_provider_type, language, tool_call_id_template, functions, user_id, flow_type
+  title, status, model, model_provider_name, model_provider_type, language, tool_call_id_template, user_id, flow_type
 )
 VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+  $1, $2, $3, $4, $5, $6, $7, $8, $9
 )
 RETURNING *;
 
 -- name: UpdateFlow :one
 UPDATE flows
-SET title = $1, model = $2, language = $3, tool_call_id_template = $4, functions = $5, trace_id = $6
-WHERE id = $7
+SET title = $1, model = $2, language = $3, tool_call_id_template = $4, trace_id = $5
+WHERE id = $6
 RETURNING *;
 
 -- name: UpdateFlowStatus :one

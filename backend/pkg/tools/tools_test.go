@@ -213,7 +213,7 @@ func TestTools_Prepare_LaunchesTheSandboxWithTheCapabilityAllowList(t *testing.T
 		t.Run(tc.name, func(t *testing.T) {
 			docker := &fakeDockerClient{}
 			cfg := &config.Config{DataDir: t.TempDir(), TenantID: tc.tenant, DockerNetAdmin: tc.netAdmin}
-			executor, err := NewFlowToolsExecutor(&fakeContainerDB{}, cfg, docker, nil, 1, 42)
+			executor, err := NewFlowToolsExecutor(&fakeContainerDB{}, cfg, docker, 1, 42)
 			require.NoError(t, err)
 			executor.SetImage("vxcontrol/kali-linux:test")
 
@@ -521,7 +521,7 @@ func TestTools_NewFlowToolsExecutor_MasksTheConfiguredSecrets(t *testing.T) {
 	t.Cleanup(func() { sharedReplacerOnce, sharedReplacer, sharedReplacerErr = sync.Once{}, nil, nil })
 
 	const licenseKey = "PLUM-WALRUS-7731-QUIVER"
-	executor, err := NewFlowToolsExecutor(nil, &config.Config{LicenseKey: licenseKey}, nil, nil, 1, 42)
+	executor, err := NewFlowToolsExecutor(nil, &config.Config{LicenseKey: licenseKey}, nil, 1, 42)
 	require.NoError(t, err)
 
 	masked := executor.(*flowToolsExecutor).replacer.ReplaceString("applied license " + licenseKey + " to the node")
@@ -821,46 +821,6 @@ func TestTools_GetExecutors_RequireWhatTheyUse(t *testing.T) {
 			}
 			require.ErrorIs(t, err, errLookup)
 			assert.Contains(t, err.Error(), "failed to get container 42")
-		})
-	}
-}
-
-func TestTools_Functions_ScansWhatTheDatabaseDriverReturns(t *testing.T) {
-	const stored = `{"token":"t-1","disabled":[{"name":"terminal","context":["agent"]}],` +
-		`"functions":[{"name":"lookup","url":"https://example.com/api","timeout":30}]}`
-
-	cases := []struct {
-		name    string
-		input   any
-		wantErr string
-	}{
-		{name: "a string", input: stored},
-		{name: "bytes", input: []byte(stored)},
-		{name: "a raw JSON message", input: json.RawMessage(stored)},
-		{name: "an integer", input: int64(1), wantErr: "unsupported type of input value to scan"},
-		{name: "malformed JSON", input: `{"token":`, wantErr: "unexpected end of JSON input"},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			var functions Functions
-
-			err := functions.Scan(tc.input)
-
-			if tc.wantErr != "" {
-				assert.EqualError(t, err, tc.wantErr)
-				return
-			}
-			require.NoError(t, err)
-			require.NotNil(t, functions.Token)
-			assert.Equal(t, "t-1", *functions.Token)
-			assert.Equal(t, []DisableFunction{{Name: "terminal", Context: []string{"agent"}}}, functions.Disabled)
-			require.Len(t, functions.Function, 1)
-			assert.Equal(t, "lookup", functions.Function[0].Name)
-			assert.Equal(t, "https://example.com/api", functions.Function[0].URL)
-			if assert.NotNil(t, functions.Function[0].Timeout) {
-				assert.Equal(t, int64(30), *functions.Function[0].Timeout)
-			}
 		})
 	}
 }

@@ -134,11 +134,11 @@ There are no relational `actions`, `artifacts` or `memories` tables. Individual 
 
 | Table | Key fields / notes |
 |---|---|
-| `flows` | Status, title, model, provider name/type, language, functions JSON, `tool_call_id_template`, optional `trace_id`, soft deletion |
+| `flows` | Status, title, model, provider name/type, language, `tool_call_id_template`, optional `trace_id`, soft deletion |
 | `tasks` | Status, title, input, result; owned by `flow_id` |
 | `subtasks` | Status, title, description, result, persisted `context`; owned by `task_id` |
 | `containers` | Type (`primary`/`secondary`), name, image, status, optional Docker `local_id`/`local_dir` |
-| `assistants` | Flow-scoped interactive assistants with model/provider/functions, `use_agents`, optional `msgchain_id`, soft deletion |
+| `assistants` | Flow-scoped interactive assistants with model/provider, `use_agents`, optional `msgchain_id`, soft deletion |
 | `msgchains` | LLM chain JSON plus usage (`usage_in`/`out`, cache, cost) and `duration_seconds` |
 | `toolcalls` | `call_id`, name, args JSON, result, status, `duration_seconds` |
 | `flow_templates` | User-owned reusable flow descriptions (`title`, `text`) |
@@ -153,7 +153,7 @@ There are no relational `actions`, `artifacts` or `memories` tables. Individual 
 | `prompts` | User-owned prompt templates keyed by `PROMPT_TYPE` |
 | `user_resources` | Uploaded file/directory metadata (`hash`, `name`, `path`, `size`, `is_dir`) |
 
-Flow and assistant rows contain model/provider selection and runtime function configuration. Prompt templates themselves are stored in `prompts`, not in current flow or assistant rows.
+Flow and assistant rows contain the model and provider selection. Prompt templates themselves are stored in `prompts`, not in current flow or assistant rows.
 
 #### Logs and artifacts
 

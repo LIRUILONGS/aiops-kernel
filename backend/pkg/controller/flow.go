@@ -2,7 +2,6 @@ package controller
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -85,7 +84,6 @@ type newFlowWorkerCtx struct {
 	dryRun    bool
 	prvname   provider.ProviderName
 	prvtype   provider.ProviderType
-	functions *tools.Functions
 	resources []database.UserResource
 
 	flowWorkerCtx
@@ -152,7 +150,6 @@ func reserveFlow(ctx context.Context, fwc newFlowWorkerCtx) (database.Flow, erro
 		ModelProviderType:  database.ProviderType(fwc.prvtype),
 		Language:           "English",
 		ToolCallIDTemplate: cast.ToolCallIDTemplate,
-		Functions:          []byte("{}"),
 		UserID:             fwc.userID,
 		FlowType:           fwc.flowType,
 	})
@@ -216,7 +213,7 @@ func buildFlowWorker(
 	if err != nil {
 		return nil, wrapErrorEndSpan(ctx, flowSpan, "failed to build user prompter", err)
 	}
-	executor, err := tools.NewFlowToolsExecutor(fwc.db, fwc.cfg, fwc.docker, fwc.functions, fwc.userID, flow.ID)
+	executor, err := tools.NewFlowToolsExecutor(fwc.db, fwc.cfg, fwc.docker, fwc.userID, flow.ID)
 	if err != nil {
 		return nil, wrapErrorEndSpan(ctx, flowSpan, "failed to create flow tools executor", err)
 	}
@@ -227,17 +224,11 @@ func buildFlowWorker(
 		return nil, wrapErrorEndSpan(ctx, flowSpan, "failed to get flow provider", err)
 	}
 
-	functionsBlob, err := json.Marshal(fwc.functions)
-	if err != nil {
-		return nil, wrapErrorEndSpan(ctx, flowSpan, "failed to marshal functions", err)
-	}
-
 	flow, err = fwc.db.UpdateFlow(ctx, database.UpdateFlowParams{
 		Title:              flowProvider.Title(),
 		Model:              flowProvider.Model(pconfig.OptionsTypeCommander),
 		Language:           flowProvider.Language(),
 		ToolCallIDTemplate: flowProvider.ToolCallIDTemplate(),
-		Functions:          functionsBlob,
 		TraceID:            database.StringToNullString(observation.TraceID()),
 		ID:                 flow.ID,
 	})
@@ -393,16 +384,11 @@ func LoadFlowWorker(ctx context.Context, flow database.Flow, fwc flowWorkerCtx) 
 	flowSpan := observation.Span(langfuse.WithSpanName("prepare flow worker"))
 	ctx, _ = flowSpan.Observation(ctx)
 
-	functions := &tools.Functions{}
-	if err := json.Unmarshal(flow.Functions, functions); err != nil {
-		return nil, wrapErrorEndSpan(ctx, flowSpan, "failed to unmarshal functions", err)
-	}
-
 	prompter, err := newUserPrompter(ctx, fwc.db, flow.UserID)
 	if err != nil {
 		return nil, wrapErrorEndSpan(ctx, flowSpan, "failed to build user prompter", err)
 	}
-	executor, err := tools.NewFlowToolsExecutor(fwc.db, fwc.cfg, fwc.docker, functions, flow.UserID, flow.ID)
+	executor, err := tools.NewFlowToolsExecutor(fwc.db, fwc.cfg, fwc.docker, flow.UserID, flow.ID)
 	if err != nil {
 		return nil, wrapErrorEndSpan(ctx, flowSpan, "failed to create flow tools executor", err)
 	}

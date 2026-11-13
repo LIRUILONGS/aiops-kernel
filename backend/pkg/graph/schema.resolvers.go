@@ -67,7 +67,7 @@ func (r *mutationResolver) CreateFlow(ctx context.Context, modelProvider string,
 	}
 	prvtype := prv.Type()
 
-	flowID, err := r.Controller.CreateFlow(ctx, uid, input, convertFlowType(flowType), prvname, prvtype, nil, dbResources)
+	flowID, err := r.Controller.CreateFlow(ctx, uid, input, convertFlowType(flowType), prvname, prvtype, dbResources)
 	if err != nil {
 		return nil, err
 	}
@@ -338,7 +338,7 @@ func (r *mutationResolver) CreateAssistant(ctx context.Context, flowID int64, mo
 	prvtype := prv.Type()
 
 	assistantID, err := r.Controller.CreateAssistant(
-		ctx, uid, flowID, input, useAgents, prvname, prvtype, nil, dbResources,
+		ctx, uid, flowID, input, useAgents, prvname, prvtype, dbResources,
 	)
 	if err != nil {
 		return nil, err

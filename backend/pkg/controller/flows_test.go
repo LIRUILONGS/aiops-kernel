@@ -340,7 +340,7 @@ func (c *creatingController) registered() bool {
 func (c *creatingController) create(t *testing.T) int64 {
 	t.Helper()
 
-	flowID, err := c.fc.CreateFlow(context.Background(), 1, "scan it", "auto", "anthropic", "anthropic", nil, nil)
+	flowID, err := c.fc.CreateFlow(context.Background(), 1, "scan it", "auto", "anthropic", "anthropic", nil)
 	require.NoError(t, err)
 
 	return flowID
@@ -351,7 +351,7 @@ func TestFlows_CreateFlow_AnswersAndAnnouncesTheFlowBeforePreparingIt(t *testing
 
 	answered := make(chan int64, 1)
 	go func() {
-		flowID, _ := c.fc.CreateFlow(context.Background(), 1, "scan it", "auto", "anthropic", "anthropic", nil, nil)
+		flowID, _ := c.fc.CreateFlow(context.Background(), 1, "scan it", "auto", "anthropic", "anthropic", nil)
 		answered <- flowID
 	}()
 
@@ -388,7 +388,7 @@ func TestFlows_PrepareFlow_OutlivesTheRequestThatAskedForIt(t *testing.T) {
 	c := newCreatingController(t, nil)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	flowID, err := c.fc.CreateFlow(ctx, 1, "scan it", "auto", "anthropic", "anthropic", nil, nil)
+	flowID, err := c.fc.CreateFlow(ctx, 1, "scan it", "auto", "anthropic", "anthropic", nil)
 	require.NoError(t, err)
 
 	c.waitForPreparation(t)
@@ -440,7 +440,7 @@ func TestFlows_CreateAssistant_AnswersFirstAndFailsTheAssistantOfAFlowThatCannot
 	answered := make(chan int64, 1)
 	go func() {
 		assistantID, _ := c.fc.CreateAssistant(
-			context.Background(), 1, 0, "hello", false, "anthropic", "anthropic", nil, nil,
+			context.Background(), 1, 0, "hello", false, "anthropic", "anthropic", nil,
 		)
 		answered <- assistantID
 	}()
@@ -467,7 +467,7 @@ func TestFlows_CreateAssistant_StillPreparesTheFlowWhenTheAssistantCannotBeReser
 	c.q.assistantErr = reserveErr
 	c.q.mx.Unlock()
 
-	_, err := c.fc.CreateAssistant(context.Background(), 1, 0, "hello", false, "anthropic", "anthropic", nil, nil)
+	_, err := c.fc.CreateAssistant(context.Background(), 1, 0, "hello", false, "anthropic", "anthropic", nil)
 	require.ErrorIs(t, err, reserveErr)
 
 	c.waitForPreparation(t)
@@ -783,7 +783,7 @@ func TestFlows_FinishFlow_TakesAClosingFlowOutOfService(t *testing.T) {
 			if !tc.unloaded {
 				answersWhile(t, gated, "creating an assistant on the closing flow", func() {
 					assistantID, err := fc.CreateAssistant(
-						context.Background(), 1, gatedFlowID, "hello", false, "anthropic", "anthropic", nil, nil,
+						context.Background(), 1, gatedFlowID, "hello", false, "anthropic", "anthropic", nil,
 					)
 					assert.Zero(t, assistantID)
 					assert.ErrorIs(t, err, ErrFlowNotFound, "a second worker for a flow that is shutting down would fight the first")
@@ -1017,7 +1017,7 @@ func TestFlows_CreateAssistant_WaitsForTheTeardownOfAnUnloadedFlowInProgress(t *
 			answered := make(chan answer, 1)
 			go func() {
 				assistantID, err := c.fc.CreateAssistant(
-					ctx, 1, gatedFlowID, "hello", false, "anthropic", "anthropic", nil, nil,
+					ctx, 1, gatedFlowID, "hello", false, "anthropic", "anthropic", nil,
 				)
 				answered <- answer{assistantID: assistantID, err: err}
 			}()

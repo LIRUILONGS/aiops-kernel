@@ -14,7 +14,6 @@ import (
 	"opsagi/pkg/graph/subscriptions"
 	"opsagi/pkg/providers"
 	"opsagi/pkg/providers/provider"
-	"opsagi/pkg/tools"
 
 	"github.com/sirupsen/logrus"
 )
@@ -34,7 +33,6 @@ type FlowController interface {
 		flowType string,
 		prvname provider.ProviderName,
 		prvtype provider.ProviderType,
-		functions *tools.Functions,
 		resources []database.UserResource,
 	) (int64, error)
 	CreateAssistant(
@@ -45,7 +43,6 @@ type FlowController interface {
 		useAgents bool,
 		prvname provider.ProviderName,
 		prvtype provider.ProviderType,
-		functions *tools.Functions,
 		resources []database.UserResource,
 	) (int64, error)
 	LoadFlows(ctx context.Context) error
@@ -281,7 +278,6 @@ func (fc *flowController) CreateFlow(
 	flowType string,
 	prvname provider.ProviderName,
 	prvtype provider.ProviderType,
-	functions *tools.Functions,
 	resources []database.UserResource,
 ) (int64, error) {
 	fwc := newFlowWorkerCtx{
@@ -290,7 +286,6 @@ func (fc *flowController) CreateFlow(
 		flowType:      flowType,
 		prvname:       prvname,
 		prvtype:       prvtype,
-		functions:     functions,
 		resources:     resources,
 		flowWorkerCtx: fc.flowWorkerCtx(),
 	}
@@ -413,7 +408,6 @@ func (fc *flowController) CreateAssistant(
 	useAgents bool,
 	prvname provider.ProviderName,
 	prvtype provider.ProviderType,
-	functions *tools.Functions,
 	resources []database.UserResource,
 ) (int64, error) {
 	fwc := newFlowWorkerCtx{
@@ -422,7 +416,6 @@ func (fc *flowController) CreateAssistant(
 		dryRun:        true,
 		prvname:       prvname,
 		prvtype:       prvtype,
-		functions:     functions,
 		flowWorkerCtx: fc.flowWorkerCtx(),
 	}
 
@@ -438,7 +431,6 @@ func (fc *flowController) CreateAssistant(
 		prvname:       prvname,
 		prvtype:       prvtype,
 		useAgents:     useAgents,
-		functions:     functions,
 		resources:     resources,
 		flowWorkerCtx: fwc.flowWorkerCtx,
 	}

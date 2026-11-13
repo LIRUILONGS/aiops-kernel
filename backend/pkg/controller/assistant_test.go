@@ -214,7 +214,6 @@ func loadRestoredAssistant(
 		ID:                5,
 		FlowID:            42,
 		Status:            status,
-		Functions:         []byte("{}"),
 		MsgchainID:        sql.NullInt64{Int64: 11, Valid: true},
 		ModelProviderName: "custom",
 	}, awc)
