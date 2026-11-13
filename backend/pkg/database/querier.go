@@ -103,6 +103,8 @@ type Querier interface {
 	GetFlowMsgChains(ctx context.Context, flowID int64) ([]Msgchain, error)
 	GetFlowMsgLogs(ctx context.Context, flowID int64) ([]Msglog, error)
 	GetFlowPrimaryContainer(ctx context.Context, flowID int64) (Container, error)
+	GetFlowRoleEdges(ctx context.Context, flowID int64) ([]GetFlowRoleEdgesRow, error)
+	GetFlowRoleMetrics(ctx context.Context, flowID int64) ([]GetFlowRoleMetricsRow, error)
 	GetFlowScreenshots(ctx context.Context, flowID int64) ([]Screenshot, error)
 	GetFlowSearchLog(ctx context.Context, arg GetFlowSearchLogParams) (Searchlog, error)
 	GetFlowSearchLogs(ctx context.Context, flowID int64) ([]Searchlog, error)

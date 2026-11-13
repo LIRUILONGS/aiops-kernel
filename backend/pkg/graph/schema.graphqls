@@ -638,6 +638,31 @@ type ModelAgentsUsageStats {
   stats: UsageStats!
 }
 
+# ==================== Role Activity Types ====================
+
+type RoleMetric {
+  role: AgentType!
+  chains: Int!
+  logs: Int!
+  usageIn: Int!
+  usageOut: Int!
+  cost: Float!
+  firstAt: Time
+  lastAt: Time
+}
+
+type RoleEdge {
+  from: AgentType!
+  to: AgentType!
+  logs: Int!
+  lastAt: Time!
+}
+
+type FlowRoleActivity {
+  roles: [RoleMetric!]!
+  edges: [RoleEdge!]!
+}
+
 type AgentTypeUsageStats {
   agentType: AgentType!
   stats: UsageStats!
@@ -985,6 +1010,7 @@ type Query {
   terminalLogs(flowId: ID!): [TerminalLog!]
   messageLogs(flowId: ID!): [MessageLog!]
   agentLogs(flowId: ID!): [AgentLog!]
+  flowRoleActivity(flowId: ID!): FlowRoleActivity!
   searchLogs(flowId: ID!): [SearchLog!]
   vectorStoreLogs(flowId: ID!): [VectorStoreLog!]
   toolCallLogs(flowId: ID!): [ToolCallLog!]

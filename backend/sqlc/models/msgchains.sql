@@ -313,3 +313,19 @@ SELECT
 FROM msgchains mc
 INNER JOIN flows f ON f.id = mc.flow_id
 WHERE f.deleted_at IS NULL AND f.user_id = $1;
+
+-- name: GetFlowRoleMetrics :many
+SELECT
+  mc.type,
+  count(*)::bigint AS chains,
+  COALESCE(SUM(mc.usage_in), 0)::bigint AS total_usage_in,
+  COALESCE(SUM(mc.usage_out), 0)::bigint AS total_usage_out,
+  COALESCE(SUM(mc.usage_cost_in), 0.0)::double precision AS total_usage_cost_in,
+  COALESCE(SUM(mc.usage_cost_out), 0.0)::double precision AS total_usage_cost_out,
+  min(mc.created_at) AS first_at,
+  max(mc.updated_at) AS last_at
+FROM msgchains mc
+INNER JOIN flows f ON f.id = mc.flow_id
+WHERE mc.flow_id = $1 AND f.deleted_at IS NULL
+GROUP BY mc.type
+ORDER BY mc.type;

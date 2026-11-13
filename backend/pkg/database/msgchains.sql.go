@@ -201,6 +201,66 @@ func (q *Queries) GetFlowMsgChains(ctx context.Context, flowID int64) ([]Msgchai
 	return items, nil
 }
 
+const getFlowRoleMetrics = `-- name: GetFlowRoleMetrics :many
+SELECT
+  mc.type,
+  count(*)::bigint AS chains,
+  COALESCE(SUM(mc.usage_in), 0)::bigint AS total_usage_in,
+  COALESCE(SUM(mc.usage_out), 0)::bigint AS total_usage_out,
+  COALESCE(SUM(mc.usage_cost_in), 0.0)::double precision AS total_usage_cost_in,
+  COALESCE(SUM(mc.usage_cost_out), 0.0)::double precision AS total_usage_cost_out,
+  min(mc.created_at) AS first_at,
+  max(mc.updated_at) AS last_at
+FROM msgchains mc
+INNER JOIN flows f ON f.id = mc.flow_id
+WHERE mc.flow_id = $1 AND f.deleted_at IS NULL
+GROUP BY mc.type
+ORDER BY mc.type
+`
+
+type GetFlowRoleMetricsRow struct {
+	Type              MsgchainType `json:"type"`
+	Chains            int64        `json:"chains"`
+	TotalUsageIn      int64        `json:"total_usage_in"`
+	TotalUsageOut     int64        `json:"total_usage_out"`
+	TotalUsageCostIn  float64      `json:"total_usage_cost_in"`
+	TotalUsageCostOut float64      `json:"total_usage_cost_out"`
+	FirstAt           time.Time    `json:"first_at"`
+	LastAt            time.Time    `json:"last_at"`
+}
+
+func (q *Queries) GetFlowRoleMetrics(ctx context.Context, flowID int64) ([]GetFlowRoleMetricsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getFlowRoleMetrics, flowID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetFlowRoleMetricsRow
+	for rows.Next() {
+		var i GetFlowRoleMetricsRow
+		if err := rows.Scan(
+			&i.Type,
+			&i.Chains,
+			&i.TotalUsageIn,
+			&i.TotalUsageOut,
+			&i.TotalUsageCostIn,
+			&i.TotalUsageCostOut,
+			&i.FirstAt,
+			&i.LastAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getFlowTaskTypeLastMsgChain = `-- name: GetFlowTaskTypeLastMsgChain :one
 SELECT
   mc.id, mc.type, mc.model, mc.model_provider, mc.usage_in, mc.usage_out, mc.chain, mc.flow_id, mc.task_id, mc.subtask_id, mc.created_at, mc.updated_at, mc.usage_cache_in, mc.usage_cache_out, mc.usage_cost_in, mc.usage_cost_out, mc.duration_seconds

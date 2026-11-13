@@ -567,3 +567,65 @@ func TestConverter_APITokenStatus_ReportsAnOutlivedActiveTokenAsExpired(t *testi
 		})
 	}
 }
+
+func TestConverter_ConvertFlowRoleActivity_CountsWhatEachRoleAnsweredAndKeepsWhoAsked(t *testing.T) {
+	started := time.Date(2026, 11, 13, 9, 0, 0, 0, time.UTC)
+	updated := time.Date(2026, 11, 13, 9, 30, 0, 0, time.UTC)
+	answeredLater := time.Date(2026, 11, 13, 9, 45, 0, 0, time.UTC)
+
+	metrics := []database.GetFlowRoleMetricsRow{
+		{
+			Type:              database.MsgchainTypeCommander,
+			Chains:            3,
+			TotalUsageIn:      1000,
+			TotalUsageOut:     200,
+			TotalUsageCostIn:  0.25,
+			TotalUsageCostOut: 0.5,
+			FirstAt:           started,
+			LastAt:            updated,
+		},
+	}
+	edges := []database.GetFlowRoleEdgesRow{
+		{Initiator: database.MsgchainTypeCommander, Executor: database.MsgchainTypeLogAnalyst, Logs: 4, LastAt: answeredLater},
+		{Initiator: database.MsgchainTypeCommander, Executor: database.MsgchainTypeCommander, Logs: 2, LastAt: updated},
+	}
+
+	activity := ConvertFlowRoleActivity(metrics, edges)
+
+	require.Len(t, activity.Roles, 2)
+	require.Len(t, activity.Edges, 2)
+
+	commander, logAnalyst := activity.Roles[0], activity.Roles[1]
+	require.Equal(t, model.AgentTypeCommander, commander.Role)
+	assert.Equal(t, 3, commander.Chains)
+	assert.Equal(t, 2, commander.Logs)
+	assert.Equal(t, 1000, commander.UsageIn)
+	assert.Equal(t, 200, commander.UsageOut)
+	assert.Equal(t, 0.75, commander.Cost)
+	require.NotNil(t, commander.FirstAt)
+	assert.Equal(t, started, *commander.FirstAt)
+	require.NotNil(t, commander.LastAt)
+	assert.Equal(t, updated, *commander.LastAt)
+
+	require.Equal(t, model.AgentTypeLogAnalyst, logAnalyst.Role)
+	assert.Zero(t, logAnalyst.Chains, "a role that only answered has no chain of its own")
+	assert.Equal(t, 4, logAnalyst.Logs)
+	require.NotNil(t, logAnalyst.LastAt, "the log it answered is the later activity")
+	assert.Equal(t, answeredLater, *logAnalyst.LastAt)
+	assert.Nil(t, logAnalyst.FirstAt)
+
+	assert.Equal(t, model.AgentTypeCommander, activity.Edges[0].From)
+	assert.Equal(t, model.AgentTypeCommander, activity.Edges[0].To)
+	assert.Equal(t, model.AgentTypeCommander, activity.Edges[1].From)
+	assert.Equal(t, model.AgentTypeLogAnalyst, activity.Edges[1].To)
+}
+
+func TestConverter_ConvertFlowRoleActivity_AnswersEmptyListsForAFlowWithNoActivity(t *testing.T) {
+	activity := ConvertFlowRoleActivity(nil, nil)
+
+	require.NotNil(t, activity, "the query field is non-null")
+	assert.Empty(t, activity.Roles)
+	assert.Empty(t, activity.Edges)
+	assert.NotNil(t, activity.Roles, "an empty list must marshal as [] rather than null")
+	assert.NotNil(t, activity.Edges)
+}

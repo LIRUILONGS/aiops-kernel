@@ -1561,6 +1561,31 @@ func (r *queryResolver) AgentLogs(ctx context.Context, flowID int64) ([]*model.A
 	return converter.ConvertAgentLogs(logs), nil
 }
 
+// FlowRoleActivity is the resolver for the flowRoleActivity field.
+func (r *queryResolver) FlowRoleActivity(ctx context.Context, flowID int64) (*model.FlowRoleActivity, error) {
+	uid, err := validatePermissionWithFlowID(ctx, "agentlogs.view", flowID, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	r.Logger.WithFields(logrus.Fields{
+		"uid":  uid,
+		"flow": flowID,
+	}).Debug("get flow role activity")
+
+	metrics, err := r.DB.GetFlowRoleMetrics(ctx, flowID)
+	if err != nil {
+		return nil, err
+	}
+
+	edges, err := r.DB.GetFlowRoleEdges(ctx, flowID)
+	if err != nil {
+		return nil, err
+	}
+
+	return converter.ConvertFlowRoleActivity(metrics, edges), nil
+}
+
 // SearchLogs is the resolver for the searchLogs field.
 func (r *queryResolver) SearchLogs(ctx context.Context, flowID int64) ([]*model.SearchLog, error) {
 	uid, err := validatePermissionWithFlowID(ctx, "searchlogs.view", flowID, r.DB)

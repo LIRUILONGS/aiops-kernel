@@ -898,6 +898,26 @@ export type UsageStatsByAgentTypeForFlowQuery = {
     usageStatsByAgentTypeForFlow: Array<AgentTypeUsageStatsFragmentFragment>;
 };
 
+export type FlowRoleActivityQueryVariables = Exact<{
+    flowId: string | number;
+}>;
+
+export type FlowRoleActivityQuery = {
+    flowRoleActivity: {
+        roles: Array<{
+            role: AgentType;
+            chains: number;
+            logs: number;
+            usageIn: number;
+            usageOut: number;
+            cost: number;
+            firstAt: string | null;
+            lastAt: string | null;
+        }>;
+        edges: Array<{ from: AgentType; to: AgentType; logs: number; lastAt: string }>;
+    };
+};
+
 export type UsageStatsByModelAgentsForFlowQueryVariables = Exact<{
     flowId: string | number;
 }>;
@@ -6013,6 +6033,74 @@ export const UsageStatsByAgentTypeForFlowDocument = {
         },
     ],
 } as unknown as DocumentNode<UsageStatsByAgentTypeForFlowQuery, UsageStatsByAgentTypeForFlowQueryVariables>;
+export const FlowRoleActivityDocument = {
+    kind: 'Document',
+    definitions: [
+        {
+            kind: 'OperationDefinition',
+            operation: 'query',
+            name: { kind: 'Name', value: 'flowRoleActivity' },
+            variableDefinitions: [
+                {
+                    kind: 'VariableDefinition',
+                    variable: { kind: 'Variable', name: { kind: 'Name', value: 'flowId' } },
+                    type: { kind: 'NonNullType', type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } } },
+                },
+            ],
+            selectionSet: {
+                kind: 'SelectionSet',
+                selections: [
+                    {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'flowRoleActivity' },
+                        arguments: [
+                            {
+                                kind: 'Argument',
+                                name: { kind: 'Name', value: 'flowId' },
+                                value: { kind: 'Variable', name: { kind: 'Name', value: 'flowId' } },
+                            },
+                        ],
+                        selectionSet: {
+                            kind: 'SelectionSet',
+                            selections: [
+                                {
+                                    kind: 'Field',
+                                    name: { kind: 'Name', value: 'roles' },
+                                    selectionSet: {
+                                        kind: 'SelectionSet',
+                                        selections: [
+                                            { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+                                            { kind: 'Field', name: { kind: 'Name', value: 'chains' } },
+                                            { kind: 'Field', name: { kind: 'Name', value: 'logs' } },
+                                            { kind: 'Field', name: { kind: 'Name', value: 'usageIn' } },
+                                            { kind: 'Field', name: { kind: 'Name', value: 'usageOut' } },
+                                            { kind: 'Field', name: { kind: 'Name', value: 'cost' } },
+                                            { kind: 'Field', name: { kind: 'Name', value: 'firstAt' } },
+                                            { kind: 'Field', name: { kind: 'Name', value: 'lastAt' } },
+                                        ],
+                                    },
+                                },
+                                {
+                                    kind: 'Field',
+                                    name: { kind: 'Name', value: 'edges' },
+                                    selectionSet: {
+                                        kind: 'SelectionSet',
+                                        selections: [
+                                            { kind: 'Field', name: { kind: 'Name', value: 'from' } },
+                                            { kind: 'Field', name: { kind: 'Name', value: 'to' } },
+                                            { kind: 'Field', name: { kind: 'Name', value: 'logs' } },
+                                            { kind: 'Field', name: { kind: 'Name', value: 'lastAt' } },
+                                        ],
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
+        },
+    ],
+} as unknown as DocumentNode<FlowRoleActivityQuery, FlowRoleActivityQueryVariables>;
 export const UsageStatsByModelAgentsForFlowDocument = {
     kind: 'Document',
     definitions: [

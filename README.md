@@ -80,6 +80,14 @@ OpsAGI 是 [PentAGI](https://github.com/vxcontrol/pentagi)（MIT）的分支。�
 | `ASK_USER` | `false` | 打开 `ask` 工具（人工闸门） |
 | `OPSAGI_SUBTASK_CONCURRENCY` | `1` | 同一任务内子任务并发度 |
 
+### 界面
+
+一个 flow 的右侧是可切换的观察面：终端、任务、智能体、**角色**、工具调用、向量库、文件、截图。
+
+**角色**页回答"这一轮是谁在干活"。上方是按层摆放的十二个角色拓扑——规划（生成 / 精炼）在上，指挥官居中，四个取证分析师在下，消费与修补型角色在底；节点上带该角色在本 flow 的 chain 数、日志条数、token 用量与最后活动时间，一分钟内有动作的角色描一圈绿边，发生过的委派用带次数的箭头连起来。下方是按角色过滤的日志：点节点或点角色标签，只看这个角色写下或应答的条目。
+
+图用 [`@xyflow/react`](https://reactflow.dev) 画。数据来自两条聚合：`msgchains` 按角色汇总 chain / token / 费用，`agentlogs` 按 `initiator → executor` 计数；查询只在 flow 运行中每 5 秒轮询一次，结束后不再刷新。
+
 ---
 
 ## 快速开始

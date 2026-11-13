@@ -54,3 +54,15 @@ VALUES (
   $1, $2, $3, $4, $5, $6, $7
 )
 RETURNING *;
+
+-- name: GetFlowRoleEdges :many
+SELECT
+  al.initiator,
+  al.executor,
+  count(*)::bigint AS logs,
+  max(al.created_at) AS last_at
+FROM agentlogs al
+INNER JOIN flows f ON f.id = al.flow_id
+WHERE al.flow_id = $1 AND f.deleted_at IS NULL
+GROUP BY al.initiator, al.executor
+ORDER BY al.executor, al.initiator;

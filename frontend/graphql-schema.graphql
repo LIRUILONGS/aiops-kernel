@@ -875,6 +875,27 @@ query usageStatsByAgentTypeForFlow($flowId: ID!) {
     }
 }
 
+query flowRoleActivity($flowId: ID!) {
+    flowRoleActivity(flowId: $flowId) {
+        roles {
+            role
+            chains
+            logs
+            usageIn
+            usageOut
+            cost
+            firstAt
+            lastAt
+        }
+        edges {
+            from
+            to
+            logs
+            lastAt
+        }
+    }
+}
+
 query usageStatsByModelAgentsForFlow($flowId: ID!) {
     usageStatsByModelAgentsForFlow(flowId: $flowId) {
         ...modelAgentsUsageStatsFragment

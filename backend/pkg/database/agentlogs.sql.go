@@ -8,6 +8,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"time"
 )
 
 const createAgentLog = `-- name: CreateAgentLog :one
@@ -119,6 +120,54 @@ func (q *Queries) GetFlowAgentLogs(ctx context.Context, flowID int64) ([]Agentlo
 			&i.TaskID,
 			&i.SubtaskID,
 			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getFlowRoleEdges = `-- name: GetFlowRoleEdges :many
+SELECT
+  al.initiator,
+  al.executor,
+  count(*)::bigint AS logs,
+  max(al.created_at) AS last_at
+FROM agentlogs al
+INNER JOIN flows f ON f.id = al.flow_id
+WHERE al.flow_id = $1 AND f.deleted_at IS NULL
+GROUP BY al.initiator, al.executor
+ORDER BY al.executor, al.initiator
+`
+
+type GetFlowRoleEdgesRow struct {
+	Initiator MsgchainType `json:"initiator"`
+	Executor  MsgchainType `json:"executor"`
+	Logs      int64        `json:"logs"`
+	LastAt    time.Time    `json:"last_at"`
+}
+
+func (q *Queries) GetFlowRoleEdges(ctx context.Context, flowID int64) ([]GetFlowRoleEdgesRow, error) {
+	rows, err := q.db.QueryContext(ctx, getFlowRoleEdges, flowID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetFlowRoleEdgesRow
+	for rows.Next() {
+		var i GetFlowRoleEdgesRow
+		if err := rows.Scan(
+			&i.Initiator,
+			&i.Executor,
+			&i.Logs,
+			&i.LastAt,
 		); err != nil {
 			return nil, err
 		}

@@ -232,6 +232,11 @@ type FlowFile struct {
 	ModifiedAt time.Time `json:"modifiedAt"`
 }
 
+type FlowRoleActivity struct {
+	Roles []*RoleMetric `json:"roles"`
+	Edges []*RoleEdge   `json:"edges"`
+}
+
 type FlowStats struct {
 	TotalTasksCount      int `json:"totalTasksCount"`
 	TotalSubtasksCount   int `json:"totalSubtasksCount"`
@@ -440,6 +445,24 @@ type ReasoningConfig struct {
 	Mode      *ReasoningMode   `json:"mode,omitempty"`
 	Effort    *ReasoningEffort `json:"effort,omitempty"`
 	MaxTokens *int             `json:"maxTokens,omitempty"`
+}
+
+type RoleEdge struct {
+	From   AgentType `json:"from"`
+	To     AgentType `json:"to"`
+	Logs   int       `json:"logs"`
+	LastAt time.Time `json:"lastAt"`
+}
+
+type RoleMetric struct {
+	Role     AgentType  `json:"role"`
+	Chains   int        `json:"chains"`
+	Logs     int        `json:"logs"`
+	UsageIn  int        `json:"usageIn"`
+	UsageOut int        `json:"usageOut"`
+	Cost     float64    `json:"cost"`
+	FirstAt  *time.Time `json:"firstAt,omitempty"`
+	LastAt   *time.Time `json:"lastAt,omitempty"`
 }
 
 type Screenshot struct {

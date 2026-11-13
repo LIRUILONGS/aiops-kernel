@@ -2,6 +2,7 @@ package converter
 
 import (
 	"encoding/json"
+	"sort"
 	"time"
 
 	"opsagi/pkg/database"
@@ -675,14 +676,14 @@ func ConvertProviderConfigToGqlModel(cfg *pconfig.ProviderConfig) *model.AgentsC
 	}
 
 	return &model.AgentsConfig{
-		Simple:       ConvertAgentConfigToGqlModel(cfg.Simple),
-		SimpleJSON:   ConvertAgentConfigToGqlModel(cfg.SimpleJSON),
-		Commander: ConvertAgentConfigToGqlModel(cfg.Commander),
-		Assistant:    ConvertAgentConfigToGqlModel(cfg.Assistant),
-		Generator:    ConvertAgentConfigToGqlModel(cfg.Generator),
-		Refiner:      ConvertAgentConfigToGqlModel(cfg.Refiner),
-		Reflector:    ConvertAgentConfigToGqlModel(cfg.Reflector),
-		Analyst:     ConvertAgentConfigToGqlModel(cfg.Analyst),
+		Simple:     ConvertAgentConfigToGqlModel(cfg.Simple),
+		SimpleJSON: ConvertAgentConfigToGqlModel(cfg.SimpleJSON),
+		Commander:  ConvertAgentConfigToGqlModel(cfg.Commander),
+		Assistant:  ConvertAgentConfigToGqlModel(cfg.Assistant),
+		Generator:  ConvertAgentConfigToGqlModel(cfg.Generator),
+		Refiner:    ConvertAgentConfigToGqlModel(cfg.Refiner),
+		Reflector:  ConvertAgentConfigToGqlModel(cfg.Reflector),
+		Analyst:    ConvertAgentConfigToGqlModel(cfg.Analyst),
 	}
 }
 
@@ -775,14 +776,14 @@ func ConvertAgentsConfigFromGqlModel(cfg *model.AgentsConfig) *pconfig.ProviderC
 	}
 
 	pc := &pconfig.ProviderConfig{
-		Simple:       ConvertAgentConfigFromGqlModel(cfg.Simple),
-		SimpleJSON:   ConvertAgentConfigFromGqlModel(cfg.SimpleJSON),
-		Commander: ConvertAgentConfigFromGqlModel(cfg.Commander),
-		Assistant:    ConvertAgentConfigFromGqlModel(cfg.Assistant),
-		Generator:    ConvertAgentConfigFromGqlModel(cfg.Generator),
-		Refiner:      ConvertAgentConfigFromGqlModel(cfg.Refiner),
-		Reflector:    ConvertAgentConfigFromGqlModel(cfg.Reflector),
-		Analyst:     ConvertAgentConfigFromGqlModel(cfg.Analyst),
+		Simple:     ConvertAgentConfigFromGqlModel(cfg.Simple),
+		SimpleJSON: ConvertAgentConfigFromGqlModel(cfg.SimpleJSON),
+		Commander:  ConvertAgentConfigFromGqlModel(cfg.Commander),
+		Assistant:  ConvertAgentConfigFromGqlModel(cfg.Assistant),
+		Generator:  ConvertAgentConfigFromGqlModel(cfg.Generator),
+		Refiner:    ConvertAgentConfigFromGqlModel(cfg.Refiner),
+		Reflector:  ConvertAgentConfigFromGqlModel(cfg.Reflector),
+		Analyst:    ConvertAgentConfigFromGqlModel(cfg.Analyst),
 	}
 
 	rawConfig, err := json.Marshal(pc)
@@ -927,14 +928,14 @@ func ConvertTestResults(results tester.AgentTestResults) *model.AgentTestResult 
 
 func ConvertProviderTestResults(results tester.ProviderTestResults) *model.ProviderTestResult {
 	return &model.ProviderTestResult{
-		Simple:       ConvertTestResults(results.Simple),
-		SimpleJSON:   ConvertTestResults(results.SimpleJSON),
-		Commander: ConvertTestResults(results.Commander),
-		Assistant:    ConvertTestResults(results.Assistant),
-		Generator:    ConvertTestResults(results.Generator),
-		Refiner:      ConvertTestResults(results.Refiner),
-		Reflector:    ConvertTestResults(results.Reflector),
-		Analyst:     ConvertTestResults(results.Analyst),
+		Simple:     ConvertTestResults(results.Simple),
+		SimpleJSON: ConvertTestResults(results.SimpleJSON),
+		Commander:  ConvertTestResults(results.Commander),
+		Assistant:  ConvertTestResults(results.Assistant),
+		Generator:  ConvertTestResults(results.Generator),
+		Refiner:    ConvertTestResults(results.Refiner),
+		Reflector:  ConvertTestResults(results.Reflector),
+		Analyst:    ConvertTestResults(results.Analyst),
 	}
 }
 
@@ -1260,4 +1261,69 @@ func ConvertUserResource(r database.UserResource) *model.UserResource {
 		CreatedAt: r.CreatedAt.Time,
 		UpdatedAt: r.UpdatedAt.Time,
 	}
+}
+
+func ConvertFlowRoleActivity(
+	metrics []database.GetFlowRoleMetricsRow,
+	edges []database.GetFlowRoleEdgesRow,
+) *model.FlowRoleActivity {
+	roles := make(map[model.AgentType]*model.RoleMetric, len(metrics))
+	roleFor := func(agentType database.MsgchainType) *model.RoleMetric {
+		role := model.AgentType(agentType)
+		metric, ok := roles[role]
+		if !ok {
+			metric = &model.RoleMetric{Role: role}
+			roles[role] = metric
+		}
+		return metric
+	}
+
+	for _, row := range metrics {
+		metric := roleFor(row.Type)
+		metric.Chains = int(row.Chains)
+		metric.UsageIn = int(row.TotalUsageIn)
+		metric.UsageOut = int(row.TotalUsageOut)
+		metric.Cost = row.TotalUsageCostIn + row.TotalUsageCostOut
+		firstAt, lastAt := row.FirstAt, row.LastAt
+		metric.FirstAt = &firstAt
+		metric.LastAt = &lastAt
+	}
+
+	activity := &model.FlowRoleActivity{
+		Roles: make([]*model.RoleMetric, 0, len(roles)),
+		Edges: make([]*model.RoleEdge, 0, len(edges)),
+	}
+
+	// A role that only asked another one has no chain metrics of its own, and a
+	// role's last activity can be the log it answered rather than its own chain.
+	for _, row := range edges {
+		from, to := roleFor(row.Initiator), roleFor(row.Executor)
+		to.Logs += int(row.Logs)
+		lastAt := row.LastAt
+		if to.LastAt == nil || lastAt.After(*to.LastAt) {
+			to.LastAt = &lastAt
+		}
+		activity.Edges = append(activity.Edges, &model.RoleEdge{
+			From:   from.Role,
+			To:     to.Role,
+			Logs:   int(row.Logs),
+			LastAt: row.LastAt,
+		})
+	}
+
+	for _, metric := range roles {
+		activity.Roles = append(activity.Roles, metric)
+	}
+
+	sort.Slice(activity.Roles, func(i, j int) bool {
+		return activity.Roles[i].Role < activity.Roles[j].Role
+	})
+	sort.Slice(activity.Edges, func(i, j int) bool {
+		if activity.Edges[i].From != activity.Edges[j].From {
+			return activity.Edges[i].From < activity.Edges[j].From
+		}
+		return activity.Edges[i].To < activity.Edges[j].To
+	})
+
+	return activity
 }

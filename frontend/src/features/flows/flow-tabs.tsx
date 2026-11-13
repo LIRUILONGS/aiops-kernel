@@ -7,6 +7,7 @@ import FlowDashboard from '@/features/flows/dashboard/flow-dashboard';
 import FlowFiles from '@/features/flows/files/flow-files';
 import FlowAssistantMessages from '@/features/flows/messages/flow-assistant-messages';
 import FlowAutomationMessages from '@/features/flows/messages/flow-automation-messages';
+import FlowRoles from '@/features/flows/roles/flow-roles';
 import FlowScreenshots from '@/features/flows/screenshots/flow-screenshots';
 import FlowTasks from '@/features/flows/tasks/flow-tasks';
 import FlowTerminal from '@/features/flows/terminal/flow-terminal';
@@ -47,6 +48,7 @@ function FlowTabs({ activeTab, onTabChange }: FlowTabsProps) {
                         <TabsTrigger value="terminal">终端</TabsTrigger>
                         <TabsTrigger value="tasks">任务</TabsTrigger>
                         <TabsTrigger value="agents">智能体</TabsTrigger>
+                        <TabsTrigger value="roles">角色</TabsTrigger>
                         <TabsTrigger value="tools">工具调用</TabsTrigger>
                         <TabsTrigger value="vectorStores">向量库</TabsTrigger>
                         <TabsTrigger value="files">文件</TabsTrigger>
@@ -100,6 +102,13 @@ function FlowTabs({ activeTab, onTabChange }: FlowTabsProps) {
                 value="agents"
             >
                 <FlowAgents />
+            </TabsContent>
+
+            <TabsContent
+                className="mt-1 flex-1 overflow-auto pr-4"
+                value="roles"
+            >
+                <FlowRoles />
             </TabsContent>
 
             <TabsContent
