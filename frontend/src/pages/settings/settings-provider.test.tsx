@@ -1426,9 +1426,7 @@ describe('SettingsProvider budget saved without a mode', () => {
         renderWith({ effort: 'high', maxTokens: 2048, mode: 'budget' });
 
         expect(modeSelect()).toHaveTextContent('预算');
-        await waitFor(() =>
-            expect(screen.getByRole('combobox', { name: '推理强度' })).toHaveTextContent('未选择'),
-        );
+        await waitFor(() => expect(screen.getByRole('combobox', { name: '推理强度' })).toHaveTextContent('未选择'));
     });
 
     it('goes to the wire without a budget once switched to Not selected', async () => {

@@ -85,7 +85,13 @@ test.describe('settings prompt detail', { tag: '@coverage' }, () => {
 
         const raw = await page.getByRole('textbox', { name: EDITOR }).inputValue();
 
-        for (const atom of ['Refiner', '{{.Target}}', '{{.Scope}}', 'kubectl get pods', 'stay inside the agreed scope']) {
+        for (const atom of [
+            'Refiner',
+            '{{.Target}}',
+            '{{.Scope}}',
+            'kubectl get pods',
+            'stay inside the agreed scope',
+        ]) {
             expect(raw, `"${atom}" survived the editor round-trip`).toContain(atom);
         }
 

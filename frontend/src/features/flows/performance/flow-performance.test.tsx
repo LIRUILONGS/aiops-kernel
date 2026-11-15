@@ -127,14 +127,14 @@ describe('FlowPerformance', () => {
 
         await screen.findByText('指标趋势');
         expect(container.querySelectorAll('[data-testid="metric-chart"]')).toHaveLength(1);
-        expect(screen.getByText('prometheus_tsdb_head_series{instance="127.0.0.1:9091", job="prometheus"}')).toBeInTheDocument();
+        expect(
+            screen.getByText('prometheus_tsdb_head_series{instance="127.0.0.1:9091", job="prometheus"}'),
+        ).toBeInTheDocument();
         expect(container.querySelector('[data-testid="metric-chart-jump"]')).not.toBeNull();
     });
 
     it('renders a metrics query that produced no series as no panel at all', async () => {
-        toolcalls.mockResolvedValue(
-            answer([{ name: 'prom_query', result: '监控查询：absent\n窗口内没有数据。' }]),
-        );
+        toolcalls.mockResolvedValue(answer([{ name: 'prom_query', result: '监控查询：absent\n窗口内没有数据。' }]));
 
         const { container } = render(<FlowPerformance flowId="15" />);
 

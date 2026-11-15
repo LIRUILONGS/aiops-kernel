@@ -89,8 +89,7 @@ export const routeTitles = {
     template: {
         title: apolloTitle({
             document: FlowTemplateDocument,
-            select: (data, { templateId }) =>
-                templateId === 'new' ? '新建模板' : data?.flowTemplate?.title || '模板',
+            select: (data, { templateId }) => (templateId === 'new' ? '新建模板' : data?.flowTemplate?.title || '模板'),
             variables: ({ templateId }) => (!templateId || templateId === 'new' ? null : { templateId }),
         }),
     },

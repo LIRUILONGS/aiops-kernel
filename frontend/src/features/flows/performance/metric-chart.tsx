@@ -59,7 +59,10 @@ export function MetricChart({ series }: { series: MetricSeries }) {
     }
 
     return (
-        <figure className="flex flex-col gap-2" data-testid="metric-chart">
+        <figure
+            className="flex flex-col gap-2"
+            data-testid="metric-chart"
+        >
             <figcaption className="flex flex-wrap items-baseline justify-between gap-2">
                 <code className="text-xs break-all">{series.name}</code>
             </figcaption>
@@ -79,7 +82,13 @@ export function MetricChart({ series }: { series: MetricSeries }) {
                     y1={HEIGHT / 2}
                     y2={HEIGHT / 2}
                 />
-                <path d={path} fill="none" stroke="currentColor" strokeLinejoin="round" strokeWidth={1.5} />
+                <path
+                    d={path}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                />
                 {marker && (
                     <circle
                         className="text-destructive"
@@ -105,7 +114,10 @@ export function MetricChart({ series }: { series: MetricSeries }) {
 
 export function MetricGroupSection({ group }: { group: MetricGroup }) {
     return (
-        <section className="flex flex-col gap-3" data-testid="metric-group">
+        <section
+            className="flex flex-col gap-3"
+            data-testid="metric-group"
+        >
             <header className="flex flex-wrap items-baseline justify-between gap-2 border-b pb-1">
                 <code className="text-xs break-all">{group.query}</code>
                 <span className="text-muted-foreground text-xs tabular-nums">
@@ -114,7 +126,10 @@ export function MetricGroupSection({ group }: { group: MetricGroup }) {
             </header>
             <div className="grid gap-4 sm:grid-cols-2">
                 {group.series.map((item, index) => (
-                    <MetricChart key={`${item.name}-${index}`} series={item} />
+                    <MetricChart
+                        key={`${item.name}-${index}`}
+                        series={item}
+                    />
                 ))}
             </div>
         </section>
@@ -128,7 +143,9 @@ export function pathOf(series: MetricSeries, width = WIDTH, height = HEIGHT): st
         return '';
     }
 
-    return points.map((point, index) => `${index === 0 ? 'M' : 'L'}${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(' ');
+    return points
+        .map((point, index) => `${index === 0 ? 'M' : 'L'}${point.x.toFixed(1)},${point.y.toFixed(1)}`)
+        .join(' ');
 }
 
 function formatTime(at: number): string {

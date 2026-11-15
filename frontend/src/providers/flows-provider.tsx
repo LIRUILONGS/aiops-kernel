@@ -131,8 +131,7 @@ export function FlowsProvider({ children }: FlowsProviderProps) {
 
                 return null;
             } catch (error) {
-                const description =
-                    error instanceof Error ? error.message : '创建助手时出错';
+                const description = error instanceof Error ? error.message : '创建助手时出错';
                 toast.error('创建助手失败', {
                     description,
                 });

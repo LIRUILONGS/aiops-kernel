@@ -45,13 +45,15 @@ describe('parseMetricSeries', () => {
     });
 
     it('drops a series that cannot be drawn', () => {
-        const single = '### 结构化结果\n\n```json\n{"end":1,"query":"q","range":"5m","series":[{"name":"a","points":[["1","1"]]},{"name":"b","points":[["1","1"],["2","2"]]}],"step":"15s"}\n```';
+        const single =
+            '### 结构化结果\n\n```json\n{"end":1,"query":"q","range":"5m","series":[{"name":"a","points":[["1","1"]]},{"name":"b","points":[["1","1"],["2","2"]]}],"step":"15s"}\n```';
 
         expect(parseMetricSeries(single).map((sery) => sery.name)).toEqual(['b']);
     });
 
     it('skips points whose timestamp or value is not a number', () => {
-        const broken = '### 结构化结果\n\n```json\n{"end":1,"query":"q","range":"5m","series":[{"name":"a","points":[["1","1"],["x","2"],["3","y"],["4","4"]]}],"step":"15s"}\n```';
+        const broken =
+            '### 结构化结果\n\n```json\n{"end":1,"query":"q","range":"5m","series":[{"name":"a","points":[["1","1"],["x","2"],["3","y"],["4","4"]]}],"step":"15s"}\n```';
 
         expect(parseMetricSeries(broken)[0]?.points).toEqual([
             { at: 1, value: 1 },

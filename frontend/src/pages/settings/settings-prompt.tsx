@@ -796,9 +796,7 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
             <div className="flex flex-col gap-2 text-center">
                 <h2 className="text-2xl font-semibold">编辑提示词</h2>
                 <p className="text-muted-foreground">
-                    {promptInfo.type === 'agent'
-                        ? '自定义该 Agent 使用的提示词模板'
-                        : '自定义该工具使用的提示词模板'}
+                    {promptInfo.type === 'agent' ? '自定义该 Agent 使用的提示词模板' : '自定义该工具使用的提示词模板'}
                 </p>
             </div>
 
@@ -812,9 +810,7 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
                     {promptInfo.displayName}
                 </h3>
                 <p className="text-muted-foreground text-sm">
-                    {promptInfo.type === 'agent'
-                        ? '配置该 AI Agent 的提示词'
-                        : '配置该工具的提示词'}
+                    {promptInfo.type === 'agent' ? '配置该 AI Agent 的提示词' : '配置该工具的提示词'}
                 </p>
             </div>
 
@@ -846,8 +842,7 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
         </>
     );
 
-    const systemPlaceholder =
-        promptInfo.type === 'tool' ? '输入工具提示词模板…' : '输入系统提示词模板…';
+    const systemPlaceholder = promptInfo.type === 'tool' ? '输入工具提示词模板…' : '输入系统提示词模板…';
 
     const promptEditor = (
         <>
@@ -1053,9 +1048,7 @@ function Variables({ currentTemplate, onVariableClick, variables }: VariablesPro
                             {variables.length}
                         </Badge>
                     </h4>
-                    <p className="text-muted-foreground mt-1 text-xs">
-                        点击插入到光标处，或循环跳转到已有引用。
-                    </p>
+                    <p className="text-muted-foreground mt-1 text-xs">点击插入到光标处，或循环跳转到已有引用。</p>
                 </div>
                 <div className="bg-background">{content}</div>
             </div>
@@ -1100,9 +1093,7 @@ function VariablesContent({ currentTemplate, onVariableClick, variables }: Varia
             {variables.map((variable) => {
                 const count = counts[variable] ?? 0;
                 const isUsed = count > 0;
-                const action = isUsed
-                    ? `跳到模板中的下一个 {{.${variable}}}`
-                    : `在光标处插入 {{.${variable}}}`;
+                const action = isUsed ? `跳到模板中的下一个 {{.${variable}}}` : `在光标处插入 {{.${variable}}}`;
 
                 return (
                     // className stays on Badge: Slot only concatenates, so `font-normal` would race

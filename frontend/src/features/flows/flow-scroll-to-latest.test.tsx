@@ -64,11 +64,7 @@ describe('scroll-to-latest buttons carry an accessible name', () => {
     it.each([
         ['跳到最新日志', { flowData: { agentLogs: [item] } }, <FlowAgents key="agents" />],
         ['跳到最新工具调用', { flowData: { searchLogs: [item] } }, <FlowTools key="tools" />],
-        [
-            '跳到最新向量库日志',
-            { flowData: { vectorStoreLogs: [item] } },
-            <FlowVectorStores key="vector-stores" />,
-        ],
+        ['跳到最新向量库日志', { flowData: { vectorStoreLogs: [item] } }, <FlowVectorStores key="vector-stores" />],
         ['跳到最新任务', { flowData: { tasks: [item] } }, <FlowTasks key="tasks" />],
         ['跳到最新截图', { flowData: { screenshots: [item] } }, <FlowScreenshots key="screenshots" />],
         [

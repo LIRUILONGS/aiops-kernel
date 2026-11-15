@@ -43,9 +43,7 @@ export function samplesOf(calls: ToolcallRow[]): BaselineSample[] {
 }
 
 export function seriesOf(calls: ToolcallRow[]): MetricSeries[] {
-    return calls
-        .filter((call) => call.name === 'prom_query')
-        .flatMap((call) => parseMetricSeries(call.result));
+    return calls.filter((call) => call.name === 'prom_query').flatMap((call) => parseMetricSeries(call.result));
 }
 
 function Comparison({ diff }: { diff: DiffReport }) {
@@ -168,7 +166,10 @@ function FlowPerformance({ flowId }: { flowId: string }) {
                     <div className="flex flex-col gap-4">
                         <h3 className="text-sm font-medium">指标趋势</h3>
                         {groups.map((group) => (
-                            <MetricGroupSection group={group} key={group.key} />
+                            <MetricGroupSection
+                                group={group}
+                                key={group.key}
+                            />
                         ))}
                     </div>
                 )}
