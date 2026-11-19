@@ -70,20 +70,6 @@ func NewOpsTools(cfg *config.Config) *opsTools {
 
 	return tools
 }
-
-// splitImages reads the operator's allowlist, which is the only place an image
-// name enters the sandbox command line.
-func splitImages(raw string) []string {
-	images := make([]string, 0, 4)
-	for _, candidate := range strings.Split(raw, ",") {
-		if trimmed := strings.TrimSpace(candidate); trimmed != "" {
-			images = append(images, trimmed)
-		}
-	}
-
-	return images
-}
-
 func (o *opsTools) IsAvailable() bool { return len(o.targets) > 0 }
 
 func (o *opsTools) resolve(id string) (opsremote.Target, error) {

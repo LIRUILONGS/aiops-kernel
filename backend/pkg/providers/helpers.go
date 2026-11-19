@@ -39,11 +39,6 @@ const (
 	toolCallsHistorySeparator    = "---------------TOOL_CALLS_HISTORY---------------"
 	ChainContinuationMessage     = "Continue from where we left off"
 )
-
-type dummyMessage struct {
-	Message string `json:"message"`
-}
-
 func toolCallIDTemplateOrDefault(template string) string {
 	if template != "" {
 		return template
@@ -949,57 +944,6 @@ func isEmptyChain(msgChain json.RawMessage) bool {
 
 	return len(msgList) == 0
 }
-
-func getToolCallMessage(toolCall *llms.FunctionCall) map[string]string {
-	var msg dummyMessage
-
-	if toolCall == nil {
-		return nil
-	}
-
-	if err := json.Unmarshal(json.RawMessage(toolCall.Arguments), &msg); err != nil {
-		return nil
-	}
-
-	return map[string]string{
-		"name": toolCall.Name,
-		"msg":  msg.Message,
-	}
-}
-
-// getRecentMessages returns the last section messages from the chain
-func getRecentMessages(chain []llms.MessageContent) []map[string]string {
-	var messages []map[string]string
-
-	ast, err := cast.NewChainAST(chain, true)
-	if err != nil {
-		return messages
-	}
-
-	lastSection := ast.Sections[len(ast.Sections)-1]
-	if len(lastSection.Body) == 0 {
-		return messages
-	}
-
-	for idx := len(lastSection.Body) - 1; idx >= 0 && len(messages) < extractLastMessagesCount; idx-- {
-		pair := lastSection.Body[idx]
-		if pair.Type != cast.RequestResponse {
-			continue
-		}
-
-		for _, tc := range pair.GetToolCallsInfo().CompletedToolCalls {
-			message := getToolCallMessage(tc.ToolCall.FunctionCall)
-			if message != nil {
-				messages = append(messages, message)
-			}
-		}
-	}
-
-	slices.Reverse(messages)
-
-	return messages
-}
-
 func cutString(s string, maxLength int) string {
 	if len(s) <= maxLength {
 		return s
@@ -1082,38 +1026,6 @@ func extractToolCallsFromChain(chain []llms.MessageContent) []map[string]string 
 
 	return toolCalls
 }
-
-// extractAgentPromptFromChain extracts the agent prompt from the message chain
-func extractAgentPromptFromChain(chain []llms.MessageContent) string {
-	ast, err := cast.NewChainAST(chain, true)
-	if err != nil {
-		return ""
-	}
-
-	lastSection := ast.Sections[len(ast.Sections)-1]
-	if len(lastSection.Body) == 0 {
-		return ""
-	}
-
-	if lastSection.Header == nil {
-		return ""
-	}
-
-	humanMessage := lastSection.Header.HumanMessage
-	if humanMessage == nil {
-		return ""
-	}
-
-	var parts []string
-	for _, part := range humanMessage.Parts {
-		if text, ok := part.(llms.TextContent); ok && text.Text != "" {
-			parts = append(parts, text.Text)
-		}
-	}
-
-	return strings.Join(parts, "\n")
-}
-
 
 func extractHistoryFromHumanMessage(msg *llms.MessageContent) string {
 	if msg == nil {

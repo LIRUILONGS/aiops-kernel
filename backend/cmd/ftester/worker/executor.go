@@ -22,22 +22,6 @@ import (
 	"github.com/vxcontrol/cloud/anonymizer/patterns"
 	"github.com/vxcontrol/langchaingo/vectorstores/pgvector"
 )
-
-type agentTool struct {
-	handler tools.ExecutorHandler
-}
-
-func (at *agentTool) Handle(ctx context.Context, name string, args json.RawMessage) (string, error) {
-	if at.handler == nil {
-		return "", fmt.Errorf("handler for tool %s is not set", name)
-	}
-	return at.handler(ctx, name, args)
-}
-
-func (at *agentTool) IsAvailable() bool {
-	return at.handler != nil
-}
-
 // searcherTool adapts a single searchers.Searcher to the tools.Tool interface so the
 // ftester can exercise one engine against its real API by name (e.g. `ftester -flow N
 // tavily`). Production agents never take this path — they call web_search, which

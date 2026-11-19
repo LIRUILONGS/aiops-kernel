@@ -18,12 +18,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 )
-
-func wrapError(ctx context.Context, msg string, err error) error {
-	obs.LogErrorOrCancel(logrus.WithContext(ctx), err, msg)
-	return fmt.Errorf("%s: %w", msg, err)
-}
-
 func wrapErrorEndAgentSpan(ctx context.Context, span langfuse.Agent, msg string, err error) error {
 	obs.LogErrorOrCancel(logrus.WithContext(ctx), err, msg)
 	err = fmt.Errorf("%s: %w", msg, err)
@@ -53,31 +47,6 @@ func wrapErrorEndEvaluatorSpan(ctx context.Context, span langfuse.Evaluator, msg
 	)
 	return err
 }
-
-func (fp *flowProvider) getTaskAndSubtask(ctx context.Context, taskID, subtaskID *int64) (*database.Task, *database.Subtask, error) {
-	var (
-		ptrTask    *database.Task
-		ptrSubtask *database.Subtask
-	)
-
-	if taskID != nil {
-		task, err := fp.db.GetTask(ctx, *taskID)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to get task: %w", err)
-		}
-		ptrTask = &task
-	}
-	if subtaskID != nil {
-		subtask, err := fp.db.GetSubtask(ctx, *subtaskID)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to get subtask: %w", err)
-		}
-		ptrSubtask = &subtask
-	}
-
-	return ptrTask, ptrSubtask, nil
-}
-
 
 
 

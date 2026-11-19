@@ -477,39 +477,6 @@ func TestFlowProvider_budgetNudge_LeavesRoomToConclude(t *testing.T) {
 		})
 	}
 }
-
-type performerToolRecordingProvider struct {
-	*mock.Provider
-
-	withTools    map[pconfig.ProviderOptionsType]bool
-	withoutTools map[pconfig.ProviderOptionsType]bool
-}
-
-func (p *performerToolRecordingProvider) record(opt pconfig.ProviderOptionsType, tools []llms.Tool) {
-	if len(tools) > 0 {
-		p.withTools[opt] = true
-	} else {
-		p.withoutTools[opt] = true
-	}
-}
-
-func (p *performerToolRecordingProvider) CallEx(
-	ctx context.Context, opt pconfig.ProviderOptionsType, chain []llms.MessageContent, streamCb streaming.Callback,
-) (*llms.ContentResponse, error) {
-	p.record(opt, nil)
-
-	return p.Provider.CallEx(ctx, opt, chain, streamCb)
-}
-
-func (p *performerToolRecordingProvider) CallWithTools(
-	ctx context.Context, opt pconfig.ProviderOptionsType, chain []llms.MessageContent,
-	tools []llms.Tool, streamCb streaming.Callback,
-) (*llms.ContentResponse, error) {
-	p.record(opt, tools)
-
-	return p.Provider.CallWithTools(ctx, opt, chain, tools, streamCb)
-}
-
 // The reflector and the adviser send no tools; the agent the reflector answers for keeps its own.
 
 // performerFailingProvider fails every call; with cancel set it cancels the chain first, the way a stopped flow does.

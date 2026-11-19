@@ -30,16 +30,6 @@ var analystPromptType = map[string]templates.PromptType{
 	tools.MetricsAnalystToolName: templates.PromptTypeMetricsAnalyst,
 	tools.ChangeAnalystToolName:  templates.PromptTypeChangeAnalyst,
 }
-
-// analystTitles are the headings a finding is rendered under, so a delegation
-// result reads the same in the record as it did in the transcript.
-var analystTitles = map[string]string{
-	tools.TriageToolName:         "分诊结论",
-	tools.LogAnalystToolName:     "日志分析结论",
-	tools.MetricsAnalystToolName: "指标分析结论",
-	tools.ChangeAnalystToolName:  "变更分析结论",
-}
-
 // GetTriageHandler and its three siblings are the delegation surface of the
 // commander: each runs its specialist's chain under its own prompt and tools,
 // and returns that specialist's finding as the tool result.
