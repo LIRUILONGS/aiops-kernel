@@ -10,13 +10,10 @@ on:
     # supersede a red e2e-mock. The stand tier lives in e2e-stand.yml, which owns
     # the `labeled` trigger.
     types: [opened, synchronize, reopened]
-  push:
-    branches:
-      - main
-    tags:
-      - "v[0-9]+.[0-9]+.[0-9]+"
-  schedule:
-    - cron: "0 3 * * *"
+  # No push or nightly trigger: the baselines were rendered in the pinned
+  # Playwright container CI images, and on a runner outside it every visual
+  # comparison mismatches on font rendering alone. Here the tiers run when a
+  # pull request asks for them or when someone dispatches the workflow.
   workflow_dispatch:
     inputs:
       tier:
