@@ -1705,7 +1705,7 @@ GraphQL 面加三个类型与一个字段：`RoleMetric`（`role` / `chains` / `
 
 **只清 HEAD 不够。** 历史里同样有：`git log -S` 数得出来，而 docx 每个版本都是重新生成的，七十个提交里都有它的 blob。所以用 `git filter-branch --index-filter` 把这五个文件从 `cffed94..HEAD` 的每个提交里摘掉，再用清理后的版本补一次提交；然后删 `refs/original`、让 reflog 过期、`gc --prune=now`，本地也就没有旧 blob 了。
 
-**验证。** 扫全部对象（`git cat-file --batch-all-objects --batch`）：8098 个 blob，四个串命中 0 次；线上再按 GitHub API 取回 `03-handover.md` 与 docx（下载后解包读 `word/document.xml`）核对，同样 0 次；`GET /repos/…/secret-scanning/alerts` 返回 0 条。旧提交 `8593b57`、`559ebb2` 在线上都是 422（不可达）。
+**验证。** 扫全部对象（`git cat-file --batch-all-objects --batch`）：8098 个 blob，四个串命中 0 次；线上再按 GitHub API 取回 `03-handover.md` 与 docx（下载后解包读 `word/document.xml`）核对，同样 0 次；`GET /repos/…/secret-scanning/alerts` 返回 0 条。第一次推送后 GitHub 的 secret scanning 另外报了 5 条，全部落在上游带进来的内容里：三条是 `observability/jaeger/bin/jaeger-clickhouse-linux-arm64` 这个二进制里的随机字节命中了 MessageBird 的正则，两条是 `backend/pkg/config/config_test.go` 里那对 OAuth 夹具；逐条按 false positive 与 used in tests 关掉，现在开着的是 0 条。旧提交 `8593b57`、`559ebb2` 在线上都是 422（不可达）。
 
 **副作用。** 87 个提交的 hash 全变，§6 里 13 个短 hash 因此失效——已删掉，只留 subject，并在 §6 补了一句说明。
 
