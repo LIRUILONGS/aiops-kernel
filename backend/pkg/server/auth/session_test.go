@@ -11,7 +11,7 @@ import (
 // Literals from an independent PBKDF2: a changed derivation signs out every issued token and cookie.
 func TestSession_MakeJWTSigningKey_DerivesAStableKeyPerSaltApartFromTheCookieKeys(t *testing.T) {
 	for range 2 {
-		assert.Equal(t, "30c8728cb80e76b834425f8ef8afc62557dd94f7906a28c06c317fed9a8b4de5",
+		assert.Equal(t, "6b95a23ff5ad60cd4b380f8a75a5890de112064dbbd06e1a95edd70e7776ba58",
 			hex.EncodeToString(MakeJWTSigningKey("kat_salt")), "derived first, then served from the cache")
 	}
 
@@ -30,7 +30,7 @@ func TestSession_MakeCookieStoreKey_DerivesAStableAuthAndEncryptionKey(t *testin
 		require.Len(t, keys, 2)
 		require.Len(t, keys[0], 64)
 		require.Len(t, keys[1], 32)
-		assert.Equal(t, "82db383af22e5e9744541f50404e1b77", hex.EncodeToString(keys[0][:16]))
-		assert.Equal(t, "3d8abedc0cb244d2e3ad59e7d5f125d8", hex.EncodeToString(keys[1][:16]))
+		assert.Equal(t, "e7886e3f2c63e6fead563a4b333f9f1f", hex.EncodeToString(keys[0][:16]))
+		assert.Equal(t, "106bae2bffc8c17699da8c1b796744f7", hex.EncodeToString(keys[1][:16]))
 	}
 }

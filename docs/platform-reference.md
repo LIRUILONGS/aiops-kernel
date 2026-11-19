@@ -1935,8 +1935,8 @@ OpsAGI lists 14 Gemini model IDs that responded through the tested API endpoint.
 Both default models passed a basic API/configuration smoke for every role. [Google reports stronger agentic and coding performance for 3.5 Flash-Lite than 3.1 Flash-Lite](https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-3-6-flash-3-5-flash-lite-3-5-flash-cyber/); OpsAGI's saved production chains cover generator and reflector only, so the smoke does not establish semantic quality or multi-turn reliability for other roles. On two saved generator chains, 3.5 Flash-Lite first chose one of the allowed delegation tools and called `subtask_list` after a synthetic tool response; no real tool was executed in that continuation.
 
 **Reasoning Effort Levels**:
-- **High**: Deeper reasoning for planning and review (`generator`, `refiner`)
-- **Medium**: Balanced reasoning for execution roles (`commander`, `assistant`)
+- **High**: Deeper reasoning for planning and review (`generator`, `refiner`, `commander`)
+- **Medium**: Balanced reasoning for execution roles (`assistant`)
 - **Not set**: No thinking setting is sent and the model's own default applies (`simple`, `simple_json`, `reflector`, `analyst`)
 
 ### AWS Bedrock Provider Configuration

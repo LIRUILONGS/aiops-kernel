@@ -997,19 +997,19 @@ func TestPerformer_PerformAgentChain_WritesAMissingScopeToGraphitiAsADash(t *tes
 		{
 			name:    "an agent the assistant started has neither a task nor a subtask",
 			agent:   pconfig.OptionsTypeAnalyst,
-			barrier: "search_result",
+			barrier: "report_result",
 			want: []performerGraphitiEpisode{
 				{
 					name:    "agent_response",
-					source:  "OpsAGI searcher agent execution in flow 42",
-					content: "Agent: searcher\nResponse: hello\nContext: Task -, Subtask -\n\n",
+					source:  "OpsAGI analyst agent execution in flow 42",
+					content: "Agent: analyst\nResponse: hello\nContext: Task -, Subtask -\n\n",
 				},
 				{
-					name:   "tool_execution_search_result",
+					name:   "tool_execution_report_result",
 					source: "OpsAGI tool execution in flow 42",
-					content: "Tool: search_result\n" +
-						"Description: Send the complex search result as a answer for the user question to the user\n" +
-						"Barrier Function: true\nArguments: {}\nInvoked by: searcher Agent\nStatus: success\nResult: ok\n" +
+					content: "Tool: report_result\n" +
+						"Description: Send the report result to the user with execution status and description\n" +
+						"Barrier Function: true\nArguments: {}\nInvoked by: analyst Agent\nStatus: success\nResult: ok\n" +
 						"Context: Task -, Subtask -\n\n",
 				},
 			},
@@ -1039,7 +1039,7 @@ func TestPerformer_PerformAgentChain_WritesAMissingScopeToGraphitiAsADash(t *tes
 			agent:     pconfig.OptionsTypeRefiner,
 			taskID:    &taskID,
 			subtaskID: &subtaskID,
-			barrier:   "hack_result",
+			barrier:   "report_result",
 			want: []performerGraphitiEpisode{
 				{
 					name:    "agent_response",
@@ -1047,10 +1047,10 @@ func TestPerformer_PerformAgentChain_WritesAMissingScopeToGraphitiAsADash(t *tes
 					content: "Agent: refiner\nResponse: hello\nContext: Task 7, Subtask 11\n\n",
 				},
 				{
-					name:   "tool_execution_hack_result",
+					name:   "tool_execution_report_result",
 					source: "OpsAGI tool execution in flow 42, task 7, subtask 11",
-					content: "Tool: hack_result\nDescription: Send the penetration test result to the user with detailed report\n" +
-						"Barrier Function: true\nArguments: {}\nInvoked by: pentester Agent\nStatus: success\nResult: ok\n" +
+					content: "Tool: report_result\nDescription: Send the report result to the user with execution status and description\n" +
+						"Barrier Function: true\nArguments: {}\nInvoked by: refiner Agent\nStatus: success\nResult: ok\n" +
 						"Context: Task 7, Subtask 11\n\n",
 				},
 			},

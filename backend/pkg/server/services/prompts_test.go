@@ -101,7 +101,7 @@ func TestPrompts_ResetPrompt_AnswersAFailedCreateOnce(t *testing.T) {
 	db := promptsTestDB(t, "TEXT NOT NULL CHECK (length(prompt) < 10)")
 	defer db.Close()
 
-	w := promptsCall(NewPromptService(db).ResetPrompt, "primary_agent", []string{"settings.prompts.edit"}, "")
+	w := promptsCall(NewPromptService(db).ResetPrompt, "commander", []string{"settings.prompts.edit"}, "")
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
@@ -111,5 +111,5 @@ func TestPrompts_ResetPrompt_AnswersAFailedCreateOnce(t *testing.T) {
 	assert.Equal(t, "error", first["status"])
 	assert.False(t, decoder.More(), "a failed reset must not append a success body: %s", w.Body.String())
 
-	assert.Empty(t, promptsStored(t, db, "primary_agent"))
+	assert.Empty(t, promptsStored(t, db, "commander"))
 }
