@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
+	"strings"
 
 	"opsagi/pkg/cast"
 	"opsagi/pkg/csum"
@@ -268,6 +269,8 @@ func (ap *assistantProvider) getAssistantSystemPrompt(ctx context.Context) (stri
 		return "", fmt.Errorf("failed to get assistant execution context: %w", err)
 	}
 
+	opsTargets := ap.fp.Executor().OpsTargets()
+
 	systemAssistantTmpl, err := ap.fp.Prompter().RenderTemplate(templates.PromptTypeAssistant, map[string]any{
 		"TerminalToolName":           tools.TerminalToolName,
 		"FileToolName":               tools.FileToolName,
@@ -283,6 +286,13 @@ func (ap *assistantProvider) getAssistantSystemPrompt(ctx context.Context) (stri
 		"ExecutionContext":           executionContext,
 		"Lang":                       ap.fp.Language(),
 		"CurrentTime":                getCurrentTime(),
+		"OpsProbesEnabled":           len(opsTargets) > 0,
+		"OpsTargets":                 strings.Join(quoteAll(opsTargets), ", "),
+		"OpsSystemToolName":          tools.OpsSystemToolName,
+		"OpsContainersToolName":      tools.OpsContainersToolName,
+		"OpsLogsToolName":            tools.OpsLogsToolName,
+		"OpsBaselineToolName":        tools.OpsBaselineToolName,
+		"OpsDiffToolName":            tools.OpsDiffToolName,
 		"FlowManagerEnabled":         ap.flowWorker != nil,
 		"GetFlowStatusToolName":      tools.GetFlowStatusToolName,
 		"StopFlowToolName":           tools.StopFlowToolName,
@@ -297,6 +307,17 @@ func (ap *assistantProvider) getAssistantSystemPrompt(ctx context.Context) (stri
 	}
 
 	return systemAssistantTmpl, nil
+}
+
+// quoteAll wraps each id in backticks, so the prompt shows the exact string a
+// model may pass as `target`.
+func quoteAll(ids []string) []string {
+	quoted := make([]string, len(ids))
+	for i, id := range ids {
+		quoted[i] = "`" + id + "`"
+	}
+
+	return quoted
 }
 
 func (ap *assistantProvider) getAssistantExecutionContext(ctx context.Context) (string, error) {

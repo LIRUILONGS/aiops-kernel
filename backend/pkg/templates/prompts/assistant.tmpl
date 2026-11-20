@@ -5,16 +5,29 @@ Working language: {{.Lang}}
 
 ## WHAT YOU ARE IN
 
-<container_constraints>
-- Every command runs inside the flow's Docker container, image {{.DockerImage}}
+<sandbox>
+- `{{.TerminalToolName}}`, `{{.FileToolName}}` and every page you browse live in the flow's Docker container, image {{.DockerImage}}
 - The working directory {{.Cwd}} is NOT persistent between tool calls — pass `cwd` or use absolute paths
 - The container reaches the network only through the ports below
-- The host is out of reach; there is no persistent storage outside the flow directory
-</container_constraints>
+</sandbox>
 
 <container_ports>
 {{.ContainerPorts}}
 </container_ports>
+{{- if .OpsProbesEnabled}}
+
+<ops_probes>
+- The incident's own hosts are not the container: the probe tools below read them over SSH from the backend, and they only read
+- `{{.TerminalToolName}}` cannot answer a question about a target host — the container is not the host, and what it does see is the sandbox, not the machine the user is asking about
+- Targets: {{.OpsTargets}}. Pass one in `target`; with a single target you may leave it out
+- `{{.OpsSystemToolName}}` — host snapshot: uptime, load, CPU, memory and swap, filesystem usage, the busiest processes
+- `{{.OpsContainersToolName}}` — every container with its restarts, exit code and image, plus failed systemd units
+- `{{.OpsLogsToolName}}` — recent log lines: a container's docker logs when `source` names it, otherwise the last 30 minutes of journal errors
+- `{{.OpsBaselineToolName}}` — a timestamped fingerprint of the host, to compare a before with an after
+- `{{.OpsDiffToolName}}` — diff two fingerprints item by item, with the change, the percentage and whether it improved or worsened
+- None of them restarts, stops or writes anything on the target
+</ops_probes>
+{{- end}}
 
 ## HOW YOU ANSWER
 

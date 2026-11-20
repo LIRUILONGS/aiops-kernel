@@ -2,9 +2,11 @@ package templates
 
 import (
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // Every row also proves ValidatePattern accepts what the pattern generated.
@@ -189,4 +191,52 @@ func TestTemplates_ValidatePattern_NamesWhereASampleDiverges(t *testing.T) {
 			}
 		})
 	}
+}
+
+// The assistant hands these names to the model, so a probe the deployment does
+// not have must not show up in its tool list, and the sandbox must never be
+// presented as a way to reach the target host.
+func TestTemplates_RenderPrompt_AssistantDescribesTheProbesOnlyWhenATargetIsConfigured(t *testing.T) {
+	prompts, err := GetDefaultPrompts()
+	require.NoError(t, err)
+
+	assistant := prompts.AgentsPrompts.Assistant.System.Template
+	if !strings.Contains(assistant, "{{.OpsSystemToolName}}") {
+		t.Fatal("the shipped assistant prompt no longer names the probes this test pins")
+	}
+
+	params := func(enabled bool, targets string) map[string]any {
+		values := make(map[string]any, len(PromptVariables[PromptTypeAssistant]))
+		for _, variable := range PromptVariables[PromptTypeAssistant] {
+			values[variable] = "x"
+		}
+		values["OpsProbesEnabled"] = enabled
+		values["OpsTargets"] = targets
+		values["OpsSystemToolName"] = "<system>"
+		values["OpsContainersToolName"] = "<containers>"
+		values["OpsLogsToolName"] = "<logs>"
+		values["OpsBaselineToolName"] = "<baseline>"
+		values["OpsDiffToolName"] = "<diff>"
+
+		return values
+	}
+
+	t.Run("a deployment with a target", func(t *testing.T) {
+		rendered, err := RenderPrompt(string(PromptTypeAssistant), assistant, params(true, "`lab-host`"))
+		require.NoError(t, err)
+
+		for _, want := range []string{"<ops_probes>", "<system>", "<containers>", "<logs>", "<baseline>", "<diff>", "`lab-host`"} {
+			assert.Contains(t, rendered, want)
+		}
+		assert.NotContains(t, rendered, "out of reach")
+	})
+
+	t.Run("a deployment without a target", func(t *testing.T) {
+		rendered, err := RenderPrompt(string(PromptTypeAssistant), assistant, params(false, ""))
+		require.NoError(t, err)
+
+		assert.NotContains(t, rendered, "<ops_probes>")
+		assert.NotContains(t, rendered, "<system>")
+		assert.NotContains(t, rendered, "out of reach")
+	})
 }

@@ -261,6 +261,10 @@ type FlowToolsExecutor interface {
 
 	Prepare(ctx context.Context) error
 	Release(ctx context.Context) error
+	// OpsTargets names the hosts the read-only probes reach. A prompt that
+	// describes those probes needs the ids, and a deployment without any
+	// configured target registers no probe tool at all.
+	OpsTargets() []string
 	GetAssistantExecutor(cfg AssistantExecutorConfig) (ContextToolsExecutor, error)
 	GetCommanderExecutor(cfg CommanderExecutorConfig) (ContextToolsExecutor, error)
 	GetAnalystExecutor(cfg AnalystExecutorConfig) (ContextToolsExecutor, error)
@@ -312,6 +316,10 @@ func NewFlowToolsExecutor(
 		definitions: make(map[string]llms.FunctionDefinition),
 		handlers:    make(map[string]ExecutorHandler),
 	}, nil
+}
+
+func (fte *flowToolsExecutor) OpsTargets() []string {
+	return NewOpsTools(fte.cfg).TargetIDs()
 }
 
 func (fte *flowToolsExecutor) SetUserID(userID int64) {

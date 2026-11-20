@@ -72,6 +72,10 @@ func NewOpsTools(cfg *config.Config) *opsTools {
 }
 func (o *opsTools) IsAvailable() bool { return len(o.targets) > 0 }
 
+// TargetIDs lists the configured targets, sorted, so a prompt can name the ids
+// a model may pass as `target` instead of leaving it to guess.
+func (o *opsTools) TargetIDs() []string { return o.order }
+
 func (o *opsTools) resolve(id string) (opsremote.Target, error) {
 	if len(o.targets) == 0 {
 		return opsremote.Target{}, fmt.Errorf("未配置任何运维目标主机（OPSAGI_TARGETS 为空）")

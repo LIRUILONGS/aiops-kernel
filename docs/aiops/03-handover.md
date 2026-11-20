@@ -1725,6 +1725,27 @@ GraphQL 面加三个类型与一个字段：`RoleMetric`（`role` / `chains` / `
 
 **本地。** `origin` 现在是 GitHub，兄弟目录改叫 `local`；分支仍是 `feat/aiops-kernel`，跟踪 `origin/main`。重写前的备份 bundle 已删（它含明文口令）。
 
+### 4.64 助手读到的提示词和它手里的工具对不上（2026-11-20）
+
+`assistant.tmpl` 开头写着「Every command runs inside the flow's Docker container … The host is out of reach」，可同样的执行器在 `OPSAGI_TARGETS` 非空时还会挂五个直连目标机的只读探针（`ops_system`、`ops_containers`、`ops_logs`、`ops_baseline`、`ops_diff`）。模型一边被告知主机够不着，一边拿着读主机的工具——于是要么不用，要么把沙箱当目标机答。工具描述只写在 schema 里，模板一个字没提。
+
+改了三处：
+
+1. 模板：`<container_constraints>` 改成 `<sandbox>`，删掉「主机够不着」那句；新增 `<ops_probes>` 段，只在有目标时渲染，写明探针是从后端走 SSH 读目标机、只读、`terminal` 看的是沙箱而不是主机，并列出五个工具和可用目标 id。
+2. 变量：新增 `OpsProbesEnabled`、`OpsTargets`（id 渲染成 `` `lab-host` `` 这种形式，模型可以原样放进 `target`）与五个工具名；`PromptVariables[assistant]` 与 `validator.CreateDummyTemplateData` 同步，否则模板校验的两条测试会红。
+3. 数据源：`FlowToolsExecutor` 接口加 `OpsTargets()`，实现走 `NewOpsTools(cfg).TargetIDs()`（配置里的目标按 id 排序，没有 id 时回落到 host）。
+
+测试两条：`pkg/templates` 里渲染两向——有目标时出现 `<ops_probes>`、五个工具名与目标 id，没有目标时整段消失，两向都不许再出现 `out of reach`；`pkg/tools` 里 `TestTools_GetExecutors_RegisterTheProbesOnlyWhenATargetIsConfigured` 断言配了目标时五个探针进 `definitions` 且 `OpsTargets()` 返回排序后的 id（含一个没写 id 的目标，验证回落），没配时一个都不进。
+
+实机验证（真实后端 + 真实数据库）：
+
+| 条件 | 发给模型的工具 | 系统提示 |
+|---|---|---|
+| `OPSAGI_TARGETS` 一个目标 | 13 个，含五个探针 | `<ops_probes>` 一次，`` `lab-host` `` 与五个工具名各一次 |
+| `OPSAGI_TARGETS` 为空 | 8 个，无探针 | 没有 `ops_probes` 段，也没有任何 `ops_` 名字 |
+
+本机的 LLM 网关（`xin-buddy`，`:41474`）已经不认旧 key 了（401「本地 API Key 无效」），所以这一轮用了一个本地 OpenAI 兼容 stub 跑通链路：固定回答文本，只在 provider 探测 tool-call-id 模板时返回三条 `get_number` 的 tool_calls，让探测走默认模板。这个 stub 只在 `D:\Temp` 下，不进仓库。
+
 ## 5 环境
 
 ### 5.1 开发机
@@ -1748,6 +1769,8 @@ GraphQL 面加三个类型与一个字段：`RoleMetric`（`role` / `chains` / `
 - 模型清单：`curl -H "Authorization: Bearer $KEY" http://127.0.0.1:41474/v1/models`。
 
 上面几处 `<REDACTED>` 是本机环境变量里的真实值；这个仓库是公开的，所以口令与网关 key 只写在运营侧，交接时按新环境重新填。
+
+2026-11-20 起这台机器上的网关不认旧 key 了（`401 本地 API Key 无效`），环境变量也已经清掉；要跑真实对话得向运营侧要新的 key。只验提示词与工具清单时不需要模型：起一个本地 OpenAI 兼容 stub，把它指给 `LLM_SERVER_URL` 即可，provider 侧只会在探测 tool-call-id 模板时要求一次 `tool_calls` 响应。
 
 注意：`max_tokens` 给小了会只输出思考不输出正文，验收脚本里至少给 400。
 
@@ -1814,6 +1837,8 @@ refactor: delete the declarations the lint reports as unused              # 4.63
 ci: keep the image build and the E2E tiers off the push trigger            # 4.63
 style(frontend): format the twelve files the current Prettier plugin sorts differently # 4.63
 chore(docs): publish the handover and lab scripts without live credentials # 4.63
+docs(handover): note the five scanning alerts and how they were triaged  # 4.63
+fix(assistant): tell it about the probes it can call                      # 4.64
 feat(flows): let a flow declare its own target type        # 4.9，迁移 + sqlc + gqlgen + 判定
 feat(ui): choose the target type when starting a flow      # 4.9，表单三选一
 feat(ui): read the conclusion back into fields

@@ -28,32 +28,32 @@ var ErrTemplateNotFound = errors.New("template not found")
 type PromptType string
 
 const (
-	PromptTypeCommander                PromptType = "commander"                  // leads an incident diagnosis and states the conclusion
-	PromptTypeTriage                   PromptType = "triage"                     // rates severity, blast radius and known patterns
-	PromptTypeLogAnalyst               PromptType = "log_analyst"                // finds error patterns and their onset in logs
-	PromptTypeMetricsAnalyst           PromptType = "metrics_analyst"            // locates the inflection point in metric series
-	PromptTypeChangeAnalyst            PromptType = "change_analyst"             // builds the change timeline around the onset
-	PromptTypeAssistant                PromptType = "assistant"                  // interactive AI assistant for user conversations
-	PromptTypeGenerator                PromptType = "generator"                  // turns an alert into verifiable hypotheses
-	PromptTypeSubtasksGenerator        PromptType = "subtasks_generator"         // human input for task decomposition
-	PromptTypeRefiner                  PromptType = "refiner"                    // re-plans the remaining hypotheses
-	PromptTypeSubtasksRefiner          PromptType = "subtasks_refiner"           // human input for task refinement
-	PromptTypeReporter                 PromptType = "reporter"                   // writes the incident closing report
-	PromptTypeTaskReporter             PromptType = "task_reporter"              // human input for result documentation
-	PromptTypeReflector                PromptType = "reflector"                  // analyzes outcomes and suggests improvements
-	PromptTypeQuestionReflector        PromptType = "question_reflector"         // human input for self-assessment
-	PromptTypeToolCallFixer            PromptType = "toolcall_fixer"             // repairs malformed tool call arguments
-	PromptTypeInputToolCallFixer       PromptType = "input_toolcall_fixer"       // human input for tool argument fixing
-	PromptTypeSummarizer               PromptType = "summarizer"                 // condenses long conversations and results
-	PromptTypeImageChooser             PromptType = "image_chooser"              // chooses the flow sandbox image
-	PromptTypeLanguageChooser          PromptType = "language_chooser"           // determines user's preferred language
-	PromptTypeFlowDescriptor           PromptType = "flow_descriptor"            // generates flow titles from user requests
-	PromptTypeTaskDescriptor           PromptType = "task_descriptor"            // generates task titles from user requests
-	PromptTypeExecutionLogs            PromptType = "execution_logs"             // formats execution history for display
-	PromptTypeFullExecutionContext     PromptType = "full_execution_context"     // prepares complete context for summarization
-	PromptTypeShortExecutionContext    PromptType = "short_execution_context"    // prepares minimal context for quick processing
-	PromptTypeToolCallIDCollector      PromptType = "tool_call_id_collector"     // requests function call to collect tool call ID sample
-	PromptTypeToolCallIDDetector       PromptType = "tool_call_id_detector"      // analyzes tool call ID samples to detect pattern template
+	PromptTypeCommander             PromptType = "commander"               // leads an incident diagnosis and states the conclusion
+	PromptTypeTriage                PromptType = "triage"                  // rates severity, blast radius and known patterns
+	PromptTypeLogAnalyst            PromptType = "log_analyst"             // finds error patterns and their onset in logs
+	PromptTypeMetricsAnalyst        PromptType = "metrics_analyst"         // locates the inflection point in metric series
+	PromptTypeChangeAnalyst         PromptType = "change_analyst"          // builds the change timeline around the onset
+	PromptTypeAssistant             PromptType = "assistant"               // interactive AI assistant for user conversations
+	PromptTypeGenerator             PromptType = "generator"               // turns an alert into verifiable hypotheses
+	PromptTypeSubtasksGenerator     PromptType = "subtasks_generator"      // human input for task decomposition
+	PromptTypeRefiner               PromptType = "refiner"                 // re-plans the remaining hypotheses
+	PromptTypeSubtasksRefiner       PromptType = "subtasks_refiner"        // human input for task refinement
+	PromptTypeReporter              PromptType = "reporter"                // writes the incident closing report
+	PromptTypeTaskReporter          PromptType = "task_reporter"           // human input for result documentation
+	PromptTypeReflector             PromptType = "reflector"               // analyzes outcomes and suggests improvements
+	PromptTypeQuestionReflector     PromptType = "question_reflector"      // human input for self-assessment
+	PromptTypeToolCallFixer         PromptType = "toolcall_fixer"          // repairs malformed tool call arguments
+	PromptTypeInputToolCallFixer    PromptType = "input_toolcall_fixer"    // human input for tool argument fixing
+	PromptTypeSummarizer            PromptType = "summarizer"              // condenses long conversations and results
+	PromptTypeImageChooser          PromptType = "image_chooser"           // chooses the flow sandbox image
+	PromptTypeLanguageChooser       PromptType = "language_chooser"        // determines user's preferred language
+	PromptTypeFlowDescriptor        PromptType = "flow_descriptor"         // generates flow titles from user requests
+	PromptTypeTaskDescriptor        PromptType = "task_descriptor"         // generates task titles from user requests
+	PromptTypeExecutionLogs         PromptType = "execution_logs"          // formats execution history for display
+	PromptTypeFullExecutionContext  PromptType = "full_execution_context"  // prepares complete context for summarization
+	PromptTypeShortExecutionContext PromptType = "short_execution_context" // prepares minimal context for quick processing
+	PromptTypeToolCallIDCollector   PromptType = "tool_call_id_collector"  // requests function call to collect tool call ID sample
+	PromptTypeToolCallIDDetector    PromptType = "tool_call_id_detector"   // analyzes tool call ID samples to detect pattern template
 )
 
 var PromptVariables = map[PromptType][]string{
@@ -71,6 +71,13 @@ var PromptVariables = map[PromptType][]string{
 		"ContainerPorts",
 		"Lang",
 		"CurrentTime",
+		"OpsProbesEnabled",
+		"OpsTargets",
+		"OpsSystemToolName",
+		"OpsContainersToolName",
+		"OpsLogsToolName",
+		"OpsBaselineToolName",
+		"OpsDiffToolName",
 		"FlowManagerEnabled",
 		"GetFlowStatusToolName",
 		"StopFlowToolName",

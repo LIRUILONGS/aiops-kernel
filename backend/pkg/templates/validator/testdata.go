@@ -1,4 +1,4 @@
-﻿package validator
+package validator
 
 import (
 	"database/sql"
@@ -79,6 +79,14 @@ func CreateDummyTemplateData() map[string]any {
 		* 0.0.0.0:8080 -> 8080/tcp (in container)
 		* 0.0.0.0:8443 -> 8443/tcp (in container)
 		you can listen these ports the container inside and receive connections from the internet.`,
+
+		"OpsProbesEnabled":      true,
+		"OpsTargets":            "`lab-host`",
+		"OpsSystemToolName":     tools.OpsSystemToolName,
+		"OpsContainersToolName": tools.OpsContainersToolName,
+		"OpsLogsToolName":       tools.OpsLogsToolName,
+		"OpsBaselineToolName":   tools.OpsBaselineToolName,
+		"OpsDiffToolName":       tools.OpsDiffToolName,
 
 		// Context and state
 		"ExecutionContext": "Test execution context with current task and subtask information",

@@ -737,6 +737,42 @@ func TestTools_GetExecutors_GiveEachAgentItsTools(t *testing.T) {
 	}
 }
 
+// The probes exist only where a target is configured, and the assistant prompt
+// offers them by name: both sides have to agree, or the model is handed names it
+// cannot call.
+func TestTools_GetExecutors_RegisterTheProbesOnlyWhenATargetIsConfigured(t *testing.T) {
+	probes := []string{OpsSystemToolName, OpsContainersToolName, OpsLogsToolName, OpsBaselineToolName, OpsDiffToolName}
+
+	tests := []struct {
+		name        string
+		targets     string
+		wantTargets []string
+	}{
+		{name: "a configured target", targets: `[{"id":"lab-host","host":"10.0.0.9"},{"host":"10.0.0.10"}]`, wantTargets: []string{"10.0.0.10", "lab-host"}},
+		{name: "no target"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fte := toolsAgentFlow(t, false)
+			fte.cfg = &config.Config{OpsTargets: tt.targets}
+
+			executor, err := fte.GetAssistantExecutor(AssistantExecutorConfig{})
+			require.NoError(t, err)
+
+			advertised := map[string]bool{}
+			for _, definition := range executor.(*customExecutor).definitions {
+				advertised[definition.Name] = true
+			}
+			for _, probe := range probes {
+				assert.Equal(t, len(tt.wantTargets) > 0, advertised[probe], "the %s tool", probe)
+			}
+
+			assert.Equal(t, tt.wantTargets, fte.OpsTargets())
+		})
+	}
+}
+
 // Covers the Get*Executor factories; subtests are keyed by factory. The terminal log carries the agent's task and subtask.
 func TestTools_GetExecutors_BindTheTerminalToTheFlowSandbox(t *testing.T) {
 	cases, _ := toolsAgentExecutorCases()
