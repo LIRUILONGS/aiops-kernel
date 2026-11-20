@@ -664,12 +664,13 @@ type ComplexityRoot struct {
 	}
 
 	Terminal struct {
-		Connected func(childComplexity int) int
-		CreatedAt func(childComplexity int) int
-		ID        func(childComplexity int) int
-		Image     func(childComplexity int) int
-		Name      func(childComplexity int) int
-		Type      func(childComplexity int) int
+		Connected      func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		ID             func(childComplexity int) int
+		Image          func(childComplexity int) int
+		Name           func(childComplexity int) int
+		RequestedImage func(childComplexity int) int
+		Type           func(childComplexity int) int
 	}
 
 	TerminalLog struct {
@@ -4452,6 +4453,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Terminal.Name(childComplexity), true
+
+	case "Terminal.requestedImage":
+		if e.complexity.Terminal.RequestedImage == nil {
+			break
+		}
+
+		return e.complexity.Terminal.RequestedImage(childComplexity), true
 
 	case "Terminal.type":
 		if e.complexity.Terminal.Type == nil {
@@ -14646,6 +14654,8 @@ func (ec *executionContext) fieldContext_Flow_terminals(_ context.Context, field
 				return ec.fieldContext_Terminal_name(ctx, field)
 			case "image":
 				return ec.fieldContext_Terminal_image(ctx, field)
+			case "requestedImage":
+				return ec.fieldContext_Terminal_requestedImage(ctx, field)
 			case "connected":
 				return ec.fieldContext_Terminal_connected(ctx, field)
 			case "createdAt":
@@ -32711,6 +32721,47 @@ func (ec *executionContext) fieldContext_Terminal_image(_ context.Context, field
 	return fc, nil
 }
 
+func (ec *executionContext) _Terminal_requestedImage(ctx context.Context, field graphql.CollectedField, obj *model.Terminal) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Terminal_requestedImage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RequestedImage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Terminal_requestedImage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Terminal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Terminal_connected(ctx context.Context, field graphql.CollectedField, obj *model.Terminal) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Terminal_connected(ctx, field)
 	if err != nil {
@@ -43261,6 +43312,8 @@ func (ec *executionContext) _Terminal(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "requestedImage":
+			out.Values[i] = ec._Terminal_requestedImage(ctx, field, obj)
 		case "connected":
 			out.Values[i] = ec._Terminal_connected(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

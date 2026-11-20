@@ -537,12 +537,13 @@ type TaskExecutionStats struct {
 }
 
 type Terminal struct {
-	ID        int64        `json:"id"`
-	Type      TerminalType `json:"type"`
-	Name      string       `json:"name"`
-	Image     string       `json:"image"`
-	Connected bool         `json:"connected"`
-	CreatedAt time.Time    `json:"createdAt"`
+	ID             int64        `json:"id"`
+	Type           TerminalType `json:"type"`
+	Name           string       `json:"name"`
+	Image          string       `json:"image"`
+	RequestedImage *string      `json:"requestedImage,omitempty"`
+	Connected      bool         `json:"connected"`
+	CreatedAt      time.Time    `json:"createdAt"`
 }
 
 type TerminalLog struct {

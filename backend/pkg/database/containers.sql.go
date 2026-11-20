@@ -12,30 +12,32 @@ import (
 
 const createContainer = `-- name: CreateContainer :one
 INSERT INTO containers (
-  type, name, image, status, flow_id, local_id, local_dir
+  type, name, image, requested_image, status, flow_id, local_id, local_dir
 )
 VALUES (
-  $1, $2, $3, $4, $5, $6, $7
+  $1, $2, $3, $4, $5, $6, $7, $8
 )
 ON CONFLICT ON CONSTRAINT containers_local_id_unique
 DO UPDATE SET
   type = EXCLUDED.type,
   name = EXCLUDED.name,
   image = EXCLUDED.image,
+  requested_image = EXCLUDED.requested_image,
   status = EXCLUDED.status,
   flow_id = EXCLUDED.flow_id,
   local_dir = EXCLUDED.local_dir
-RETURNING id, type, name, image, status, local_id, local_dir, flow_id, created_at, updated_at
+RETURNING id, type, name, image, status, local_id, local_dir, flow_id, created_at, updated_at, requested_image
 `
 
 type CreateContainerParams struct {
-	Type     ContainerType   `json:"type"`
-	Name     string          `json:"name"`
-	Image    string          `json:"image"`
-	Status   ContainerStatus `json:"status"`
-	FlowID   int64           `json:"flow_id"`
-	LocalID  sql.NullString  `json:"local_id"`
-	LocalDir sql.NullString  `json:"local_dir"`
+	Type           ContainerType   `json:"type"`
+	Name           string          `json:"name"`
+	Image          string          `json:"image"`
+	RequestedImage sql.NullString  `json:"requested_image"`
+	Status         ContainerStatus `json:"status"`
+	FlowID         int64           `json:"flow_id"`
+	LocalID        sql.NullString  `json:"local_id"`
+	LocalDir       sql.NullString  `json:"local_dir"`
 }
 
 func (q *Queries) CreateContainer(ctx context.Context, arg CreateContainerParams) (Container, error) {
@@ -43,6 +45,7 @@ func (q *Queries) CreateContainer(ctx context.Context, arg CreateContainerParams
 		arg.Type,
 		arg.Name,
 		arg.Image,
+		arg.RequestedImage,
 		arg.Status,
 		arg.FlowID,
 		arg.LocalID,
@@ -60,13 +63,14 @@ func (q *Queries) CreateContainer(ctx context.Context, arg CreateContainerParams
 		&i.FlowID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.RequestedImage,
 	)
 	return i, err
 }
 
 const getContainers = `-- name: GetContainers :many
 SELECT
-  c.id, c.type, c.name, c.image, c.status, c.local_id, c.local_dir, c.flow_id, c.created_at, c.updated_at
+  c.id, c.type, c.name, c.image, c.status, c.local_id, c.local_dir, c.flow_id, c.created_at, c.updated_at, c.requested_image
 FROM containers c
 INNER JOIN flows f ON c.flow_id = f.id
 WHERE f.deleted_at IS NULL
@@ -93,6 +97,7 @@ func (q *Queries) GetContainers(ctx context.Context) ([]Container, error) {
 			&i.FlowID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.RequestedImage,
 		); err != nil {
 			return nil, err
 		}
@@ -109,7 +114,7 @@ func (q *Queries) GetContainers(ctx context.Context) ([]Container, error) {
 
 const getFlowContainers = `-- name: GetFlowContainers :many
 SELECT
-  c.id, c.type, c.name, c.image, c.status, c.local_id, c.local_dir, c.flow_id, c.created_at, c.updated_at
+  c.id, c.type, c.name, c.image, c.status, c.local_id, c.local_dir, c.flow_id, c.created_at, c.updated_at, c.requested_image
 FROM containers c
 INNER JOIN flows f ON c.flow_id = f.id
 WHERE c.flow_id = $1 AND f.deleted_at IS NULL
@@ -136,6 +141,7 @@ func (q *Queries) GetFlowContainers(ctx context.Context, flowID int64) ([]Contai
 			&i.FlowID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.RequestedImage,
 		); err != nil {
 			return nil, err
 		}
@@ -152,7 +158,7 @@ func (q *Queries) GetFlowContainers(ctx context.Context, flowID int64) ([]Contai
 
 const getFlowPrimaryContainer = `-- name: GetFlowPrimaryContainer :one
 SELECT
-  c.id, c.type, c.name, c.image, c.status, c.local_id, c.local_dir, c.flow_id, c.created_at, c.updated_at
+  c.id, c.type, c.name, c.image, c.status, c.local_id, c.local_dir, c.flow_id, c.created_at, c.updated_at, c.requested_image
 FROM containers c
 INNER JOIN flows f ON c.flow_id = f.id
 WHERE c.flow_id = $1 AND c.type = 'primary' AND f.deleted_at IS NULL
@@ -174,13 +180,14 @@ func (q *Queries) GetFlowPrimaryContainer(ctx context.Context, flowID int64) (Co
 		&i.FlowID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.RequestedImage,
 	)
 	return i, err
 }
 
 const getRunningContainers = `-- name: GetRunningContainers :many
 SELECT
-  c.id, c.type, c.name, c.image, c.status, c.local_id, c.local_dir, c.flow_id, c.created_at, c.updated_at
+  c.id, c.type, c.name, c.image, c.status, c.local_id, c.local_dir, c.flow_id, c.created_at, c.updated_at, c.requested_image
 FROM containers c
 INNER JOIN flows f ON c.flow_id = f.id
 WHERE c.status = 'running' AND f.deleted_at IS NULL
@@ -207,6 +214,7 @@ func (q *Queries) GetRunningContainers(ctx context.Context) ([]Container, error)
 			&i.FlowID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.RequestedImage,
 		); err != nil {
 			return nil, err
 		}
@@ -223,7 +231,7 @@ func (q *Queries) GetRunningContainers(ctx context.Context) ([]Container, error)
 
 const getUserContainers = `-- name: GetUserContainers :many
 SELECT
-  c.id, c.type, c.name, c.image, c.status, c.local_id, c.local_dir, c.flow_id, c.created_at, c.updated_at
+  c.id, c.type, c.name, c.image, c.status, c.local_id, c.local_dir, c.flow_id, c.created_at, c.updated_at, c.requested_image
 FROM containers c
 INNER JOIN flows f ON c.flow_id = f.id
 INNER JOIN users u ON f.user_id = u.id
@@ -251,6 +259,7 @@ func (q *Queries) GetUserContainers(ctx context.Context, userID int64) ([]Contai
 			&i.FlowID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.RequestedImage,
 		); err != nil {
 			return nil, err
 		}
@@ -267,7 +276,7 @@ func (q *Queries) GetUserContainers(ctx context.Context, userID int64) ([]Contai
 
 const getUserFlowContainers = `-- name: GetUserFlowContainers :many
 SELECT
-  c.id, c.type, c.name, c.image, c.status, c.local_id, c.local_dir, c.flow_id, c.created_at, c.updated_at
+  c.id, c.type, c.name, c.image, c.status, c.local_id, c.local_dir, c.flow_id, c.created_at, c.updated_at, c.requested_image
 FROM containers c
 INNER JOIN flows f ON c.flow_id = f.id
 INNER JOIN users u ON f.user_id = u.id
@@ -300,6 +309,7 @@ func (q *Queries) GetUserFlowContainers(ctx context.Context, arg GetUserFlowCont
 			&i.FlowID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.RequestedImage,
 		); err != nil {
 			return nil, err
 		}
@@ -318,7 +328,7 @@ const updateContainerImage = `-- name: UpdateContainerImage :one
 UPDATE containers
 SET image = $1
 WHERE id = $2
-RETURNING id, type, name, image, status, local_id, local_dir, flow_id, created_at, updated_at
+RETURNING id, type, name, image, status, local_id, local_dir, flow_id, created_at, updated_at, requested_image
 `
 
 type UpdateContainerImageParams struct {
@@ -340,6 +350,7 @@ func (q *Queries) UpdateContainerImage(ctx context.Context, arg UpdateContainerI
 		&i.FlowID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.RequestedImage,
 	)
 	return i, err
 }
@@ -348,7 +359,7 @@ const updateContainerStatus = `-- name: UpdateContainerStatus :one
 UPDATE containers
 SET status = $1
 WHERE id = $2
-RETURNING id, type, name, image, status, local_id, local_dir, flow_id, created_at, updated_at
+RETURNING id, type, name, image, status, local_id, local_dir, flow_id, created_at, updated_at, requested_image
 `
 
 type UpdateContainerStatusParams struct {
@@ -370,6 +381,7 @@ func (q *Queries) UpdateContainerStatus(ctx context.Context, arg UpdateContainer
 		&i.FlowID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.RequestedImage,
 	)
 	return i, err
 }
@@ -378,7 +390,7 @@ const updateContainerStatusLocalID = `-- name: UpdateContainerStatusLocalID :one
 UPDATE containers
 SET status = $1, local_id = $2
 WHERE id = $3
-RETURNING id, type, name, image, status, local_id, local_dir, flow_id, created_at, updated_at
+RETURNING id, type, name, image, status, local_id, local_dir, flow_id, created_at, updated_at, requested_image
 `
 
 type UpdateContainerStatusLocalIDParams struct {
@@ -401,6 +413,7 @@ func (q *Queries) UpdateContainerStatusLocalID(ctx context.Context, arg UpdateCo
 		&i.FlowID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.RequestedImage,
 	)
 	return i, err
 }

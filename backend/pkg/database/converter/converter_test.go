@@ -629,3 +629,34 @@ func TestConverter_ConvertFlowRoleActivity_AnswersEmptyListsForAFlowWithNoActivi
 	assert.NotNil(t, activity.Roles, "an empty list must marshal as [] rather than null")
 	assert.NotNil(t, activity.Edges)
 }
+
+// A fallback container is the only one whose two images differ; a row that ran as
+// asked reports nothing extra, so a client reads image alone.
+func TestConverter_ConvertContainer_CarriesTheRequestedImageOnlyWhenItDiffered(t *testing.T) {
+	tests := []struct {
+		name      string
+		requested sql.NullString
+		image     string
+		want      *string
+	}{
+		{name: "a pull that landed on the fallback", requested: sql.NullString{String: "alpine:3.20", Valid: true}, image: "debian:latest", want: converterPtr("alpine:3.20")},
+		{name: "a pull that took the image it was asked for", requested: sql.NullString{String: "debian:latest", Valid: true}, image: "debian:latest"},
+		{name: "a row recorded before the column existed", image: "debian:latest"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			terminal := ConvertContainer(database.Container{
+				Type:           database.ContainerTypePrimary,
+				Name:           "opsagi-terminal-1",
+				Image:          tt.image,
+				RequestedImage: tt.requested,
+				Status:         database.ContainerStatusRunning,
+			})
+
+			assert.Equal(t, tt.image, terminal.Image)
+			assert.Equal(t, tt.want, terminal.RequestedImage)
+			assert.True(t, terminal.Connected)
+		})
+	}
+}

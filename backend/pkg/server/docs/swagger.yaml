@@ -404,6 +404,12 @@ definitions:
         type: string
       name:
         type: string
+      requested_image:
+        description: |-
+          RequestedImage is the image the flow asked for before any fallback. It is
+          empty when the row predates the column, and equal to Image when the pull
+          succeeded.
+        type: string
       status:
         type: string
       type:

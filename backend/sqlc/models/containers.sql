@@ -51,16 +51,17 @@ ORDER BY c.created_at DESC;
 
 -- name: CreateContainer :one
 INSERT INTO containers (
-  type, name, image, status, flow_id, local_id, local_dir
+  type, name, image, requested_image, status, flow_id, local_id, local_dir
 )
 VALUES (
-  $1, $2, $3, $4, $5, $6, $7
+  $1, $2, $3, $4, $5, $6, $7, $8
 )
 ON CONFLICT ON CONSTRAINT containers_local_id_unique
 DO UPDATE SET
   type = EXCLUDED.type,
   name = EXCLUDED.name,
   image = EXCLUDED.image,
+  requested_image = EXCLUDED.requested_image,
   status = EXCLUDED.status,
   flow_id = EXCLUDED.flow_id,
   local_dir = EXCLUDED.local_dir

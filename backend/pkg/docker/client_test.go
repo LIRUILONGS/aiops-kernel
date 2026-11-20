@@ -268,14 +268,15 @@ func (r *containerRecorder) CreateContainer(
 	}
 	r.created = arg
 	r.row = database.Container{
-		ID:       1,
-		Type:     arg.Type,
-		Name:     arg.Name,
-		Image:    arg.Image,
-		Status:   arg.Status,
-		LocalID:  arg.LocalID,
-		LocalDir: arg.LocalDir,
-		FlowID:   arg.FlowID,
+		ID:             1,
+		Type:           arg.Type,
+		Name:           arg.Name,
+		Image:          arg.Image,
+		RequestedImage: arg.RequestedImage,
+		Status:         arg.Status,
+		LocalID:        arg.LocalID,
+		LocalDir:       arg.LocalDir,
+		FlowID:         arg.FlowID,
 	}
 	return r.row, nil
 }
@@ -744,7 +745,8 @@ func TestClient_RunContainer_HostNetworkSkipsPortPublishing(t *testing.T) {
 func TestClient_RunContainer_FallsBackToTheDefaultImage(t *testing.T) {
 	dc, recorder := newRunContainerClient(t)
 	config := probeConfig()
-	config.Image = probeName(t) + ":0" // a repository that cannot exist
+	requested := probeName(t) + ":0" // a repository that cannot exist
+	config.Image = requested
 
 	row, inspect := runProbeContainer(t, dc, probeName(t), 9, config, nil)
 
@@ -752,6 +754,9 @@ func TestClient_RunContainer_FallsBackToTheDefaultImage(t *testing.T) {
 	require.Equal(t, []string{probeImage}, recorder.images)
 	require.Equal(t, probeImage, row.Image)
 	require.Equal(t, probeImage, inspect.Config.Image)
+	require.True(t, recorder.created.RequestedImage.Valid, "the image the flow asked for is recorded before the pull")
+	require.Equal(t, requested, recorder.created.RequestedImage.String)
+	require.Equal(t, requested, row.RequestedImage.String, "the fallback moves the image, not the request")
 }
 
 // With DOCKER_INSIDE the sandbox gets the socket, the client environment and the TLS material read-only.

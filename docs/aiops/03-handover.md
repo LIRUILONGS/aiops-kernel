@@ -1784,6 +1784,30 @@ GraphQL 面加三个类型与一个字段：`RoleMetric`（`role` / `chains` / `
 
 实机验证（真实数据库 + 真实后端 + 本地 OpenAI 兼容桩）：向助手 8 发一句带标记的话，桩在首轮返回 `record_finding` 的工具调用、拿到结果后改回纯文本，于是链只调用一次；随后 flow 87 的 `msglogs` 里出现一条 `type=advice` 的记录，正文是 `**load1 doubled after the deploy**` + 说明 + 围栏里的 `/proc/loadavg` 输出，`assistantlogs` 里没有重复。
 
+### 4.67 记住"想跑哪个镜像"，而不只是"最后跑成了哪个"（2026-11-20）
+
+4.60 实机验证时看到的一个小裂缝：`fixed` 模式下这条 flow 选中的是 `alpine:3.20`，registry 连不上，pull 失败，回落到本地的 `debian:latest` —— 于是 `containers.image` 记的是 `debian:latest`。日志里三条都在（`running container image=alpine:3.20`、`failed to pull image`、`try to use default image`），但库里只剩最后一条。事后审计"这条 flow 到底想跑在哪个镜像里"时答不上来，容易把"选中"和"实际"当成一件事。
+
+改法只有一处需要判断：**`image` 的含义不变，仍然是"真正跑起来的那个"**，另外加一列 `requested_image` 记"创建时选中的那个"。它在容器行插入的那一刻就写入（此时还没开始 pull），回落只改 `image`，不动它。于是：
+
+| 情形 | `image` | `requested_image` | 怎么读 |
+|---|---|---|---|
+| pull 成功 | 选中的镜像 | 同一个值 | 两个相等，说明没发生回落 |
+| pull 失败并回落 | 兜底镜像 | 选中的镜像 | 不相等，中间的差值就是这次事故 |
+| 本列出现之前的老行 | 跑起来的那个 | `NULL` | 读不到，不假装知道 |
+
+三层都通了：`containers.requested_image`（迁移 `20261120120000`）→ GraphQL `Terminal.requestedImage`（**只在两者不同时才返回**，相等或 `NULL` 返回 null，所以客户端读 `image` 的行为一个字都没变）→ REST 容器模型 `requested_image`（`omitempty`，同理）。选择"加一列"而不是"往消息日志写一行"，是因为这个问题是**审计**问题：列能查、能 join、能在列表页排序，日志行不能。
+
+实机验证（真实数据库 + 真实后端 + 真实 Docker daemon，`DOCKER_IMAGE_SELECTION_MODE=fixed`、`OPSAGI_DEFAULT_SANDBOX_IMAGE=alpine:3.20`、`DOCKER_DEFAULT_IMAGE=debian:latest`，本机到 `registry-1.docker.io` 不通 —— 正好是这个场景）：
+
+1. flow 89 创建后第一次读到：`image=alpine:3.20`、`requested_image=alpine:3.20`、`status=starting`（推送中，还没失败）。
+2. 约 20 秒后：`image=debian:latest`、`requested_image=alpine:3.20`、`status=running`。服务端日志同时有 `failed to pull image 'alpine:3.20' and using default image` 与 `try to use default image image=debian:latest`。
+3. `query { flow(flowId: 89) { terminals { image requestedImage } } }` → `image: "debian:latest"`、`requestedImage: "alpine:3.20"`。
+4. `GET /api/v1/flows/89/containers/?page=1&type=init` → `"image":"debian:latest","requested_image":"alpine:3.20"`。
+5. 没发生回落的行（`requested_image == image`）`requestedImage` 为 null —— 由 `pkg/database/converter` 的单元测试钉住。
+
+`pkg/docker` 里那条端到端断言（创建时写入、回落只动 `image`）需要能拉到 `alpine:3.23.5`，本机 registry 不通所以本地 skip、CI 里跑；本机这一层由上面 flow 89 的实机证据覆盖。
+
 ## 5 环境
 
 ### 5.1 开发机
@@ -1879,6 +1903,7 @@ docs(handover): note the five scanning alerts and how they were triaged  # 4.63
 fix(assistant): tell it about the probes it can call                      # 4.64
 refactor(assistant): delete the use_agents pipeline end to end                 # 4.65
 feat(assistant): give it the read-only probes and a finding outlet       # 4.66
+feat(containers): keep the image the flow asked for beside the one it ran  # 4.67
 feat(flows): let a flow declare its own target type        # 4.9，迁移 + sqlc + gqlgen + 判定
 feat(ui): choose the target type when starting a flow      # 4.9，表单三选一
 feat(ui): read the conclusion back into fields
@@ -1947,12 +1972,9 @@ chore: fork OpsAGI as AIOps kernel; add design docs and incident prompts
 
 4.58 删掉了唯一的消费者，剩下的空管线——`assistants.use_agents` 列、GraphQL `Assistant.useAgents`、两个 mutation 的 `useAgents` 入参、`ASSISTANT_USE_AGENTS` 配置、安装器的表单项、前端的 `shouldUseAgents`——在 4.65 里整条删掉了。这一项留在列表里只为记得它曾经挂在这里。
 
-### 7. 镜像 pull 失败时，容器行记的不是"选中的镜像"
+### 7. 镜像 pull 失败时，容器行记的不是"选中的镜像"（已完成，见 4.67）
 
-今天验证 4.60 时看到的：`fixed` 模式下选中的是 `alpine:3.20`，pull 失败（`registry-1.docker.io` 连不上）后回落到本地的 `debian:latest`，于是 `containers.image` 记的是 `debian:latest`。日志里三条都在（`running container image=alpine:3.20`、`failed to pull image`、`try to use default image`），但库里只剩最后一条——事后审计"这条 flow 到底在哪个镜像里跑的"时，唯一能回答的是最后真正跑起来的那个，容易把"选中"和"实际"混为一谈。
-
-- 落点：pull 失败时把 `选中的镜像` 与失败原因写进容器的消息日志（或 `containers` 加一列 `requested_image`），让"想跑什么、实际跑什么"都能查。
-- 验收：造一次 pull 失败，`containers` 能同时回答两个问题。
+验证 4.60 时看到的：`fixed` 模式下选中的是 `alpine:3.20`，pull 失败（`registry-1.docker.io` 连不上）后回落到本地的 `debian:latest`，于是 `containers.image` 记的是 `debian:latest`，事后审计分不清"选中"和"实际"。4.67 加了 `containers.requested_image`（创建时写入、回落时不动），并在 GraphQL `Terminal.requestedImage` 与 REST `requested_image` 上暴露出来，只在不同时才返回。这一项留在列表里只为记得它曾经挂在这里。
 
 ### 已经关掉的（不再列在上面）
 

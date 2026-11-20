@@ -271,13 +271,14 @@ func (dc *dockerClient) RunContainer(
 	logger.Info("running container")
 
 	dbContainer, err := dc.db.CreateContainer(ctx, database.CreateContainerParams{
-		Type:     containerType,
-		Name:     containerName,
-		Image:    config.Image,
-		Status:   database.ContainerStatusStarting,
-		FlowID:   flowID,
-		LocalID:  database.StringToNullString(fmt.Sprintf("tmp-id-%d", flowID)),
-		LocalDir: database.StringToNullString(hostDir),
+		Type:           containerType,
+		Name:           containerName,
+		Image:          config.Image,
+		RequestedImage: database.StringToNullString(config.Image),
+		Status:         database.ContainerStatusStarting,
+		FlowID:         flowID,
+		LocalID:        database.StringToNullString(fmt.Sprintf("tmp-id-%d", flowID)),
+		LocalDir:       database.StringToNullString(hostDir),
 	})
 	if err != nil {
 		return database.Container{}, fmt.Errorf("failed to create container in database: %w", err)

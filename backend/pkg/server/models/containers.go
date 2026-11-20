@@ -77,6 +77,10 @@ type Container struct {
 	Type      ContainerType   `form:"type" json:"type" validate:"valid,required" gorm:"type:CONTAINER_TYPE;NOT NULL;default:'primary'"`
 	Name      string          `form:"name" json:"name" validate:"required" gorm:"type:TEXT;NOT NULL;default:MD5(RANDOM()::text)"`
 	Image     string          `form:"image" json:"image" validate:"required" gorm:"type:TEXT;NOT NULL"`
+	// RequestedImage is the image the flow asked for before any fallback. It is
+	// empty when the row predates the column, and equal to Image when the pull
+	// succeeded.
+	RequestedImage string `form:"requested_image,omitempty" json:"requested_image,omitempty" validate:"omitempty" gorm:"type:TEXT"`
 	Status    ContainerStatus `form:"status" json:"status" validate:"valid,required" gorm:"type:CONTAINER_STATUS;NOT NULL;default:'starting'"`
 	LocalID   string          `form:"local_id" json:"local_id" validate:"omitempty" gorm:"type:TEXT"`
 	LocalDir  string          `form:"local_dir" json:"local_dir" validate:"omitempty" gorm:"type:TEXT"`

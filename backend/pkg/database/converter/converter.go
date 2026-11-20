@@ -60,7 +60,7 @@ func ConvertContainers(containers []database.Container) []*model.Terminal {
 }
 
 func ConvertContainer(container database.Container) *model.Terminal {
-	return &model.Terminal{
+	terminal := &model.Terminal{
 		ID:        container.ID,
 		Type:      model.TerminalType(container.Type),
 		Name:      container.Name,
@@ -68,6 +68,11 @@ func ConvertContainer(container database.Container) *model.Terminal {
 		Connected: container.Status == database.ContainerStatusRunning,
 		CreatedAt: container.CreatedAt.Time,
 	}
+	if container.RequestedImage.Valid && container.RequestedImage.String != container.Image {
+		terminal.RequestedImage = &container.RequestedImage.String
+	}
+
+	return terminal
 }
 
 func ConvertTasks(tasks []database.Task, subtasks []database.Subtask) []*model.Task {

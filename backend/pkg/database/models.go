@@ -906,16 +906,17 @@ type Assistantlog struct {
 }
 
 type Container struct {
-	ID        int64           `json:"id"`
-	Type      ContainerType   `json:"type"`
-	Name      string          `json:"name"`
-	Image     string          `json:"image"`
-	Status    ContainerStatus `json:"status"`
-	LocalID   sql.NullString  `json:"local_id"`
-	LocalDir  sql.NullString  `json:"local_dir"`
-	FlowID    int64           `json:"flow_id"`
-	CreatedAt sql.NullTime    `json:"created_at"`
-	UpdatedAt sql.NullTime    `json:"updated_at"`
+	ID             int64           `json:"id"`
+	Type           ContainerType   `json:"type"`
+	Name           string          `json:"name"`
+	Image          string          `json:"image"`
+	Status         ContainerStatus `json:"status"`
+	LocalID        sql.NullString  `json:"local_id"`
+	LocalDir       sql.NullString  `json:"local_dir"`
+	FlowID         int64           `json:"flow_id"`
+	CreatedAt      sql.NullTime    `json:"created_at"`
+	UpdatedAt      sql.NullTime    `json:"updated_at"`
+	RequestedImage sql.NullString  `json:"requested_image"`
 }
 
 type Flow struct {

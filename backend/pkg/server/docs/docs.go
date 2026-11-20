@@ -8333,6 +8333,10 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "requested_image": {
+                    "description": "RequestedImage is the image the flow asked for before any fallback. It is\nempty when the row predates the column, and equal to Image when the pull\nsucceeded.",
+                    "type": "string"
+                },
                 "status": {
                     "type": "string"
                 },

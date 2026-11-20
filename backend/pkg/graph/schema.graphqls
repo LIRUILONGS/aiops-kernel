@@ -242,6 +242,7 @@ type Terminal {
   type: TerminalType!
   name: String!
   image: String!
+  requestedImage: String
   connected: Boolean!
   createdAt: Time!
 }
