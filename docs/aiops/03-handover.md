@@ -1867,7 +1867,22 @@ PostgreSQL 16 的 `EXPLAIN (GENERIC_PLAN)` 正好解这个：它按"参数未知
 
 这一段的价值在于它是**算术**，不是模型的回忆：`ops_diff` 吃两份指纹 JSON，吐固定格式的表格，前后两次采样之间锁有没有消失是算出来的。没有模型也能验证，所以上面这三行是真跑出来的，不是等模型上线再补的。
 
-剩下的是**流程层面**：一条真实的优化 flow 把上面这套串起来（`ops_baseline` → 改配置/加索引/缩短事务 → `ops_baseline` → `ops_diff` → 收成 improved），这一步今天跑不了，因为本机的模型网关不认旧 key（§5.2），只能起 stub；stub 能证明工具被调用、参数正确，但给不出真实诊断。它需要的**度量**已经在了，缺的只是模型。
+#### 三、一条真实 flow 把它跑通（真模型）
+
+同一天下午用真模型（`glm-5.3-flash`，就是 §5.2 那个网关，key 取自 `xin-buddy` 的 `local-api-proxy.json`）起后端，靶场目标指到 `opsagi-labbox`，把锁竞争做成长事务（`begin; update accounts …; select pg_sleep(3600);`）加一个等待会话，让 flow 自己按五步走。
+
+flow 93 的实际轨迹（UTC）：
+
+| 步骤 | 证据 |
+|---|---|
+| 定位等待链 | `pg_locks` 读到 blocked `1686` / blocker `1679`、`transactionid`、`ShareLock`、已等 1777.2 秒 |
+| before 指纹 | 08:40:25Z：`blocked_sessions=1`、`longest_wait_s=418.91` |
+| 请操作员执行 | 写出 `select pg_terminate_backend(1679)`，用 `ask_user` 等人 |
+| 操作员执行 | 09:07:46Z，`opslab-db` 日志记下 `[1679] FATAL: terminating connection due to administrator command` |
+| after 指纹 | 09:10:46Z：`blocked_sessions=0`、`longest_wait_s=0` |
+| `ops_diff` | 锁等待会话 1→0、最长锁等待 418.9s→0s，均 -100%，**improved** |
+
+值得记的一点：模型没有直接采信操作员说"已经执行"，它先去 `opslab-db` 的日志里找那行 FATAL，确认终止时间早于 `pg_sleep(3600)` 的自然到期点（09:33:04Z）之后，才把改善归因于 terminate。第一次尝试（flow 92）里锁是自己到期释放的，模型就把结论停在 diagnosis、拒绝写 improved——它只承认自己看到因果。这也说明前面的度量不是装饰：没有 Postgres 段的 1→0 与 418.9s→0，README 里那个 improved 就只能靠模型嘴说。
 
 ## 5 环境
 
@@ -1968,6 +1983,7 @@ feat(containers): keep the image the flow asked for beside the one it ran  # 4.6
 feat(tools): explain the statement a postgres target is spending its time in  # 4.68
 feat(tools): read who is waiting on a row lock and who holds it  # 4.69
 feat(tools): measure a lock fix in the baseline instead of a recollection  # 4.69
+docs: record the lock-contention flow that closed as improved  # 4.69
 feat(flows): let a flow declare its own target type        # 4.9，迁移 + sqlc + gqlgen + 判定
 feat(ui): choose the target type when starting a flow      # 4.9，表单三选一
 feat(ui): read the conclusion back into fields
