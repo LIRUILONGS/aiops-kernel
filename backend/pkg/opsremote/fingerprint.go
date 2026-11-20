@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -26,6 +27,54 @@ type Fingerprint struct {
 	Containers  map[string]FingerprintContainer `json:"containers"`
 	TopCPU      []ProcessBrief                  `json:"top_cpu"`
 	TopMem      []ProcessBrief                  `json:"top_mem"`
+	Postgres    *PostgresBrief                  `json:"postgres,omitempty"`
+}
+
+// PostgresBrief is the database-side half of a fingerprint: the numbers a lock
+// problem moves, which no host metric carries. It is absent unless the operator
+// named a container and a database, because those are target-specific.
+type PostgresBrief struct {
+	Container         string  `json:"container"`
+	Database          string  `json:"database"`
+	BlockedSessions   int     `json:"blocked_sessions"`
+	LongestWaitS      float64 `json:"longest_wait_s"`
+	IdleInTransaction int     `json:"idle_in_transaction"`
+}
+
+// ParsePostgresBrief reads the three numbers the summary command prints. The
+// command is a catalogue entry, so its shape is fixed here rather than guessed.
+func ParsePostgresBrief(container, database, output string) (PostgresBrief, error) {
+	fields := strings.Split(strings.TrimSpace(output), "|")
+	if len(fields) != 3 {
+		return PostgresBrief{}, fmt.Errorf("锁等待摘要应有三段，收到 %d 段：%q", len(fields), strings.TrimSpace(output))
+	}
+
+	blocked, err := strconv.Atoi(strings.TrimSpace(fields[0]))
+	if err != nil {
+		return PostgresBrief{}, fmt.Errorf("解析等待会话数失败：%w", err)
+	}
+
+	wait, err := strconv.ParseFloat(strings.TrimSpace(fields[1]), 64)
+	if err != nil {
+		return PostgresBrief{}, fmt.Errorf("解析最长等待秒数失败：%w", err)
+	}
+
+	idle, err := strconv.Atoi(strings.TrimSpace(fields[2]))
+	if err != nil {
+		return PostgresBrief{}, fmt.Errorf("解析长事务会话数失败：%w", err)
+	}
+
+	return PostgresBrief{
+		Container:         container,
+		Database:          database,
+		BlockedSessions:   blocked,
+		LongestWaitS:      round3(wait),
+		IdleInTransaction: idle,
+	}, nil
+}
+
+func round3(value float64) float64 {
+	return math.Round(value*1000) / 1000
 }
 
 // FingerprintContainer keeps only what changes between two samples.
@@ -146,6 +195,14 @@ func CompareFingerprints(before, after Fingerprint) []Delta {
 		compareNumeric("cpu", before.CPUPercent, after.CPUPercent, 2.0, "%", true),
 		compareNumeric("内存占用", float64(before.MemUsedMB), float64(after.MemUsedMB), 32, "MB", true),
 		compareNumeric("swap 使用", float64(before.SwapUsedMB), float64(after.SwapUsedMB), 1, "MB", true),
+	}
+
+	if before.Postgres != nil && after.Postgres != nil {
+		deltas = append(deltas,
+			compareNumeric("锁等待会话", float64(before.Postgres.BlockedSessions), float64(after.Postgres.BlockedSessions), 1, "", true),
+			compareNumeric("最长锁等待", before.Postgres.LongestWaitS, after.Postgres.LongestWaitS, 0.5, "s", true),
+			compareNumeric("长事务会话", float64(before.Postgres.IdleInTransaction), float64(after.Postgres.IdleInTransaction), 1, "", true),
+		)
 	}
 
 	mounts := unionKeys(before.Filesystems, after.Filesystems)

@@ -462,8 +462,10 @@ func catalogueArgsOf(args OpsWatchArgs) map[string]string {
 
 // OpsBaselineArgs captures a named sample of a host for later comparison.
 type OpsBaselineArgs struct {
-	Target string `json:"target,omitempty" jsonschema:"description=目标主机 ID，留空使用默认主机"`
-	Label  string `json:"label,omitempty" jsonschema:"description=这次采样的名字，例如 before-change / after-change,example=before-change"`
+	Target    string `json:"target,omitempty" jsonschema:"description=目标主机 ID，留空使用默认主机"`
+	Label     string `json:"label,omitempty" jsonschema:"description=本次采样的标签，例如 before-change / after-change,example=before-change"`
+	Container string `json:"container,omitempty" jsonschema:"description=Postgres 所在容器名。与 database 一起给出时，指纹里会多一段数据库指标（锁等待会话数、最长等待秒数、长事务会话数）,example=opslab-db"`
+	Database  string `json:"database,omitempty" jsonschema:"description=数据库名，与 container 成对出现,example=shop"`
 }
 
 // OpsDiffArgs compares two samples taken by ops_baseline.
@@ -502,6 +504,19 @@ func (o *opsTools) HandleBaseline(ctx context.Context, name string, args json.Ra
 	}
 
 	fp := opsremote.SnapshotFingerprint(label, snap, containers)
+
+	postgresNote := ""
+	if parsed.Container != "" || parsed.Database != "" {
+		brief, captureErr := o.capturePostgres(ctx, client, parsed.Container, parsed.Database)
+		if captureErr != nil {
+			postgresNote = "Postgres 段未采集：" + captureErr.Error() + "\n"
+		} else {
+			fp.Postgres = &brief
+			postgresNote = fmt.Sprintf("Postgres 段（%s/%s）：等待锁的会话 %d 个，最长等待 %.3f 秒，idle in transaction %d 个。\n",
+				brief.Container, brief.Database, brief.BlockedSessions, brief.LongestWaitS, brief.IdleInTransaction)
+		}
+	}
+
 	payload, err := json.Marshal(fp)
 	if err != nil {
 		return "", fmt.Errorf("序列化基线失败：%w", err)
@@ -511,11 +526,38 @@ func (o *opsTools) HandleBaseline(ctx context.Context, name string, args json.Ra
 	fmt.Fprintf(&b, "已采集基线 %q（目标 %s，主机 %s）\n", label, target.ID, fp.Host)
 	fmt.Fprintf(&b, "负载 %.2f，CPU %.1f%%，内存 %d/%d MB，磁盘根分区 %.0f%%\n",
 		fp.Load1, fp.CPUPercent, fp.MemUsedMB, fp.MemTotalMB, fp.Filesystems["/"])
+	if postgresNote != "" {
+		b.WriteString(postgresNote)
+	}
 	b.WriteString("\n把下面这一整行原样保存下来，做完变更后再次调用 ops_baseline 采一个 after，再用 ops_diff 对比：\n")
 	b.WriteString(string(payload))
 	b.WriteString("\n")
 
 	return b.String(), nil
+}
+
+// capturePostgres adds the database half of a fingerprint through the same
+// catalogue command the agent may call, so the SQL and its validation live in one
+// place. A failure is reported, not fatal: the host half is still worth keeping.
+func (o *opsTools) capturePostgres(ctx context.Context, client *opsremote.Client, container, database string) (opsremote.PostgresBrief, error) {
+	if container == "" || database == "" {
+		return opsremote.PostgresBrief{}, fmt.Errorf("采集 Postgres 段需要同时给出 container 与 database")
+	}
+
+	command, err := opsremote.Render("pg_lock_wait_summary", map[string]string{
+		"Container": container,
+		"Database":  database,
+	})
+	if err != nil {
+		return opsremote.PostgresBrief{}, err
+	}
+
+	res, err := client.RunCtx(ctx, command)
+	if err != nil {
+		return opsremote.PostgresBrief{}, fmt.Errorf("执行锁等待摘要失败：%w", err)
+	}
+
+	return opsremote.ParsePostgresBrief(container, database, res.Stdout)
 }
 
 func (o *opsTools) HandleDiff(ctx context.Context, name string, args json.RawMessage) (string, error) {

@@ -185,6 +185,18 @@ func TestExec_Render_BuildsTheCommandFromTheTemplateAndTheValidatedValue(t *test
 			want: "offset 3 - 1",
 		},
 		{
+			name: "a lock summary prints three numbers in one row",
+			id:   "pg_lock_wait_summary",
+			args: map[string]string{"Container": "opslab-db", "Database": "shop"},
+			want: "cardinality(pg_blocking_pids(w.pid))",
+		},
+		{
+			name: "a lock summary counts the long transactions as well",
+			id:   "pg_lock_wait_summary",
+			args: map[string]string{"Container": "opslab-db", "Database": "shop"},
+			want: "state = 'idle in transaction'",
+		},
+		{
 			name: "a lock list names the blocked backend and the one holding the lock",
 			id:   "pg_locks",
 			args: map[string]string{"Container": "opslab-db", "Database": "shop", "Lines": "20"},

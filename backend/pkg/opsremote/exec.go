@@ -71,6 +71,7 @@ var (
 		"pg_stat_activity",
 		"pg_stat_statements",
 		"pg_locks",
+		"pg_lock_wait_summary",
 		"pg_explain",
 	}
 	catalog = map[string]Command{
@@ -228,6 +229,15 @@ var (
 				{Template: "Container", Kind: ParamName},
 				{Template: "Database", Kind: ParamName},
 				{Template: "Lines", Kind: ParamCount, Min: 1, Max: 50, Default: 10},
+			},
+		},
+		"pg_lock_wait_summary": {
+			ID:          "pg_lock_wait_summary",
+			Description: "锁等待摘要，一行三个数字：正在等锁的会话数、最长等待秒数、处于 idle in transaction 的会话数。只用来看“此刻有没有人在等”，细节用 pg_locks",
+			Template:    `docker exec %Container% psql -U postgres -d %Database% -At -c "select (select count(*) from pg_stat_activity w where cardinality(pg_blocking_pids(w.pid)) > 0) || '|' || coalesce((select round(max(extract(epoch from (now() - w.query_start)))::numeric, 3) from pg_stat_activity w where cardinality(pg_blocking_pids(w.pid)) > 0), 0) || '|' || (select count(*) from pg_stat_activity where state = 'idle in transaction')" 2>&1`,
+			Params: []Param{
+				{Template: "Container", Kind: ParamName},
+				{Template: "Database", Kind: ParamName},
 			},
 		},
 		"pg_explain": {

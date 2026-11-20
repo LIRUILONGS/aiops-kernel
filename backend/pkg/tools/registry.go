@@ -433,7 +433,8 @@ var registryDefinitions = map[string]llms.FunctionDefinition{
 	OpsBaselineToolName: {
 		Name: OpsBaselineToolName,
 		Description: "对目标主机采集一次带时间戳的基线指纹，返回一段 JSON。用于性能优化类目标：变更前采一次、变更后再采一次，然后用 ops_diff 对比。" +
-			"指纹包含负载、CPU、内存、Swap、各分区使用率、容器状态与重启次数、CPU 与内存占用最高的进程。" +
+			"指纹包含负载、CPU、内存、Swap、各文件系统使用率、容器状态与重启次数、以及按 CPU 与内存占用最高的进程；" +
+			"传了 container 与 database 时再多一段数据库指标（等待锁的会话数、最长等待秒数、idle in transaction 会话数），锁竞争这类问题靠这一段才能被 ops_diff 量出来。" +
 			"该工具只读取数据，不修改目标主机。",
 		Parameters: reflector.Reflect(&OpsBaselineArgs{}),
 	},
@@ -455,6 +456,7 @@ var registryDefinitions = map[string]llms.FunctionDefinition{
 			"container_image（容器所用镜像与创建时刻，需 container）、image_history（镜像各层的构建命令与时刻，需 image，可传 lines）、" +
 			"pg_stat_activity（Postgres 容器里还在跑的查询，需 container 与 database）、pg_stat_statements（Postgres 里累计耗时最高的语句，需 container 与 database，可传 lines）、" +
 			"pg_locks（此刻的锁等待：谁被谁挡住、等了多少秒、卡在哪把未授予的锁上，需 container 与 database，可传 lines）、" +
+			"pg_lock_wait_summary（锁等待摘要：等待中的会话数、最长等待秒数、idle in transaction 会话数，需 container 与 database）、" +
 			"pg_explain（累计耗时第 N 条语句的执行计划：只取计划、不执行，需 container、database 与 rank，rank 从 1 起）。" +
 			"参数只允许字母、数字与 . _ - /，含空格或 shell 元字符会被拒绝。" +
 			"返回结果会带上真实执行的命令原文，写证据时直接引用它。",

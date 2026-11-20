@@ -1833,11 +1833,13 @@ PostgreSQL 16 的 `EXPLAIN (GENERIC_PLAN)` 正好解这个：它按"参数未知
 
 实机验证（真实 Postgres 容器 + 真实目录渲染）：起一个 `postgres:16-alpine`（`shared_preload_libraries=pg_stat_statements`）、`shop` 库、30 万行 `orders`，用**代码里的 `opsremote.Render`** 渲染出命令原文，再在靶场容器上原样执行 —— 输出计划；把 rank 换成 50 —— 输出越界那句话；`calls` 前后一致。渲染结果是 `docker exec -i <container> psql …` 这种形状，所以这一层与 `ops_exec` 在靶场上执行的字符串是同一个；SSH 传输层是 4.11 / 4.31 已经走过的路径，这一步没有另测（本机没有可达的靶场主机）。
 
-### 4.69 行锁等待：把"谁在等、被谁挡住"变成一条只读命令（2026-11-20）
+### 4.69 行锁等待：从"哪把锁、谁挡着谁"到"改完真的好了"（2026-11-20）
 
 4.31 补了"哪条语句最贵"，4.68 补了"贵在哪"。真实运维里第三个高频问题是**锁**：一个没提交的事务把一行锁住，后面所有改这行的会话排队，从外面看只是"接口变慢"。Postgres 把这件事放在 `pg_locks`（未授予的锁）和 `pg_blocking_pids()`（谁挡着谁）里，但两者要 join 起来才读得懂，而且必须**在等待发生的当下**读。
 
-`pg_locks` 命令做的就是这一次 join：被挡的后端、挡住它的后端、等了多少秒、卡在哪种锁上（`transactionid` / `relation` / `tuple`）、等待方与被挡方各自的语句开头，按等待时长倒序，默认 10 行。只读，参数只有容器名、库名与行数。
+#### 一、`pg_locks`：一条只读命令回答"谁在等、被谁挡住"
+
+命令做的就是这一次 join：被挡的后端、挡住它的后端、等了多少秒、卡在哪种锁上（`transactionid` / `relation` / `tuple`）、等待方与被挡方各自的语句开头，按等待时长倒序，默认 10 行。只读，参数只有容器名、库名与行数。配套的 `pg_lock_wait_summary` 只回一行三个数字（等待会话数、最长等待秒数、idle in transaction 会话数），给下面的指纹段用，也方便 agent 先便宜地问一句"现在有人在等吗"。
 
 **场景不是造出来的假数据，是两个真会话**：`accounts` 表两行，会话 A `begin; update … where id = 1; select pg_sleep(40);`，三秒后会话 B 对同一行做 `update` —— B 就阻塞在 A 的行锁上。在 B 阻塞期间用**真实工具路径**（后端进程 → SSH 到靶场宿主机 → `docker exec` → psql）执行 `ops_exec pg_locks`，读到的就是这一行：
 
@@ -1849,10 +1851,23 @@ PostgreSQL 16 的 `EXPLAIN (GENERIC_PLAN)` 正好解这个：它按"参数未知
 
 实机环境：`opslab-db`（`postgres:16-alpine`，`shared_preload_libraries=pg_stat_statements`，`shop` 库）；`opsagi-labbox`（Debian + `openssh-server` + 从 `docker:latest` 里取出的静态 docker CLI，挂宿主 docker socket），后端通过 SSH 用私钥登录它，再 `docker exec` 进 `opslab-db`。这样 `ops_exec` 的**整条路径**（参数校验 → 渲染 → SSH → 容器 → psql → 格式化）都真跑了一遍，而不是像验收脚本那样只跑到"记录下来的证据"。顺带把 4.68 的 SSH 传输层也补上了：`pg_explain` 在同一条路径上给出了 `Parallel Seq Scan on orders` 的计划。
 
-**还没做到的一步，说清楚**：目标是"跑一条优化 flow，用 `ops_diff` 收成 improved"，这一步没有完成，卡在两处，都不是代码缺陷：
+#### 二、指纹里的 Postgres 段：让 `ops_diff` 量得出锁的问题
 
-1. 本机的模型网关不认旧 key（§5.2），只能起 stub；stub 能证明"工具被调用、参数正确"，但给不出真实诊断。
-2. `ops_diff` 比的是 `ops_baseline` 采的**主机指纹**（负载、内存、连接数、端口……），里面没有"锁等待秒数"这种数据库侧的指标。要让一条锁竞争 flow 能像 4.33 那样收成 `improved`，得先决定锁竞争的"改动前/改动后"用什么量：是给指纹加一个需要容器与库名的 Postgres 段（签名会变成带参数的），还是在 flow 里改用 `pg_locks` 的前后对比证据。这是个设计决定，不应该顺手塞进这一节。
+锁修没修好，主机指标几乎不动——`load1` 只从 0.47 掉到 0.43，隔着噪声；`ops_diff` 里真正该看的那几行原来根本不存在，因为指纹只有负载、CPU、内存、文件系统、容器与进程。所以 `ops_baseline` 多接了 `container` 与 `database` 两个可选参数：给了就再采一段数据库指标（等待锁的会话数、最长等待秒数、idle in transaction 会话数），写进指纹的 `postgres` 字段。采集走的是同一条 catalogue 命令（`pg_lock_wait_summary`），SQL 与参数校验只有一份，且**失败不致命**：容器名写错时基线照样出主机那一半，只在正文里说一句"Postgres 段未采集：…"。
+
+同一次锁竞争，改动前后两次 `ops_baseline`：
+
+| 字段 | before-lock-fix | after-lock-fix | 变化 | 判定 |
+|---|---|---|---|---|
+| 锁等待会话 | 1.0 | 0.0 | -1.0 (-100%) | 改善 |
+| 最长锁等待 | 6.3s | 0.0s | -6.3s (-100%) | 改善 |
+| 长事务会话 | 0.0 | 0.0 | +0.0 | 持平 |
+
+（同一次对比里 CPU 也降了 81%，因为两个 psql 会话退出；`load1` 那一行按 0.10 的噪声门限判为"持平"——这正是要 Postgres 段的原因。）
+
+这一段的价值在于它是**算术**，不是模型的回忆：`ops_diff` 吃两份指纹 JSON，吐固定格式的表格，前后两次采样之间锁有没有消失是算出来的。没有模型也能验证，所以上面这三行是真跑出来的，不是等模型上线再补的。
+
+剩下的是**流程层面**：一条真实的优化 flow 把上面这套串起来（`ops_baseline` → 改配置/加索引/缩短事务 → `ops_baseline` → `ops_diff` → 收成 improved），这一步今天跑不了，因为本机的模型网关不认旧 key（§5.2），只能起 stub；stub 能证明工具被调用、参数正确，但给不出真实诊断。它需要的**度量**已经在了，缺的只是模型。
 
 ## 5 环境
 
@@ -1952,6 +1967,7 @@ feat(assistant): give it the read-only probes and a finding outlet       # 4.66
 feat(containers): keep the image the flow asked for beside the one it ran  # 4.67
 feat(tools): explain the statement a postgres target is spending its time in  # 4.68
 feat(tools): read who is waiting on a row lock and who holds it  # 4.69
+feat(tools): measure a lock fix in the baseline instead of a recollection  # 4.69
 feat(flows): let a flow declare its own target type        # 4.9，迁移 + sqlc + gqlgen + 判定
 feat(ui): choose the target type when starting a flow      # 4.9，表单三选一
 feat(ui): read the conclusion back into fields

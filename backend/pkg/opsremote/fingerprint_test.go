@@ -1,6 +1,7 @@
 package opsremote
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -125,4 +126,112 @@ func TestFormatDeltas_LeadsWithTheCountOfMaterialChanges(t *testing.T) {
 
 	assert.Contains(t, output, "显著变化 1 项")
 	assert.NotContains(t, output, "没有显著变化")
+}
+
+func TestFingerprint_ParsePostgresBrief_ReadsTheThreeNumbers(t *testing.T) {
+	tests := []struct {
+		name   string
+		output string
+		want   PostgresBrief
+	}{
+		{
+			name:   "a waiting session and its longest wait",
+			output: "1|3.812|0\n",
+			want:   PostgresBrief{Container: "opslab-db", Database: "shop", BlockedSessions: 1, LongestWaitS: 3.812},
+		},
+		{
+			name:   "nothing waiting",
+			output: "0|0|0\n",
+			want:   PostgresBrief{Container: "opslab-db", Database: "shop"},
+		},
+		{
+			name:   "two waiters and a long transaction",
+			output: "2|41.5|3\n",
+			want:   PostgresBrief{Container: "opslab-db", Database: "shop", BlockedSessions: 2, LongestWaitS: 41.5, IdleInTransaction: 3},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ParsePostgresBrief("opslab-db", "shop", tt.output)
+			if err != nil {
+				t.Fatalf("parse: %v", err)
+			}
+			if got != tt.want {
+				t.Errorf("brief = %+v, want %+v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestFingerprint_ParsePostgresBrief_RefusesAnOutputItCannotRead(t *testing.T) {
+	tests := []struct {
+		name   string
+		output string
+		want   string
+	}{
+		{name: "a psql error is not a summary", output: "ERROR:  relation pg_stat_activity does not exist", want: "三段"},
+		{name: "a missing column", output: "1|3.8", want: "三段"},
+		{name: "a non-numeric count", output: "many|3.8|0", want: "等待会话数"},
+		{name: "a non-numeric wait", output: "1|soon|0", want: "最长等待秒数"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := ParsePostgresBrief("opslab-db", "shop", tt.output)
+			if err == nil {
+				t.Fatal("parsed an output that is not a summary")
+			}
+			if !strings.Contains(err.Error(), tt.want) {
+				t.Errorf("error = %q, want it to mention %q", err, tt.want)
+			}
+		})
+	}
+}
+
+// A lock fix moves numbers no host metric carries, so the comparison needs them.
+func TestFingerprint_CompareFingerprints_ReportsWhatTheLockFixMoved(t *testing.T) {
+	before := Fingerprint{Host: "lab-host", Label: "before", Postgres: &PostgresBrief{
+		Container: "opslab-db", Database: "shop", BlockedSessions: 1, LongestWaitS: 3.8, IdleInTransaction: 2,
+	}}
+	after := Fingerprint{Host: "lab-host", Label: "after", Postgres: &PostgresBrief{
+		Container: "opslab-db", Database: "shop",
+	}}
+
+	rows := map[string]Delta{}
+	for _, delta := range CompareFingerprints(before, after) {
+		rows[delta.Field] = delta
+	}
+
+	blocked, ok := rows["锁等待会话"]
+	if !ok {
+		t.Fatalf("no row for the blocked sessions, got %v", rows)
+	}
+	if !blocked.Material || blocked.Verdict != "改善" {
+		t.Errorf("row = %+v, want a material improvement", blocked)
+	}
+	if blocked.Before != "1.0" || blocked.After != "0.0" {
+		t.Errorf("before/after = %s/%s, want 1.0/0.0", blocked.Before, blocked.After)
+	}
+
+	wait := rows["最长锁等待"]
+	if !wait.Material || wait.Verdict != "改善" {
+		t.Errorf("row = %+v, want a material improvement", wait)
+	}
+
+	idle := rows["长事务会话"]
+	if !idle.Material || idle.Verdict != "改善" {
+		t.Errorf("row = %+v, want a material improvement", idle)
+	}
+}
+
+func TestFingerprint_CompareFingerprints_LeavesOutThePostgresRowsWhenOneSideHasNoSection(t *testing.T) {
+	before := Fingerprint{Host: "lab-host", Postgres: &PostgresBrief{Container: "opslab-db", Database: "shop", BlockedSessions: 3}}
+	after := Fingerprint{Host: "lab-host"}
+
+	for _, delta := range CompareFingerprints(before, after) {
+		if strings.HasPrefix(delta.Field, "锁等待") || strings.HasPrefix(delta.Field, "最长锁等待") || delta.Field == "长事务会话" {
+			t.Errorf("compared %q although only one sample carried a postgres section", delta.Field)
+		}
+	}
 }
