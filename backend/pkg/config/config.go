@@ -307,7 +307,6 @@ type Config struct {
 	WebSearchInternalMaxSiteBytes int  `env:"WEB_SEARCH_INTERNAL_MAX_SITE_BYTES" envDefault:"10240"`
 
 	// === AI Assistant Mode Configuration ===
-	AssistantUseAgents                bool `env:"ASSISTANT_USE_AGENTS" envDefault:"false"`
 	AssistantSummarizerPreserveLast   bool `env:"ASSISTANT_SUMMARIZER_PRESERVE_LAST" envDefault:"true"`
 	AssistantSummarizerLastSecBytes   int  `env:"ASSISTANT_SUMMARIZER_LAST_SEC_BYTES" envDefault:"76800"`
 	AssistantSummarizerMaxBPBytes     int  `env:"ASSISTANT_SUMMARIZER_MAX_BP_BYTES" envDefault:"16384"`

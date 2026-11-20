@@ -804,7 +804,7 @@ NEO4J_PASSWORD=devpassword
 NEO4J_URI=bolt://neo4j:7687
 
 # Assistant configuration
-ASSISTANT_USE_AGENTS=false         # Default value for agent usage when creating new assistants
+ASSISTANT_SUMMARIZER_PRESERVE_LAST=true   # Keep every message of the assistant's last context section
 ```
 
 5. Change all security related environment variables in `.env` file to improve security.
@@ -1020,17 +1020,15 @@ All Podman configurations remain fully compatible with Docker. The non-privilege
 
 ### Assistant Configuration
 
-OpsAGI allows you to configure default behavior for assistants:
+An assistant carries its own summarization budget, separate from the flows':
 
-| Variable               | Default | Description                                                             |
-| ---------------------- | ------- | ----------------------------------------------------------------------- |
-| `ASSISTANT_USE_AGENTS` | `false` | Controls the default value for agent usage when creating new assistants |
+| Variable                           | Default | Description                                                    |
+| ---------------------------------- | ------- | -------------------------------------------------------------- |
+| `ASSISTANT_SUMMARIZER_PRESERVE_LAST` | `true` | Keep every message in the assistant's last context section     |
+| `ASSISTANT_SUMMARIZER_LAST_SEC_BYTES` | `76800` | Byte budget for that last section                             |
+| `ASSISTANT_SUMMARIZER_MAX_QA_SECTIONS` | `7`   | Number of question/answer sections kept verbatim               |
 
-The `ASSISTANT_USE_AGENTS` setting affects the initial state of the "Use Agents" toggle when creating a new assistant in the UI:
-- `false` (default): New assistants are created with agent delegation disabled by default
-- `true`: New assistants are created with agent delegation enabled by default
-
-Note that users can always override this setting by toggling the "Use Agents" button in the UI when creating or editing an assistant. This environment variable only controls the initial default state.
+The full list, with the byte budgets of each section, is in `backend/docs/config.md`; nothing in it decides which tools an assistant may call.
 
 ## How to Use OpsAGI After Login
 

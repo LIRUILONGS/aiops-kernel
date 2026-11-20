@@ -327,7 +327,6 @@ function FlowAutomationMessages({ className }: FlowAutomationMessagesProps) {
                     onCancel={handleStopAutomation}
                     onSubmit={handleSubmitMessage}
                     placeholder={placeholder}
-                    type={'automation'}
                 />
             </div>
         </div>

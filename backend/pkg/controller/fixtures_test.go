@@ -615,16 +615,6 @@ func (q *lifecycleQuerier) UpdateAssistant(
 	return database.Assistant{ID: arg.ID, Status: database.AssistantStatusCreated, Title: arg.Title}, nil
 }
 
-func (*lifecycleQuerier) UpdateAssistantUseAgents(
-	ctx context.Context, arg database.UpdateAssistantUseAgentsParams,
-) (database.Assistant, error) {
-	if err := ctx.Err(); err != nil {
-		return database.Assistant{}, err
-	}
-
-	return database.Assistant{ID: arg.ID, UseAgents: arg.UseAgents}, nil
-}
-
 func (q *lifecycleQuerier) UpdateAssistantStatus(
 	ctx context.Context, arg database.UpdateAssistantStatusParams,
 ) (database.Assistant, error) {

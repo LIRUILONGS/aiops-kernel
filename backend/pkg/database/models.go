@@ -885,7 +885,6 @@ type Assistant struct {
 	Language           string          `json:"language"`
 	TraceID            sql.NullString  `json:"trace_id"`
 	FlowID             int64           `json:"flow_id"`
-	UseAgents          bool            `json:"use_agents"`
 	MsgchainID         sql.NullInt64   `json:"msgchain_id"`
 	CreatedAt          sql.NullTime    `json:"created_at"`
 	UpdatedAt          sql.NullTime    `json:"updated_at"`

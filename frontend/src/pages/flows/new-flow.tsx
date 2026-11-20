@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { AppHeader, AppHeaderContent, AppHeaderTitle } from '@/components/layouts/app/app-header';
@@ -8,21 +8,15 @@ import { FlowForm, type FlowFormValues } from '@/features/flows/flow-form';
 import { routes } from '@/lib/routes';
 import { useFlows } from '@/providers/flows-provider';
 import { useProviders } from '@/providers/providers-provider';
-import { useSystemSettings } from '@/providers/system-settings-provider';
 
 function NewFlow() {
     const navigate = useNavigate();
 
     const { selectedProvider } = useProviders();
     const { createFlow, createFlowWithAssistant } = useFlows();
-    const { settings } = useSystemSettings();
 
     const [isLoading, setIsLoading] = useState(false);
     const [flowType, setFlowType] = useState<'assistant' | 'automation'>('automation');
-
-    const shouldUseAgents = useMemo(() => {
-        return settings?.assistantUseAgents ?? false;
-    }, [settings?.assistantUseAgents]);
 
     const handleSubmit = async (values: FlowFormValues) => {
         if (isLoading) {
@@ -82,7 +76,6 @@ function NewFlow() {
                         <FlowForm
                             defaultValues={{
                                 providerName: selectedProvider?.name ?? '',
-                                useAgents: shouldUseAgents,
                             }}
                             isSubmitting={isLoading}
                             onSubmit={handleSubmit}
@@ -93,7 +86,6 @@ function NewFlow() {
                                         : 'What would you like me to help you with?'
                                     : 'Creating a new flow...'
                             }
-                            type={flowType}
                         />
                     </CardContent>
                 </Card>

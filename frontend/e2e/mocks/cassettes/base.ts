@@ -42,7 +42,6 @@ const versionInfo: ResultOf<typeof VersionInfoDocument> = {
 const settings: ResultOf<typeof SettingsDocument> = {
     settings: entity('Settings', {
         askUser: false,
-        assistantUseAgents: false,
         debug: false,
         dockerInside: false,
         isDevelopMode: false,

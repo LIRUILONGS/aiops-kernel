@@ -8117,9 +8117,6 @@
                     "type": "integer",
                     "minimum": 0
                 },
-                "functions": {
-                    "$ref": "#/definitions/tools.Functions"
-                },
                 "id": {
                     "type": "integer",
                     "minimum": 0
@@ -8159,9 +8156,6 @@
                 },
                 "updated_at": {
                     "type": "string"
-                },
-                "use_agents": {
-                    "type": "boolean"
                 }
             }
         },
@@ -8192,9 +8186,6 @@
                     "type": "integer",
                     "minimum": 0
                 },
-                "functions": {
-                    "$ref": "#/definitions/tools.Functions"
-                },
                 "id": {
                     "type": "integer",
                     "minimum": 0
@@ -8234,9 +8225,6 @@
                 },
                 "updated_at": {
                     "type": "string"
-                },
-                "use_agents": {
-                    "type": "boolean"
                 }
             }
         },
@@ -8464,9 +8452,6 @@
                 "provider"
             ],
             "properties": {
-                "functions": {
-                    "$ref": "#/definitions/tools.Functions"
-                },
                 "input": {
                     "type": "string",
                     "example": "user input for running assistant"
@@ -8480,10 +8465,6 @@
                     "items": {
                         "type": "integer"
                     }
-                },
-                "use_agents": {
-                    "type": "boolean",
-                    "example": true
                 }
             }
         },
@@ -8494,9 +8475,6 @@
                 "provider"
             ],
             "properties": {
-                "functions": {
-                    "$ref": "#/definitions/tools.Functions"
-                },
                 "input": {
                     "type": "string",
                     "example": "user input for first task in the flow"
@@ -8629,9 +8607,6 @@
                 },
                 "deleted_at": {
                     "type": "string"
-                },
-                "functions": {
-                    "$ref": "#/definitions/tools.Functions"
                 },
                 "id": {
                     "type": "integer",
@@ -8782,9 +8757,6 @@
                 },
                 "deleted_at": {
                     "type": "string"
-                },
-                "functions": {
-                    "$ref": "#/definitions/tools.Functions"
                 },
                 "id": {
                     "type": "integer",
@@ -9272,10 +9244,6 @@
                     "items": {
                         "type": "integer"
                     }
-                },
-                "use_agents": {
-                    "type": "boolean",
-                    "example": true
                 }
             }
         },
@@ -9647,10 +9615,6 @@
             "type": "object",
             "properties": {
                 "ask_user": {
-                    "type": "boolean",
-                    "example": false
-                },
-                "assistant_use_agents": {
                     "type": "boolean",
                     "example": false
                 },
@@ -10597,76 +10561,6 @@
                     "items": {
                         "$ref": "#/definitions/models.Vecstorelog"
                     }
-                }
-            }
-        },
-        "tools.DisableFunction": {
-            "type": "object",
-            "required": [
-                "context",
-                "name"
-            ],
-            "properties": {
-                "context": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "tools.ExternalFunction": {
-            "type": "object",
-            "required": [
-                "context",
-                "name",
-                "schema",
-                "url"
-            ],
-            "properties": {
-                "context": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "schema": {
-                    "type": "object"
-                },
-                "timeout": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "example": 60
-                },
-                "url": {
-                    "type": "string",
-                    "example": "https://example.com/api/v1/function"
-                }
-            }
-        },
-        "tools.Functions": {
-            "type": "object",
-            "properties": {
-                "disabled": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/tools.DisableFunction"
-                    }
-                },
-                "functions": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/tools.ExternalFunction"
-                    }
-                },
-                "token": {
-                    "type": "string"
                 }
             }
         }

@@ -87,7 +87,6 @@ test.describe('flow assistants', { tag: '@flows' }, () => {
                 flowId: '5',
                 input: 'plan the recon',
                 modelProvider: PROVIDER.name,
-                useAgents: false,
             });
 
             // `Create new assistant` leaves the picker on an explicit "none" that the
@@ -131,7 +130,6 @@ test.describe('flow assistants', { tag: '@flows' }, () => {
                 assistantId: WAITING_ASSISTANT.id,
                 flowId: '5',
                 input: 'and the other ports?',
-                useAgents: false,
             });
             await expect(composer).toHaveValue('');
             expectCleanPage(pageErrorLog);

@@ -38,12 +38,11 @@ func (s *SettingsService) GetSettings(c *gin.Context) {
 	}
 
 	settings := models.Settings{
-		Debug:              s.cfg.Debug,
-		AskUser:            s.cfg.AskUser,
-		Version:            version.GetBinaryVersion(),
-		DockerInside:       s.cfg.DockerInside,
-		IsDevelopMode:      version.IsDevelopMode(),
-		AssistantUseAgents: s.cfg.AssistantUseAgents,
+		Debug:         s.cfg.Debug,
+		AskUser:       s.cfg.AskUser,
+		Version:       version.GetBinaryVersion(),
+		DockerInside:  s.cfg.DockerInside,
+		IsDevelopMode: version.IsDevelopMode(),
 	}
 
 	response.Success(c, http.StatusOK, settings)

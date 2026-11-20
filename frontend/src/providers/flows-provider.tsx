@@ -105,7 +105,7 @@ export function FlowsProvider({ children }: FlowsProviderProps) {
 
     const createFlowWithAssistant = useCallback(
         async (values: FlowFormValues) => {
-            const { providerName, resourceIds, useAgents } = values;
+            const { providerName, resourceIds } = values;
 
             const input = composeFlowInput(values);
             const modelProvider = providerName.trim();
@@ -121,7 +121,6 @@ export function FlowsProvider({ children }: FlowsProviderProps) {
                         input,
                         modelProvider,
                         resourceIds: resourceIds?.length ? resourceIds : undefined,
-                        useAgents,
                     },
                 });
 

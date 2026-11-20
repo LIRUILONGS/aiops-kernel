@@ -555,7 +555,7 @@ export function FlowProvider({ children }: FlowProviderProps) {
 
     const createAssistant = useCallback(
         async (values: FlowFormValues) => {
-            const { message, providerName, resourceIds, useAgents } = values;
+            const { message, providerName, resourceIds } = values;
 
             const input = message.trim();
             const modelProvider = providerName.trim();
@@ -571,7 +571,6 @@ export function FlowProvider({ children }: FlowProviderProps) {
                         input,
                         modelProvider,
                         resourceIds: resourceIds?.length ? resourceIds : undefined,
-                        useAgents,
                     },
                 });
 
@@ -599,7 +598,7 @@ export function FlowProvider({ children }: FlowProviderProps) {
 
     const submitAssistantMessage = useCallback(
         async (assistantId: string, values: FlowFormValues) => {
-            const { message, resourceIds, useAgents } = values;
+            const { message, resourceIds } = values;
 
             const input = message.trim();
 
@@ -614,7 +613,6 @@ export function FlowProvider({ children }: FlowProviderProps) {
                         flowId,
                         input,
                         resourceIds: resourceIds?.length ? resourceIds : undefined,
-                        useAgents,
                     },
                 });
 

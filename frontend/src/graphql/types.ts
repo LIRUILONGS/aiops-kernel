@@ -302,7 +302,6 @@ export type SettingsFragmentFragment = {
     version: string;
     dockerInside: boolean;
     isDevelopMode: boolean;
-    assistantUseAgents: boolean;
 };
 
 export type VersionInfoFragmentFragment = {
@@ -457,7 +456,6 @@ export type AssistantFragmentFragment = {
     title: string;
     status: StatusType;
     flowId: string;
-    useAgents: boolean;
     createdAt: string;
     updatedAt: string;
     provider: ProviderFragmentFragment;
@@ -1112,7 +1110,6 @@ export type CreateAssistantMutationVariables = Exact<{
     flowId: string | number;
     modelProvider: string;
     input: string;
-    useAgents: boolean;
     resourceIds?: Array<string | number> | string | number | null | undefined;
 }>;
 
@@ -1124,7 +1121,6 @@ export type CallAssistantMutationVariables = Exact<{
     flowId: string | number;
     assistantId: string | number;
     input: string;
-    useAgents: boolean;
     resourceIds?: Array<string | number> | string | number | null | undefined;
 }>;
 
@@ -1447,7 +1443,6 @@ export const SettingsFragmentFragmentDoc = {
                     { kind: 'Field', name: { kind: 'Name', value: 'version' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'dockerInside' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'isDevelopMode' } },
-                    { kind: 'Field', name: { kind: 'Name', value: 'assistantUseAgents' } },
                 ],
             },
         },
@@ -1862,7 +1857,6 @@ export const AssistantFragmentFragmentDoc = {
                         },
                     },
                     { kind: 'Field', name: { kind: 'Name', value: 'flowId' } },
-                    { kind: 'Field', name: { kind: 'Name', value: 'useAgents' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
                 ],
@@ -3419,7 +3413,6 @@ export const SettingsDocument = {
                     { kind: 'Field', name: { kind: 'Name', value: 'version' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'dockerInside' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'isDevelopMode' } },
-                    { kind: 'Field', name: { kind: 'Name', value: 'assistantUseAgents' } },
                 ],
             },
         },
@@ -5346,7 +5339,6 @@ export const AssistantsDocument = {
                         },
                     },
                     { kind: 'Field', name: { kind: 'Name', value: 'flowId' } },
-                    { kind: 'Field', name: { kind: 'Name', value: 'useAgents' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
                 ],
@@ -7855,14 +7847,6 @@ export const CreateAssistantDocument = {
                 },
                 {
                     kind: 'VariableDefinition',
-                    variable: { kind: 'Variable', name: { kind: 'Name', value: 'useAgents' } },
-                    type: {
-                        kind: 'NonNullType',
-                        type: { kind: 'NamedType', name: { kind: 'Name', value: 'Boolean' } },
-                    },
-                },
-                {
-                    kind: 'VariableDefinition',
                     variable: { kind: 'Variable', name: { kind: 'Name', value: 'resourceIds' } },
                     type: {
                         kind: 'ListType',
@@ -7891,11 +7875,6 @@ export const CreateAssistantDocument = {
                                 kind: 'Argument',
                                 name: { kind: 'Name', value: 'input' },
                                 value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
-                            },
-                            {
-                                kind: 'Argument',
-                                name: { kind: 'Name', value: 'useAgents' },
-                                value: { kind: 'Variable', name: { kind: 'Name', value: 'useAgents' } },
                             },
                             {
                                 kind: 'Argument',
@@ -8014,7 +7993,6 @@ export const CreateAssistantDocument = {
                         },
                     },
                     { kind: 'Field', name: { kind: 'Name', value: 'flowId' } },
-                    { kind: 'Field', name: { kind: 'Name', value: 'useAgents' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
                 ],
@@ -8047,14 +8025,6 @@ export const CallAssistantDocument = {
                 },
                 {
                     kind: 'VariableDefinition',
-                    variable: { kind: 'Variable', name: { kind: 'Name', value: 'useAgents' } },
-                    type: {
-                        kind: 'NonNullType',
-                        type: { kind: 'NamedType', name: { kind: 'Name', value: 'Boolean' } },
-                    },
-                },
-                {
-                    kind: 'VariableDefinition',
                     variable: { kind: 'Variable', name: { kind: 'Name', value: 'resourceIds' } },
                     type: {
                         kind: 'ListType',
@@ -8083,11 +8053,6 @@ export const CallAssistantDocument = {
                                 kind: 'Argument',
                                 name: { kind: 'Name', value: 'input' },
                                 value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
-                            },
-                            {
-                                kind: 'Argument',
-                                name: { kind: 'Name', value: 'useAgents' },
-                                value: { kind: 'Variable', name: { kind: 'Name', value: 'useAgents' } },
                             },
                             {
                                 kind: 'Argument',
@@ -8179,7 +8144,6 @@ export const StopAssistantDocument = {
                         },
                     },
                     { kind: 'Field', name: { kind: 'Name', value: 'flowId' } },
-                    { kind: 'Field', name: { kind: 'Name', value: 'useAgents' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
                 ],
@@ -10140,7 +10104,6 @@ export const AssistantCreatedDocument = {
                         },
                     },
                     { kind: 'Field', name: { kind: 'Name', value: 'flowId' } },
-                    { kind: 'Field', name: { kind: 'Name', value: 'useAgents' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
                 ],
@@ -10216,7 +10179,6 @@ export const AssistantUpdatedDocument = {
                         },
                     },
                     { kind: 'Field', name: { kind: 'Name', value: 'flowId' } },
-                    { kind: 'Field', name: { kind: 'Name', value: 'useAgents' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
                 ],
@@ -10292,7 +10254,6 @@ export const AssistantDeletedDocument = {
                         },
                     },
                     { kind: 'Field', name: { kind: 'Name', value: 'flowId' } },
-                    { kind: 'Field', name: { kind: 'Name', value: 'useAgents' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
                 ],

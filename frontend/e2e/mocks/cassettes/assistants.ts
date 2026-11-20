@@ -24,7 +24,6 @@ export const makeAssistant = (
         status,
         title,
         updatedAt: T,
-        useAgents: false,
     });
 
 export const WAITING_ASSISTANT = makeAssistant('11', 'E2E Assistant Waiting');

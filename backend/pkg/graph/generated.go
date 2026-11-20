@@ -159,7 +159,6 @@ type ComplexityRoot struct {
 		Status    func(childComplexity int) int
 		Title     func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
-		UseAgents func(childComplexity int) int
 	}
 
 	AssistantLog struct {
@@ -368,9 +367,9 @@ type ComplexityRoot struct {
 	Mutation struct {
 		AddFavoriteFlow         func(childComplexity int, flowID int64) int
 		AnonymizeText           func(childComplexity int, text string) int
-		CallAssistant           func(childComplexity int, flowID int64, assistantID int64, input string, useAgents bool, resourceIds []int64) int
+		CallAssistant           func(childComplexity int, flowID int64, assistantID int64, input string, resourceIds []int64) int
 		CreateAPIToken          func(childComplexity int, input model.CreateAPITokenInput) int
-		CreateAssistant         func(childComplexity int, flowID int64, modelProvider string, input string, useAgents bool, resourceIds []int64) int
+		CreateAssistant         func(childComplexity int, flowID int64, modelProvider string, input string, resourceIds []int64) int
 		CreateFlow              func(childComplexity int, modelProvider string, input string, flowType *model.FlowType, resourceIds []int64) int
 		CreateFlowTemplate      func(childComplexity int, input model.CreateFlowTemplateInput) int
 		CreateKnowledgeDocument func(childComplexity int, input model.CreateKnowledgeDocumentInput) int
@@ -578,12 +577,11 @@ type ComplexityRoot struct {
 	}
 
 	Settings struct {
-		AskUser            func(childComplexity int) int
-		AssistantUseAgents func(childComplexity int) int
-		Debug              func(childComplexity int) int
-		DockerInside       func(childComplexity int) int
-		IsDevelopMode      func(childComplexity int) int
-		Version            func(childComplexity int) int
+		AskUser       func(childComplexity int) int
+		Debug         func(childComplexity int) int
+		DockerInside  func(childComplexity int) int
+		IsDevelopMode func(childComplexity int) int
+		Version       func(childComplexity int) int
 	}
 
 	Subscription struct {
@@ -792,8 +790,8 @@ type MutationResolver interface {
 	FinishFlow(ctx context.Context, flowID int64) (model.ResultType, error)
 	DeleteFlow(ctx context.Context, flowID int64) (model.ResultType, error)
 	RenameFlow(ctx context.Context, flowID int64, title string) (model.ResultType, error)
-	CreateAssistant(ctx context.Context, flowID int64, modelProvider string, input string, useAgents bool, resourceIds []int64) (*model.FlowAssistant, error)
-	CallAssistant(ctx context.Context, flowID int64, assistantID int64, input string, useAgents bool, resourceIds []int64) (model.ResultType, error)
+	CreateAssistant(ctx context.Context, flowID int64, modelProvider string, input string, resourceIds []int64) (*model.FlowAssistant, error)
+	CallAssistant(ctx context.Context, flowID int64, assistantID int64, input string, resourceIds []int64) (model.ResultType, error)
 	StopAssistant(ctx context.Context, flowID int64, assistantID int64) (*model.Assistant, error)
 	DeleteAssistant(ctx context.Context, flowID int64, assistantID int64) (model.ResultType, error)
 	TestAgent(ctx context.Context, typeArg model.ProviderType, agentType model.AgentConfigType, agent model.AgentConfig, simple *model.AgentConfig) (*model.AgentTestResult, error)
@@ -1471,13 +1469,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Assistant.UpdatedAt(childComplexity), true
-
-	case "Assistant.useAgents":
-		if e.complexity.Assistant.UseAgents == nil {
-			break
-		}
-
-		return e.complexity.Assistant.UseAgents(childComplexity), true
 
 	case "AssistantLog.appendPart":
 		if e.complexity.AssistantLog.AppendPart == nil {
@@ -2430,7 +2421,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CallAssistant(childComplexity, args["flowId"].(int64), args["assistantId"].(int64), args["input"].(string), args["useAgents"].(bool), args["resourceIds"].([]int64)), true
+		return e.complexity.Mutation.CallAssistant(childComplexity, args["flowId"].(int64), args["assistantId"].(int64), args["input"].(string), args["resourceIds"].([]int64)), true
 
 	case "Mutation.createAPIToken":
 		if e.complexity.Mutation.CreateAPIToken == nil {
@@ -2454,7 +2445,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateAssistant(childComplexity, args["flowId"].(int64), args["modelProvider"].(string), args["input"].(string), args["useAgents"].(bool), args["resourceIds"].([]int64)), true
+		return e.complexity.Mutation.CreateAssistant(childComplexity, args["flowId"].(int64), args["modelProvider"].(string), args["input"].(string), args["resourceIds"].([]int64)), true
 
 	case "Mutation.createFlow":
 		if e.complexity.Mutation.CreateFlow == nil {
@@ -3856,13 +3847,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Settings.AskUser(childComplexity), true
 
-	case "Settings.assistantUseAgents":
-		if e.complexity.Settings.AssistantUseAgents == nil {
-			break
-		}
-
-		return e.complexity.Settings.AssistantUseAgents(childComplexity), true
-
 	case "Settings.debug":
 		if e.complexity.Settings.Debug == nil {
 			break
@@ -5249,16 +5233,11 @@ func (ec *executionContext) field_Mutation_callAssistant_args(ctx context.Contex
 		return nil, err
 	}
 	args["input"] = arg2
-	arg3, err := ec.field_Mutation_callAssistant_argsUseAgents(ctx, rawArgs)
+	arg3, err := ec.field_Mutation_callAssistant_argsResourceIds(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["useAgents"] = arg3
-	arg4, err := ec.field_Mutation_callAssistant_argsResourceIds(ctx, rawArgs)
-	if err != nil {
-		return nil, err
-	}
-	args["resourceIds"] = arg4
+	args["resourceIds"] = arg3
 	return args, nil
 }
 func (ec *executionContext) field_Mutation_callAssistant_argsFlowID(
@@ -5324,28 +5303,6 @@ func (ec *executionContext) field_Mutation_callAssistant_argsInput(
 	}
 
 	var zeroVal string
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Mutation_callAssistant_argsUseAgents(
-	ctx context.Context,
-	rawArgs map[string]interface{},
-) (bool, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["useAgents"]
-	if !ok {
-		var zeroVal bool
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("useAgents"))
-	if tmp, ok := rawArgs["useAgents"]; ok {
-		return ec.unmarshalNBoolean2bool(ctx, tmp)
-	}
-
-	var zeroVal bool
 	return zeroVal, nil
 }
 
@@ -5421,16 +5378,11 @@ func (ec *executionContext) field_Mutation_createAssistant_args(ctx context.Cont
 		return nil, err
 	}
 	args["input"] = arg2
-	arg3, err := ec.field_Mutation_createAssistant_argsUseAgents(ctx, rawArgs)
+	arg3, err := ec.field_Mutation_createAssistant_argsResourceIds(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["useAgents"] = arg3
-	arg4, err := ec.field_Mutation_createAssistant_argsResourceIds(ctx, rawArgs)
-	if err != nil {
-		return nil, err
-	}
-	args["resourceIds"] = arg4
+	args["resourceIds"] = arg3
 	return args, nil
 }
 func (ec *executionContext) field_Mutation_createAssistant_argsFlowID(
@@ -5496,28 +5448,6 @@ func (ec *executionContext) field_Mutation_createAssistant_argsInput(
 	}
 
 	var zeroVal string
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Mutation_createAssistant_argsUseAgents(
-	ctx context.Context,
-	rawArgs map[string]interface{},
-) (bool, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["useAgents"]
-	if !ok {
-		var zeroVal bool
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("useAgents"))
-	if tmp, ok := rawArgs["useAgents"]; ok {
-		return ec.unmarshalNBoolean2bool(ctx, tmp)
-	}
-
-	var zeroVal bool
 	return zeroVal, nil
 }
 
@@ -12646,50 +12576,6 @@ func (ec *executionContext) fieldContext_Assistant_flowId(_ context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _Assistant_useAgents(ctx context.Context, field graphql.CollectedField, obj *model.Assistant) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Assistant_useAgents(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.UseAgents, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Assistant_useAgents(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Assistant",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Assistant_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Assistant) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Assistant_createdAt(ctx, field)
 	if err != nil {
@@ -15022,8 +14908,6 @@ func (ec *executionContext) fieldContext_FlowAssistant_assistant(_ context.Conte
 				return ec.fieldContext_Assistant_provider(ctx, field)
 			case "flowId":
 				return ec.fieldContext_Assistant_flowId(ctx, field)
-			case "useAgents":
-				return ec.fieldContext_Assistant_useAgents(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Assistant_createdAt(ctx, field)
 			case "updatedAt":
@@ -19237,7 +19121,7 @@ func (ec *executionContext) _Mutation_createAssistant(ctx context.Context, field
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateAssistant(rctx, fc.Args["flowId"].(int64), fc.Args["modelProvider"].(string), fc.Args["input"].(string), fc.Args["useAgents"].(bool), fc.Args["resourceIds"].([]int64))
+		return ec.resolvers.Mutation().CreateAssistant(rctx, fc.Args["flowId"].(int64), fc.Args["modelProvider"].(string), fc.Args["input"].(string), fc.Args["resourceIds"].([]int64))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -19298,7 +19182,7 @@ func (ec *executionContext) _Mutation_callAssistant(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CallAssistant(rctx, fc.Args["flowId"].(int64), fc.Args["assistantId"].(int64), fc.Args["input"].(string), fc.Args["useAgents"].(bool), fc.Args["resourceIds"].([]int64))
+		return ec.resolvers.Mutation().CallAssistant(rctx, fc.Args["flowId"].(int64), fc.Args["assistantId"].(int64), fc.Args["input"].(string), fc.Args["resourceIds"].([]int64))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -19388,8 +19272,6 @@ func (ec *executionContext) fieldContext_Mutation_stopAssistant(ctx context.Cont
 				return ec.fieldContext_Assistant_provider(ctx, field)
 			case "flowId":
 				return ec.fieldContext_Assistant_flowId(ctx, field)
-			case "useAgents":
-				return ec.fieldContext_Assistant_useAgents(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Assistant_createdAt(ctx, field)
 			case "updatedAt":
@@ -23811,8 +23693,6 @@ func (ec *executionContext) fieldContext_Query_assistants(ctx context.Context, f
 				return ec.fieldContext_Assistant_provider(ctx, field)
 			case "flowId":
 				return ec.fieldContext_Assistant_flowId(ctx, field)
-			case "useAgents":
-				return ec.fieldContext_Assistant_useAgents(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Assistant_createdAt(ctx, field)
 			case "updatedAt":
@@ -25818,8 +25698,6 @@ func (ec *executionContext) fieldContext_Query_settings(_ context.Context, field
 				return ec.fieldContext_Settings_dockerInside(ctx, field)
 			case "isDevelopMode":
 				return ec.fieldContext_Settings_isDevelopMode(ctx, field)
-			case "assistantUseAgents":
-				return ec.fieldContext_Settings_assistantUseAgents(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Settings", field.Name)
 		},
@@ -28339,50 +28217,6 @@ func (ec *executionContext) fieldContext_Settings_isDevelopMode(_ context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _Settings_assistantUseAgents(ctx context.Context, field graphql.CollectedField, obj *model.Settings) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Settings_assistantUseAgents(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.AssistantUseAgents, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Settings_assistantUseAgents(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Settings",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Subscription_flowCreated(ctx context.Context, field graphql.CollectedField) (ret func(ctx context.Context) graphql.Marshaler) {
 	fc, err := ec.fieldContext_Subscription_flowCreated(ctx, field)
 	if err != nil {
@@ -28858,8 +28692,6 @@ func (ec *executionContext) fieldContext_Subscription_assistantCreated(ctx conte
 				return ec.fieldContext_Assistant_provider(ctx, field)
 			case "flowId":
 				return ec.fieldContext_Assistant_flowId(ctx, field)
-			case "useAgents":
-				return ec.fieldContext_Assistant_useAgents(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Assistant_createdAt(ctx, field)
 			case "updatedAt":
@@ -28945,8 +28777,6 @@ func (ec *executionContext) fieldContext_Subscription_assistantUpdated(ctx conte
 				return ec.fieldContext_Assistant_provider(ctx, field)
 			case "flowId":
 				return ec.fieldContext_Assistant_flowId(ctx, field)
-			case "useAgents":
-				return ec.fieldContext_Assistant_useAgents(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Assistant_createdAt(ctx, field)
 			case "updatedAt":
@@ -29032,8 +28862,6 @@ func (ec *executionContext) fieldContext_Subscription_assistantDeleted(ctx conte
 				return ec.fieldContext_Assistant_provider(ctx, field)
 			case "flowId":
 				return ec.fieldContext_Assistant_flowId(ctx, field)
-			case "useAgents":
-				return ec.fieldContext_Assistant_useAgents(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Assistant_createdAt(ctx, field)
 			case "updatedAt":
@@ -39490,11 +39318,6 @@ func (ec *executionContext) _Assistant(ctx context.Context, sel ast.SelectionSet
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "useAgents":
-			out.Values[i] = ec._Assistant_useAgents(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "createdAt":
 			out.Values[i] = ec._Assistant_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -43024,11 +42847,6 @@ func (ec *executionContext) _Settings(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "isDevelopMode":
 			out.Values[i] = ec._Settings_isDevelopMode(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "assistantUseAgents":
-			out.Values[i] = ec._Settings_assistantUseAgents(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

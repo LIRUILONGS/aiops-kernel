@@ -59,7 +59,6 @@ const assistant = {
     status: StatusType.Waiting,
     title: 'Assistant',
     updatedAt: '2026-01-01T00:00:00Z',
-    useAgents: false,
 };
 
 const assistantLogRow = (id: string) => ({

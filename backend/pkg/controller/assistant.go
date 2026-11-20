@@ -32,7 +32,7 @@ type AssistantWorker interface {
 	GetTitle() string
 	GetStatus(ctx context.Context) (database.AssistantStatus, error)
 	SetStatus(ctx context.Context, status database.AssistantStatus) error
-	PutInput(ctx context.Context, input string, useAgents bool, resources []database.UserResource) error
+	PutInput(ctx context.Context, input string, resources []database.UserResource) error
 	Finish(ctx context.Context) error
 	Stop(ctx context.Context) error
 }
@@ -63,7 +63,6 @@ type newAssistantWorkerCtx struct {
 	userID    int64
 	flowID    int64
 	input     string
-	useAgents bool
 	prvname   provider.ProviderName
 	prvtype   provider.ProviderType
 	resources []database.UserResource
@@ -92,9 +91,8 @@ const interruptedRunNote = "The server restarted before the assistant finished t
 	"so its reply may be incomplete. Send a message to continue."
 
 type assistantInput struct {
-	input     string
-	useAgents bool
-	reply     *inputReply
+	input string
+	reply *inputReply
 }
 
 func reserveAssistant(ctx context.Context, awc newAssistantWorkerCtx) (database.Assistant, error) {
@@ -110,7 +108,6 @@ func reserveAssistant(ctx context.Context, awc newAssistantWorkerCtx) (database.
 		Language:           "English",
 		ToolCallIDTemplate: cast.ToolCallIDTemplate,
 		FlowID:             awc.flowID,
-		UseAgents:          awc.useAgents,
 	})
 	if err != nil {
 		logrus.WithContext(ctx).WithError(err).Error("failed to create assistant in DB")
@@ -305,7 +302,7 @@ func buildAssistantWorker(
 
 	pub.AssistantUpdated(ctx, assistant)
 
-	if err := aw.PutInput(ctx, awc.input, awc.useAgents, awc.resources); err != nil {
+	if err := aw.PutInput(ctx, awc.input, awc.resources); err != nil {
 		if aw.ctx.Err() != nil || errors.Is(err, context.Canceled) {
 			assistantSpan.End(langfuse.WithSpanStatus("assistant worker stopped or finished by its owner"))
 			return aw, nil
@@ -503,19 +500,11 @@ func (aw *assistantWorker) noteInterruptedRun(ctx context.Context) {
 func (aw *assistantWorker) worker() {
 	defer aw.wg.Done()
 
-	perform := func(ctx context.Context, input string, useAgents bool) error {
+	perform := func(ctx context.Context, input string) error {
 		aw.runWG.Add(1)
 		defer aw.runWG.Done()
 
 		aw.noteInterruptedRun(ctx)
-
-		_, err := aw.db.UpdateAssistantUseAgents(ctx, database.UpdateAssistantUseAgentsParams{
-			UseAgents: useAgents,
-			ID:        aw.id,
-		})
-		if err != nil {
-			return fmt.Errorf("failed to update assistant use agents: %w", err)
-		}
 
 		if err := aw.SetStatus(ctx, database.AssistantStatusRunning); err != nil {
 			obs.LogErrorOrCancel(aw.logger, err, "failed to set assistant status to waiting")
@@ -527,7 +516,7 @@ func (aw *assistantWorker) worker() {
 			}
 		}()
 
-		_, err = aw.aslw.PutFlowAssistantMsg(ctx, database.MsglogTypeInput, "", input)
+		_, err := aw.aslw.PutFlowAssistantMsg(ctx, database.MsglogTypeInput, "", input)
 		if err != nil {
 			return fmt.Errorf("failed to put input to flow assistant log: %w", err)
 		}
@@ -559,7 +548,7 @@ func (aw *assistantWorker) worker() {
 		case <-aw.ctx.Done():
 			return
 		case ain := <-aw.input:
-			err := perform(aw.ctx, ain.input, ain.useAgents)
+			err := perform(aw.ctx, ain.input)
 			if err != nil {
 				obs.LogErrorOrCancel(aw.logger, err, "failed to perform assistant chain")
 			}
@@ -620,7 +609,7 @@ func (aw *assistantWorker) SetStatus(ctx context.Context, status database.Assist
 	return nil
 }
 
-func (aw *assistantWorker) PutInput(ctx context.Context, input string, useAgents bool, resources []database.UserResource) error {
+func (aw *assistantWorker) PutInput(ctx context.Context, input string, resources []database.UserResource) error {
 	ctx, span := obs.Observer.NewSpan(ctx, obs.SpanKindInternal, "controller.assistantWorker.PutInput")
 	defer span.End()
 
@@ -630,7 +619,7 @@ func (aw *assistantWorker) PutInput(ctx context.Context, input string, useAgents
 		}
 	}
 
-	ain := assistantInput{input: input, useAgents: useAgents, reply: newInputReply()}
+	ain := assistantInput{input: input, reply: newInputReply()}
 	select {
 	case <-aw.ctx.Done():
 		return fmt.Errorf("assistant %d flow %d stopped: %w", aw.id, aw.flowID, aw.ctx.Err())

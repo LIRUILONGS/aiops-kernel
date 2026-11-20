@@ -286,7 +286,7 @@ func (r *mutationResolver) RenameFlow(ctx context.Context, flowID int64, title s
 }
 
 // CreateAssistant is the resolver for the createAssistant field.
-func (r *mutationResolver) CreateAssistant(ctx context.Context, flowID int64, modelProvider string, input string, useAgents bool, resourceIds []int64) (*model.FlowAssistant, error) {
+func (r *mutationResolver) CreateAssistant(ctx context.Context, flowID int64, modelProvider string, input string, resourceIds []int64) (*model.FlowAssistant, error) {
 	var (
 		err error
 		uid int64
@@ -338,7 +338,7 @@ func (r *mutationResolver) CreateAssistant(ctx context.Context, flowID int64, mo
 	prvtype := prv.Type()
 
 	assistantID, err := r.Controller.CreateAssistant(
-		ctx, uid, flowID, input, useAgents, prvname, prvtype, dbResources,
+		ctx, uid, flowID, input, prvname, prvtype, dbResources,
 	)
 	if err != nil {
 		return nil, err
@@ -363,7 +363,7 @@ func (r *mutationResolver) CreateAssistant(ctx context.Context, flowID int64, mo
 }
 
 // CallAssistant is the resolver for the callAssistant field.
-func (r *mutationResolver) CallAssistant(ctx context.Context, flowID int64, assistantID int64, input string, useAgents bool, resourceIds []int64) (model.ResultType, error) {
+func (r *mutationResolver) CallAssistant(ctx context.Context, flowID int64, assistantID int64, input string, resourceIds []int64) (model.ResultType, error) {
 	uid, err := validatePermissionWithFlowID(ctx, "assistants.edit", flowID, r.DB)
 	if err != nil {
 		return model.ResultTypeError, err
@@ -397,7 +397,7 @@ func (r *mutationResolver) CallAssistant(ctx context.Context, flowID int64, assi
 		return model.ResultTypeError, err
 	}
 
-	if err := aw.PutInput(ctx, input, useAgents, dbResources); err != nil {
+	if err := aw.PutInput(ctx, input, dbResources); err != nil {
 		return model.ResultTypeError, err
 	}
 
@@ -2120,12 +2120,11 @@ func (r *queryResolver) Settings(ctx context.Context) (*model.Settings, error) {
 	}
 
 	settings := &model.Settings{
-		Debug:              r.Config.Debug,
-		AskUser:            r.Config.AskUser,
-		Version:            version.GetBinaryVersion(),
-		DockerInside:       r.Config.DockerInside,
-		IsDevelopMode:      version.IsDevelopMode(),
-		AssistantUseAgents: r.Config.AssistantUseAgents,
+		Debug:         r.Config.Debug,
+		AskUser:       r.Config.AskUser,
+		Version:       version.GetBinaryVersion(),
+		DockerInside:  r.Config.DockerInside,
+		IsDevelopMode: version.IsDevelopMode(),
 	}
 
 	return settings, nil

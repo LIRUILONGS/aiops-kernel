@@ -39,9 +39,7 @@ import {
     InputGroupTextareaAutosize,
 } from '@/components/ui/input-group';
 import { Spinner } from '@/components/ui/spinner';
-import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useResourcesUpload } from '@/features/resources/use-resources-upload';
 import { useAppForm } from '@/hooks/use-app-form';
 import { cn } from '@/lib/utils';
@@ -74,7 +72,6 @@ const formSchema = z.object({
     providerName: z.string().trim().min(1, { message: 'Provider must be selected' }),
     resourceIds: z.array(z.string()),
     targetType: z.enum(['auto', 'diagnosis', 'optimization']),
-    useAgents: z.boolean(),
 });
 
 export interface FlowFormProps {
@@ -87,7 +84,6 @@ export interface FlowFormProps {
     onCancel?: () => Promise<void> | void;
     onSubmit: (values: FlowFormValues) => boolean | Promise<boolean>;
     placeholder?: string;
-    type: 'assistant' | 'automation';
 }
 
 export type FlowFormValues = z.infer<typeof formSchema>;
@@ -102,7 +98,6 @@ export function FlowForm({
     onCancel,
     onSubmit,
     placeholder = 'Describe the incident to diagnose, or the service to optimise...',
-    type,
 }: FlowFormProps) {
     const { providers, setSelectedProvider } = useProviders();
     const { templates } = useTemplates();
@@ -176,7 +171,6 @@ export function FlowForm({
             providerName: defaultValues?.providerName ?? '',
             resourceIds: defaultValues?.resourceIds ?? [],
             targetType: defaultValues?.targetType ?? 'auto',
-            useAgents: defaultValues?.useAgents ?? false,
         },
         schema: formSchema,
     });
@@ -737,43 +731,6 @@ export function FlowForm({
                                             )
                                         }
                                     />
-
-                                    {type === 'assistant' && (
-                                        <FormField
-                                            control={control}
-                                            name="useAgents"
-                                            render={({ field: useAgentsField }) => (
-                                                <TooltipProvider>
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <FormItem className="flex flex-row items-center gap-0">
-                                                                <FormControl>
-                                                                    <Switch
-                                                                        checked={useAgentsField.value}
-                                                                        disabled={isFormDisabled}
-                                                                        onCheckedChange={useAgentsField.onChange}
-                                                                    />
-                                                                </FormControl>
-                                                                <FormLabel
-                                                                    className="flex cursor-pointer pl-2 text-xs font-normal"
-                                                                    onClick={() =>
-                                                                        useAgentsField.onChange(!useAgentsField.value)
-                                                                    }
-                                                                >
-                                                                    Use Agents
-                                                                </FormLabel>
-                                                            </FormItem>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent>
-                                                            <p className="max-w-48">
-                                                                Enable multi-agent collaboration for complex tasks
-                                                            </p>
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                </TooltipProvider>
-                                            )}
-                                        />
-                                    )}
 
                                     <DropdownMenu
                                         onOpenChange={(open) => {

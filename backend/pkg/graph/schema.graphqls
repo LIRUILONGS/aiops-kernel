@@ -186,7 +186,6 @@ type Settings {
   version: String!
   dockerInside: Boolean!
   isDevelopMode: Boolean!
-  assistantUseAgents: Boolean!
 }
 
 enum UpdateState {
@@ -253,7 +252,6 @@ type Assistant {
   status: StatusType!
   provider: Provider!
   flowId: ID!
-  useAgents: Boolean!
   createdAt: Time!
   updatedAt: Time!
 }
@@ -1073,8 +1071,8 @@ type Mutation {
   renameFlow(flowId: ID!, title: String!): ResultType!
 
   # Assistant management
-  createAssistant(flowId: ID!, modelProvider: String!, input: String!, useAgents: Boolean!, resourceIds: [ID!]): FlowAssistant!
-  callAssistant(flowId: ID!, assistantId: ID!, input: String!, useAgents: Boolean!, resourceIds: [ID!]): ResultType!
+  createAssistant(flowId: ID!, modelProvider: String!, input: String!, resourceIds: [ID!]): FlowAssistant!
+  callAssistant(flowId: ID!, assistantId: ID!, input: String!, resourceIds: [ID!]): ResultType!
   stopAssistant(flowId: ID!, assistantId: ID!): Assistant!
   deleteAssistant(flowId: ID!, assistantId: ID!): ResultType!
 

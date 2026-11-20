@@ -8164,9 +8164,6 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "string"
-                },
-                "use_agents": {
-                    "type": "boolean"
                 }
             }
         },
@@ -8236,9 +8233,6 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "string"
-                },
-                "use_agents": {
-                    "type": "boolean"
                 }
             }
         },
@@ -8479,10 +8473,6 @@ const docTemplate = `{
                     "items": {
                         "type": "integer"
                     }
-                },
-                "use_agents": {
-                    "type": "boolean",
-                    "example": true
                 }
             }
         },
@@ -9262,10 +9252,6 @@ const docTemplate = `{
                     "items": {
                         "type": "integer"
                     }
-                },
-                "use_agents": {
-                    "type": "boolean",
-                    "example": true
                 }
             }
         },
@@ -9637,10 +9623,6 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "ask_user": {
-                    "type": "boolean",
-                    "example": false
-                },
-                "assistant_use_agents": {
                     "type": "boolean",
                     "example": false
                 },

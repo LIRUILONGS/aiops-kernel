@@ -1421,11 +1421,10 @@ func NewSummarizer(config SummarizerConfig) Summarizer {
 
 ## Assistant Settings
 
-These settings control the behavior of the AI assistant functionality, including whether to use multi-agent delegation and assistant-specific summarization settings.
+These settings control the behavior of the AI assistant functionality: assistant-specific summarization settings.
 
 | Option                            | Environment Variable                    | Default Value | Description                                                             |
 | --------------------------------- | --------------------------------------- | ------------- | ----------------------------------------------------------------------- |
-| AssistantUseAgents                | `ASSISTANT_USE_AGENTS`                  | `false`       | Controls the default value for agent usage when creating new assistants |
 | AssistantSummarizerPreserveLast   | `ASSISTANT_SUMMARIZER_PRESERVE_LAST`    | `true`        | Whether to preserve all messages in the assistant's last section        |
 | AssistantSummarizerLastSecBytes   | `ASSISTANT_SUMMARIZER_LAST_SEC_BYTES`   | `76800`       | Maximum byte size for assistant's last section (75KB)                   |
 | AssistantSummarizerMaxBPBytes     | `ASSISTANT_SUMMARIZER_MAX_BP_BYTES`     | `16384`       | Maximum byte size for a single body pair in assistant context (16KB)    |
@@ -1436,14 +1435,6 @@ These settings control the behavior of the AI assistant functionality, including
 ### Usage Details
 
 The assistant settings are used to configure the behavior of the AI assistant and its context management:
-
-- **AssistantUseAgents**: Controls the default state of the "Use Agents" toggle when creating new assistants in the UI:
-  ```go
-  // This setting affects the initial state when creating assistants
-  // Users can always override this by toggling the "Use Agents" button in the UI
-  ```
-  - `false` (default): New assistants are created with agent delegation disabled by default
-  - `true`: New assistants are created with agent delegation enabled by default
 
 - **Assistant Summarizer Settings**: These provide dedicated summarization configuration for assistant instances, typically allowing for more memory retention compared to the global settings:
   ```go
@@ -1458,7 +1449,6 @@ The assistant summarizer configuration is designed to provide more memory for co
 
 1. **Standard Assistant Conversations**
    ```
-   AssistantUseAgents: false
    AssistantSummarizerPreserveLast: true
    AssistantSummarizerLastSecBytes: 76800 (75KB)
    AssistantSummarizerMaxBPBytes: 16384 (16KB)
@@ -1468,9 +1458,8 @@ The assistant summarizer configuration is designed to provide more memory for co
    ```
    The default settings provide a balance between context retention and performance for typical assistant interactions.
 
-2. **Multi-Agent Assistant Workflows**
+2. **Long Conversation Assistant**
    ```
-   AssistantUseAgents: true
    AssistantSummarizerPreserveLast: true
    AssistantSummarizerLastSecBytes: 102400 (100KB)
    AssistantSummarizerMaxBPBytes: 32768 (32KB)
@@ -1478,11 +1467,10 @@ The assistant summarizer configuration is designed to provide more memory for co
    AssistantSummarizerMaxQABytes: 102400 (100KB)
    AssistantSummarizerKeepQASections: 5
    ```
-   Enhanced settings for complex workflows that benefit from agent delegation with increased context preservation.
+   Enhanced settings for long conversations that need more context preservation.
 
 3. **Resource-Constrained Assistant**
    ```
-   AssistantUseAgents: false
    AssistantSummarizerPreserveLast: true
    AssistantSummarizerLastSecBytes: 51200 (50KB)
    AssistantSummarizerMaxBPBytes: 16384 (16KB)

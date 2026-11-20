@@ -60,7 +60,6 @@ describe('RetryMeasurement', () => {
             providerName: 'custom',
             resourceIds: [],
             targetType: 'optimization',
-            useAgents: false,
         });
     });
 

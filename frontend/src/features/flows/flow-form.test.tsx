@@ -65,7 +65,6 @@ describe('FlowForm attachments', () => {
             <FlowForm
                 defaultValues={{ providerName: 'openai' }}
                 onSubmit={onSubmit}
-                type="assistant"
             />,
         );
 
@@ -88,7 +87,6 @@ describe('FlowForm attachments', () => {
             <FlowForm
                 defaultValues={{ providerName: 'openai' }}
                 onSubmit={onSubmit}
-                type="assistant"
             />,
         );
 
@@ -113,7 +111,6 @@ describe('FlowForm attachments', () => {
             <FlowForm
                 defaultValues={{ providerName: 'openai' }}
                 onSubmit={onSubmit}
-                type="automation"
             />,
         );
 
@@ -132,7 +129,6 @@ describe('FlowForm attachments', () => {
             <FlowForm
                 defaultValues={{ providerName: 'openai' }}
                 onSubmit={vi.fn()}
-                type="assistant"
             />,
         );
 
@@ -140,7 +136,6 @@ describe('FlowForm attachments', () => {
             <FlowForm
                 defaultValues={{ providerName: 'openai', resourceIds: ['7'] }}
                 onSubmit={vi.fn()}
-                type="assistant"
             />,
         );
 

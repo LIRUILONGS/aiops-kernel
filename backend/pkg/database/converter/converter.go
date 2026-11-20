@@ -147,7 +147,6 @@ func ConvertAssistant(assistant database.Assistant) *model.Assistant {
 		Status:    model.StatusType(assistant.Status),
 		Provider:  provider,
 		FlowID:    assistant.FlowID,
-		UseAgents: assistant.UseAgents,
 		CreatedAt: assistant.CreatedAt.Time,
 		UpdatedAt: assistant.UpdatedAt.Time,
 	}

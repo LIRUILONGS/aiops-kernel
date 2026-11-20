@@ -38,7 +38,6 @@ function RetryMeasurement({ verdict }: { verdict: string }) {
                 providerName,
                 resourceIds: [],
                 targetType: 'optimization',
-                useAgents: false,
             });
 
             if (flowId) {

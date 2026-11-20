@@ -302,13 +302,13 @@ func TestAssistant_NoteInterruptedRun_WritesTheOwedNoteBeforeTheNextMessage(t *t
 	require.Empty(t, log.recorded())
 
 	log.recovers()
-	require.NoError(t, aw.PutInput(context.Background(), "go on", false, nil))
+	require.NoError(t, aw.PutInput(context.Background(), "go on", nil))
 
 	require.Eventually(t, func() bool { return len(reportNotes(log)) == 1 }, 5*time.Second, 10*time.Millisecond)
 	assert.Equal(t, lifecycleNote{msgType: database.MsglogTypeReport, msg: interruptedRunNote}, log.recorded()[0],
 		"the note belongs above the message it explains")
 
-	require.NoError(t, aw.PutInput(context.Background(), "and again", false, nil))
+	require.NoError(t, aw.PutInput(context.Background(), "and again", nil))
 	assert.Never(t, func() bool { return len(reportNotes(log)) > 1 }, time.Second, 20*time.Millisecond)
 }
 
@@ -329,7 +329,7 @@ func TestAssistant_ReportFailure_ReachesExactlyOneOfCallerAndLog(t *testing.T) {
 				&lifecycleChain{delay: tc.delay, err: overloaded})
 			require.NoError(t, err)
 
-			err = aw.PutInput(context.Background(), "scan the host", false, nil)
+			err = aw.PutInput(context.Background(), "scan the host", nil)
 
 			if tc.toCaller {
 				require.ErrorIs(t, err, overloaded)
@@ -351,7 +351,7 @@ func TestAssistant_PutInput_RefusesAnInputWhoseAssistantIsFinishedMeanwhile(t *t
 	require.NoError(t, err)
 
 	answered := make(chan error, 1)
-	go func() { answered <- aw.PutInput(context.Background(), "scan the host", false, nil) }()
+	go func() { answered <- aw.PutInput(context.Background(), "scan the host", nil) }()
 	require.Eventually(t, func() bool { return len(log.recorded()) > 0 }, 5*time.Second, time.Millisecond,
 		"the input never reached the assistant")
 

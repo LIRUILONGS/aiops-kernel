@@ -174,7 +174,6 @@ type FlowController interface {
         userID int64,
         flowID int64,
         input string,
-        useAgents bool,
         prvtype provider.ProviderType,
         functions *tools.Functions,
     ) (AssistantWorker, error)
@@ -215,7 +214,7 @@ type AssistantWorker interface {
     GetTitle() string
     GetStatus(ctx context.Context) (database.AssistantStatus, error)
     SetStatus(ctx context.Context, status database.AssistantStatus) error
-    PutInput(ctx context.Context, input string, useAgents bool) error
+    PutInput(ctx context.Context, input string) error
     Finish(ctx context.Context) error
     Stop(ctx context.Context) error
 }

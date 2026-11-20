@@ -68,7 +68,6 @@ func CreateDummyTemplateData() map[string]any {
 		"SummarizedContentPrefix": csum.SummarizedContentPrefix,
 
 		// Boolean flags
-		"UseAgents":            true,
 		"IsDefaultDockerImage": false,
 		"FlowManagerEnabled":   true,
 

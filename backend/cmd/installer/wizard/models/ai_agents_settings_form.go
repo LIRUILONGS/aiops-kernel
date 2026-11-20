@@ -44,12 +44,6 @@ func (m *AIAgentsSettingsFormModel) BuildForm() tea.Cmd {
 			cfg.HumanInTheLoop,
 		),
 		m.createBooleanField(
-			"assistant_use_agents",
-			locale.ToolsAIAgentsSettingUseAgents,
-			locale.ToolsAIAgentsSettingUseAgentsDesc,
-			cfg.AssistantUseAgents,
-		),
-		m.createBooleanField(
 			"execution_monitor_enabled",
 			locale.ToolsAIAgentsSettingExecutionMonitor,
 			locale.ToolsAIAgentsSettingExecutionMonitorDesc,
@@ -250,7 +244,6 @@ func (m *AIAgentsSettingsFormModel) GetCurrentConfiguration() string {
 
 	// basic settings
 	displayBoolean(cfg.HumanInTheLoop, locale.ToolsAIAgentsSettingHumanInTheLoop)
-	displayBoolean(cfg.AssistantUseAgents, locale.ToolsAIAgentsSettingUseAgents)
 
 	// execution monitoring
 	displayBoolean(cfg.ExecutionMonitorEnabled, locale.ToolsAIAgentsSettingExecutionMonitor)
@@ -273,7 +266,6 @@ func (m *AIAgentsSettingsFormModel) GetCurrentConfiguration() string {
 func (m *AIAgentsSettingsFormModel) IsConfigured() bool {
 	cfg := m.GetController().GetAIAgentsConfig()
 	return cfg.HumanInTheLoop.IsPresent() || cfg.HumanInTheLoop.IsChanged ||
-		cfg.AssistantUseAgents.IsPresent() || cfg.AssistantUseAgents.IsChanged ||
 		cfg.ExecutionMonitorEnabled.IsPresent() || cfg.ExecutionMonitorEnabled.IsChanged ||
 		cfg.ExecutionMonitorSameToolLimit.IsPresent() || cfg.ExecutionMonitorSameToolLimit.IsChanged ||
 		cfg.ExecutionMonitorTotalToolLimit.IsPresent() || cfg.ExecutionMonitorTotalToolLimit.IsChanged ||
@@ -292,14 +284,13 @@ func (m *AIAgentsSettingsFormModel) GetHelpContent() string {
 
 func (m *AIAgentsSettingsFormModel) HandleSave() error {
 	fields := m.GetFormFields()
-	if len(fields) != 9 {
+	if len(fields) != 8 {
 		return fmt.Errorf("unexpected number of fields: %d", len(fields))
 	}
 
 	cur := m.GetController().GetAIAgentsConfig()
 	newCfg := &controller.AIAgentsConfig{
 		HumanInTheLoop:                 cur.HumanInTheLoop,
-		AssistantUseAgents:             cur.AssistantUseAgents,
 		ExecutionMonitorEnabled:        cur.ExecutionMonitorEnabled,
 		ExecutionMonitorSameToolLimit:  cur.ExecutionMonitorSameToolLimit,
 		ExecutionMonitorTotalToolLimit: cur.ExecutionMonitorTotalToolLimit,
@@ -319,12 +310,6 @@ func (m *AIAgentsSettingsFormModel) HandleSave() error {
 				return err
 			}
 			newCfg.HumanInTheLoop.Value = value
-
-		case "assistant_use_agents":
-			if err := m.validateBooleanField(value, locale.ToolsAIAgentsSettingUseAgents); err != nil {
-				return err
-			}
-			newCfg.AssistantUseAgents.Value = value
 
 		case "execution_monitor_enabled":
 			if err := m.validateBooleanField(value, locale.ToolsAIAgentsSettingExecutionMonitor); err != nil {
@@ -395,36 +380,32 @@ func (m *AIAgentsSettingsFormModel) HandleReset() {
 		fields[0].Value = fields[0].Input.Value()
 	}
 	if len(fields) >= 2 {
-		fields[1].Input.SetValue(cfg.AssistantUseAgents.Value)
+		fields[1].Input.SetValue(cfg.ExecutionMonitorEnabled.Value)
 		fields[1].Value = fields[1].Input.Value()
 	}
 	if len(fields) >= 3 {
-		fields[2].Input.SetValue(cfg.ExecutionMonitorEnabled.Value)
+		fields[2].Input.SetValue(cfg.ExecutionMonitorSameToolLimit.Value)
 		fields[2].Value = fields[2].Input.Value()
 	}
 	if len(fields) >= 4 {
-		fields[3].Input.SetValue(cfg.ExecutionMonitorSameToolLimit.Value)
+		fields[3].Input.SetValue(cfg.ExecutionMonitorTotalToolLimit.Value)
 		fields[3].Value = fields[3].Input.Value()
 	}
 	if len(fields) >= 5 {
-		fields[4].Input.SetValue(cfg.ExecutionMonitorTotalToolLimit.Value)
+		fields[4].Input.SetValue(cfg.MaxGeneralAgentToolCalls.Value)
 		fields[4].Value = fields[4].Input.Value()
 	}
 	if len(fields) >= 6 {
-		fields[5].Input.SetValue(cfg.MaxGeneralAgentToolCalls.Value)
+		fields[5].Input.SetValue(cfg.MaxLimitedAgentToolCalls.Value)
 		fields[5].Value = fields[5].Input.Value()
 	}
 	if len(fields) >= 7 {
-		fields[6].Input.SetValue(cfg.MaxLimitedAgentToolCalls.Value)
+		fields[6].Input.SetValue(cfg.AgentPlanningStepEnabled.Value)
 		fields[6].Value = fields[6].Input.Value()
 	}
 	if len(fields) >= 8 {
-		fields[7].Input.SetValue(cfg.AgentPlanningStepEnabled.Value)
+		fields[7].Input.SetValue(cfg.LLMFallbackProvider.Value)
 		fields[7].Value = fields[7].Input.Value()
-	}
-	if len(fields) >= 9 {
-		fields[8].Input.SetValue(cfg.LLMFallbackProvider.Value)
-		fields[8].Value = fields[8].Input.Value()
 	}
 
 	m.SetFormFields(fields)

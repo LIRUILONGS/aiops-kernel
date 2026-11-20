@@ -79,10 +79,9 @@ func runInfo(ctx context.Context) int {
 
 	options := database.SummaryOptions{
 		Features: database.InstanceFeatures{
-			Debug:              cfg.Debug,
-			AskUser:            cfg.AskUser,
-			DockerInside:       cfg.DockerInside,
-			AssistantUseAgents: cfg.AssistantUseAgents,
+			Debug:        cfg.Debug,
+			AskUser:      cfg.AskUser,
+			DockerInside: cfg.DockerInside,
 		},
 		OAuth:             configuredOAuthProviders(cfg),
 		DefaultProviders:  providers.EnabledDefaultProviderTypes(cfg),

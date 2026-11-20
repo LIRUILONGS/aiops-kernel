@@ -325,7 +325,6 @@ func (s *AssistantService) CreateFlowAssistant(c *gin.Context) {
 		int64(uid),
 		int64(flowID),
 		createAssistant.Input,
-		createAssistant.UseAgents,
 		prvname,
 		prvtype,
 		dbResources,
@@ -468,7 +467,7 @@ func (s *AssistantService) PatchAssistant(c *gin.Context) {
 			return
 		}
 
-		if err := aw.PutInput(c, *patchAssistant.Input, patchAssistant.UseAgents, dbResources); err != nil {
+		if err := aw.PutInput(c, *patchAssistant.Input, dbResources); err != nil {
 			logger.FromContext(c).WithError(err).Errorf("error sending input to assistant")
 			response.Error(c, response.ErrInternal, err)
 			return
@@ -625,7 +624,6 @@ func convertAssistantToDatabase(assistant models.Assistant) (database.Assistant,
 		Language:           assistant.Language,
 		TraceID:            database.PtrStringToNullString(assistant.TraceID),
 		FlowID:             int64(assistant.FlowID),
-		UseAgents:          assistant.UseAgents,
 		MsgchainID:         database.Uint64ToNullInt64(assistant.MsgchainID),
 		CreatedAt:          database.TimeToNullTime(assistant.CreatedAt),
 		UpdatedAt:          database.TimeToNullTime(assistant.UpdatedAt),

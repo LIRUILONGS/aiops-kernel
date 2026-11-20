@@ -216,10 +216,9 @@ func (r *Service) sendOnce(ctx context.Context) {
 
 	summary := r.queries.GetInstanceSummary(ctx, database.SummaryOptions{
 		Features: database.InstanceFeatures{
-			Debug:              r.cfg.Debug,
-			AskUser:            r.cfg.AskUser,
-			DockerInside:       r.cfg.DockerInside,
-			AssistantUseAgents: r.cfg.AssistantUseAgents,
+			Debug:        r.cfg.Debug,
+			AskUser:      r.cfg.AskUser,
+			DockerInside: r.cfg.DockerInside,
 		},
 		OAuth:             configuredOAuthProviders(r.cfg),
 		DefaultProviders:  providers.EnabledDefaultProviderTypes(r.cfg),

@@ -86,7 +86,6 @@ type Querier interface {
 	GetAllResourcesRecursive(ctx context.Context, arg GetAllResourcesRecursiveParams) ([]UserResource, error)
 	GetAllResourcesRoot(ctx context.Context) ([]UserResource, error)
 	GetAssistant(ctx context.Context, id int64) (Assistant, error)
-	GetAssistantUseAgents(ctx context.Context, id int64) (bool, error)
 	// Get total count of assistants for a specific flow
 	GetAssistantsCountForFlow(ctx context.Context, flowID int64) (int64, error)
 	GetCallToolcall(ctx context.Context, callID string) (Toolcall, error)
@@ -284,7 +283,6 @@ type Querier interface {
 	UpdateAssistantStatus(ctx context.Context, arg UpdateAssistantStatusParams) (Assistant, error)
 	UpdateAssistantTitle(ctx context.Context, arg UpdateAssistantTitleParams) (Assistant, error)
 	UpdateAssistantToolCallIDTemplate(ctx context.Context, arg UpdateAssistantToolCallIDTemplateParams) (Assistant, error)
-	UpdateAssistantUseAgents(ctx context.Context, arg UpdateAssistantUseAgentsParams) (Assistant, error)
 	// The assistants counterpart of UpdateFlowsProviderNameByOldName. Assistants
 	// carry their own provider reference, independent of their flow's, and the
 	// table has no user_id — ownership is derived by joining through flows, so the

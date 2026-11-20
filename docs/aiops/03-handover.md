@@ -1746,6 +1746,25 @@ GraphQL 面加三个类型与一个字段：`RoleMetric`（`role` / `chains` / `
 
 本机的 LLM 网关（`xin-buddy`，`:41474`）已经不认旧 key 了（401「本地 API Key 无效」），所以这一轮用了一个本地 OpenAI 兼容 stub 跑通链路：固定回答文本，只在 provider 探测 tool-call-id 模板时返回三条 `get_number` 的 tool_calls，让探测走默认模板。这个 stub 只在 `D:\Temp` 下，不进仓库。
 
+### 4.65 删掉 assistant 的 `use_agents`：一条从数据库到前端的空管线（2026-11-20）
+
+4.58 拿掉了它唯一的消费者（`AssistantExecutorConfig.UseAgents` 与六个处理器），剩下的东西没有一个读它：`assistants.use_agents` 列、GraphQL `Assistant.useAgents`、`createAssistant`/`callAssistant` 的 `useAgents` 入参、`ASSISTANT_USE_AGENTS` 配置、`Settings.assistantUseAgents`、安装器 "Use Multi-Agent Mode" 表单项、前端 `shouldUseAgents` 与那个 "Use Agents" 开关。它们的值不改变任何行为，只让每个碰助手的人多读一遍、多传一遍。
+
+按依赖顺序删的：
+
+| 层 | 改动 |
+|---|---|
+| 数据库 | 新迁移 `20261120100000_drop_assistant_use_agents.sql`；sqlc 查询删掉 `GetAssistantUseAgents`、`UpdateAssistantUseAgents`，`CreateAssistant` 少一列一参，`UpdateAssistantsProviderNameByOldName` 的 `RETURNING` 少一列 |
+| GraphQL | `Assistant.useAgents`、`Settings.assistantUseAgents`、`createAssistant`/`callAssistant` 的 `useAgents` 参；gqlgen 重新生成 |
+| 控制器 | `PutInput` 少一个参数，`assistantInput` 少一个字段，`perform` 里那条 `UpdateAssistantUseAgents` 调用删掉——它原本每轮都写一次数据库，只为一个没人读的值 |
+| 配置与 REST | `config.AssistantUseAgents`、`InstanceFeatures.AssistantUseAgents`、`models.Settings.assistantUseAgents`、REST 三个 DTO 的 `use_agents`；`swag init` 重新生成（顺带补上了早先删掉 `functions` 却一直没重新生成的文档） |
+| 安装器 | `AIAgentsConfig.AssistantUseAgents`、`GetVar`/`SetVar` 一对、环境变量描述、表单项（表单从 9 个字段降到 8，`HandleReset` 的下标一并前移） |
+| 前端 | zod 字段与默认值、`FlowForm` 的 "Use Agents" 开关与 `type` 属性（开关是它唯一的消费者，属性一并删掉，三个调用点跟着改）、`shouldUseAgents` 的三处推导、两个 provider 的变量透传、三个 e2e 样例 |
+
+实机验证（真实数据库 + 真实后端）：启动时 goose 跑到 `20261120100000`，`information_schema` 里 `assistants.use_agents` 已经不存在；`createAssistant` 不带 `useAgents` 返回 200 并建出助手 7，带 `useAgents` 返回 422 `Unknown argument`；`settings` 查询不带 `assistantUseAgents` 返回 200，带上返回 422 `Cannot query field`；REST `/api/v1/settings/` 的字段里也没有 `assistant_use_agents` 了。
+
+顺带一个本地环境事实：`pnpm run prettier` 会对 494 个文件报错，因为工作副本是 CRLF 而配置要求 LF——本地这条检查判不了格式，只能交给 CI。
+
 ## 5 环境
 
 ### 5.1 开发机
@@ -1839,6 +1858,7 @@ style(frontend): format the twelve files the current Prettier plugin sorts diffe
 chore(docs): publish the handover and lab scripts without live credentials # 4.63
 docs(handover): note the five scanning alerts and how they were triaged  # 4.63
 fix(assistant): tell it about the probes it can call                      # 4.64
+refactor(assistant): delete the use_agents pipeline end to end                 # 4.65
 feat(flows): let a flow declare its own target type        # 4.9，迁移 + sqlc + gqlgen + 判定
 feat(ui): choose the target type when starting a flow      # 4.9，表单三选一
 feat(ui): read the conclusion back into fields
@@ -1903,12 +1923,9 @@ chore: fork OpsAGI as AIOps kernel; add design docs and incident prompts
 
 有一批面向 PentAGI 的部署教程（worker node、openvas 自定义镜像等），是上游文档的拷贝，与 AIOps 主线无关。留着当参考比逐句改写省事，但如果这套仓库要对外，得决定是删、是标记"上游原文"、还是重写。
 
-### 6. assistant 的 `use_agents` 从数据库到前端还在，但已经不影响行为
+### 6. assistant 的 `use_agents` 管线（已完成，见 4.65）
 
-4.58 删掉了唯一的消费者（`AssistantExecutorConfig.UseAgents` 与六个处理器）。留下来的是一条完整的空管线：`assistants.use_agents` 列、GraphQL `Assistant.useAgents`、安装器的助手表单、前端 `shouldUseAgents`。它们不会报错，只是没有任何一条代码路径因为它的值而改变。
-
-- 落点：删列要一条迁移 + gqlgen + 前端 codegen；或者保留并注明"仅为兼容旧客户端"。两种都可以，前提是别让它继续看起来像一个开关。
-- 验收：设在 GraphQL 里改这个字段，助手的工具表与行为不变——把它写进文档，或让它消失。
+4.58 删掉了唯一的消费者，剩下的空管线——`assistants.use_agents` 列、GraphQL `Assistant.useAgents`、两个 mutation 的 `useAgents` 入参、`ASSISTANT_USE_AGENTS` 配置、安装器的表单项、前端的 `shouldUseAgents`——在 4.65 里整条删掉了。这一项留在列表里只为记得它曾经挂在这里。
 
 ### 7. 镜像 pull 失败时，容器行记的不是"选中的镜像"
 

@@ -75,10 +75,9 @@ type InstanceSummary struct {
 // InstanceFeatures are the switches this server runs with. They come from the
 // configuration rather than from the database, so the caller supplies them.
 type InstanceFeatures struct {
-	Debug              bool `json:"debug"`
-	AskUser            bool `json:"ask_user"`
-	DockerInside       bool `json:"docker_inside"`
-	AssistantUseAgents bool `json:"assistant_use_agents"`
+	Debug        bool `json:"debug"`
+	AskUser      bool `json:"ask_user"`
+	DockerInside bool `json:"docker_inside"`
 }
 
 // InstanceProvider is one configured provider type and how many of it there are.

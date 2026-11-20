@@ -250,8 +250,6 @@ definitions:
       flow_id:
         minimum: 0
         type: integer
-      functions:
-        $ref: '#/definitions/tools.Functions'
       id:
         minimum: 0
         type: integer
@@ -281,8 +279,6 @@ definitions:
         type: string
       updated_at:
         type: string
-      use_agents:
-        type: boolean
     required:
     - flow_id
     - language
@@ -305,8 +301,6 @@ definitions:
       flow_id:
         minimum: 0
         type: integer
-      functions:
-        $ref: '#/definitions/tools.Functions'
       id:
         minimum: 0
         type: integer
@@ -336,8 +330,6 @@ definitions:
         type: string
       updated_at:
         type: string
-      use_agents:
-        type: boolean
     required:
     - flow_id
     - language
@@ -510,8 +502,6 @@ definitions:
     type: object
   models.CreateAssistant:
     properties:
-      functions:
-        $ref: '#/definitions/tools.Functions'
       input:
         example: user input for running assistant
         type: string
@@ -522,17 +512,12 @@ definitions:
         items:
           type: integer
         type: array
-      use_agents:
-        example: true
-        type: boolean
     required:
     - input
     - provider
     type: object
   models.CreateFlow:
     properties:
-      functions:
-        $ref: '#/definitions/tools.Functions'
       input:
         example: user input for first task in the flow
         type: string
@@ -621,8 +606,6 @@ definitions:
         type: string
       deleted_at:
         type: string
-      functions:
-        $ref: '#/definitions/tools.Functions'
       id:
         minimum: 0
         type: integer
@@ -728,8 +711,6 @@ definitions:
         type: string
       deleted_at:
         type: string
-      functions:
-        $ref: '#/definitions/tools.Functions'
       id:
         minimum: 0
         type: integer
@@ -1082,9 +1063,6 @@ definitions:
         items:
           type: integer
         type: array
-      use_agents:
-        example: true
-        type: boolean
     required:
     - action
     type: object
@@ -1347,9 +1325,6 @@ definitions:
   models.Settings:
     properties:
       ask_user:
-        example: false
-        type: boolean
-      assistant_use_agents:
         example: false
         type: boolean
       debug:
@@ -2001,54 +1976,6 @@ definitions:
         items:
           $ref: '#/definitions/models.Vecstorelog'
         type: array
-    type: object
-  tools.DisableFunction:
-    properties:
-      context:
-        items:
-          type: string
-        type: array
-      name:
-        type: string
-    required:
-    - context
-    - name
-    type: object
-  tools.ExternalFunction:
-    properties:
-      context:
-        items:
-          type: string
-        type: array
-      name:
-        type: string
-      schema:
-        type: object
-      timeout:
-        example: 60
-        minimum: 1
-        type: integer
-      url:
-        example: https://example.com/api/v1/function
-        type: string
-    required:
-    - context
-    - name
-    - schema
-    - url
-    type: object
-  tools.Functions:
-    properties:
-      disabled:
-        items:
-          $ref: '#/definitions/tools.DisableFunction'
-        type: array
-      functions:
-        items:
-          $ref: '#/definitions/tools.ExternalFunction'
-        type: array
-      token:
-        type: string
     type: object
 info:
   contact:

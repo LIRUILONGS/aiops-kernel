@@ -26,7 +26,6 @@ import { groupAssistantsByState } from '@/models/assistant';
 import { isProviderValid } from '@/models/provider';
 import { useFlow } from '@/providers/flow-provider';
 import { useProviders } from '@/providers/providers-provider';
-import { useSystemSettings } from '@/providers/system-settings-provider';
 
 import { FlowForm, type FlowFormValues } from '../flow-form';
 import FlowMessage from './flow-message';
@@ -289,8 +288,6 @@ function FlowAssistantMessages({ className }: FlowAssistantMessagesProps) {
         selectedAssistantId ?? null,
     );
 
-    const { settings } = useSystemSettings();
-
     const form = useForm<z.infer<typeof searchFormSchema>>({
         defaultValues: {
             search: '',
@@ -331,14 +328,6 @@ function FlowAssistantMessages({ className }: FlowAssistantMessagesProps) {
 
         return assistants.find((assistant) => assistant.id === selectedAssistantId) || null;
     }, [assistants, selectedAssistantId]);
-
-    const shouldUseAgents = useMemo(() => {
-        if (isAssistantCreating || !selectedAssistant) {
-            return settings?.assistantUseAgents ?? false;
-        }
-
-        return selectedAssistant.useAgents;
-    }, [selectedAssistant, settings?.assistantUseAgents, isAssistantCreating]);
 
     const hasActiveFilters = useMemo(() => {
         return !!searchValue.trim();
@@ -611,7 +600,6 @@ function FlowAssistantMessages({ className }: FlowAssistantMessagesProps) {
                 <FlowForm
                     defaultValues={{
                         providerName: selectedAssistant?.provider?.name ?? selectedProvider?.name ?? '',
-                        useAgents: shouldUseAgents,
                     }}
                     isCanceling={isCanceling}
                     isDisabled={isFormDisabled}
@@ -621,7 +609,6 @@ function FlowAssistantMessages({ className }: FlowAssistantMessagesProps) {
                     onCancel={handleStopAssistant}
                     onSubmit={handleSubmitMessage}
                     placeholder={placeholder}
-                    type={'assistant'}
                 />
             </div>
         </div>

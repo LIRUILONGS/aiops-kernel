@@ -1419,7 +1419,6 @@ type AIAgentsConfig struct {
 	// direct form field mappings using loader.EnvVar
 	// these fields directly correspond to environment variables and form inputs (not computed)
 	HumanInTheLoop                 loader.EnvVar // ASK_USER
-	AssistantUseAgents             loader.EnvVar // ASSISTANT_USE_AGENTS
 	ExecutionMonitorEnabled        loader.EnvVar // EXECUTION_MONITOR_ENABLED
 	ExecutionMonitorSameToolLimit  loader.EnvVar // EXECUTION_MONITOR_SAME_TOOL_LIMIT
 	ExecutionMonitorTotalToolLimit loader.EnvVar // EXECUTION_MONITOR_TOTAL_TOOL_LIMIT
@@ -1433,7 +1432,6 @@ func (c *controller) GetAIAgentsConfig() *AIAgentsConfig {
 	config := &AIAgentsConfig{}
 
 	config.HumanInTheLoop, _ = c.GetVar("ASK_USER")
-	config.AssistantUseAgents, _ = c.GetVar("ASSISTANT_USE_AGENTS")
 	config.ExecutionMonitorEnabled, _ = c.GetVar("EXECUTION_MONITOR_ENABLED")
 	config.ExecutionMonitorSameToolLimit, _ = c.GetVar("EXECUTION_MONITOR_SAME_TOOL_LIMIT")
 	config.ExecutionMonitorTotalToolLimit, _ = c.GetVar("EXECUTION_MONITOR_TOTAL_TOOL_LIMIT")
@@ -1452,9 +1450,6 @@ func (c *controller) UpdateAIAgentsConfig(config *AIAgentsConfig) error {
 
 	if err := c.SetVar("ASK_USER", config.HumanInTheLoop.Value); err != nil {
 		return fmt.Errorf("failed to set ASK_USER: %w", err)
-	}
-	if err := c.SetVar("ASSISTANT_USE_AGENTS", config.AssistantUseAgents.Value); err != nil {
-		return fmt.Errorf("failed to set ASSISTANT_USE_AGENTS: %w", err)
 	}
 	if err := c.SetVar("EXECUTION_MONITOR_ENABLED", config.ExecutionMonitorEnabled.Value); err != nil {
 		return fmt.Errorf("failed to set EXECUTION_MONITOR_ENABLED: %w", err)
@@ -1484,7 +1479,6 @@ func (c *controller) UpdateAIAgentsConfig(config *AIAgentsConfig) error {
 func (c *controller) ResetAIAgentsConfig() *AIAgentsConfig {
 	vars := []string{
 		"ASK_USER",
-		"ASSISTANT_USE_AGENTS",
 		"LLM_FALLBACK_PROVIDER",
 	}
 
@@ -2516,8 +2510,6 @@ func (c *controller) getVariableDescription(varName string) string {
 
 		"ASK_USER": locale.EnvDesc_ASK_USER,
 
-		"ASSISTANT_USE_AGENTS": locale.EnvDesc_ASSISTANT_USE_AGENTS,
-
 		"EXECUTION_MONITOR_ENABLED":          locale.EnvDesc_EXECUTION_MONITOR_ENABLED,
 		"EXECUTION_MONITOR_SAME_TOOL_LIMIT":  locale.EnvDesc_EXECUTION_MONITOR_SAME_TOOL_LIMIT,
 		"EXECUTION_MONITOR_TOTAL_TOOL_LIMIT": locale.EnvDesc_EXECUTION_MONITOR_TOTAL_TOOL_LIMIT,
@@ -2920,7 +2912,6 @@ var criticalVariables = map[string]bool{
 	"SUMMARIZER_KEEP_QA_SECTIONS":    true,
 
 	// assistant-level settings
-	"ASSISTANT_USE_AGENTS":                  true,
 	"ASSISTANT_SUMMARIZER_PRESERVE_LAST":    true,
 	"ASSISTANT_SUMMARIZER_LAST_SEC_BYTES":   true,
 	"ASSISTANT_SUMMARIZER_MAX_BP_BYTES":     true,

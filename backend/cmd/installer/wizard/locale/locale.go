@@ -1658,8 +1658,6 @@ Task Planning (⚠️  BETA):
 	// field labels and descriptions
 	ToolsAIAgentsSettingHumanInTheLoop          = "Enable User Interaction"
 	ToolsAIAgentsSettingHumanInTheLoopDesc      = "Allow agents to ask for user input when needed"
-	ToolsAIAgentsSettingUseAgents               = "Use Multi-Agent Mode"
-	ToolsAIAgentsSettingUseAgentsDesc           = "Enable assistant to orchestrate multiple specialized agents"
 	ToolsAIAgentsSettingExecutionMonitor        = "Enable Execution Monitoring (beta)"
 	ToolsAIAgentsSettingExecutionMonitorDesc    = "Automatically invoke mentor for execution pattern analysis"
 	ToolsAIAgentsSettingSameToolLimit           = "Same Tool Call Threshold"
@@ -2618,8 +2616,6 @@ const (
 	EnvDesc_EMBEDDING_MAX_TEXT_BYTES  = "Embedding Max Text Bytes"
 
 	EnvDesc_ASK_USER = "Human-in-the-loop"
-
-	EnvDesc_ASSISTANT_USE_AGENTS = "Enable multi-agent mode for assistant"
 
 	EnvDesc_EXECUTION_MONITOR_ENABLED          = "Enable Execution Monitoring (beta)"
 	EnvDesc_EXECUTION_MONITOR_SAME_TOOL_LIMIT  = "Same Tool Call Threshold"

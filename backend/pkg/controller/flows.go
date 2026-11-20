@@ -40,7 +40,6 @@ type FlowController interface {
 		userID int64,
 		flowID int64,
 		input string,
-		useAgents bool,
 		prvname provider.ProviderName,
 		prvtype provider.ProviderType,
 		resources []database.UserResource,
@@ -405,7 +404,6 @@ func (fc *flowController) CreateAssistant(
 	userID int64,
 	flowID int64,
 	input string,
-	useAgents bool,
 	prvname provider.ProviderName,
 	prvtype provider.ProviderType,
 	resources []database.UserResource,
@@ -430,7 +428,6 @@ func (fc *flowController) CreateAssistant(
 		input:         input,
 		prvname:       prvname,
 		prvtype:       prvtype,
-		useAgents:     useAgents,
 		resources:     resources,
 		flowWorkerCtx: fwc.flowWorkerCtx,
 	}
