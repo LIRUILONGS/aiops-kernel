@@ -81,6 +81,30 @@ func TestExec_Render_RefusesAnythingThatCouldLeaveTheCatalogue(t *testing.T) {
 			args: map[string]string{"Lines": "many"},
 			want: "需要一个整数",
 		},
+		{
+			name: "a statement rank past the catalogue limit is refused",
+			id:   "pg_explain",
+			args: map[string]string{"Container": "opslab-db", "Database": "shop", "Rank": "51"},
+			want: "超出范围",
+		},
+		{
+			name: "a statement rank below one is refused",
+			id:   "pg_explain",
+			args: map[string]string{"Container": "opslab-db", "Database": "shop", "Rank": "0"},
+			want: "超出范围",
+		},
+		{
+			name: "a statement rank carrying a shell is refused",
+			id:   "pg_explain",
+			args: map[string]string{"Container": "opslab-db", "Database": "shop", "Rank": "1; rm -rf /"},
+			want: "需要一个整数",
+		},
+		{
+			name: "an explanation without a database is refused",
+			id:   "pg_explain",
+			args: map[string]string{"Container": "opslab-db"},
+			want: "缺少参数",
+		},
 	}
 
 	for _, tc := range tests {
@@ -154,6 +178,24 @@ func TestExec_Render_BuildsTheCommandFromTheTemplateAndTheValidatedValue(t *test
 			id:   "package_history",
 			want: "tail -n 40",
 		},
+		{
+			name: "the statement rank lands in the offset that picks the statement",
+			id:   "pg_explain",
+			args: map[string]string{"Container": "opslab-db", "Database": "shop", "Rank": "3"},
+			want: "offset 3 - 1",
+		},
+		{
+			name: "an explanation plans a parameterised statement with the generic plan",
+			id:   "pg_explain",
+			args: map[string]string{"Container": "opslab-db", "Database": "shop", "Rank": "2"},
+			want: "'explain (format text, verbose off, generic_plan) ' || query",
+		},
+		{
+			name: "an explanation reads the statement the other postgres command ranks",
+			id:   "pg_explain",
+			args: map[string]string{"Container": "opslab-db", "Database": "shop", "Rank": "2"},
+			want: "order by total_exec_time desc",
+		},
 	}
 
 	for _, tc := range tests {
@@ -166,6 +208,25 @@ func TestExec_Render_BuildsTheCommandFromTheTemplateAndTheValidatedValue(t *test
 				t.Errorf("command = %q, want it to contain %q", got, tc.want)
 			}
 		})
+	}
+}
+
+// An explanation that ran the statement would be a write dressed as a probe.
+func TestExec_Render_ExplainsAStatementWithoutRunningIt(t *testing.T) {
+	rendered, err := Render("pg_explain", map[string]string{
+		"Container": "opslab-db",
+		"Database":  "shop",
+		"Rank":      "1",
+	})
+
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	if strings.Contains(strings.ToLower(rendered), "analyze") {
+		t.Errorf("command = %q, want no ANALYZE in it", rendered)
+	}
+	if !strings.Contains(rendered, "generic_plan") {
+		t.Errorf("command = %q, want the generic plan so parameters need no values", rendered)
 	}
 }
 

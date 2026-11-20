@@ -199,8 +199,9 @@ type OpsExecArgs struct {
 	Container string `json:"container,omitempty" jsonschema:"description=容器名，docker_inspect 必填,example=opslab-broken"`
 	Path      string `json:"path,omitempty" jsonschema:"description=绝对路径，file_stat 必填,example=/etc/nginx/nginx.conf"`
 	Image     string `json:"image,omitempty" jsonschema:"description=镜像引用，image_history 必填,example=nginx:1.27-alpine"`
-	Database  string `json:"database,omitempty" jsonschema:"description=数据库名，pg_stat_activity 与 pg_stat_statements 必填,example=shop"`
+	Database  string `json:"database,omitempty" jsonschema:"description=数据库名，pg_stat_activity、pg_stat_statements 与 pg_explain 必填,example=shop"`
 	Lines     int    `json:"lines,omitempty" jsonschema:"description=行数，见各命令允许的范围,example=100"`
+	Rank      int    `json:"rank,omitempty" jsonschema:"description=pg_explain 的语句序号，按累计耗时从高到低排第几，从 1 起,example=1"`
 }
 
 func (o *opsTools) HandleExec(ctx context.Context, name string, args json.RawMessage) (string, error) {
@@ -684,6 +685,9 @@ func catalogueArgs(args OpsExecArgs) map[string]string {
 	}
 	if args.Lines > 0 {
 		out["Lines"] = fmt.Sprintf("%d", args.Lines)
+	}
+	if args.Rank > 0 {
+		out["Rank"] = fmt.Sprintf("%d", args.Rank)
 	}
 	return out
 }

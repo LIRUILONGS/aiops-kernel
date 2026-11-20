@@ -70,6 +70,7 @@ var (
 		"image_history",
 		"pg_stat_activity",
 		"pg_stat_statements",
+		"pg_explain",
 	}
 	catalog = map[string]Command{
 		"listen_ports": {
@@ -216,6 +217,26 @@ var (
 				{Template: "Container", Kind: ParamName},
 				{Template: "Database", Kind: ParamName},
 				{Template: "Lines", Kind: ParamCount, Min: 1, Max: 50, Default: 10},
+			},
+		},
+		"pg_explain": {
+			ID:          "pg_explain",
+			Description: "解释 Postgres 里累计耗时第 N 条语句的执行计划，序号与 pg_stat_statements 的输出顺序一致：只取计划、不执行（不加 ANALYZE，带参数的语句走 EXPLAIN GENERIC_PLAN，需要 PostgreSQL 16 及以上）。需要 container 与 database，rank 从 1 起",
+			Template: `docker exec -i %Container% psql -U postgres -d %Database% -At -v ON_ERROR_STOP=0 -f - 2>&1 <<'SQL'
+select coalesce(
+  (select 'explain (format text, verbose off, generic_plan) ' || query
+   from pg_stat_statements
+   where dbid = (select oid from pg_database where datname = current_database())
+   order by total_exec_time desc
+   offset %Rank% - 1
+   limit 1),
+  'select ''pg_stat_statements 里没有第 %Rank% 条语句'''
+) \gexec
+SQL`,
+			Params: []Param{
+				{Template: "Container", Kind: ParamName},
+				{Template: "Database", Kind: ParamName},
+				{Template: "Rank", Kind: ParamCount, Min: 1, Max: 50, Default: 1},
 			},
 		},
 	}

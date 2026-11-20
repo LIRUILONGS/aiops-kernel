@@ -453,7 +453,8 @@ var registryDefinitions = map[string]llms.FunctionDefinition{
 			"docker_inspect（容器状态、退出码、OOMKilled、重启次数，需 container）、docker_stats（一次性资源采样）、file_stat（绝对路径的元数据，需 path）、" +
 			"package_history（最近的软件包安装与升级，可传 lines，用来对齐变更时间线）、unit_activated_at（systemd 单元的激活与启动时刻，需 unit）、" +
 			"container_image（容器所用镜像与创建时刻，需 container）、image_history（镜像各层的构建命令与时刻，需 image，可传 lines）、" +
-			"pg_stat_activity（Postgres 容器里还在跑的查询，需 container 与 database）、pg_stat_statements（Postgres 里累计耗时最高的语句，需 container 与 database，可传 lines）。" +
+			"pg_stat_activity（Postgres 容器里还在跑的查询，需 container 与 database）、pg_stat_statements（Postgres 里累计耗时最高的语句，需 container 与 database，可传 lines）、" +
+			"pg_explain（累计耗时第 N 条语句的执行计划：只取计划、不执行，需 container、database 与 rank，rank 从 1 起）。" +
 			"参数只允许字母、数字与 . _ - /，含空格或 shell 元字符会被拒绝。" +
 			"返回结果会带上真实执行的命令原文，写证据时直接引用它。",
 		Parameters: reflector.Reflect(&OpsExecArgs{}),

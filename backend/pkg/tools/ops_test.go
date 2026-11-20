@@ -154,6 +154,7 @@ func TestOpsTools_HandleExec_GivesTheModelAFieldForEveryCatalogueParam(t *testin
 		Image:     "nginx:1.27-alpine",
 		Database:  "shop",
 		Lines:     10,
+		Rank:      3,
 	}
 
 	available := catalogueArgs(filled)

@@ -1808,6 +1808,31 @@ GraphQL 面加三个类型与一个字段：`RoleMetric`（`role` / `chains` / `
 
 `pkg/docker` 里那条端到端断言（创建时写入、回落只动 `image`）需要能拉到 `alpine:3.23.5`，本机 registry 不通所以本地 skip、CI 里跑；本机这一层由上面 flow 89 的实机证据覆盖。
 
+### 4.68 让 agent 自己看执行计划，而不是让操作员代跑（2026-11-20）
+
+4.31 的慢查询场景里有一处人机往返一直没消掉：目录里有 `pg_stat_activity` 与 `pg_stat_statements`，能指出"哪条语句最贵"，但看到计划还得操作员登录进去敲 `EXPLAIN`——因为目录不接受自由 SQL（3.11 的红线：命令正文只能是代码里的常量）。
+
+补的是 `pg_explain`：一条只读命令，输入只有容器名、库名和一个**序号**（1–50，按累计耗时从高到低，与 `pg_stat_statements` 的输出顺序完全一致，所以"第 3 条"在两条命令里指同一条语句）。语句正文由命令自己在目标库里读出来，调用者永远碰不到它：
+
+```text
+select 'explain (format text, verbose off, generic_plan) ' || query
+from pg_stat_statements where dbid = (…current_database()…)
+order by total_exec_time desc offset <rank> - 1 limit 1 \gexec
+```
+
+搭这条命令时撞了两堵墙，都值得记下来：
+
+1. `EXPLAIN select … where amount > $1` 直接失败：`there is no parameter $1`。pg_stat_statements 里的语句正文是**归一化过的**，参数都在，值不在。
+2. 于是先试 `PREPARE … AS <正文>` 再 `EXPLAIN EXECUTE …`，仍然失败：`wrong number of parameters for prepared statement "opsagi_explain" (Expected 1 parameters but got 0)`——`EXPLAIN EXECUTE` 不带 `ANALYZE` 也要求把参数值给全，而参数个数与类型我们并不掌握。
+
+PostgreSQL 16 的 `EXPLAIN (GENERIC_PLAN)` 正好解这个：它按"参数未知"生成计划，既不要求值也不执行语句。所以这条命令要求目标库是 PG16 及以上（靶场的 `opslab-db` 就是 16），更老的库上会返回 PostgreSQL 自己的报错，不会假装成功。
+
+序号越界时返回一句话而不是空结果：`pg_stat_statements 里没有第 50 条语句`。空输出会让模型以为命令失败或者数据库没数据。
+
+**只读的证明不是"我没写 ANALYZE"，而是计数没变**：在靶场库上把 `select count(*), sum(amount) from orders where amount > $1` 跑成累计耗时第一（300 次调用、19.4 秒），执行 `pg_explain` 前后 `calls` 都是 300。取到的计划是 `Parallel Seq Scan on orders` + `Filter: (amount > $1)`，正是这条语句缺索引的样子。
+
+实机验证（真实 Postgres 容器 + 真实目录渲染）：起一个 `postgres:16-alpine`（`shared_preload_libraries=pg_stat_statements`）、`shop` 库、30 万行 `orders`，用**代码里的 `opsremote.Render`** 渲染出命令原文，再在靶场容器上原样执行 —— 输出计划；把 rank 换成 50 —— 输出越界那句话；`calls` 前后一致。渲染结果是 `docker exec -i <container> psql …` 这种形状，所以这一层与 `ops_exec` 在靶场上执行的字符串是同一个；SSH 传输层是 4.11 / 4.31 已经走过的路径，这一步没有另测（本机没有可达的靶场主机）。
+
 ## 5 环境
 
 ### 5.1 开发机
@@ -1904,6 +1929,7 @@ fix(assistant): tell it about the probes it can call                      # 4.64
 refactor(assistant): delete the use_agents pipeline end to end                 # 4.65
 feat(assistant): give it the read-only probes and a finding outlet       # 4.66
 feat(containers): keep the image the flow asked for beside the one it ran  # 4.67
+feat(tools): explain the statement a postgres target is spending its time in  # 4.68
 feat(flows): let a flow declare its own target type        # 4.9，迁移 + sqlc + gqlgen + 判定
 feat(ui): choose the target type when starting a flow      # 4.9，表单三选一
 feat(ui): read the conclusion back into fields
