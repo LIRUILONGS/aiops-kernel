@@ -1833,6 +1833,27 @@ PostgreSQL 16 的 `EXPLAIN (GENERIC_PLAN)` 正好解这个：它按"参数未知
 
 实机验证（真实 Postgres 容器 + 真实目录渲染）：起一个 `postgres:16-alpine`（`shared_preload_libraries=pg_stat_statements`）、`shop` 库、30 万行 `orders`，用**代码里的 `opsremote.Render`** 渲染出命令原文，再在靶场容器上原样执行 —— 输出计划；把 rank 换成 50 —— 输出越界那句话；`calls` 前后一致。渲染结果是 `docker exec -i <container> psql …` 这种形状，所以这一层与 `ops_exec` 在靶场上执行的字符串是同一个；SSH 传输层是 4.11 / 4.31 已经走过的路径，这一步没有另测（本机没有可达的靶场主机）。
 
+### 4.69 行锁等待：把"谁在等、被谁挡住"变成一条只读命令（2026-11-20）
+
+4.31 补了"哪条语句最贵"，4.68 补了"贵在哪"。真实运维里第三个高频问题是**锁**：一个没提交的事务把一行锁住，后面所有改这行的会话排队，从外面看只是"接口变慢"。Postgres 把这件事放在 `pg_locks`（未授予的锁）和 `pg_blocking_pids()`（谁挡着谁）里，但两者要 join 起来才读得懂，而且必须**在等待发生的当下**读。
+
+`pg_locks` 命令做的就是这一次 join：被挡的后端、挡住它的后端、等了多少秒、卡在哪种锁上（`transactionid` / `relation` / `tuple`）、等待方与被挡方各自的语句开头，按等待时长倒序，默认 10 行。只读，参数只有容器名、库名与行数。
+
+**场景不是造出来的假数据，是两个真会话**：`accounts` 表两行，会话 A `begin; update … where id = 1; select pg_sleep(40);`，三秒后会话 B 对同一行做 `update` —— B 就阻塞在 A 的行锁上。在 B 阻塞期间用**真实工具路径**（后端进程 → SSH 到靶场宿主机 → `docker exec` → psql）执行 `ops_exec pg_locks`，读到的就是这一行：
+
+```text
+622|615|transactionid|ShareLock|-|3.8|Lock/transactionid|active|update accounts set balance = balance + 50 where id = 1;|select pg_sleep(40);
+```
+
+`blocked_pid=622`、`blocker_pid=615`、等了 3.8 秒、`ShareLock`、等待事件 `Lock/transactionid`——即"B 在等 A 的事务 id"，而 `relation` 是 `-` 正是行锁的样子（真正被锁的是元组，不是表）。同一时刻 `pg_stat_activity` 里 A 是 `active / Timeout`（在 `pg_sleep` 里）、B 是 `active / Lock`，两条对上。`pg_terminate_backend` 掉两个会话后再跑同一条命令：没有任何输出——它是当下的快照，不是历史。
+
+实机环境：`opslab-db`（`postgres:16-alpine`，`shared_preload_libraries=pg_stat_statements`，`shop` 库）；`opsagi-labbox`（Debian + `openssh-server` + 从 `docker:latest` 里取出的静态 docker CLI，挂宿主 docker socket），后端通过 SSH 用私钥登录它，再 `docker exec` 进 `opslab-db`。这样 `ops_exec` 的**整条路径**（参数校验 → 渲染 → SSH → 容器 → psql → 格式化）都真跑了一遍，而不是像验收脚本那样只跑到"记录下来的证据"。顺带把 4.68 的 SSH 传输层也补上了：`pg_explain` 在同一条路径上给出了 `Parallel Seq Scan on orders` 的计划。
+
+**还没做到的一步，说清楚**：目标是"跑一条优化 flow，用 `ops_diff` 收成 improved"，这一步没有完成，卡在两处，都不是代码缺陷：
+
+1. 本机的模型网关不认旧 key（§5.2），只能起 stub；stub 能证明"工具被调用、参数正确"，但给不出真实诊断。
+2. `ops_diff` 比的是 `ops_baseline` 采的**主机指纹**（负载、内存、连接数、端口……），里面没有"锁等待秒数"这种数据库侧的指标。要让一条锁竞争 flow 能像 4.33 那样收成 `improved`，得先决定锁竞争的"改动前/改动后"用什么量：是给指纹加一个需要容器与库名的 Postgres 段（签名会变成带参数的），还是在 flow 里改用 `pg_locks` 的前后对比证据。这是个设计决定，不应该顺手塞进这一节。
+
 ## 5 环境
 
 ### 5.1 开发机
@@ -1930,6 +1951,7 @@ refactor(assistant): delete the use_agents pipeline end to end                 #
 feat(assistant): give it the read-only probes and a finding outlet       # 4.66
 feat(containers): keep the image the flow asked for beside the one it ran  # 4.67
 feat(tools): explain the statement a postgres target is spending its time in  # 4.68
+feat(tools): read who is waiting on a row lock and who holds it  # 4.69
 feat(flows): let a flow declare its own target type        # 4.9，迁移 + sqlc + gqlgen + 判定
 feat(ui): choose the target type when starting a flow      # 4.9，表单三选一
 feat(ui): read the conclusion back into fields

@@ -185,6 +185,24 @@ func TestExec_Render_BuildsTheCommandFromTheTemplateAndTheValidatedValue(t *test
 			want: "offset 3 - 1",
 		},
 		{
+			name: "a lock list names the blocked backend and the one holding the lock",
+			id:   "pg_locks",
+			args: map[string]string{"Container": "opslab-db", "Database": "shop", "Lines": "20"},
+			want: "pg_blocking_pids(w.pid)",
+		},
+		{
+			name: "a lock list takes the default count when none is given",
+			id:   "pg_locks",
+			args: map[string]string{"Container": "opslab-db", "Database": "shop"},
+			want: "limit 10",
+		},
+		{
+			name: "a lock list says which ungranted lock the waiting backend wants",
+			id:   "pg_locks",
+			args: map[string]string{"Container": "opslab-db", "Database": "shop"},
+			want: "left join pg_locks l on l.pid = w.pid and not l.granted",
+		},
+		{
 			name: "an explanation plans a parameterised statement with the generic plan",
 			id:   "pg_explain",
 			args: map[string]string{"Container": "opslab-db", "Database": "shop", "Rank": "2"},

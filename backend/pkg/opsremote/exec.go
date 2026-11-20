@@ -70,6 +70,7 @@ var (
 		"image_history",
 		"pg_stat_activity",
 		"pg_stat_statements",
+		"pg_locks",
 		"pg_explain",
 	}
 	catalog = map[string]Command{
@@ -213,6 +214,16 @@ var (
 			ID:          "pg_stat_statements",
 			Description: "Postgres 容器里累计耗时最高的 N 条语句：调用次数、总耗时、平均耗时、返回行数与语句开头（需要库名与 pg_stat_statements 扩展）",
 			Template:    `docker exec %Container% psql -U postgres -d %Database% -Atc "select calls, round(total_exec_time::numeric, 1) total_ms, round(mean_exec_time::numeric, 2) mean_ms, rows, left(translate(query, chr(10) || chr(13) || chr(9), '   '), 160) query from pg_stat_statements order by total_exec_time desc limit %Lines%" 2>&1`,
+			Params: []Param{
+				{Template: "Container", Kind: ParamName},
+				{Template: "Database", Kind: ParamName},
+				{Template: "Lines", Kind: ParamCount, Min: 1, Max: 50, Default: 10},
+			},
+		},
+		"pg_locks": {
+			ID:          "pg_locks",
+			Description: "Postgres 里此刻的锁等待：谁在等、被哪个后端挡住、等了多少秒、卡在哪把未授予的锁上（pg_locks 的未授予锁 + pg_blocking_pids），按等待时长倒序。需要 container 与 database，可传 lines",
+			Template:    `docker exec %Container% psql -U postgres -d %Database% -At -c "select w.pid blocked_pid, b.pid blocker_pid, coalesce(l.locktype, '-') locktype, coalesce(l.mode, '-') mode, coalesce(l.relation::regclass::text, '-') relation, round(extract(epoch from (now() - w.query_start))::numeric, 1) waiting_s, w.wait_event_type || '/' || w.wait_event wait, b.state blocker_state, left(translate(w.query, chr(10) || chr(9), '  '), 70) blocked_query, left(translate(b.query, chr(10) || chr(9), '  '), 70) blocker_query from pg_stat_activity w cross join lateral unnest(pg_blocking_pids(w.pid)) as bp(pid) join pg_stat_activity b on b.pid = bp.pid left join pg_locks l on l.pid = w.pid and not l.granted where cardinality(pg_blocking_pids(w.pid)) > 0 order by waiting_s desc limit %Lines%" 2>&1`,
 			Params: []Param{
 				{Template: "Container", Kind: ParamName},
 				{Template: "Database", Kind: ParamName},
