@@ -143,6 +143,9 @@ type flowToolsExecutor struct {
 	vslp   VectorStoreLogProvider
 	tclp   ToolCallLogProvider
 	knp    KnowledgeProvider
+	// findingLog is where an assistant's findings land. It is the flow's own
+	// log, not the assistant's, so a finding outlives the chat it was written in.
+	findingLog MsgLogProvider
 
 	db             database.Querier
 	cfg            *config.Config
@@ -173,6 +176,13 @@ type ContextToolsExecutor interface {
 type AssistantExecutorConfig struct {
 	Summarizer  SummarizeHandler
 	FlowManager FlowManagerHandlers
+}
+
+// ProbeAvailability says which optional read-only probes a flow's executor has
+// the configuration to register.
+type ProbeAvailability struct {
+	Prometheus bool
+	Kubernetes bool
 }
 
 // FlowManagerHandlers holds optional callbacks for automation flow control.
@@ -252,6 +262,10 @@ type FlowToolsExecutor interface {
 	SetScreenshotProvider(sp ScreenshotProvider)
 	SetAgentLogProvider(alp AgentLogProvider)
 	SetMsgLogProvider(mlp MsgLogProvider)
+	// SetFindingLogProvider routes an assistant's recorded findings to the flow's
+	// log rather than the assistant's, which the controller swaps into the message
+	// log while a chat runs.
+	SetFindingLogProvider(mlp MsgLogProvider)
 	SetSearchLogProvider(slp SearchLogProvider)
 	SetTermLogProvider(tlp TermLogProvider)
 	SetVectorStoreLogProvider(vslp VectorStoreLogProvider)
@@ -265,6 +279,9 @@ type FlowToolsExecutor interface {
 	// describes those probes needs the ids, and a deployment without any
 	// configured target registers no probe tool at all.
 	OpsTargets() []string
+	// ProbeAvailability reports the optional read-only probes this executor can
+	// register, so a prompt names exactly the tools the model is handed.
+	ProbeAvailability() ProbeAvailability
 	GetAssistantExecutor(cfg AssistantExecutorConfig) (ContextToolsExecutor, error)
 	GetCommanderExecutor(cfg CommanderExecutorConfig) (ContextToolsExecutor, error)
 	GetAnalystExecutor(cfg AnalystExecutorConfig) (ContextToolsExecutor, error)
@@ -322,6 +339,13 @@ func (fte *flowToolsExecutor) OpsTargets() []string {
 	return NewOpsTools(fte.cfg).TargetIDs()
 }
 
+func (fte *flowToolsExecutor) ProbeAvailability() ProbeAvailability {
+	return ProbeAvailability{
+		Prometheus: NewPromTools(fte.cfg).IsAvailable(),
+		Kubernetes: NewK8sTools(fte.cfg).IsAvailable(),
+	}
+}
+
 func (fte *flowToolsExecutor) SetUserID(userID int64) {
 	fte.userID = userID
 }
@@ -370,6 +394,10 @@ func (fte *flowToolsExecutor) SetAgentLogProvider(alp AgentLogProvider) {
 
 func (fte *flowToolsExecutor) SetMsgLogProvider(mlp MsgLogProvider) {
 	fte.mlp = mlp
+}
+
+func (fte *flowToolsExecutor) SetFindingLogProvider(mlp MsgLogProvider) {
+	fte.findingLog = mlp
 }
 
 func (fte *flowToolsExecutor) SetSearchLogProvider(slp SearchLogProvider) {
@@ -814,13 +842,33 @@ func (fte *flowToolsExecutor) GetAssistantExecutor(cfg AssistantExecutorConfig) 
 			registryDefinitions[OpsLogsToolName],
 			registryDefinitions[OpsBaselineToolName],
 			registryDefinitions[OpsDiffToolName],
+			registryDefinitions[OpsExecToolName],
 		)
 		handlers[OpsSystemToolName] = ops.HandleSystem
 		handlers[OpsContainersToolName] = ops.HandleContainers
 		handlers[OpsLogsToolName] = ops.HandleLogs
 		handlers[OpsBaselineToolName] = ops.HandleBaseline
 		handlers[OpsDiffToolName] = ops.HandleDiff
+		handlers[OpsExecToolName] = ops.HandleExec
 	}
+
+	if prom := NewPromTools(fte.cfg); prom.IsAvailable() {
+		definitions = append(definitions, registryDefinitions[PromQueryToolName])
+		handlers[PromQueryToolName] = prom.HandleQuery
+	}
+
+	if k8s := NewK8sTools(fte.cfg); k8s.IsAvailable() {
+		definitions = append(definitions, registryDefinitions[K8sGetToolName])
+		handlers[K8sGetToolName] = k8s.HandleGet
+	}
+
+	findingLog := fte.findingLog
+	if findingLog == nil {
+		findingLog = fte.mlp
+	}
+	finding := NewFindingTool(findingLog)
+	definitions = append(definitions, registryDefinitions[RecordFindingToolName])
+	handlers[RecordFindingToolName] = finding.Handle
 
 	ce := &customExecutor{
 		userID:      fte.userID,

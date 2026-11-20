@@ -86,6 +86,12 @@ func CreateDummyTemplateData() map[string]any {
 		"OpsLogsToolName":       tools.OpsLogsToolName,
 		"OpsBaselineToolName":   tools.OpsBaselineToolName,
 		"OpsDiffToolName":       tools.OpsDiffToolName,
+		"OpsExecToolName":       tools.OpsExecToolName,
+		"PromQueryToolName":     tools.PromQueryToolName,
+		"PromQueryEnabled":      true,
+		"K8sGetToolName":        tools.K8sGetToolName,
+		"K8sGetEnabled":         true,
+		"RecordFindingToolName": tools.RecordFindingToolName,
 
 		// Context and state
 		"ExecutionContext": "Test execution context with current task and subtask information",

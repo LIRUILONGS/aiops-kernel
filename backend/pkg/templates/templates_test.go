@@ -217,6 +217,12 @@ func TestTemplates_RenderPrompt_AssistantDescribesTheProbesOnlyWhenATargetIsConf
 		values["OpsLogsToolName"] = "<logs>"
 		values["OpsBaselineToolName"] = "<baseline>"
 		values["OpsDiffToolName"] = "<diff>"
+		values["OpsExecToolName"] = "<exec>"
+		values["PromQueryToolName"] = "<prom>"
+		values["PromQueryEnabled"] = false
+		values["K8sGetToolName"] = "<k8s>"
+		values["K8sGetEnabled"] = false
+		values["RecordFindingToolName"] = "<finding>"
 
 		return values
 	}
@@ -225,10 +231,24 @@ func TestTemplates_RenderPrompt_AssistantDescribesTheProbesOnlyWhenATargetIsConf
 		rendered, err := RenderPrompt(string(PromptTypeAssistant), assistant, params(true, "`lab-host`"))
 		require.NoError(t, err)
 
-		for _, want := range []string{"<ops_probes>", "<system>", "<containers>", "<logs>", "<baseline>", "<diff>", "`lab-host`"} {
+		for _, want := range []string{"<ops_probes>", "<system>", "<containers>", "<logs>", "<baseline>", "<diff>", "<exec>", "`lab-host`", "<finding>"} {
 			assert.Contains(t, rendered, want)
 		}
+		assert.NotContains(t, rendered, "<prom>", "a metrics backend the deployment does not have")
+		assert.NotContains(t, rendered, "<k8s>", "a cluster the deployment does not have")
 		assert.NotContains(t, rendered, "out of reach")
+	})
+
+	t.Run("a deployment with a metrics backend and a cluster", func(t *testing.T) {
+		values := params(true, "`lab-host`")
+		values["PromQueryEnabled"] = true
+		values["K8sGetEnabled"] = true
+
+		rendered, err := RenderPrompt(string(PromptTypeAssistant), assistant, values)
+		require.NoError(t, err)
+
+		assert.Contains(t, rendered, "<prom>")
+		assert.Contains(t, rendered, "<k8s>")
 	})
 
 	t.Run("a deployment without a target", func(t *testing.T) {
@@ -237,6 +257,8 @@ func TestTemplates_RenderPrompt_AssistantDescribesTheProbesOnlyWhenATargetIsConf
 
 		assert.NotContains(t, rendered, "<ops_probes>")
 		assert.NotContains(t, rendered, "<system>")
+		assert.NotContains(t, rendered, "<exec>")
 		assert.NotContains(t, rendered, "out of reach")
+		assert.Contains(t, rendered, "<finding>", "the finding tool needs no probe and is offered on its own")
 	})
 }

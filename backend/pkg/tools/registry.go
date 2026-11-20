@@ -51,6 +51,7 @@ const (
 	OpsTraceToolName           = "ops_trace"
 	PromQueryToolName          = "prom_query"
 	K8sGetToolName             = "k8s_get"
+	RecordFindingToolName      = "record_finding"
 	DiagnosisToolName          = "diagnosis"
 	TriageResultToolName       = "triage_result"
 	LogFindingToolName         = "log_finding"
@@ -149,6 +150,7 @@ var toolsTypeMapping = map[string]ToolType{
 	OpsTraceToolName:           EnvironmentToolType,
 	PromQueryToolName:          EnvironmentToolType,
 	K8sGetToolName:             EnvironmentToolType,
+	RecordFindingToolName:      StoreAgentResultToolType,
 	DiagnosisToolName:          BarrierToolType,
 	TriageResultToolName:       StoreAgentResultToolType,
 	LogFindingToolName:         StoreAgentResultToolType,
@@ -502,6 +504,14 @@ var registryDefinitions = map[string]llms.FunctionDefinition{
 			"返回「窗口内没有数据」说明选择器或采集有问题，换更宽的窗口或去掉标签再试，不要当作结论。",
 		Parameters: reflector.Reflect(&PromQueryArgs{}),
 	},
+	RecordFindingToolName: {
+		Name: RecordFindingToolName,
+		Description: "把一条结论写进这条事故的记录里：一眼能读的标题、它意味着什么、以及支撑它的原始输出。" +
+			"聊天记录会滚走，这条不会——用户之后回看事故、事故指挥接手时读的都是它。" +
+			"只在探针真的查过之后写；evidence 直接粘贴工具返回里的命令行与那几行输出，不要改写、不要心算。" +
+			"同一条结论只写一次：重复写不会让它更可信，只会让时间线更难读。",
+		Parameters: reflector.Reflect(&RecordFindingArgs{}),
+	},
 	DiagnosisToolName: {
 		Name: DiagnosisToolName,
 		Description: "提交本次事故的最终诊断，并结束当前排查。这是唯一的正常出口。" +
@@ -588,6 +598,8 @@ func getMessageType(name string) database.MsglogType {
 		return database.MsglogTypeDone
 	case DiagnosisToolName, OptimizationResultToolName:
 		return database.MsglogTypeDone
+	case RecordFindingToolName:
+		return database.MsglogTypeAdvice
 	default:
 		return database.MsglogTypeThoughts
 	}

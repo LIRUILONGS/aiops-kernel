@@ -588,6 +588,7 @@ func toolsAgentExecutorCases() ([]toolsAgentExecutorCase, func(ExecutorHandler) 
 				"terminal": "", "file": "", "browser": "", "web_search": "",
 				"search_in_memory": "", "search_guide": "", "search_answer": "", "search_code": "",
 				"get_flow_status": "", "stop_flow": "", "submit_flow_input": "", "patch_flow_subtasks": "", "wait_flow_completion": "",
+				"record_finding": "",
 			},
 			optional: []string{
 				"browser", "web_search", "search_in_memory", "search_guide", "search_answer", "search_code",
@@ -741,7 +742,7 @@ func TestTools_GetExecutors_GiveEachAgentItsTools(t *testing.T) {
 // offers them by name: both sides have to agree, or the model is handed names it
 // cannot call.
 func TestTools_GetExecutors_RegisterTheProbesOnlyWhenATargetIsConfigured(t *testing.T) {
-	probes := []string{OpsSystemToolName, OpsContainersToolName, OpsLogsToolName, OpsBaselineToolName, OpsDiffToolName}
+	probes := []string{OpsSystemToolName, OpsContainersToolName, OpsLogsToolName, OpsBaselineToolName, OpsDiffToolName, OpsExecToolName}
 
 	tests := []struct {
 		name        string
@@ -771,6 +772,46 @@ func TestTools_GetExecutors_RegisterTheProbesOnlyWhenATargetIsConfigured(t *test
 			assert.Equal(t, tt.wantTargets, fte.OpsTargets())
 		})
 	}
+}
+
+// A finding is the one thing the assistant writes that outlives the chat, so it
+// is offered with no target and no cluster configured either.
+func TestTools_GetExecutors_OfferTheFindingToolWithoutAnyProbe(t *testing.T) {
+	fte := toolsAgentFlow(t, false)
+
+	executor, err := fte.GetAssistantExecutor(AssistantExecutorConfig{})
+	require.NoError(t, err)
+
+	advertised := map[string]bool{}
+	for _, definition := range executor.(*customExecutor).definitions {
+		advertised[definition.Name] = true
+	}
+
+	assert.True(t, advertised[RecordFindingToolName], "the %s tool", RecordFindingToolName)
+	assert.False(t, advertised[PromQueryToolName], "the %s tool without a metrics backend", PromQueryToolName)
+	assert.False(t, advertised[K8sGetToolName], "the %s tool without a cluster", K8sGetToolName)
+}
+
+// The controller swaps the assistant's own log into the message log while a chat
+// runs, so the finding tool needs its own sink or the finding dies with the chat.
+func TestTools_GetExecutors_SendTheFindingToTheFlowLogRatherThanTheAssistantLog(t *testing.T) {
+	fte := toolsAgentFlow(t, false)
+	assistantLog := &findingMsgLog{}
+	flowLog := &findingMsgLog{}
+	fte.SetMsgLogProvider(assistantLog)
+	fte.SetFindingLogProvider(flowLog)
+
+	executor, err := fte.GetAssistantExecutor(AssistantExecutorConfig{})
+	require.NoError(t, err)
+
+	handler := executor.(*customExecutor).handlers[RecordFindingToolName]
+	require.NotNil(t, handler)
+
+	_, err = handler(t.Context(), RecordFindingToolName, json.RawMessage(`{"title":"load fell after the restart","detail":"load1 went from 14.2 to 0.8 within a minute"}`))
+	require.NoError(t, err)
+
+	assert.Equal(t, 1, flowLog.writes, "the finding reaches the flow's log")
+	assert.Zero(t, assistantLog.writes, "the finding reaches the assistant's log")
 }
 
 // Covers the Get*Executor factories; subtests are keyed by factory. The terminal log carries the agent's task and subtask.

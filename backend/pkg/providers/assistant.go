@@ -270,6 +270,7 @@ func (ap *assistantProvider) getAssistantSystemPrompt(ctx context.Context) (stri
 	}
 
 	opsTargets := ap.fp.Executor().OpsTargets()
+	probes := ap.fp.Executor().ProbeAvailability()
 
 	systemAssistantTmpl, err := ap.fp.Prompter().RenderTemplate(templates.PromptTypeAssistant, map[string]any{
 		"TerminalToolName":           tools.TerminalToolName,
@@ -293,6 +294,12 @@ func (ap *assistantProvider) getAssistantSystemPrompt(ctx context.Context) (stri
 		"OpsLogsToolName":            tools.OpsLogsToolName,
 		"OpsBaselineToolName":        tools.OpsBaselineToolName,
 		"OpsDiffToolName":            tools.OpsDiffToolName,
+		"OpsExecToolName":            tools.OpsExecToolName,
+		"PromQueryToolName":          tools.PromQueryToolName,
+		"PromQueryEnabled":           probes.Prometheus,
+		"K8sGetToolName":             tools.K8sGetToolName,
+		"K8sGetEnabled":              probes.Kubernetes,
+		"RecordFindingToolName":      tools.RecordFindingToolName,
 		"FlowManagerEnabled":         ap.flowWorker != nil,
 		"GetFlowStatusToolName":      tools.GetFlowStatusToolName,
 		"StopFlowToolName":           tools.StopFlowToolName,

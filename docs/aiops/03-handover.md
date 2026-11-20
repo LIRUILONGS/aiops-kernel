@@ -1765,6 +1765,25 @@ GraphQL 面加三个类型与一个字段：`RoleMetric`（`role` / `chains` / `
 
 顺带一个本地环境事实：`pnpm run prettier` 会对 494 个文件报错，因为工作副本是 CRLF 而配置要求 LF——本地这条检查判不了格式，只能交给 CI。
 
+### 4.66 给 assistant 接上只读探针和一条能写进事故记录的出口（2026-11-20）
+
+4.64 让它知道自己有哪些探针，但它手里的探针只有五个摘要级的（`ops_system`、`ops_containers`、`ops_logs`、`ops_baseline`、`ops_diff`）。真到要回答「这个端口谁在听」「负载拐点在哪一刻」「pod 为什么在 CrashLoop」时，它只能猜，或者把手伸向 `terminal`——那是容器，不是那台机器（4.64 就是为了这个矛盾改的提示词）。这一节把 commander 已经在用的三个更细的只读探针接给它，再给它一个把结论留在事故里的办法。
+
+| 工具 | 它读什么 | 什么时候出现 |
+|---|---|---|
+| `ops_exec` | 预置只读命令目录里的一条：监听端口、已建立连接、PSI 压力、单元状态与日志、内核日志、docker inspect/stats、包安装历史。参数是命令 ID，正文在代码里，不接受命令行 | 配了 `OPSAGI_TARGETS` 时 |
+| `prom_query` | 对指标后端的一条 PromQL 范围查询，返回每条序列的首末值、极值与最大跳变的时刻——拐点只能从这里看出来 | 配了 `PROMETHEUS_URL` 时 |
+| `k8s_get` | 集群里的 pods / events / deployments / nodes | 配了集群（`K8S_API_URL` 或 kubeconfig）时 |
+| `record_finding` | 不读任何东西：把一条结论写进这条事故的记录 | 总是 |
+
+三处设计决定：
+
+1. **提示词里出现的名字必须等于工具列表里的名字。** 为此 `FlowToolsExecutor` 多了一个 `ProbeAvailability()`，返回指标后端与集群是否可用，`assistant.tmpl` 的 `<ops_probes>` 按这两个布尔值分别渲染 `prom_query` 与 `k8s_get`。没有这条约束，部署少了 Prometheus 时模型会被提示词骗去调用一个不存在的工具。实机验过两侧：配齐时系统提示词里有全部三个名字、工具列表 17 个；只剩 `record_finding` 时提示词里没有任何探针名、工具列表 9 个。
+2. **结论要落在事故记录上，而不是聊天记录里。** assistant 跑起来时控制器会把**助手自己的**日志 worker 换进执行器的 `mlp`（`pkg/controller/assistant.go` 两处 `SetMsgLogProvider(aslw)`），所以 `record_finding` 第一版把结论写进了 `assistantlogs`——聊天面板里看得见，事故时间线上看不见，这正好丢掉了它唯一的价值。改成显式的 `SetFindingLogProvider(workers.mlw)`：写的是**这条 flow 的** `msglogs`，`type=advice`，前端已有的 `BotMessageSquare` 图标直接把它画在事故时间线上。
+3. **它只是记录，不是结论。** 这条工具不传 task/subtask、不结束链、不参与诊断——commander 的 `diagnosis` 才是唯一的结论出口。写进去的正文是「标题 + 说明 + 原样粘贴的输出」，代码用围栏包住 evidence，且当输出本身带三反引号时自动加长围栏，避免粘贴的日志把 markdown 撕开。
+
+实机验证（真实数据库 + 真实后端 + 本地 OpenAI 兼容桩）：向助手 8 发一句带标记的话，桩在首轮返回 `record_finding` 的工具调用、拿到结果后改回纯文本，于是链只调用一次；随后 flow 87 的 `msglogs` 里出现一条 `type=advice` 的记录，正文是 `**load1 doubled after the deploy**` + 说明 + 围栏里的 `/proc/loadavg` 输出，`assistantlogs` 里没有重复。
+
 ## 5 环境
 
 ### 5.1 开发机
@@ -1859,6 +1878,7 @@ chore(docs): publish the handover and lab scripts without live credentials # 4.6
 docs(handover): note the five scanning alerts and how they were triaged  # 4.63
 fix(assistant): tell it about the probes it can call                      # 4.64
 refactor(assistant): delete the use_agents pipeline end to end                 # 4.65
+feat(assistant): give it the read-only probes and a finding outlet       # 4.66
 feat(flows): let a flow declare its own target type        # 4.9，迁移 + sqlc + gqlgen + 判定
 feat(ui): choose the target type when starting a flow      # 4.9，表单三选一
 feat(ui): read the conclusion back into fields
