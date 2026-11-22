@@ -45,6 +45,7 @@ func CreateDummyTemplateData() map[string]any {
 		"SubtaskPatchToolName":       tools.SubtaskPatchToolName,
 		"AskUserToolName":            tools.AskUserToolName,
 		"AskUserEnabled":             true,
+		"Unattended":                 false,
 		"DiagnosisToolName":          tools.DiagnosisToolName,
 		"TriageToolName":             tools.TriageToolName,
 		"LogAnalystToolName":         tools.LogAnalystToolName,

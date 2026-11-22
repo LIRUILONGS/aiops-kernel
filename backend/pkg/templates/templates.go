@@ -150,6 +150,7 @@ var PromptVariables = map[PromptType][]string{
 		"DiagnosisToolName",
 		"AskToolName",
 		"AskUserEnabled",
+		"Unattended",
 		"TriageToolName",
 		"LogAnalystToolName",
 		"MetricsAnalystToolName",

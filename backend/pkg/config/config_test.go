@@ -115,7 +115,7 @@ func clearConfigEnv(t *testing.T) {
 	t.Helper()
 
 	envVars := []string{
-		"DATABASE_URL", "DEBUG", "DATA_DIR", "ASK_USER", "TENANT_ID", "INSTALLATION_ID", "LICENSE_KEY",
+		"DATABASE_URL", "DEBUG", "DATA_DIR", "ASK_USER", "UNATTENDED", "TENANT_ID", "INSTALLATION_ID", "LICENSE_KEY",
 		"DOCKER_INSIDE", "DOCKER_NET_ADMIN", "DOCKER_SOCKET", "DOCKER_NETWORK",
 		"DOCKER_INSIDE_HOST", "DOCKER_INSIDE_TLS_VERIFY", "DOCKER_INSIDE_CERT_PATH",
 		"DOCKER_INSIDE_POLICY_TESTS",
@@ -183,6 +183,7 @@ func TestConfig_NewConfig_FillsDefaultsForAnEmptyEnvironment(t *testing.T) {
 	assert.Equal(t, 8080, config.ServerPort)
 	assert.Equal(t, "0.0.0.0", config.ServerHost)
 	assert.Equal(t, false, config.Debug)
+	assert.Equal(t, false, config.Unattended)
 	assert.Equal(t, "./data", config.DataDir)
 	assert.Equal(t, false, config.ServerUseSSL)
 	assert.Nil(t, config.StaticURL)
@@ -265,6 +266,7 @@ func TestConfig_NewConfig_ReadsTheEnvironment(t *testing.T) {
 			"SERVER_PORT":                        "9090",
 			"SERVER_HOST":                        "127.0.0.1",
 			"DEBUG":                              "true",
+			"UNATTENDED":                         "true",
 			"STATIC_URL":                         "https://example.com/static",
 			"HTTP_CLIENT_TIMEOUT":                "300",
 			"TERMINAL_TOOL_TIMEOUT":              "900",
@@ -280,6 +282,7 @@ func TestConfig_NewConfig_ReadsTheEnvironment(t *testing.T) {
 		assert.Equal(t, 9090, config.ServerPort)
 		assert.Equal(t, "127.0.0.1", config.ServerHost)
 		assert.Equal(t, true, config.Debug)
+		assert.Equal(t, true, config.Unattended)
 		require.NotNil(t, config.StaticURL)
 		assert.Equal(t, "https", config.StaticURL.Scheme)
 		assert.Equal(t, "example.com", config.StaticURL.Host)

@@ -20,9 +20,10 @@ import (
 
 type Config struct {
 	// === Core System Configuration ===
-	Debug   bool   `env:"DEBUG" envDefault:"false"`
-	DataDir string `env:"DATA_DIR" envDefault:"./data"`
-	AskUser bool   `env:"ASK_USER" envDefault:"false"`
+	Debug      bool   `env:"DEBUG" envDefault:"false"`
+	DataDir    string `env:"DATA_DIR" envDefault:"./data"`
+	AskUser    bool   `env:"ASK_USER" envDefault:"false"`
+	Unattended bool   `env:"UNATTENDED" envDefault:"false"`
 
 	// TenantID namespaces every externally-visible artifact this instance creates
 	// (PostgreSQL schema, docker object names, Graphiti group ids, telemetry identity)

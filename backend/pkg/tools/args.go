@@ -185,6 +185,11 @@ type AskUser struct {
 	Message string `json:"message" jsonschema:"required,title=Question for user" jsonschema_description:"Engagement-log entry — clarification question or any other information addressed to the engagement coordinator. Written in the engagement language declared by your system prompt."`
 }
 
+// UnattendedAnswer is the ask tool's reply when no operator can answer: the chain
+// keeps going on the evidence it already has instead of parking for a reply that
+// will never arrive.
+const UnattendedAnswer = "无人值守：现在没有人能回答这个问题。请基于已经取到的证据继续推进；必须由人执行的动作写进 record_finding 与报告，把 needs_human 置为 true，并照常用 diagnosis（性能任务用 optimization_result）收口，不要直接结束。"
+
 type Done struct {
 	// Success is a pointer for the reason TaskResult.Success is.
 	Success *Bool  `json:"success" jsonschema:"title=Execution result,type=boolean" jsonschema_description:"True if the subtask was executed successfully and its objective was reached"`

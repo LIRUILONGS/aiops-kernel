@@ -225,6 +225,12 @@ type CommanderExecutorConfig struct {
 	Diagnosis      ExecutorHandler
 	Optimization   ExecutorHandler
 	AskUser        ExecutorHandler
+
+	// AskUserUnattended makes ask an ordinary tool: nobody can answer, so the
+	// handler replies and the chain continues. A barrier would stop the chain
+	// right after that reply, before any exit is filed.
+	AskUserUnattended bool
+
 	Triage         ExecutorHandler
 	LogAnalyst     ExecutorHandler
 	MetricsAnalyst ExecutorHandler
@@ -981,7 +987,9 @@ func (fte *flowToolsExecutor) GetCommanderExecutor(cfg CommanderExecutorConfig) 
 	if cfg.AskUser != nil {
 		definitions = append(definitions, registryDefinitions[AskUserToolName])
 		handlers[AskUserToolName] = cfg.AskUser
-		barriers[AskUserToolName] = struct{}{}
+		if !cfg.AskUserUnattended {
+			barriers[AskUserToolName] = struct{}{}
+		}
 	}
 
 	return &customExecutor{

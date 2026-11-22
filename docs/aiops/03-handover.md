@@ -1884,6 +1884,57 @@ flow 93 的实际轨迹（UTC）：
 
 值得记的一点：模型没有直接采信操作员说"已经执行"，它先去 `opslab-db` 的日志里找那行 FATAL，确认终止时间早于 `pg_sleep(3600)` 的自然到期点（09:33:04Z）之后，才把改善归因于 terminate。第一次尝试（flow 92）里锁是自己到期释放的，模型就把结论停在 diagnosis、拒绝写 improved——它只承认自己看到因果。这也说明前面的度量不是装饰：没有 Postgres 段的 1→0 与 418.9s→0，README 里那个 improved 就只能靠模型嘴说。
 
+### 4.70 `ask` 闸门在无人值守时自己回答（2026-11-22）
+
+4.29 把"问一次就按已有信息收尾"写进了提示词，但闸门本身还是"没人答就一直等"：flow 92 与 flow 93 都在"请操作员执行 `pg_terminate_backend`"处停成 `waiting`，各等约一小时才被 `putUserInput` 推下去。无人值守的部署里没有那一下点击，流程就停在那儿占着容器。
+
+#### 一、闸门为什么停得住
+
+`ask` 不是阻塞调用，是两个开关叠在一起：`barrier` 把 `performResult` 置成 `PerformResultWaiting`（subtask 落成 `waiting`），同时它被登记在 `barriers` 里，`performAgentChain` 执行完任何 barrier 工具就 `wantToStop`。停住之后没有任何计时器，"等多久算超时"在原来的结构里无从谈起。
+
+#### 二、改法：没人值守就自己回一句
+
+新增 `UNATTENDED`（默认 `false`）。为真时两件事一起变：`barrier` 的 `ask` 分支不再置 `PerformResultWaiting`，直接返回 `tools.UnattendedAnswer`（"无人值守：现在没有人能回答这个问题。请基于已经取到的证据继续推进；必须由人执行的动作写进 `record_finding` 与报告，把 `needs_human` 置为 `true`，并照常用 `diagnosis` 收口，不要直接结束。"）；同时 `CommanderExecutorConfig.AskUserUnattended` 让 `ask` 不进 `barriers`，于是它退化成普通工具——答复写回链里，下一轮模型拿到的就是这句话，环继续转。
+
+提示词同步改成三态：`commander.tmpl` 里原来只有"有人值守 / 没有通道"两套说法，现在多一套"这个实例无人值守"——`ask` 只会立刻回一句"没有人能回答"，别用它等人，需要人做的事写进 `record_finding` 并把 `needs_human` 置 `true`。
+
+**收尾没有动**：任务跑完流程仍然停在 `waiting`，那是"等下一个任务"，不是"等闸门答复"；把流程自动置成 `finished` 是另一件事，没有和这个改动捆在一起。
+
+落点：`pkg/providers/provider.go`（`unattended()` / `askGateAction()`）、`pkg/tools/tools.go`（`AskUserUnattended`：无人值守时 `ask` 不进 `barriers`）、`pkg/tools/args.go`（`UnattendedAnswer`）、`pkg/templates/prompts/commander.tmpl`、`pkg/config/config.go`，`.env.example` 与 `docker-compose.yml` 各加一行。
+
+#### 三、验证
+
+单测两处：`TestFlowProvider_AskGate_AnswersItselfWhenNobodyIsWatching`（无人值守回答且不停车、有人值守停车、没有配置停车）与 `TestTools_GetCommanderExecutor_MakesAskAnOrdinaryToolWhenNobodyCanAnswer`（`ask` 是否还是 barrier）；后者把 `if !cfg.AskUserUnattended` 改成 `if true` 会红，验过。
+
+真 flow 一共跑了三次，每次都是同一条锁竞争、同一份五步任务书、`ASK_USER=true UNATTENDED=true`，全程没有一次 `putUserInput`：
+
+| flow | 改了什么 | 结果 |
+|---|---|---|
+| 94 | 只让 `ask` 分支不再置 `PerformResultWaiting` | 两次 `ask` 都立刻拿到答复（12:17:06Z、12:25:35Z），链确实继续跑了；但两个 sub chain 最后以 `failed` 收场 |
+| 95 | 答复里补一句"照常用 `diagnosis` 收口" | 依然 `failed`——说明问题不在措辞 |
+| 96 | 无人值守时不再把 `ask` 登记成 barrier | `ask` 在 13:34:40Z 被回答，79 秒后链以 `done` 收口，两个 sub chain 都是 `finished`，任务报告写明"第 2 步 ask 未获操作员答复（环境无人值守），按预案走第 3 步以 diagnosis 收口（needs_human=true）" |
+
+94/95 的根因在 `performAgentChain` 的一行：任何 barrier 工具执行完就 `wantToStop`。`ask` 一直是 barrier，所以"答复立刻回来了"和"链停在这里"同时发生——答复只是被写进链，没有人再去读它。这一点在提示词层面看不出来，只有真跑才暴露。
+
+flow 96 的时间线（UTC）：
+
+| 时刻 | 发生了什么 |
+|---|---|
+| 13:23:36Z | 建 flow |
+| 13:34:40Z | 第一次（也是唯一一次）`ask`："请求批准终止阻塞会话 11361" |
+| 13:34:40Z | 链里记下 `UnattendedAnswer`，链没有停 |
+| 13:35:59Z | 以 `done` 收口，第一个 sub chain `finished` |
+| 13:54:21Z | 第二个 sub chain `finished` |
+| 14:00:41Z | 任务报告落地（`needs_human=true`），flow 转 `waiting` |
+
+整条 flow 的状态只有 `created → running → waiting`，`waiting` 出现在最后一项任务结束之后——那是在等下一个任务，不是等闸门答复。对照 flow 92/93：同一句话让链停在那里约一小时。
+
+### 4.71 目录里的促销价到期，被守门测试逮到（2026-11-22）
+
+推 4.70 之前跑 `go test ./pkg/providers`，`TestCatalog_BundledCatalogs_ShippedDataKeepsItsInvariants` 红了：`openai/gpt-6-sol` 的描述写着 "prices below are promotional through at least 2026-11-21"，而今天是 2026-11-22，于是"没有目录项按过期促销价记账"这条不变量成立不了。
+
+这条测试是故意的：促销文到期而不改，flow 记的成本就低于厂商实际收费。手头没有厂商价目表，所以先把窗口延到 2026-12-31（与 `gemini` 那三个模型的到期日一致），并把"到期前要真的核对一次价格"写进第 7 章——续日期只是把闹钟往后拨，不是解决。
+
 ## 5 环境
 
 ### 5.1 开发机
@@ -1986,6 +2037,8 @@ feat(tools): explain the statement a postgres target is spending its time in  # 
 feat(tools): read who is waiting on a row lock and who holds it  # 4.69
 feat(tools): measure a lock fix in the baseline instead of a recollection  # 4.69
 docs: record the lock-contention flow that closed as improved  # 4.69
+feat(providers): answer the ask gate instead of parking it when nobody is watching  # 4.70
+chore(providers): renew the catalogue's promo window before the guard reddens  # 4.71
 feat(flows): let a flow declare its own target type        # 4.9，迁移 + sqlc + gqlgen + 判定
 feat(ui): choose the target type when starting a flow      # 4.9，表单三选一
 feat(ui): read the conclusion back into fields
@@ -2057,6 +2110,10 @@ chore: fork OpsAGI as AIOps kernel; add design docs and incident prompts
 ### 7. 镜像 pull 失败时，容器行记的不是"选中的镜像"（已完成，见 4.67）
 
 验证 4.60 时看到的：`fixed` 模式下选中的是 `alpine:3.20`，pull 失败（`registry-1.docker.io` 连不上）后回落到本地的 `debian:latest`，于是 `containers.image` 记的是 `debian:latest`，事后审计分不清"选中"和"实际"。4.67 加了 `containers.requested_image`（创建时写入、回落时不动），并在 GraphQL `Terminal.requestedImage` 与 REST `requested_image` 上暴露出来，只在不同时才返回。这一项留在列表里只为记得它曾经挂在这里。
+
+### 8. 目录里的促销价要有人真的核对一次
+
+`TestCatalog_BundledCatalogs_ShippedDataKeepsItsInvariants` 在"促销文写明的结束日已过"时变红，防的是目录悄悄按低价记成本。2026-11-22 它就红了（`openai/gpt-6-sol` 的促销写到 2026-11-21），4.71 把窗口延到 2026-12-31。真正的解法是有人拿厂商价目表核对一次再改，而不是续日期；下一次到期是 2026-12-31。
 
 ### 已经关掉的（不再列在上面）
 

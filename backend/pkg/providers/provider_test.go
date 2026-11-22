@@ -6,10 +6,12 @@ import (
 	"sync"
 	"testing"
 
+	"opsagi/pkg/config"
 	"opsagi/pkg/database"
 	"opsagi/pkg/providers/provider"
 	"opsagi/pkg/providers/tester/mock"
 	"opsagi/pkg/templates"
+	"opsagi/pkg/tools"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -188,6 +190,45 @@ func TestProvider_SubtaskMode_LetsAnExplicitFlowTypeOutrankThePlan(t *testing.T)
 			})
 
 			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+// A parked chain waits for an answer nobody will send; unattended instances
+// answer the gate themselves so the run can finish.
+func TestFlowProvider_AskGate_AnswersItselfWhenNobodyIsWatching(t *testing.T) {
+	tests := []struct {
+		name string
+		fp   *flowProvider
+		want string
+		park bool
+	}{
+		{
+			name: "an unattended instance answers and keeps the chain going",
+			fp:   &flowProvider{cfg: &config.Config{Unattended: true}, askUser: true},
+			want: tools.UnattendedAnswer,
+			park: false,
+		},
+		{
+			name: "an interactive instance parks the chain for an answer",
+			fp:   &flowProvider{cfg: &config.Config{}, askUser: true},
+			want: "",
+			park: true,
+		},
+		{
+			name: "a provider built without a config parks the chain",
+			fp:   &flowProvider{askUser: true},
+			want: "",
+			park: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			answer, park := tt.fp.askGateAction()
+
+			assert.Equal(t, tt.park, park, "park")
+			assert.Equal(t, tt.want, answer, "answer")
 		})
 	}
 }

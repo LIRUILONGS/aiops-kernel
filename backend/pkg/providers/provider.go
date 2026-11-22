@@ -162,6 +162,21 @@ type flowProvider struct {
 	provider.Provider
 }
 
+// unattended reports whether nobody is watching this instance.
+func (fp *flowProvider) unattended() bool {
+	return fp.cfg != nil && fp.cfg.Unattended
+}
+
+// askGateAction says what the ask tool does here: hand the chain back to an
+// operator who will answer, or answer it and let the chain continue.
+func (fp *flowProvider) askGateAction() (string, bool) {
+	if fp.unattended() {
+		return tools.UnattendedAnswer, false
+	}
+
+	return "", true
+}
+
 func (fp *flowProvider) SetAgentLogProvider(agentLog tools.AgentLogProvider) {
 	fp.mx.Lock()
 	defer fp.mx.Unlock()
@@ -664,6 +679,7 @@ func (fp *flowProvider) PrepareAgentChain(ctx context.Context, taskID, subtaskID
 		"DiagnosisToolName":      tools.DiagnosisToolName,
 		"AskToolName":            tools.AskUserToolName,
 		"AskUserEnabled":         fp.askUser,
+		"Unattended":             fp.unattended(),
 		"TriageToolName":         tools.TriageToolName,
 		"WatchToolName":          tools.OpsWatchToolName,
 		"SandboxToolName":        tools.OpsSandboxToolName,
@@ -849,6 +865,10 @@ func (fp *flowProvider) PerformAgentChain(ctx context.Context, taskID, subtaskID
 			return finish(report, "optimization: accepted")
 
 		case tools.AskUserToolName:
+			if answer, park := fp.askGateAction(); !park {
+				return answer, nil
+			}
+
 			performResult = PerformResultWaiting
 
 			var askUser tools.AskUser
@@ -883,6 +903,7 @@ func (fp *flowProvider) PerformAgentChain(ctx context.Context, taskID, subtaskID
 	}
 	if fp.askUser {
 		cfg.AskUser = barrier
+		cfg.AskUserUnattended = fp.unattended()
 	}
 
 	// Delegation is recursion: each handler runs a full specialist chain whose

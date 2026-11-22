@@ -1201,6 +1201,65 @@ func TestTools_GetCommanderExecutor_AdvertisesOnlyTheExitOfItsMode(t *testing.T)
 	}
 }
 
+func TestTools_GetCommanderExecutor_MakesAskAnOrdinaryToolWhenNobodyCanAnswer(t *testing.T) {
+	handler := func(context.Context, string, json.RawMessage) (string, error) { return "answered", nil }
+
+	build := func(cfg CommanderExecutorConfig) *customExecutor {
+		fte := &flowToolsExecutor{
+			flowID: 42,
+			cfg:    &config.Config{},
+			db:     &fakeContainerDB{row: toolsSandboxRow(database.ContainerStatusRunning, "primary")},
+			docker: &fakeDockerClient{},
+		}
+
+		executor, err := fte.GetCommanderExecutor(cfg)
+		require.NoError(t, err)
+
+		return executor.(*customExecutor)
+	}
+
+	tests := []struct {
+		name     string
+		cfg      CommanderExecutorConfig
+		wantTool bool
+		wantGate bool
+	}{
+		{
+			name:     "an operator is watching, so ask is the gate that ends the chain",
+			cfg:      CommanderExecutorConfig{Diagnosis: handler, AskUser: handler},
+			wantTool: true,
+			wantGate: true,
+		},
+		{
+			name:     "nobody can answer, so ask is just a tool that replies",
+			cfg:      CommanderExecutorConfig{Diagnosis: handler, AskUser: handler, AskUserUnattended: true},
+			wantTool: true,
+			wantGate: false,
+		},
+		{
+			name:     "without a handler there is no ask tool to offer",
+			cfg:      CommanderExecutorConfig{Diagnosis: handler, AskUserUnattended: true},
+			wantTool: false,
+			wantGate: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ce := build(tt.cfg)
+
+			var advertised []string
+			for _, def := range ce.definitions {
+				advertised = append(advertised, def.Name)
+			}
+
+			assert.Equal(t, tt.wantTool, slices.Contains(advertised, AskUserToolName), "the ask tool is offered")
+			assert.Equal(t, tt.wantTool, ce.handlers[AskUserToolName] != nil, "the ask tool has a handler")
+			assert.Equal(t, tt.wantGate, ce.IsBarrierFunction(AskUserToolName), "ask ends the chain")
+		})
+	}
+}
+
 func TestTools_GetCommanderExecutor_AdvertisesKernelTracingOnlyWhenItIsAllowed(t *testing.T) {
 	handler := func(context.Context, string, json.RawMessage) (string, error) { return "", nil }
 
