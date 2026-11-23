@@ -79,8 +79,7 @@ export function FlowsProvider({ children }: FlowsProviderProps) {
             try {
                 const { data } = await createFlowMutation({
                     variables: {
-                        capabilityMode:
-                            capabilityMode === 'off' ? undefined : (capabilityMode as CapabilityMode),
+                        capabilityMode: capabilityMode === 'off' ? undefined : (capabilityMode as CapabilityMode),
                         flowType: targetType === 'auto' ? undefined : (targetType as FlowType),
                         input,
                         modelProvider,
