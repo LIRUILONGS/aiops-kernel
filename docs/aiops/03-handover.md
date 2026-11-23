@@ -2070,7 +2070,7 @@ assistant 单独验过一次（挂在一个已完成的 flow 上，问"lab 上 s
 
 改法：`runTask` 在任务运行期间起一个读 `fw.input` 的转发协程（`forwardInputWhileRunning`），把它交给 `task.PutInput`；任务不在 waiting 时，把 `task is not waiting` 原样回给调用者——这样"worker 正忙"和"没人等输入"是两句不同的话，而不是同一个 1 秒超时。
 
-验证：`TestFlow_PutInput_ReachesATaskThatIsStillRunning`；把转发协程那两行去掉，测试立刻红，报出的正是线上那条 `flow 7 input processing timeout: input was not accepted`。真跑 flow 46（同一场景、同一靶场）：三次 `ask`（266 / 270 / 281）的答案**第一次投递就被接收**，操作员脚本日志是 `accepted on attempt 1`。
+验证：`TestFlow_PutInput_ReachesATaskThatIsStillRunning`；把转发协程那两行去掉，测试立刻红，报出的正是线上那条 `flow 7 input processing timeout: input was not accepted`。真跑 flow 46（同一场景、同一靶场）：三次 `ask`（266 / 270 / 281）的答案**第一次投递就被接收**，操作员脚本日志是 `accepted on attempt 1`。补救之后还留一半没改：两个子任务几乎同时提问时，两条答案都会喂给"第一个 waiting 的子任务"（`taskWorker.PutInput` 在那里 `break`），另一个子任务永远等不到答案——flow 49 复现，见第 7 章第 13 条。
 
 #### 二、`ops_diff` 要模型手抄一整段指纹 JSON
 
@@ -2078,7 +2078,7 @@ assistant 单独验过一次（挂在一个已完成的 flow 上，问"lab 上 s
 
 改法：`ops_baseline` 把指纹留在本 flow 的 `baselineSamples`（最近 16 次），结果里给出采样编号（`base-3`）并明说"编号比指纹 JSON 可靠"；`ops_diff` 的 `before` / `after` 改成接受编号，编号过期时回一句带编号与其保留条数的说明；直接传 JSON 仍然可用，老调用不破。
 
-验证：`TestOpsDiff_HandleDiff_TakesTheSampleIdsBaselineReturned`、`TestOpsDiff_HandleDiff_NamesTheSideWhoseSampleIsGone`、`TestOpsDiff_HandleDiff_StillTakesTheFingerprintItself`；把"按编号查找"那三行去掉，第一个测试立刻红（错误文本里能看到它退化成了"解析 before 失败：invalid character 'b'"）。
+验证：`TestOpsDiff_HandleDiff_TakesTheSampleIdsBaselineReturned`、`TestOpsDiff_HandleDiff_NamesTheSideWhoseSampleIsGone`、`TestOpsDiff_HandleDiff_StillTakesTheFingerprintItself`；把"按编号查找"那三行去掉，第一个测试立刻红（错误文本里能看到它退化成了"解析 before 失败：invalid character 'b'"）。真跑 flow 48：`ops_diff` 一次成功，返回 `共 50 项，其中显著变化 0 项` 的完整差值表——比之前那条 `invalid character ','` 强，但模型把同一个 after 采样传了两次（两次都是 `after-index`、同一秒），所以差值全是 0，结论只能写 `verdict=unverified`。原因是 `ops_baseline` 的提示行对第二次采样也写着 `before=<编号>`，模型分不清哪条是 after；改成"第一次的编号传给 before、第二次的传给 after"之后，同一条链再跑 flow 49 时它已经按 before/after 采了两次基线（`ops_baseline` 两次调用、编号 base-1 与 base-2 都出现在报告里）。
 
 ## 5 环境
 
@@ -2308,6 +2308,10 @@ chore: fork OpsAGI as AIOps kernel; add design docs and incident prompts
 ### 12. 子任务 `ask` 之后，答案进不来
 
 `flowWorker.PutInput` 把用户输入送进 `fw.input`，然后只等 `flowInputTimeout`（1 秒）看有没有人接收；唯一读这个 channel 的是 flow 主循环 `for { select { case flin = <-fw.input } }`（`pkg/controller/flow.go:1321`）。而 `taskWorker.Run` 在某个子任务 `waiting` 之后会继续跑下一个子任务（`OPSAGI_SUBTASK_CONCURRENCY=2` 时并行跑），整条 `runTask` 并不返回——于是答案只有在"整条任务跑完、回到主循环"的时间缝里才收得下，任务内部还在跑别的子任务时投递一律被拒。flow 39 就是后者：子任务 100 在 07:03:28 提问，子任务 101 转去查指标、二十分钟没停，这期间每 10 秒投递一次答案，全部 `input processing timeout`；界面上这个问题看得见、答不进去，等人真正答进去时，那条 parked 子任务可能已经被 `subtask_patch` 改掉或跳过。修法方向有两条，选一条即可：子任务 `waiting` 时任务不再起新的子任务（等答复或等它被改掉），或者把输入通道的读取挪到能并发跑的位置，并让 `putUserInput` 的报错区分"worker 正忙"和"没有人在等输入"——一个 1 秒超时把两件事说成同一件，操作员和 agent 都无从判断。
+
+### 13. 两个子任务同时提问时，答案只喂给第一个
+
+`taskWorker.PutInput` 在 `ListSubtasks` 里找第一个"未完成且 waiting"的子任务，把输入交给它，然后 `break`。flow 49 里两个子任务（148、149）几乎同时提问，操作员按顺序答了两条，两条都被 flow 接受（`putUserInput` 返回成功），但只有第一条在 `msglogs` 里留下了 `input` 记录（subtask_id=148），第二条被同一个子任务吃掉了；子任务 149 的 `ask` 从此没有答案，整条 flow 停在 `waiting`、不再产生任何工具调用。修法：输入本身要带"答哪一条问题"（`ask` 记下提问的子任务 id，`putUserInput` 按它路由），或者把"等待中的提问"排成队列逐条回答；现在这种"取第一个 waiting 就走"的写法在两个问题重叠时必然丢一个。
 
 ### 已经关掉的（不再列在上面）
 
