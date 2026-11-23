@@ -1978,7 +1978,7 @@ flow 96 的时间线（UTC）：
 | 场景 | flow | 用时 | 结束状态 | 关键工具 | 结论 |
 |---|---|---|---|---|---|
 | seal-engraver 500、健康检查仍 200（容器部署路径） | 6 | 25 min | `waiting` | ops_containers, ops_logs, ops_exec, ops_sandbox | 定位到 postgres 容器已退出、backend 在 DNS 解析处抛 `gaierror`；随后追问"谁在反复停它"，越出工具边界转成 `ask` 停车 |
-| Prometheus 里 load1 持续偏高 | 3 / 7 | 13 min / 87 min（写稿时仍在跑） | `waiting` / `running` | prom_query, ops_watch, ops_system, ops_exec | 用 `node_load1` 曲线定位峰值窗口，再落到进程与容器；flow 3 十三分钟出报告，flow 7 复跑时把 `prom_query` 打到了 58 次，比第一轮深得多 |
+| Prometheus 里 load1 持续偏高 | 3 / 7 | 13 min / 94 min | `waiting` / `waiting` | prom_query, ops_watch, ops_system, ops_exec | 用 `node_load1` 曲线定位峰值窗口，再落到进程与容器；flow 7 复跑时 `prom_query` 打了 58 次，根因是两个 `busybox` 压测容器的 8 个 `while true` 空转进程把 load1 从 0.1–1.5 抬到 22.4–31.07，并用变更事件回溯了它们的创建时间 |
 | 长事务持锁，update 卡住 | 14 | 12 min | `waiting` | ops_exec, ops_watch, ops_sandbox, ask | 实时读出 `blocked_pid` / `blocker_pid` / 等待 2978 秒，判定需要终止阻塞会话，`ask` 请求授权 |
 | nginx 全线 502 | 15 | 17 min | `waiting` | ops_logs, ops_exec, ops_containers, diagnosis | 五步取证走完，根因是上游 `127.0.0.1:8099` 没人监听，报告引用了 nginx 的 `connect() failed` 原文 |
 | 慢查询 649ms → 10ms 以内 | 16 | 17 min | `waiting` | ops_exec, ops_baseline, ask | 从 `pg_stat_statements` 找到语句、读出 `Limit → Gather Merge → Sort → Parallel Seq Scan`，给出 DDL；操作员执行后回放 `Execution Time: 0.440 ms` |
@@ -1988,7 +1988,7 @@ flow 96 的时间线（UTC）：
 | 一台对外主机的 SSH 暴破告警 | 9 | 43 min | `failed` | ops_logs, ops_exec, ask, log_analyst | 报告写"未完成（证据缺失，非事件证伪）"：靶场的 Linux_2k 归档是 2005 年的开机自检段，宿主也没有 `/var/log/secure`，agent 拒绝在没有原文的情况下下结论 |
 | Apache + Tomcat（mod_jk）日志健康评估 | 11 | 36 min | `waiting` | ops_logs, ops_exec, log_analyst, diagnosis | 数出 595 条 `workerEnv in error state 6`，同时指出日志源本身是回放的历史归档，结论只能覆盖那段历史 |
 | Spark 作业"不稳定"（对照） | 10 | 22 min | `waiting` | ops_logs, ops_exec, log_analyst, diagnosis | 全 INFO 的对照组：没编造异常，而是说明只能覆盖可读的尾部 62 行、不在这段里 |
-| Zookeeper 集群抖动 | 17 | 写稿时仍在跑 | `running` | ops_logs, ops_sandbox, log_analyst | 已进入第 3、4 条子任务：在"QuorumCnxManager 连接异常"与"选举风暴"之间做取舍，并要求核对时间窗前后的配置变更 |
+| Zookeeper 集群抖动 | 17 | 28 min | `waiting` | ops_logs, ops_sandbox, log_analyst | 结论是"不存在真实抖动"：日志源是 busybox 回放的 2015 年 ZK 样本，`ops_logs` 实际可见的尾部 41 行里 INFO 33 / WARN 8 / ERROR 0，WARN 全是客户端侧建连噪声；它没有把回放日志当成本集群现场 |
 
 三件事值得单独记：
 
@@ -1998,7 +1998,7 @@ flow 96 的时间线（UTC）：
 
 #### 四、这一轮跑出来的五个问题
 
-1. **`ops_logs` 说"上限 500 行"，实际给的是 8 KB**。flow 10 的 agent 发现"申请的 500 行被截断，只读到尾部 62 行"——`formatLogs` 的 `maxBody` 是 8000 字节，Apache/HDFS 这类日志一行 80～120 字节，500 行约 50 KB。截断本身是对的（保护上下文），但结果只写一句"已截断，仅保留末尾内容"，agent 无从知道自己的样本占全文多少。改法：截断时把 `共 N 行，这里只保留最后 M 行` 写在结果开头，并在 `lines` 的 schema 描述里把 8 KB 这件事说明白；`TestFormatLogs_CutTailReportsHowManyLinesWereDropped` 钉住它，把总数换成 `0` 会红（验过）。
+1. **`ops_logs` 说"上限 500 行"，实际给的是 8 KB**。flow 10 的 agent 发现"申请的 500 行被截断，只读到尾部 62 行"、flow 17 只拿到 41 行——`formatLogs` 的 `maxBody` 是 8000 字节，Apache/HDFS/Zookeeper 这类日志一行 80～140 字节，500 行约 50 KB。截断本身是对的（保护上下文），但结果只写一句"已截断，仅保留末尾内容"，agent 无从知道自己的样本占全文多少。改法：截断时把 `共 N 行，这里只保留最后 M 行` 写在结果开头，并在 `lines` 的 schema 描述里把 8 KB 这件事说明白；`TestFormatLogs_CutTailReportsHowManyLinesWereDropped` 钉住它，把总数换成 `0` 会红（验过）。重建成镜像后真跑了一次（flow 26，只让它读一次 `ops_logs`），返回的第一行原文是 `…（日志过长：共 500 行，这里只保留最后 68 行；要更早的内容就缩小 range 或换个来源再取一次）`——数字对得上：500 行、68 行落在 8 KB 里。
 2. **容器里的 k8s 端点不是产品缺陷，但暴露了报错可读性**。第一次 k8s 场景 3 分钟就 `failed`，原文是 `Get "https://host.docker.internal:16443/version": http: server gave HTTP response to HTTPS client`。真正的原因是靶场把 k3s 的 6443 发布成宿主 16443，而 Docker Desktop 在那个端口上回的第一次应答不是 TLS；把 `opslab-k3s` 接进 `opsagi-network`、kubeconfig 改成 `https://opslab-k3s:6443` + `insecure-skip-tls-verify` 之后，flow 13 的 `k8s_get` 正常了（31 次调用）。接线是靶场的事，但这条错误原文对 agent 是有用的，它照着改了方向。
 3. **工具参数被截断的那一次，隔离复现两次都没再现**。04:08 那批 flow（同一部署、同一网关）出现 `tool call has invalid JSON arguments` 与 `subtasks array is missing`，当时同时挂着"按角色配模型"的文件和 `LLM_SERVER_PRESERVE_REASONING=true`。用独立数据库起了一个旁路实例分别试：只挂角色配置（6 分钟，无异常）、角色配置 + 保留推理（6 分钟，无异常），两次都没再现；网关对 `max_tokens` 4096/8192/16384/32768 的探测也全部返回合法 JSON 的 `tool_calls`。结论只能是"观察项"，不是"已修复"——把配置撤掉后十六个 flow 再没出现过同样的报错。
 4. **`base+2*flowID` 的端口派生会撞上宿主占用**。flow 12 建流 3 秒后 `failed`：`failed to bind port 0.0.0.0:40024: bind: address already in use`。端口是确定性算出来的，撞上任何宿主占用或 Windows 的保留段就没有退路。这一轮把 base 挪到 40000 绕开，但从产品角度这是个设计取舍（确定性端口方便操作员预开防火墙，代价是撞了只能改配置），写进第 8 章而不是偷偷改掉。
@@ -2288,6 +2288,8 @@ chore: fork OpsAGI as AIOps kernel; add design docs and incident prompts
 29. **场景定义和结果不能同名**。驱动按 `id` 把结果写到 `D:\Temp\matrix\<id>.json`，定义文件也在同一层时，第一次跑完就把定义覆盖成结果，第二次跑会读到一份没有 `prompt` 的 JSON。定义统一放 `scenarios/` 子目录。
 
 30. **`docker run -e VAR='[{...}]'` 在 PowerShell 里会被吃掉引号**。`OPSAGI_TARGETS` 传进去变成 `[{id:lab,...}]`，不是合法 JSON，结果是"目标存在但工具全不可用"，agent 会报告"ops_containers 在本会话不可调用"。用 `--env-file`，并且事后 `docker exec <c> env | grep OPSAGI_TARGETS` 逐字确认。
+
+31. **后台任务"结束"不等于它的 python 子进程结束**。一轮并发验收跑完后，`run_all.py` 的一条子进程仍在，`docker compose --force-recreate` 之后它以为自己的 flow 没了，于是照着同一份场景定义又建了一批新 flow（18～25），把矩阵搅成两套。判断办法：`Get-CimInstance Win32_Process -Filter "Name='python.exe'"` 看有没有 `matrix` 的残留，重建部署前先确认干净；驱动脚本本身不做重试，残留只可能来自没退出的进程。
 
 ## 9 从零启动的操作手册
 
