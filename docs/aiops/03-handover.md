@@ -2010,6 +2010,52 @@ flow 96 的时间线（UTC）：
 
 assistant 单独验过一次（挂在一个已完成的 flow 上，问"lab 上 seal-engraver- 开头的容器有哪些"）：1.3 分钟答完，答案来自 `ops_containers` 的真实返回（5 条容器、`seal-engraver-postgres` 已退出、退出码 0），结论正确；但正文里出现了一行自己拼错的表格行并在下一段自我更正——单次问答没有 flow 的多轮取证兜底，这一档质量不如 flow，记在第 7 章。
 
+### 4.73 集群里的那两行，产品终于读得到（2026-11-23）
+
+上一节把 k8s 场景记成"取证不完整"：拿到了 Pod 状态、事件计数、Deployment 副本，但**退出码和进程死前写的那一行拿不到**，于是根因只能写"未确认"。这一节把这条缺口补上，并且用同一个真实集群证明了补上之后结论会变。
+
+#### 一、真实集群上那行从来没出现过
+
+`k8sObjectRow` 读容器状态时找的是 `containerStatuses[i].waiting` 和 `.terminated`，而 Kubernetes API 把它们放在 `containerStatuses[i].state.waiting` / `.state.terminated`，上一个容器的死因在 `.lastState.terminated`。也就是说：**单元测试喂的是拍平过的假响应，真集群返回的嵌套结构一条都匹配不上**，所以 flow 4 / 106 的 Pod 行只有 `Running restarts=8`，CrashLoopBackOff 这个原因本身被静默丢掉了。
+
+改了三处：
+
+1. 状态按 API 的位置读（`state.waiting`、`state.terminated`、`lastState.terminated`），退出码单独成列：`restarts=13 exit=78 ... | api: CrashLoopBackOff: back-off 5m0s restarting failed container`；
+2. `k8s_get` 增加 `what=logs`：一个 Pod 一个容器，`tail_lines` 默认 200、上限 2000，读的是 `GET /api/v1/namespaces/{ns}/pods/{pod}/log`，标题里写明"最后 N 行"，正文被 8 KB 截断时复用 `ops_logs` 那条"共 N 行，只保留最后 M 行"的计数器；
+3. `formatLogs` 里那段截断逻辑抽成 `cutTail`，两条读日志的路径共用一份计数口径，避免两个工具对"你看到了多少"给出两种说法。
+
+测试是照着真响应写的：原来那条断言 `waiting` 直接挂在容器状态上的用例，本身就是在钉一个不存在的结构，这次连同夹具一起改成 `state.waiting`；新增四条钉住退出码、日志路径与尾部参数、缺少 Pod 名时的拒绝、以及空日志要读成"容器没写过任何东西"而不是失败。
+
+#### 二、测试能红，才算钉住了
+
+把 `lastState` 那一段用 `if false &&` 关掉，`TestK8s_HandleGet_ReportsTheExitCodeOfTheLastRun` 立刻红：渲染结果里只有 `restarts=8 | api: CrashLoopBackOff`，没有 `exit=78`；恢复后整个包绿。改夹具本身也是一次反向验证——旧代码配新夹具，`ImagePullBackOff` 那条用例不会再出现原因文本。
+
+#### 三、同一条任务，结论从"未确认"变成定论
+
+新二进制起来之后，同一个 `s6_k8s_crashloop`（同集群、同故障、真模型）跑了 flow 107：
+
+| 步骤 | 工具与参数 | 返回里的原文 |
+|---|---|---|
+| Pod | `k8s_get what=pods namespace=opslab` | `opslab/api-78695cf464-tw89g Running restarts=13 exit=78 node=26d5e6a1a95d \| api: CrashLoopBackOff: back-off 5m0s restarting failed container` |
+| 事件 | `k8s_get what=events namespace=opslab` | `BackOff x68`、`Created/Started` 各 4 次、无 `Liveness probe failed` |
+| 日志 | `k8s_get what=logs namespace=opslab name=api-78695cf464-tw89g container=api tail_lines=200` | `Pod 日志（opslab/api-78695cf464-tw89g，container=api，最后 200 行）` + `starting orders-api v2.4.1` / `FATAL: DATABASE_URL is not set; refusing to start` |
+| Deployment | `k8s_get what=deployments namespace=opslab` | `ready=0/1 image=busybox:latest` |
+
+`diagnosis` 的收口跟着变了：根因写"进程启动时读不到 `DATABASE_URL`，应用自己打印启动横幅后 FATAL 退出（exit 78），kubelet 因此反复重启"，并且明说排除了镜像拉取、调度、OOM 与探针；evidence 数组里直接引用 Pod 行和那两行日志。上一节同一场景的结论是"机制拿到了，退出码与死前日志取不到，根因未确认"——差别不在模型，在工具给不给得到那两行。
+
+#### 四、两个环境侧的坑，都不是产品缺陷但都会让人误判
+
+1. **重建 k3s 容器等于换了一个集群**。k3s 的 CA 与客户端证书在容器文件系统里，`docker rm` 之后重新 `run` 会签发一套新的；旧 kubeconfig 带着旧证书去访问新集群，每一次调用都是 `集群返回 401：Unauthorized`。flow 104 就是这么失败的，而错误文本只说了 401，看不出是证书过期还是权限不够。正确做法是从容器里重新取 `/etc/rancher/k3s/k3s.yaml` 再改 server（`reseed_k8s.py` 做的就是这件事），两份 kubeconfig 分别指向宿主发布端口和容器网络里的名字。
+2. **`frontend/dist` 是构建产物，仓库里那份是旧的**。用 `STATIC_DIR` 指向仓库里的 dist 起本机服务时，flow 页面的 `assistants` 与 `settings` 两个查询会 422：`Cannot query field "useAgents" on type "Assistant"`、`Cannot query field "assistantUseAgents" on type "Settings"`——schema 早就把这两个字段删了，旧 bundle 还在查它们。镜像里没这个问题（Dockerfile 现构建前端），但要记住：**拿它当"UI 报错"之前先确认 dist 的构建时间**。
+
+#### 五、浏览器那一遍
+
+用 Playwright 走了一遍要交付的那个容器（`http://127.0.0.1:8443`）：登录 → 落地 `/flows/new` → `/flows` 列出 5 个 flow → 点进 `/flows/31`，页面渲染出标题与状态，`console` 与 `pageerror` 均为 0 条。同一段脚本指向本机 8899（旧 dist）时抓到 5 条 422，就是第四节第 2 条那件事。这一步补的是之前所有验收都没有的部分：**同一个事实在页面上是不是也看得见**。
+
+#### 六、慢查询那条链的实测数字
+
+`bench` 库的报表查询在没有任何索引时是 `Parallel Seq Scan`，`Execution Time: 1240.994 ms`（`explain (analyze, buffers)`，5,000,000 行）；`pg_stat_statements` 里同一条语句 `calls=3，mean_exec_time=1070.75 ms`。操作员按 agent 给的 DDL 建索引后，同一条 SQL 三次回放落在 `0.16～0.18 ms`。flow 35 的报告把这组数字引用了，并且自己点明"建索引后的独立复测、after 基线、`ops_diff`、`optimization_result` 这四步没做，verdict 没有实测依据"——这个自我限界要保留，它比一个漂亮的"优化成功"更可信。
+
 ## 5 环境
 
 ### 5.1 开发机
