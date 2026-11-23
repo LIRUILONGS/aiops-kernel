@@ -2199,6 +2199,49 @@ flow 56（`变更验证：压测前后的主机指纹对比`）在 12:04:29 由�
 
 因此"转发协程的修复在真机上把答案接住"这最后一步，证据只有单测（它复现的是线上原文），真机复验要等网关稳定，写进第 7 章第 16 条。
 
+### 4.78 能力租约在真 flow 上过了一遍：被拒的调用确实停住，agent 换路取证（2026-11-23）
+
+租约是这一轮新加的东西，交付时只有单测。这一节用真模型跑了两条 flow，把"开关合上以后会发生什么"落成证据；顺带修了 `psi` 在目录里从上线起就没成功过的那个缺陷。
+
+#### 一、开关的状态是可观测的
+
+flow 65（`capabilityMode=off`）：`capability_leases` 0 行、`capability_decisions` 0 行——守门器根本没有安装，代码路径与租约出现之前一致。flow 63（`enforce`）：3 条租约、15 条决策（10 allow / 5 deny）。这就是"off 不是把策略放宽，而是不装门"的证据。
+
+#### 二、出厂策略是宽容的，所以窄租约要自己造
+
+`capability.DefaultPolicy()` 今天给的是通配（目标 `*`、工具 `*`、命令 `*`、形状 `probe`），注释里写明这是故意的：打开开关不该把一个本来能跑的 flow 变窄。于是**拒绝在出厂配置下不可能出现**。要验拒绝，就得让某个子任务拿到窄租约——做法是在该子任务开始之前，直接往 `capability_leases` 插一行（`issued_by='probe-narrow'`，目标只放 `lab`，只读命令只放 `listen_ports`、`disk_usage`，形状只放 `probe`）：`ensureLease` 先读后发，已经存在的行会被原样复用，所以插进去的那行就是这个子任务的租约。
+
+这是这次验证的限界，得写清楚：**产品今天没有给操作员配策略的入口**，策略写在代码里。做一个策略编辑器（或者把租约来源换成计划里的 `targets` 字段）是下一步，不在这节覆盖范围内。
+
+#### 三、拒绝长什么样
+
+flow 63 的 15 条决策，按发生顺序：
+
+| 子任务 | 调用 | 判定 | 模型看到的原文 |
+|---|---|---|---|
+| 177 | `ops_sandbox`（没写 target） | deny | 这次调用没有写 target，而租约只放开了列出的主机；请显式指定目标主机 |
+| 177 | `ops_exec command=docker_inspect` | deny | 只读命令 docker_inspect 不在这个子任务的租约里（允许：listen_ports, disk_usage） |
+| 177 | `ops_exec command=load` | deny | 只读命令 load 不在这个子任务的租约里（允许：listen_ports, disk_usage） |
+| 178 | `ops_exec command=top_cpu` | deny | 只读命令 top_cpu 不在这个子任务的租约里（允许：listen_ports, disk_usage） |
+| 178 | `ops_exec command=memory` | deny | 只读命令 memory 不在这个子任务的租约里（允许：listen_ports, disk_usage） |
+| 177/178 | `ops_logs`、`ops_system`、`ops_sandbox`（带 target）、`prom_query`、`ops_exec command=disk_usage`、`ops_exec command=listen_ports` | allow | — |
+
+同一张表里还有一条"没写 target"的拒绝，它来自守门器里那条补丁规则（`authorize`）：目标留空等于选默认主机，而租约只放开了列出的主机时，这个默认值不能替模型做主。
+
+#### 四、被拒之后 agent 没有编数字
+
+`top_cpu` 被拒之后，它没有把"没有数据"写成结论，而是换成允许的工具继续：`ops_system` 读到负载 42.17 / 30.83 / 24.04（20 核）、CPU 90.0%，`prom_query` 取到 `node_load1` 61 个点，`ops_logs` 读到 `opslab-stress` 的容器日志，`ops_watch` 用 `top_cpu` 的采样被拒后改用带 target 的 `ops_sandbox` 采样。这正是窄租约要的性质：**缩的是工具面，不是证据面**——被拒的调用在它的记录里是"这道门不许走"，不是"这台机器没有这个数据"。
+
+#### 五、顺带修掉：`psi` 从上线起就没成功过一次
+
+flow 63 里两次调用都返回 `命令模板 "psi" 还留着未替换的占位符`（`ops_exec psi` 与 `ops_watch psi`）。原因：`Render` 在参数替换之后禁止任何 `%` 残留，而 `psi` 的模板里写着 `printf "%s: " "$f"`——`%s` 被当成了没替换的占位符。目录里 26 条命令中有一条从上线起就没成功过，`ops_watch` 走同一条模板，所以"采样 PSI"这条路一直是死的。
+
+改法：模板里写 `%%` 表示一个字面 `%`；检查残留时先用一个模板里不可能出现的哨兵把 `%%` 挡起来，检查完再还原，`%Param%` 没被替换仍然报错。`TestExec_Render_BuildsTheCommandFromTheTemplateAndTheValidatedValue` 的表格里加了一行 `psi`，断言渲染结果含 `printf "%s: " "$f"`；把哨兵那两行去掉，这一行立刻红，报的正是线上那句原文。
+
+#### 六、这轮验证踩到的环境问题
+
+两条 flow 一开始都停在"第一个工具调用之后没动静"。原因是靶场的 overlays 把模型改成了 `qwen3-4b-cpu`，而那个模型在网关上一次 10 token 的补全超过 120 秒——比产品自己的客户端超时还长，所以每条 flow 都在第二次 LLM 调用处卡住，`created`/`running` 状态上看着像死锁。换回 `deepseek-v4.1`（3.8 秒同一条请求）之后两分钟内就进 `running`。这件事与第 7 章第 16 条是同一类：请求没有超时，卡住以后没人说话。
+
 ## 5 环境
 
 ### 5.1 开发机
