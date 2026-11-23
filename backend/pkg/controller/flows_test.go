@@ -446,6 +446,22 @@ func TestFlows_FailFlow_RecordsWhyAndMarksTheFlowFailed(t *testing.T) {
 	assert.Equal(t, flowID, messages[0].FlowID)
 }
 
+func TestFlows_FailFlow_MarksTheFlowEvenAfterThePreparationDeadlineHasPassed(t *testing.T) {
+	c := newCreatingController(t, nil)
+	flow := database.Flow{ID: reservedFlowID, UserID: 1, Status: database.FlowStatusCreated}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	c.fc.failFlow(ctx, flow, errors.New("preparation ran past its deadline"))
+
+	assert.Contains(t, c.q.recordedStatuses(), database.FlowStatusFailed,
+		"a flow whose preparation expired must still be marked failed")
+	messages := c.q.recordedMessages()
+	require.Len(t, messages, 1)
+	assert.Contains(t, messages[0].Message, "preparation ran past its deadline")
+}
+
 func TestFlows_FinishFlow_CancelsAPreparationWithoutWaitingForIt(t *testing.T) {
 	c := newCreatingController(t, nil)
 	c.holdsAfterCancel = true

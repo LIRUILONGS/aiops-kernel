@@ -2193,11 +2193,9 @@ flow 56（`变更验证：压测前后的主机指纹对比`）在 12:04:29 由�
 
 把含本修复的镜像部署上去之后，新建的 flow 58 / 59 / 60 全部停在 `created`，容器日志只有 `flow created in DB`，没有后面那句 `creating container`。数据库连接正常（`pg_stat_activity` 里 3 个 idle），进程没有重启也没有 panic，`deleteFlow` 依旧 3 秒返回。
 
-证据在连接上：flow 60 创建于 12:46:42，宿主机 `Get-NetTCPConnection -LocalPort 18000` 里那条 `127.0.0.1:50723 → 127.0.0.1:18000 Established 20:46:42` 就是它发出的准备调用，25 分钟之后仍然挂着；同一时间直接用 `curl` 打网关是 2.2 秒返回。也就是说准备阶段那次模型调用既没有自己的 deadline，也没有心跳/重试，一条死连接就能让这条 flow 永远停在 `created`。同一窗口里链上的调用报的是 `agent model call failed: EOF` 和 `request timeout: API call exceeded deadline`——那个超时只发生在执行期的 agent 链上，准备期没有。
+证据在连接上：flow 60 创建于 12:46:42，宿主机 `Get-NetTCPConnection -LocalPort 18000` 里那条 `127.0.0.1:50723 → 127.0.0.1:18000 Established 20:46:42` 就是它发出的准备调用，25 分钟之后仍然挂着；同一时间直接用 `curl` 打网关是 2.2 秒返回。也就是说准备阶段那次模型调用既没有自己的 deadline，也没有心跳/重试。同一窗口里链上的调用报的是 `agent model call failed: EOF` 和 `request timeout: API call exceeded deadline`——那个超时只发生在执行期的 agent 链上，准备期没有。
 
-网关恢复之后（ssh 隧道在 20:44:18 重连过）再建 flow 61，两分钟内就离开 `created` 进入 `running`，所以这条不是死锁，是缺超时。写进第 7 章第 16 条。
-
-因此"转发协程的修复在真机上把答案接住"这最后一步，证据只有单测（它复现的是线上原文），真机复验要等网关稳定，写进第 7 章第 16 条。
+网关恢复之后（ssh 隧道在 20:44:18 重连过）再建 flow 61，两分钟内就离开 `created` 进入 `running`，所以这条不是死锁，是缺超时。缺的那一层，以及它到期之后连"失败"都写不进去的那个洞，见 4.80。
 
 ### 4.78 能力租约在真 flow 上过了一遍：被拒的调用确实停住，agent 换路取证（2026-11-23）
 
@@ -2273,6 +2271,26 @@ flow 63 里两次调用都返回 `命令模板 "psi" 还留着未替换的占位
 
 - 采样编号的作用域是"当前 flow"：flow 111 只调 `ops_diff`、引用 flow 110 的 `base-2`，得到的是"可能已经过期"——错误信息本身写清楚了原因，但用户会以为是 16 条上限挤掉了。可以在措辞里点明"编号只在采集它的那条 flow 里有效"。
 - 模型仍然会绕开 `ask`：flow 112 的任务写死了"第二步必须 ask"，它却以"`create index if not exists` 是空操作、实例 CPU 已饱和"为由直接给了 `unverified`。这个判断本身没错（索引确实存在过、靶场 load1 已到 37），但它意味着"让模型照剧本走"不能当作验收手段——验收要落在工具层，见上面的 live tier。
+
+### 4.80 准备超时之后，flow 连"失败"都写不进去（2026-11-23）
+
+4.77 的第五节留下一个现象：flow 58 / 59 / 60 停在 `created`。这一节把它收尾——根因不是"死锁"，是准备超时的那一刻，负责写"失败"的那段代码用的是已经过期的 `ctx`。
+
+#### 一、到期之后发生什么
+
+`prepareFlow` 给准备阶段 30 分钟（`flowPrepareTimeout`）。到期时 `build` 返回 `ctx.Err()`，`prepareFlow` 调 `failFlow(ctx, flow, err)`——传进去的就是那个已经过期的 ctx。`failFlow` 用同一个 ctx 打开消息日志、写"为什么不开始"、把状态改成 `failed`、再读容器列表发布出去：pgx 在 ctx 过期后一律拒绝，于是这四步全失败，只剩一行 `failed to mark a flow failed after its preparation broke` 在容器日志里。界面上那条 flow 就永远停在"创建中"。
+
+flow 60 的那条连接（`127.0.0.1:50723 → 127.0.0.1:18000`，20:46:42 建立）在 25 分钟后仍然 `Established`，正好落在这个窗口里；网关恢复后（隧道 20:44:18 重连）新建的 flow 61 两分钟内就进了 `running`。
+
+#### 二、改法
+
+`failFlow` 用自己的预算跑写操作：`context.WithTimeout(context.WithoutCancel(ctx), flowFinishTimeout)`（5 分钟），与 `prepareFlow` 里释放"准备期间被关掉的 flow"那一支同样的形状——清理不该继承那个已经用完了的 deadline。
+
+#### 三、证明
+
+`TestFlows_FailFlow_MarksTheFlowEvenAfterThePreparationDeadlineHasPassed`：拿一个已取消的 ctx 调 `failFlow`，断言状态里出现 `failed`、消息日志里有一条带原因的 report。`createFakeQuerier` 本来就在 ctx 结束后拒绝写入（注释写着"the way pgx does"），所以这个断言真的能失败——把补上那两行删掉，测试报 `[]database.FlowStatus(nil) does not contain "failed"` 和 `"[]" should have 1 item(s), but has 0`。
+
+缺的那一层没有一起补：准备阶段那次模型调用仍然可以占满 30 分钟（第 7 章第 16 条的前半部分仍在），这一节只保证到期之后用户能看见"失败了、为什么"。
 
 ## 5 环境
 
@@ -2527,16 +2545,18 @@ flow 108 里 `pg_explain` 取第 4 名，恰好是 agent 先前那条 `explain (
 
 flow 111 只调 `ops_diff`、把 flow 110 采到的 `base-2` 传进去，得到的是"可能已经过期（`ops_baseline` 只保留最近 16 次采样）"。真正的原因不是 16 条上限，而是采样表长在 flow 自己的工具实例上：换一条 flow 就换了一张表。错误信息里那句"16 次"会把人引到上限上，应该直接说"编号只在采集它的那条 flow 里有效，请在同一个任务里先采集再比对"。
 
-### 17. 新会话可能永远停在 `created`
+### 17. 新会话可能长时间停在 `created`
 
-flow 58 / 59 / 60 在 12:26–12:47 之间创建，全部停在 `created`：`reserveFlow` 写完行、`prepareFlow` 起了，但 `CreateFlowWorker` 里的模型调用（`fwc.provs.NewFlowProvider`）没有自己的 deadline。flow 60 的那条连接（宿主机 `127.0.0.1:50723 → 127.0.0.1:18000`，建立于 20:46:42）在 25 分钟后仍然 `Established`，而同时直连网关只要 2.2 秒——一条死连接就足以让 flow 既不前进也不失败，界面上一直显示"创建中"。执行期的 agent 链有 `API call exceeded deadline`，准备期没有。
+flow 58 / 59 / 60 在 12:26–12:47 之间创建，全部停在 `created`：`reserveFlow` 写完行、`prepareFlow` 起了，但 `CreateFlowWorker` 里的模型调用（`fwc.provs.NewFlowProvider`）没有自己的 deadline。flow 60 的那条连接（宿主机 `127.0.0.1:50723 → 127.0.0.1:18000`，建立于 20:46:42）在 25 分钟后仍然 `Established`，而同时直连网关只要 2.2 秒——一条死连接就足以让 flow 在 `flowPrepareTimeout`（30 分钟）之内既不前进也不失败。执行期的 agent 链有 `API call exceeded deadline`，准备期没有。
 
-- 落点：准备阶段对 provider 的调用要带上明确超时（`flowPrepareTimeout` 在 `prepareFlow` 上，但准备内的单次 LLM 调用需要自己的 deadline），超时后把 flow 标 `failed` 并在 `msglogs` 写原因，而不是无限期停在 `created`。
+到期之后"连失败都写不进去"的那一半已经在 4.80 修掉：`failFlow` 不再沿用过期的 ctx，超时的 flow 现在会真的变成 `failed` 并在消息日志里带上原因。
+
+- 落点：准备阶段对 provider 的调用要带上明确超时（`flowPrepareTimeout` 在 `prepareFlow` 上，但准备内的单次 LLM 调用需要自己的 deadline），让一条死连接在几十秒内就把这条 flow 判掉，而不是占满 30 分钟。
 - 验收：断掉网关后建一条 flow，一分钟内变成 `failed` 并带有原因；网关恢复后建一条 flow，正常进入 `running`。
 
 ### 已经关掉的（不再列在上面）
 
-规划器替换（4.6）、性能链路与出口（4.7 / 4.12）、四角色委派（4.7）、seed/run CLI（4.9）、前端结论卡片与测量面板（4.12 / 4.13 / 4.17）、改名（4.10）、`ops_exec` 18 条命令（4.11）、`prom_query`（4.16）、`k8s_get`（4.26）、验收进 CI（4.25 / 4.27）、子任务并行（4.27）、人机回路（4.29）、交付门禁（4.30）、provider 配置桶改名（4.57）、死工具与死执行器（4.58）、文档正文重写（4.59）、镜像变量改名（4.60）、`functions`/`disabled` 死 API（4.61）、`ops_logs` 截断行数（4.72）、k8s 容器状态与 Pod 日志（4.73）、任务运行中的 `ask` 投递（4.74）、`ops_diff` 手抄指纹（4.74）、两条提问同时挂起时的答案路由（4.75）、第一条任务运行中的 `ask` 投递（4.77）、性能差值只来自主机指纹（4.79）。
+规划器替换（4.6）、性能链路与出口（4.7 / 4.12）、四角色委派（4.7）、seed/run CLI（4.9）、前端结论卡片与测量面板（4.12 / 4.13 / 4.17）、改名（4.10）、`ops_exec` 18 条命令（4.11）、`prom_query`（4.16）、`k8s_get`（4.26）、验收进 CI（4.25 / 4.27）、子任务并行（4.27）、人机回路（4.29）、交付门禁（4.30）、provider 配置桶改名（4.57）、死工具与死执行器（4.58）、文档正文重写（4.59）、镜像变量改名（4.60）、`functions`/`disabled` 死 API（4.61）、`ops_logs` 截断行数（4.72）、k8s 容器状态与 Pod 日志（4.73）、任务运行中的 `ask` 投递（4.74）、`ops_diff` 手抄指纹（4.74）、两条提问同时挂起时的答案路由（4.75）、第一条任务运行中的 `ask` 投递（4.77）、性能差值只来自主机指纹（4.79）、准备超时后写不进"失败"（4.80）。
 
 ## 8 踩过的坑
 

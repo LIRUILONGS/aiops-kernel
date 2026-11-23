@@ -354,6 +354,12 @@ func (fc *flowController) prepareFlow(
 }
 
 func (fc *flowController) failFlow(ctx context.Context, flow database.Flow, cause error) {
+	// The caller reaches here with the preparation deadline already spent, so the
+	// context it hands over refuses every write: the flow would stay "created" and
+	// its owner would read a row that never says why nothing happened.
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), flowFinishTimeout)
+	defer cancel()
+
 	logger := logrus.WithContext(ctx).WithField("flow_id", flow.ID)
 	pub := fc.subs.NewFlowPublisher(flow.UserID, flow.ID)
 
