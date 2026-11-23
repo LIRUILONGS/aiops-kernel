@@ -66,6 +66,12 @@ export enum CapabilityMode {
     Shadow = 'shadow',
 }
 
+export enum CapabilityRequestStatus {
+    Approved = 'approved',
+    Denied = 'denied',
+    Pending = 'pending',
+}
+
 export enum CapabilityVerdict {
     Allow = 'allow',
     Deny = 'deny',
@@ -359,6 +365,36 @@ export type FlowCapabilityDecisionsQueryVariables = Exact<{
 }>;
 
 export type FlowCapabilityDecisionsQuery = { capabilityDecisions: Array<CapabilityDecisionFragmentFragment> };
+
+export type CapabilityRequestFragmentFragment = {
+    id: string;
+    flowId: string;
+    subtaskId: string | null;
+    role: string;
+    tool: string;
+    target: string;
+    command: string;
+    shape: string;
+    traceProgram: string;
+    reason: string;
+    status: CapabilityRequestStatus;
+    decidedBy: string;
+    createdAt: string;
+};
+
+export type FlowCapabilityRequestsQueryVariables = Exact<{
+    flowId: string | number;
+    status?: CapabilityRequestStatus | null | undefined;
+}>;
+
+export type FlowCapabilityRequestsQuery = { capabilityRequests: Array<CapabilityRequestFragmentFragment> };
+
+export type DecideCapabilityRequestMutationVariables = Exact<{
+    requestId: string | number;
+    approve: boolean;
+}>;
+
+export type DecideCapabilityRequestMutation = { decideCapabilityRequest: CapabilityRequestFragmentFragment };
 
 export type TerminalFragmentFragment = {
     id: string;
@@ -1636,6 +1672,34 @@ export const CapabilityDecisionFragmentFragmentDoc = {
         },
     ],
 } as unknown as DocumentNode<CapabilityDecisionFragmentFragment, unknown>;
+export const CapabilityRequestFragmentFragmentDoc = {
+    kind: 'Document',
+    definitions: [
+        {
+            kind: 'FragmentDefinition',
+            name: { kind: 'Name', value: 'capabilityRequestFragment' },
+            typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'CapabilityRequest' } },
+            selectionSet: {
+                kind: 'SelectionSet',
+                selections: [
+                    { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'flowId' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'subtaskId' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'tool' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'target' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'command' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'shape' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'traceProgram' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'reason' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'decidedBy' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                ],
+            },
+        },
+    ],
+} as unknown as DocumentNode<CapabilityRequestFragmentFragment, unknown>;
 export const SubtaskFragmentFragmentDoc = {
     kind: 'Document',
     definitions: [
@@ -3404,6 +3468,153 @@ export const FlowCapabilityDecisionsDocument = {
         },
     ],
 } as unknown as DocumentNode<FlowCapabilityDecisionsQuery, FlowCapabilityDecisionsQueryVariables>;
+export const FlowCapabilityRequestsDocument = {
+    kind: 'Document',
+    definitions: [
+        {
+            kind: 'OperationDefinition',
+            operation: 'query',
+            name: { kind: 'Name', value: 'flowCapabilityRequests' },
+            variableDefinitions: [
+                {
+                    kind: 'VariableDefinition',
+                    variable: { kind: 'Variable', name: { kind: 'Name', value: 'flowId' } },
+                    type: { kind: 'NonNullType', type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } } },
+                },
+                {
+                    kind: 'VariableDefinition',
+                    variable: { kind: 'Variable', name: { kind: 'Name', value: 'status' } },
+                    type: { kind: 'NamedType', name: { kind: 'Name', value: 'CapabilityRequestStatus' } },
+                },
+            ],
+            selectionSet: {
+                kind: 'SelectionSet',
+                selections: [
+                    {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'capabilityRequests' },
+                        arguments: [
+                            {
+                                kind: 'Argument',
+                                name: { kind: 'Name', value: 'flowId' },
+                                value: { kind: 'Variable', name: { kind: 'Name', value: 'flowId' } },
+                            },
+                            {
+                                kind: 'Argument',
+                                name: { kind: 'Name', value: 'status' },
+                                value: { kind: 'Variable', name: { kind: 'Name', value: 'status' } },
+                            },
+                        ],
+                        selectionSet: {
+                            kind: 'SelectionSet',
+                            selections: [
+                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'capabilityRequestFragment' } },
+                            ],
+                        },
+                    },
+                ],
+            },
+        },
+        {
+            kind: 'FragmentDefinition',
+            name: { kind: 'Name', value: 'capabilityRequestFragment' },
+            typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'CapabilityRequest' } },
+            selectionSet: {
+                kind: 'SelectionSet',
+                selections: [
+                    { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'flowId' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'subtaskId' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'tool' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'target' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'command' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'shape' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'traceProgram' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'reason' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'decidedBy' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                ],
+            },
+        },
+    ],
+} as unknown as DocumentNode<FlowCapabilityRequestsQuery, FlowCapabilityRequestsQueryVariables>;
+export const DecideCapabilityRequestDocument = {
+    kind: 'Document',
+    definitions: [
+        {
+            kind: 'OperationDefinition',
+            operation: 'mutation',
+            name: { kind: 'Name', value: 'decideCapabilityRequest' },
+            variableDefinitions: [
+                {
+                    kind: 'VariableDefinition',
+                    variable: { kind: 'Variable', name: { kind: 'Name', value: 'requestId' } },
+                    type: { kind: 'NonNullType', type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } } },
+                },
+                {
+                    kind: 'VariableDefinition',
+                    variable: { kind: 'Variable', name: { kind: 'Name', value: 'approve' } },
+                    type: {
+                        kind: 'NonNullType',
+                        type: { kind: 'NamedType', name: { kind: 'Name', value: 'Boolean' } },
+                    },
+                },
+            ],
+            selectionSet: {
+                kind: 'SelectionSet',
+                selections: [
+                    {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'decideCapabilityRequest' },
+                        arguments: [
+                            {
+                                kind: 'Argument',
+                                name: { kind: 'Name', value: 'requestId' },
+                                value: { kind: 'Variable', name: { kind: 'Name', value: 'requestId' } },
+                            },
+                            {
+                                kind: 'Argument',
+                                name: { kind: 'Name', value: 'approve' },
+                                value: { kind: 'Variable', name: { kind: 'Name', value: 'approve' } },
+                            },
+                        ],
+                        selectionSet: {
+                            kind: 'SelectionSet',
+                            selections: [
+                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'capabilityRequestFragment' } },
+                            ],
+                        },
+                    },
+                ],
+            },
+        },
+        {
+            kind: 'FragmentDefinition',
+            name: { kind: 'Name', value: 'capabilityRequestFragment' },
+            typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'CapabilityRequest' } },
+            selectionSet: {
+                kind: 'SelectionSet',
+                selections: [
+                    { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'flowId' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'subtaskId' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'tool' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'target' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'command' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'shape' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'traceProgram' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'reason' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'decidedBy' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                ],
+            },
+        },
+    ],
+} as unknown as DocumentNode<DecideCapabilityRequestMutation, DecideCapabilityRequestMutationVariables>;
 export const FlowsDocument = {
     kind: 'Document',
     definitions: [

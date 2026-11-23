@@ -13,6 +13,209 @@ import (
 	"github.com/lib/pq"
 )
 
+const createCapabilityGrant = `-- name: CreateCapabilityGrant :one
+INSERT INTO capability_grants (
+  flow_id, subtask_id, request_id, role, tool, target, command, shape, trace_program, reason, issued_by, expires_at
+)
+VALUES (
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+)
+RETURNING id, flow_id, subtask_id, request_id, role, tool, target, command, shape, trace_program, reason, issued_by, expires_at, created_at
+`
+
+type CreateCapabilityGrantParams struct {
+	FlowID       int64         `json:"flow_id"`
+	SubtaskID    sql.NullInt64 `json:"subtask_id"`
+	RequestID    sql.NullInt64 `json:"request_id"`
+	Role         string        `json:"role"`
+	Tool         string        `json:"tool"`
+	Target       string        `json:"target"`
+	Command      string        `json:"command"`
+	Shape        string        `json:"shape"`
+	TraceProgram string        `json:"trace_program"`
+	Reason       string        `json:"reason"`
+	IssuedBy     string        `json:"issued_by"`
+	ExpiresAt    time.Time     `json:"expires_at"`
+}
+
+func (q *Queries) CreateCapabilityGrant(ctx context.Context, arg CreateCapabilityGrantParams) (CapabilityGrant, error) {
+	row := q.db.QueryRowContext(ctx, createCapabilityGrant,
+		arg.FlowID,
+		arg.SubtaskID,
+		arg.RequestID,
+		arg.Role,
+		arg.Tool,
+		arg.Target,
+		arg.Command,
+		arg.Shape,
+		arg.TraceProgram,
+		arg.Reason,
+		arg.IssuedBy,
+		arg.ExpiresAt,
+	)
+	var i CapabilityGrant
+	err := row.Scan(
+		&i.ID,
+		&i.FlowID,
+		&i.SubtaskID,
+		&i.RequestID,
+		&i.Role,
+		&i.Tool,
+		&i.Target,
+		&i.Command,
+		&i.Shape,
+		&i.TraceProgram,
+		&i.Reason,
+		&i.IssuedBy,
+		&i.ExpiresAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const createCapabilityRequest = `-- name: CreateCapabilityRequest :one
+INSERT INTO capability_requests (
+  flow_id, subtask_id, role, tool, target, command, shape, trace_program, reason
+)
+VALUES (
+  $1, $2, $3, $4, $5, $6, $7, $8, $9
+)
+RETURNING id, flow_id, subtask_id, role, tool, target, command, shape, trace_program, reason, status, decided_by, decided_at, created_at
+`
+
+type CreateCapabilityRequestParams struct {
+	FlowID       int64         `json:"flow_id"`
+	SubtaskID    sql.NullInt64 `json:"subtask_id"`
+	Role         string        `json:"role"`
+	Tool         string        `json:"tool"`
+	Target       string        `json:"target"`
+	Command      string        `json:"command"`
+	Shape        string        `json:"shape"`
+	TraceProgram string        `json:"trace_program"`
+	Reason       string        `json:"reason"`
+}
+
+func (q *Queries) CreateCapabilityRequest(ctx context.Context, arg CreateCapabilityRequestParams) (CapabilityRequest, error) {
+	row := q.db.QueryRowContext(ctx, createCapabilityRequest,
+		arg.FlowID,
+		arg.SubtaskID,
+		arg.Role,
+		arg.Tool,
+		arg.Target,
+		arg.Command,
+		arg.Shape,
+		arg.TraceProgram,
+		arg.Reason,
+	)
+	var i CapabilityRequest
+	err := row.Scan(
+		&i.ID,
+		&i.FlowID,
+		&i.SubtaskID,
+		&i.Role,
+		&i.Tool,
+		&i.Target,
+		&i.Command,
+		&i.Shape,
+		&i.TraceProgram,
+		&i.Reason,
+		&i.Status,
+		&i.DecidedBy,
+		&i.DecidedAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const decideCapabilityRequest = `-- name: DecideCapabilityRequest :one
+UPDATE capability_requests
+SET status = $2,
+    decided_by = $3,
+    decided_at = now()
+WHERE id = $1
+  AND status = 'pending'
+RETURNING id, flow_id, subtask_id, role, tool, target, command, shape, trace_program, reason, status, decided_by, decided_at, created_at
+`
+
+type DecideCapabilityRequestParams struct {
+	ID        int64  `json:"id"`
+	Status    string `json:"status"`
+	DecidedBy string `json:"decided_by"`
+}
+
+func (q *Queries) DecideCapabilityRequest(ctx context.Context, arg DecideCapabilityRequestParams) (CapabilityRequest, error) {
+	row := q.db.QueryRowContext(ctx, decideCapabilityRequest, arg.ID, arg.Status, arg.DecidedBy)
+	var i CapabilityRequest
+	err := row.Scan(
+		&i.ID,
+		&i.FlowID,
+		&i.SubtaskID,
+		&i.Role,
+		&i.Tool,
+		&i.Target,
+		&i.Command,
+		&i.Shape,
+		&i.TraceProgram,
+		&i.Reason,
+		&i.Status,
+		&i.DecidedBy,
+		&i.DecidedAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const findPendingCapabilityRequest = `-- name: FindPendingCapabilityRequest :one
+SELECT id, flow_id, subtask_id, role, tool, target, command, shape, trace_program, reason, status, decided_by, decided_at, created_at FROM capability_requests
+WHERE flow_id = $1
+  AND status = 'pending'
+  AND tool = $2
+  AND target = $3
+  AND command = $4
+  AND shape = $5
+  AND trace_program = $6
+ORDER BY created_at DESC
+LIMIT 1
+`
+
+type FindPendingCapabilityRequestParams struct {
+	FlowID       int64  `json:"flow_id"`
+	Tool         string `json:"tool"`
+	Target       string `json:"target"`
+	Command      string `json:"command"`
+	Shape        string `json:"shape"`
+	TraceProgram string `json:"trace_program"`
+}
+
+func (q *Queries) FindPendingCapabilityRequest(ctx context.Context, arg FindPendingCapabilityRequestParams) (CapabilityRequest, error) {
+	row := q.db.QueryRowContext(ctx, findPendingCapabilityRequest,
+		arg.FlowID,
+		arg.Tool,
+		arg.Target,
+		arg.Command,
+		arg.Shape,
+		arg.TraceProgram,
+	)
+	var i CapabilityRequest
+	err := row.Scan(
+		&i.ID,
+		&i.FlowID,
+		&i.SubtaskID,
+		&i.Role,
+		&i.Tool,
+		&i.Target,
+		&i.Command,
+		&i.Shape,
+		&i.TraceProgram,
+		&i.Reason,
+		&i.Status,
+		&i.DecidedBy,
+		&i.DecidedAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getCapabilityLease = `-- name: GetCapabilityLease :one
 SELECT id, flow_id, subtask_id, role, mode, targets, tools, commands, shapes, trace_programs, issued_by, expires_at, created_at FROM capability_leases WHERE subtask_id = $1
 `
@@ -33,6 +236,32 @@ func (q *Queries) GetCapabilityLease(ctx context.Context, subtaskID int64) (Capa
 		pq.Array(&i.TracePrograms),
 		&i.IssuedBy,
 		&i.ExpiresAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getCapabilityRequest = `-- name: GetCapabilityRequest :one
+SELECT id, flow_id, subtask_id, role, tool, target, command, shape, trace_program, reason, status, decided_by, decided_at, created_at FROM capability_requests WHERE id = $1
+`
+
+func (q *Queries) GetCapabilityRequest(ctx context.Context, id int64) (CapabilityRequest, error) {
+	row := q.db.QueryRowContext(ctx, getCapabilityRequest, id)
+	var i CapabilityRequest
+	err := row.Scan(
+		&i.ID,
+		&i.FlowID,
+		&i.SubtaskID,
+		&i.Role,
+		&i.Tool,
+		&i.Target,
+		&i.Command,
+		&i.Shape,
+		&i.TraceProgram,
+		&i.Reason,
+		&i.Status,
+		&i.DecidedBy,
+		&i.DecidedAt,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -100,6 +329,51 @@ func (q *Queries) GetOrCreateCapabilityLease(ctx context.Context, arg GetOrCreat
 	return i, err
 }
 
+const listActiveCapabilityGrants = `-- name: ListActiveCapabilityGrants :many
+SELECT id, flow_id, subtask_id, request_id, role, tool, target, command, shape, trace_program, reason, issued_by, expires_at, created_at FROM capability_grants
+WHERE flow_id = $1
+  AND expires_at > now()
+ORDER BY created_at DESC
+`
+
+func (q *Queries) ListActiveCapabilityGrants(ctx context.Context, flowID int64) ([]CapabilityGrant, error) {
+	rows, err := q.db.QueryContext(ctx, listActiveCapabilityGrants, flowID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CapabilityGrant
+	for rows.Next() {
+		var i CapabilityGrant
+		if err := rows.Scan(
+			&i.ID,
+			&i.FlowID,
+			&i.SubtaskID,
+			&i.RequestID,
+			&i.Role,
+			&i.Tool,
+			&i.Target,
+			&i.Command,
+			&i.Shape,
+			&i.TraceProgram,
+			&i.Reason,
+			&i.IssuedBy,
+			&i.ExpiresAt,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listCapabilityDecisions = `-- name: ListCapabilityDecisions :many
 SELECT id, flow_id, subtask_id, lease_id, role, tool, target, command, verdict, reason, created_at FROM capability_decisions
 WHERE flow_id = $1
@@ -134,6 +408,58 @@ func (q *Queries) ListCapabilityDecisions(ctx context.Context, arg ListCapabilit
 			&i.Command,
 			&i.Verdict,
 			&i.Reason,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listCapabilityRequests = `-- name: ListCapabilityRequests :many
+SELECT id, flow_id, subtask_id, role, tool, target, command, shape, trace_program, reason, status, decided_by, decided_at, created_at FROM capability_requests
+WHERE flow_id = $1
+  AND ($2::text IS NULL OR status = $2::text)
+ORDER BY created_at DESC, id DESC
+LIMIT $3
+`
+
+type ListCapabilityRequestsParams struct {
+	FlowID   int64          `json:"flow_id"`
+	Status   sql.NullString `json:"status"`
+	RowLimit int64          `json:"row_limit"`
+}
+
+func (q *Queries) ListCapabilityRequests(ctx context.Context, arg ListCapabilityRequestsParams) ([]CapabilityRequest, error) {
+	rows, err := q.db.QueryContext(ctx, listCapabilityRequests, arg.FlowID, arg.Status, arg.RowLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CapabilityRequest
+	for rows.Next() {
+		var i CapabilityRequest
+		if err := rows.Scan(
+			&i.ID,
+			&i.FlowID,
+			&i.SubtaskID,
+			&i.Role,
+			&i.Tool,
+			&i.Target,
+			&i.Command,
+			&i.Shape,
+			&i.TraceProgram,
+			&i.Reason,
+			&i.Status,
+			&i.DecidedBy,
+			&i.DecidedAt,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err

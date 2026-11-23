@@ -163,6 +163,70 @@ func (r *mutationResolver) StopFlow(ctx context.Context, flowID int64) (model.Re
 	return model.ResultTypeSuccess, nil
 }
 
+// DecideCapabilityRequest is the resolver for the decideCapabilityRequest field.
+func (r *mutationResolver) DecideCapabilityRequest(ctx context.Context, requestID int64, approve bool) (*model.CapabilityRequest, error) {
+	request, err := r.DB.GetCapabilityRequest(ctx, requestID)
+	if err != nil {
+		return nil, err
+	}
+
+	uid, err := validatePermissionWithFlowID(ctx, "flows.edit", request.FlowID, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	decidedBy := fmt.Sprintf("%d", uid)
+	status := string(model.CapabilityRequestStatusDenied)
+	if approve {
+		status = string(model.CapabilityRequestStatusApproved)
+	}
+
+	decided, err := r.DB.DecideCapabilityRequest(ctx, database.DecideCapabilityRequestParams{
+		ID:        requestID,
+		Status:    status,
+		DecidedBy: decidedBy,
+	})
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("capability request %d is no longer pending", requestID)
+		}
+
+		return nil, err
+	}
+
+	if !approve {
+		return converter.ConvertCapabilityRequest(decided), nil
+	}
+
+	_, err = r.DB.CreateCapabilityGrant(ctx, database.CreateCapabilityGrantParams{
+		FlowID:       request.FlowID,
+		SubtaskID:    request.SubtaskID,
+		RequestID:    sql.NullInt64{Int64: request.ID, Valid: true},
+		Role:         request.Role,
+		Tool:         request.Tool,
+		Target:       request.Target,
+		Command:      request.Command,
+		Shape:        request.Shape,
+		TraceProgram: request.TraceProgram,
+		Reason:       request.Reason,
+		IssuedBy:     decidedBy,
+		ExpiresAt:    time.Now().Add(capabilityApprovalTTL),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	r.Logger.WithFields(logrus.Fields{
+		"uid":     uid,
+		"flow":    request.FlowID,
+		"tool":    request.Tool,
+		"target":  request.Target,
+		"command": request.Command,
+	}).Info("capability: approval granted")
+
+	return converter.ConvertCapabilityRequest(decided), nil
+}
+
 // FinishFlow is the resolver for the finishFlow field.
 func (r *mutationResolver) FinishFlow(ctx context.Context, flowID int64) (model.ResultType, error) {
 	uid, err := validatePermissionWithFlowID(ctx, "flows.edit", flowID, r.DB)
@@ -1598,13 +1662,7 @@ func (r *queryResolver) CapabilityDecisions(ctx context.Context, flowID int64, v
 		"flow": flowID,
 	}).Debug("get capability decisions")
 
-	requested := capabilityDecisionsDefaultLimit
-	if limit != nil && *limit > 0 {
-		requested = *limit
-	}
-	if requested > capabilityDecisionsMaxLimit {
-		requested = capabilityDecisionsMaxLimit
-	}
+	requested := clampCapabilityRowLimit(limit)
 
 	filter := sql.NullString{}
 	if verdict != nil {
@@ -1621,6 +1679,55 @@ func (r *queryResolver) CapabilityDecisions(ctx context.Context, flowID int64, v
 	}
 
 	return converter.ConvertCapabilityDecisions(decisions), nil
+}
+
+// CapabilityRequests is the resolver for the capabilityRequests field.
+func (r *queryResolver) CapabilityRequests(ctx context.Context, flowID int64, status *model.CapabilityRequestStatus, limit *int) ([]*model.CapabilityRequest, error) {
+	uid, err := validatePermissionWithFlowID(ctx, "flows.view", flowID, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	r.Logger.WithFields(logrus.Fields{
+		"uid":  uid,
+		"flow": flowID,
+	}).Debug("get capability requests")
+
+	filter := sql.NullString{}
+	if status != nil {
+		filter = sql.NullString{String: string(*status), Valid: true}
+	}
+
+	requests, err := r.DB.ListCapabilityRequests(ctx, database.ListCapabilityRequestsParams{
+		FlowID:   flowID,
+		Status:   filter,
+		RowLimit: int64(clampCapabilityRowLimit(limit)),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return converter.ConvertCapabilityRequests(requests), nil
+}
+
+// CapabilityGrants is the resolver for the capabilityGrants field.
+func (r *queryResolver) CapabilityGrants(ctx context.Context, flowID int64) ([]*model.CapabilityGrant, error) {
+	uid, err := validatePermissionWithFlowID(ctx, "flows.view", flowID, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	r.Logger.WithFields(logrus.Fields{
+		"uid":  uid,
+		"flow": flowID,
+	}).Debug("get capability grants")
+
+	grants, err := r.DB.ListActiveCapabilityGrants(ctx, flowID)
+	if err != nil {
+		return nil, err
+	}
+
+	return converter.ConvertCapabilityGrants(grants), nil
 }
 
 // SearchLogs is the resolver for the searchLogs field.

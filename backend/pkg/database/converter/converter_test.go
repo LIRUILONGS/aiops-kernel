@@ -49,6 +49,14 @@ func TestConverter_ConvertCapabilityMode_FallsBackToOffForAValueTheSchemaCannotR
 	assert.Equal(t, model.CapabilityModeOff, ConvertCapabilityMode(""))
 }
 
+func TestConverter_ConvertCapabilityRequestStatus_ReadsAnythingUnrecognisedAsPending(t *testing.T) {
+	assert.Equal(t, model.CapabilityRequestStatusApproved, ConvertCapabilityRequestStatus("approved"))
+	assert.Equal(t, model.CapabilityRequestStatusDenied, ConvertCapabilityRequestStatus("denied"))
+	assert.Equal(t, model.CapabilityRequestStatusPending, ConvertCapabilityRequestStatus("pending"))
+	assert.Equal(t, model.CapabilityRequestStatusPending, ConvertCapabilityRequestStatus("escalated"))
+	assert.Equal(t, model.CapabilityRequestStatusPending, ConvertCapabilityRequestStatus(""))
+}
+
 func TestConverter_IsAgentTool_RecognisesAgentResultTools(t *testing.T) {
 	tests := []struct {
 		name          string

@@ -646,3 +646,112 @@ func TestSchemaResolvers_CapabilityDecisions_KeepsAnotherUsersLogOutOfReach(t *t
 	require.ErrorIs(t, err, ErrForbidden)
 	assert.Empty(t, db.decisionQueries)
 }
+
+func TestSchemaResolvers_CapabilityRequests_HandsTheStatusFilterAndTheClampedLimitToTheQuery(t *testing.T) {
+	db := &graphDB{
+		flowOwner: 1,
+		requests: []database.CapabilityRequest{{
+			ID:        4,
+			FlowID:    5,
+			SubtaskID: sql.NullInt64{Int64: 3, Valid: true},
+			Role:      "log_analyst",
+			Tool:      "ops_exec",
+			Target:    "prod",
+			Command:   "unit_logs",
+			Shape:     "probe",
+			Reason:    "目标主机 prod 不在这个子任务的租约里",
+			Status:    "pending",
+			CreatedAt: time.Date(2026, 1, 15, 11, 30, 0, 0, time.UTC),
+		}},
+	}
+	pending := model.CapabilityRequestStatusPending
+	tooMany := 5000
+
+	got, err := graphResolver(db).Query().CapabilityRequests(graphSessionContext("flows.view"), 5, &pending, &tooMany)
+	require.NoError(t, err)
+
+	require.Len(t, db.requestQueries, 1)
+	assert.Equal(t, database.ListCapabilityRequestsParams{
+		FlowID:   5,
+		Status:   sql.NullString{String: "pending", Valid: true},
+		RowLimit: 1000,
+	}, db.requestQueries[0])
+
+	require.Len(t, got, 1)
+	assert.Equal(t, model.CapabilityRequestStatusPending, got[0].Status)
+	assert.Equal(t, "prod", got[0].Target)
+	require.NotNil(t, got[0].SubtaskID)
+	assert.Equal(t, int64(3), *got[0].SubtaskID)
+}
+
+func TestSchemaResolvers_DecideCapabilityRequest_WritesTheGrantAnApprovalStandsFor(t *testing.T) {
+	db := &graphDB{
+		flowOwner: 1,
+		request: database.CapabilityRequest{
+			ID:           4,
+			FlowID:       5,
+			SubtaskID:    sql.NullInt64{Int64: 3, Valid: true},
+			Role:         "log_analyst",
+			Tool:         "ops_exec",
+			Target:       "prod",
+			Command:      "unit_logs",
+			Shape:        "probe",
+			TraceProgram: "",
+			Reason:       "目标主机 prod 不在这个子任务的租约里",
+			Status:       "pending",
+		},
+	}
+
+	got, err := graphResolver(db).Mutation().DecideCapabilityRequest(graphSessionContext("flows.edit"), 4, true)
+	require.NoError(t, err)
+
+	require.Len(t, db.decided, 1)
+	assert.Equal(t, "approved", db.decided[0].Status)
+	assert.Equal(t, "1", db.decided[0].DecidedBy)
+
+	require.Len(t, db.createdGrants, 1)
+	grant := db.createdGrants[0]
+	assert.Equal(t, int64(5), grant.FlowID)
+	assert.Equal(t, int64(4), grant.RequestID.Int64)
+	assert.Equal(t, "ops_exec", grant.Tool)
+	assert.Equal(t, "prod", grant.Target)
+	assert.Equal(t, "unit_logs", grant.Command)
+	assert.Equal(t, "1", grant.IssuedBy)
+	assert.True(t, grant.ExpiresAt.After(time.Now().Add(3*time.Hour)), "an approval must outlive the turn it was given in")
+
+	assert.Equal(t, model.CapabilityRequestStatusApproved, got.Status)
+}
+
+func TestSchemaResolvers_DecideCapabilityRequest_RefusesWithoutTheGrantWhenAnOperatorSaysNo(t *testing.T) {
+	db := &graphDB{
+		flowOwner: 1,
+		request: database.CapabilityRequest{
+			ID:     4,
+			FlowID: 5,
+			Tool:   "ops_exec",
+			Target: "prod",
+			Status: "pending",
+		},
+	}
+
+	got, err := graphResolver(db).Mutation().DecideCapabilityRequest(graphSessionContext("flows.edit"), 4, false)
+	require.NoError(t, err)
+
+	require.Len(t, db.decided, 1)
+	assert.Equal(t, "denied", db.decided[0].Status)
+	assert.Empty(t, db.createdGrants, "a refusal must not leave a grant behind")
+	assert.Equal(t, model.CapabilityRequestStatusDenied, got.Status)
+}
+
+func TestSchemaResolvers_DecideCapabilityRequest_KeepsAnotherOperatorsFlowOutOfReach(t *testing.T) {
+	db := &graphDB{
+		flowOwner: 2,
+		request:   database.CapabilityRequest{ID: 4, FlowID: 5, Status: "pending"},
+	}
+
+	_, err := graphResolver(db).Mutation().DecideCapabilityRequest(graphSessionContext("flows.edit"), 4, true)
+
+	require.ErrorIs(t, err, ErrForbidden)
+	assert.Empty(t, db.decided)
+	assert.Empty(t, db.createdGrants)
+}

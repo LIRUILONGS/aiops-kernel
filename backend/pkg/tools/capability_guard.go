@@ -3,30 +3,51 @@ package tools
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"opsagi/pkg/capability"
 	"opsagi/pkg/opsremote"
 )
 
+// CapabilityGuardOptions are the seams the guard needs. Every one of them is
+// optional: a guard with nothing but a lease still enforces, it simply cannot
+// audit, cannot read approvals and cannot ask for one.
+type CapabilityGuardOptions struct {
+	Lease *capability.Lease
+	Mode  capability.Mode
+	// Grants is read on every call, not once per subtask, so an approval given
+	// while the subtask is running lifts the very next attempt.
+	Grants func(ctx context.Context) []capability.Grant
+	Record func(ctx context.Context, call capability.Call, decision capability.Decision)
+	// Request files a pending approval and returns its id, which the refusal
+	// quotes so the operator and the model name the same thing.
+	Request func(ctx context.Context, call capability.Call, reason string) (int64, error)
+}
+
 // CapabilityGuard is the one place a flow's lease is turned into a decision
 // about a tool call. It is an aspect: it wraps handlers, knows nothing about
 // what they do, and is not installed at all when the flow's mode is off.
 type CapabilityGuard struct {
-	lease  *capability.Lease
-	mode   capability.Mode
-	record func(ctx context.Context, call capability.Call, decision capability.Decision)
-	now    func() time.Time
+	lease   *capability.Lease
+	mode    capability.Mode
+	grants  func(ctx context.Context) []capability.Grant
+	record  func(ctx context.Context, call capability.Call, decision capability.Decision)
+	request func(ctx context.Context, call capability.Call, reason string) (int64, error)
+	now     func() time.Time
 }
 
 // NewCapabilityGuard builds the guard for one subtask. A nil record sink is
 // allowed: the decision is still enforced, it is simply not audited.
-func NewCapabilityGuard(
-	lease *capability.Lease,
-	mode capability.Mode,
-	record func(ctx context.Context, call capability.Call, decision capability.Decision),
-) *CapabilityGuard {
-	return &CapabilityGuard{lease: lease, mode: mode, record: record, now: time.Now}
+func NewCapabilityGuard(opts CapabilityGuardOptions) *CapabilityGuard {
+	return &CapabilityGuard{
+		lease:   opts.Lease,
+		mode:    opts.Mode,
+		grants:  opts.Grants,
+		record:  opts.Record,
+		request: opts.Request,
+		now:     time.Now,
+	}
 }
 
 // Apply wraps the evidence handlers with the lease check. It returns the map
@@ -56,7 +77,7 @@ func (g *CapabilityGuard) Apply(handlers map[string]ExecutorHandler, except map[
 func (g *CapabilityGuard) wrap(name string, handler ExecutorHandler) ExecutorHandler {
 	return func(ctx context.Context, toolName string, args json.RawMessage) (string, error) {
 		call := extractCapabilityCall(name, args)
-		decision := g.authorize(call)
+		decision := g.authorize(ctx, call)
 
 		if g.record != nil {
 			g.record(ctx, call, decision.ForRecord(g.mode))
@@ -66,13 +87,29 @@ func (g *CapabilityGuard) wrap(name string, handler ExecutorHandler) ExecutorHan
 			return handler(ctx, toolName, args)
 		}
 
-		return "", Refuse("%s", decision.Reason)
+		return "", Refuse("%s", g.refusal(ctx, call, decision))
 	}
+}
+
+// refusal turns a denial into the sentence the model reads. A denial an operator
+// can lift is filed first, so the model's next attempt can say which request it
+// is waiting on; a tool the role never held is not something to ask for.
+func (g *CapabilityGuard) refusal(ctx context.Context, call capability.Call, decision capability.Decision) string {
+	if !decision.NeedsApproval || g.request == nil {
+		return decision.Reason
+	}
+
+	id, err := g.request(ctx, call, decision.Reason)
+	if err != nil {
+		return decision.Reason
+	}
+
+	return fmt.Sprintf("%s。已提交审批 #%d，操作员批准后重试即可", decision.Reason, id)
 }
 
 // authorize adds the one check the lease cannot make on its own: an empty
 // target means the default host, which is only in scope when the lease is open.
-func (g *CapabilityGuard) authorize(call capability.Call) capability.Decision {
+func (g *CapabilityGuard) authorize(ctx context.Context, call capability.Call) capability.Decision {
 	if call.Target == "" && callNeedsTarget(call.Tool) && !capability.HasWildcard(g.lease.Targets) {
 		return capability.Decision{
 			Verdict: capability.VerdictDeny,
@@ -80,7 +117,12 @@ func (g *CapabilityGuard) authorize(call capability.Call) capability.Decision {
 		}
 	}
 
-	return g.lease.Authorize(call, g.now())
+	var grants []capability.Grant
+	if g.grants != nil {
+		grants = g.grants(ctx)
+	}
+
+	return g.lease.Authorize(call, g.now(), grants...)
 }
 
 // callNeedsTarget reports whether a tool talks to a configured host, and so has

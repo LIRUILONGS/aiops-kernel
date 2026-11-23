@@ -920,6 +920,23 @@ type CapabilityDecision struct {
 	CreatedAt time.Time     `json:"created_at"`
 }
 
+type CapabilityGrant struct {
+	ID           int64         `json:"id"`
+	FlowID       int64         `json:"flow_id"`
+	SubtaskID    sql.NullInt64 `json:"subtask_id"`
+	RequestID    sql.NullInt64 `json:"request_id"`
+	Role         string        `json:"role"`
+	Tool         string        `json:"tool"`
+	Target       string        `json:"target"`
+	Command      string        `json:"command"`
+	Shape        string        `json:"shape"`
+	TraceProgram string        `json:"trace_program"`
+	Reason       string        `json:"reason"`
+	IssuedBy     string        `json:"issued_by"`
+	ExpiresAt    time.Time     `json:"expires_at"`
+	CreatedAt    time.Time     `json:"created_at"`
+}
+
 type CapabilityLease struct {
 	ID            int64     `json:"id"`
 	FlowID        int64     `json:"flow_id"`
@@ -934,6 +951,23 @@ type CapabilityLease struct {
 	IssuedBy      string    `json:"issued_by"`
 	ExpiresAt     time.Time `json:"expires_at"`
 	CreatedAt     time.Time `json:"created_at"`
+}
+
+type CapabilityRequest struct {
+	ID           int64         `json:"id"`
+	FlowID       int64         `json:"flow_id"`
+	SubtaskID    sql.NullInt64 `json:"subtask_id"`
+	Role         string        `json:"role"`
+	Tool         string        `json:"tool"`
+	Target       string        `json:"target"`
+	Command      string        `json:"command"`
+	Shape        string        `json:"shape"`
+	TraceProgram string        `json:"trace_program"`
+	Reason       string        `json:"reason"`
+	Status       string        `json:"status"`
+	DecidedBy    string        `json:"decided_by"`
+	DecidedAt    sql.NullTime  `json:"decided_at"`
+	CreatedAt    time.Time     `json:"created_at"`
 }
 
 type Container struct {

@@ -82,6 +82,10 @@ const (
 type Decision struct {
 	Verdict Verdict
 	Reason  string
+	// NeedsApproval marks a denial an operator can lift: the call is outside the
+	// lease in a dimension a grant can name, so the guard files a request instead
+	// of only refusing. A missing tool or an expired lease cannot be granted.
+	NeedsApproval bool
 }
 
 // Allowed reports whether the call may proceed.
@@ -103,9 +107,68 @@ func deny(format string, args ...any) Decision {
 	return Decision{Verdict: VerdictDeny, Reason: fmt.Sprintf(format, args...)}
 }
 
-// Authorize judges one call against the lease. An empty lease list is a denial,
-// not a wildcard: a lease that names nothing permits nothing.
-func (l *Lease) Authorize(call Call, now time.Time) Decision {
+func denyWithApproval(format string, args ...any) Decision {
+	decision := deny(format, args...)
+	decision.NeedsApproval = true
+
+	return decision
+}
+
+// Grant is one operator approval: a call the lease does not cover, allowed until
+// it expires. The guard reads grants on every call, so an approval given while a
+// subtask is running takes effect on its next attempt instead of the next
+// subtask.
+type Grant struct {
+	ID           int64
+	Tool         string
+	Target       string
+	Command      string
+	Shape        string
+	TraceProgram string
+	Reason       string
+	IssuedBy     string
+	ExpiresAt    time.Time
+}
+
+// Permits reports whether this approval covers the call. Every dimension the
+// grant names must match; an empty one is not a restriction.
+func (g Grant) Permits(call Call) bool {
+	if g.Tool != "" && g.Tool != call.Tool {
+		return false
+	}
+
+	for _, pair := range [][2]string{
+		{g.Command, call.Command},
+		{g.Shape, call.Shape},
+		{g.Target, call.Target},
+		{g.TraceProgram, call.TraceProgram},
+	} {
+		if pair[0] != "" && pair[0] != "*" && pair[0] != pair[1] {
+			return false
+		}
+	}
+
+	return true
+}
+
+// ApprovedBy reports whether one of the grants covers the call right now.
+func ApprovedBy(grants []Grant, call Call, now time.Time) bool {
+	for _, grant := range grants {
+		if !grant.ExpiresAt.IsZero() && !now.Before(grant.ExpiresAt) {
+			continue
+		}
+		if grant.Permits(call) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// Authorize judges one call against the lease and the approvals lifted since it
+// was issued. An empty lease list is a denial, not a wildcard: a lease that names
+// nothing permits nothing.
+func (l *Lease) Authorize(call Call, now time.Time, grants ...Grant) Decision {
 	if l == nil {
 		return deny("这个子任务没有能力租约，按缺省拒绝处理")
 	}
@@ -118,23 +181,47 @@ func (l *Lease) Authorize(call Call, now time.Time) Decision {
 		return deny("工具 %s 不在这个子任务的租约里（允许：%s）", call.Tool, describe(l.Tools))
 	}
 
-	if call.Target != "" && !permits(l.Targets, call.Target) {
-		return deny("目标主机 %s 不在这个子任务的租约里（允许：%s），换一台主机需要操作员批准", call.Target, describe(l.Targets))
+	if decision := judge(call, grants, now, l.Targets, call.Target,
+		"目标主机 %s 不在这个子任务的租约里（允许：%s），换一台主机需要操作员批准"); decision != nil {
+		return *decision
 	}
 
-	if call.Command != "" && !permits(l.Commands, call.Command) {
-		return deny("只读命令 %s 不在这个子任务的租约里（允许：%s）", call.Command, describe(l.Commands))
+	if decision := judge(call, grants, now, l.Commands, call.Command,
+		"只读命令 %s 不在这个子任务的租约里（允许：%s），换一条命令需要操作员批准"); decision != nil {
+		return *decision
 	}
 
-	if call.Shape != "" && !permits(l.Shapes, call.Shape) {
-		return deny("采集容器形状 %s 不在这个子任务的租约里（允许：%s），换形状需要操作员批准", call.Shape, describe(l.Shapes))
+	if decision := judge(call, grants, now, l.Shapes, call.Shape,
+		"采集容器形状 %s 不在这个子任务的租约里（允许：%s），换形状需要操作员批准"); decision != nil {
+		return *decision
 	}
 
-	if call.TraceProgram != "" && !permits(l.TracePrograms, call.TraceProgram) {
-		return deny("eBPF 程序 %s 不在这个子任务的租约里（允许：%s）", call.TraceProgram, describe(l.TracePrograms))
+	if decision := judge(call, grants, now, l.TracePrograms, call.TraceProgram,
+		"eBPF 程序 %s 不在这个子任务的租约里（允许：%s），换一个程序需要操作员批准"); decision != nil {
+		return *decision
 	}
 
 	return allow()
+}
+
+// judge decides one dimension: nil when the value is empty or permitted, an
+// allow when a grant lifts the refusal, and the refusal otherwise.
+func judge(
+	call Call, grants []Grant, now time.Time, allowed []string, value, refusal string,
+) *Decision {
+	if value == "" || permits(allowed, value) {
+		return nil
+	}
+
+	if ApprovedBy(grants, call, now) {
+		decision := allow()
+
+		return &decision
+	}
+
+	decision := denyWithApproval(refusal, value, describe(allowed))
+
+	return &decision
 }
 
 func permits(allowed []string, value string) bool {

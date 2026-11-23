@@ -146,6 +146,39 @@ type CapabilityDecision struct {
 	CreatedAt time.Time         `json:"createdAt"`
 }
 
+type CapabilityGrant struct {
+	ID           int64     `json:"id"`
+	FlowID       int64     `json:"flowId"`
+	SubtaskID    *int64    `json:"subtaskId,omitempty"`
+	RequestID    *int64    `json:"requestId,omitempty"`
+	Tool         string    `json:"tool"`
+	Target       string    `json:"target"`
+	Command      string    `json:"command"`
+	Shape        string    `json:"shape"`
+	TraceProgram string    `json:"traceProgram"`
+	Reason       string    `json:"reason"`
+	IssuedBy     string    `json:"issuedBy"`
+	ExpiresAt    time.Time `json:"expiresAt"`
+	CreatedAt    time.Time `json:"createdAt"`
+}
+
+type CapabilityRequest struct {
+	ID           int64                   `json:"id"`
+	FlowID       int64                   `json:"flowId"`
+	SubtaskID    *int64                  `json:"subtaskId,omitempty"`
+	Role         string                  `json:"role"`
+	Tool         string                  `json:"tool"`
+	Target       string                  `json:"target"`
+	Command      string                  `json:"command"`
+	Shape        string                  `json:"shape"`
+	TraceProgram string                  `json:"traceProgram"`
+	Reason       string                  `json:"reason"`
+	Status       CapabilityRequestStatus `json:"status"`
+	DecidedBy    string                  `json:"decidedBy"`
+	DecidedAt    *time.Time              `json:"decidedAt,omitempty"`
+	CreatedAt    time.Time               `json:"createdAt"`
+}
+
 type CreateAPITokenInput struct {
 	Name *string `json:"name,omitempty"`
 	TTL  int     `json:"ttl"`
@@ -844,6 +877,49 @@ func (e *CapabilityMode) UnmarshalGQL(v interface{}) error {
 }
 
 func (e CapabilityMode) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type CapabilityRequestStatus string
+
+const (
+	CapabilityRequestStatusPending  CapabilityRequestStatus = "pending"
+	CapabilityRequestStatusApproved CapabilityRequestStatus = "approved"
+	CapabilityRequestStatusDenied   CapabilityRequestStatus = "denied"
+)
+
+var AllCapabilityRequestStatus = []CapabilityRequestStatus{
+	CapabilityRequestStatusPending,
+	CapabilityRequestStatusApproved,
+	CapabilityRequestStatusDenied,
+}
+
+func (e CapabilityRequestStatus) IsValid() bool {
+	switch e {
+	case CapabilityRequestStatusPending, CapabilityRequestStatusApproved, CapabilityRequestStatusDenied:
+		return true
+	}
+	return false
+}
+
+func (e CapabilityRequestStatus) String() string {
+	return string(e)
+}
+
+func (e *CapabilityRequestStatus) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = CapabilityRequestStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid CapabilityRequestStatus", str)
+	}
+	return nil
+}
+
+func (e CapabilityRequestStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

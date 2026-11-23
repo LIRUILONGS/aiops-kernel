@@ -54,6 +54,34 @@ query flowCapabilityDecisions($flowId: ID!, $verdict: CapabilityVerdict, $limit:
     }
 }
 
+fragment capabilityRequestFragment on CapabilityRequest {
+    id
+    flowId
+    subtaskId
+    role
+    tool
+    target
+    command
+    shape
+    traceProgram
+    reason
+    status
+    decidedBy
+    createdAt
+}
+
+query flowCapabilityRequests($flowId: ID!, $status: CapabilityRequestStatus) {
+    capabilityRequests(flowId: $flowId, status: $status) {
+        ...capabilityRequestFragment
+    }
+}
+
+mutation decideCapabilityRequest($requestId: ID!, $approve: Boolean!) {
+    decideCapabilityRequest(requestId: $requestId, approve: $approve) {
+        ...capabilityRequestFragment
+    }
+}
+
 fragment terminalFragment on Terminal {
     id
     type

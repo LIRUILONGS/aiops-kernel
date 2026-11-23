@@ -26,6 +26,8 @@ type Querier interface {
 	CreateAgentLog(ctx context.Context, arg CreateAgentLogParams) (Agentlog, error)
 	CreateAssistant(ctx context.Context, arg CreateAssistantParams) (Assistant, error)
 	CreateAssistantLog(ctx context.Context, arg CreateAssistantLogParams) (Assistantlog, error)
+	CreateCapabilityGrant(ctx context.Context, arg CreateCapabilityGrantParams) (CapabilityGrant, error)
+	CreateCapabilityRequest(ctx context.Context, arg CreateCapabilityRequestParams) (CapabilityRequest, error)
 	CreateContainer(ctx context.Context, arg CreateContainerParams) (Container, error)
 	CreateFlow(ctx context.Context, arg CreateFlowParams) (Flow, error)
 	CreateFlowTemplate(ctx context.Context, arg CreateFlowTemplateParams) (FlowTemplate, error)
@@ -44,6 +46,7 @@ type Querier interface {
 	CreateUserPreferences(ctx context.Context, arg CreateUserPreferencesParams) (UserPreference, error)
 	CreateUserPrompt(ctx context.Context, arg CreateUserPromptParams) (Prompt, error)
 	CreateVectorStoreLog(ctx context.Context, arg CreateVectorStoreLogParams) (Vecstorelog, error)
+	DecideCapabilityRequest(ctx context.Context, arg DecideCapabilityRequestParams) (CapabilityRequest, error)
 	DeleteAPIToken(ctx context.Context, id int64) (ApiToken, error)
 	DeleteAssistant(ctx context.Context, id int64) (Assistant, error)
 	DeleteFavoriteFlow(ctx context.Context, arg DeleteFavoriteFlowParams) (UserPreference, error)
@@ -75,6 +78,7 @@ type Querier interface {
 	// (providers_name_user_id_unique is partial on deleted_at IS NULL). Mirrors the
 	// guard GetUserProvider already applies on the rename path.
 	DeleteUserProvider(ctx context.Context, arg DeleteUserProviderParams) (Provider, error)
+	FindPendingCapabilityRequest(ctx context.Context, arg FindPendingCapabilityRequestParams) (CapabilityRequest, error)
 	GetAPIToken(ctx context.Context, id int64) (ApiToken, error)
 	GetAPITokenByTokenID(ctx context.Context, tokenID string) (ApiToken, error)
 	GetAPITokens(ctx context.Context) ([]ApiToken, error)
@@ -90,6 +94,7 @@ type Querier interface {
 	GetAssistantsCountForFlow(ctx context.Context, flowID int64) (int64, error)
 	GetCallToolcall(ctx context.Context, callID string) (Toolcall, error)
 	GetCapabilityLease(ctx context.Context, subtaskID int64) (CapabilityLease, error)
+	GetCapabilityRequest(ctx context.Context, id int64) (CapabilityRequest, error)
 	GetContainerTermLogs(ctx context.Context, containerID int64) ([]Termlog, error)
 	GetContainers(ctx context.Context) ([]Container, error)
 	GetFlow(ctx context.Context, id int64) (Flow, error)
@@ -256,9 +261,11 @@ type Querier interface {
 	// embedding must be formatted as a PostgreSQL vector literal: '[f1,f2,...]'
 	// cmetadata must be valid JSON text.
 	InsertKnowledgeDocument(ctx context.Context, arg InsertKnowledgeDocumentParams) (string, error)
+	ListActiveCapabilityGrants(ctx context.Context, flowID int64) ([]CapabilityGrant, error)
 	// List all knowledge documents excluding the noisy memory type (admin view).
 	ListAllKnowledgeDocuments(ctx context.Context) ([]ListAllKnowledgeDocumentsRow, error)
 	ListCapabilityDecisions(ctx context.Context, arg ListCapabilityDecisionsParams) ([]CapabilityDecision, error)
+	ListCapabilityRequests(ctx context.Context, arg ListCapabilityRequestsParams) ([]CapabilityRequest, error)
 	// List non-memory knowledge documents belonging to a specific flow (admin scoped).
 	ListFlowKnowledgeDocuments(ctx context.Context, flowID sql.NullString) ([]ListFlowKnowledgeDocumentsRow, error)
 	// List all non-memory knowledge documents owned by a specific user (user-scoped view).

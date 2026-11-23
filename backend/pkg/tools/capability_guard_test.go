@@ -26,6 +26,15 @@ func guardLease(expiresIn time.Duration) *capability.Lease {
 	}
 }
 
+// guardFor builds a guard with only the sink a given test needs.
+func guardFor(
+	lease *capability.Lease,
+	mode capability.Mode,
+	record func(context.Context, capability.Call, capability.Decision),
+) *CapabilityGuard {
+	return NewCapabilityGuard(CapabilityGuardOptions{Lease: lease, Mode: mode, Record: record})
+}
+
 // recordingHandler counts the calls that reached the tool and returns what it
 // was given, so a wrapper that mangles the arguments is visible.
 func recordingHandler(calls *int, seen *json.RawMessage) ExecutorHandler {
@@ -44,7 +53,7 @@ func TestCapabilityGuard_Apply_LeavesTheCallAloneWhenTheFlowIsOff(t *testing.T) 
 	lease := guardLease(time.Hour)
 
 	handlers := map[string]ExecutorHandler{OpsExecToolName: recordingHandler(&calls, &seen)}
-	guarded := NewCapabilityGuard(lease, capability.ModeOff, func(_ context.Context, _ capability.Call, d capability.Decision) {
+	guarded := guardFor(lease, capability.ModeOff, func(_ context.Context, _ capability.Call, d capability.Decision) {
 		recorded = append(recorded, d)
 	}).Apply(handlers, nil)
 
@@ -74,7 +83,7 @@ func TestCapabilityGuard_Apply_RefusesTheCallTheLeaseDoesNotCover(t *testing.T) 
 	var seen json.RawMessage
 
 	handlers := map[string]ExecutorHandler{OpsExecToolName: recordingHandler(&calls, &seen)}
-	guarded := NewCapabilityGuard(guardLease(time.Hour), capability.ModeEnforce, func(_ context.Context, _ capability.Call, d capability.Decision) {
+	guarded := guardFor(guardLease(time.Hour), capability.ModeEnforce, func(_ context.Context, _ capability.Call, d capability.Decision) {
 		recorded = append(recorded, d)
 	}).Apply(handlers, nil)
 
@@ -104,7 +113,7 @@ func TestCapabilityGuard_Apply_RunsTheCallAndRecordsWhatEnforcementWouldStop(t *
 	var seen json.RawMessage
 
 	handlers := map[string]ExecutorHandler{OpsExecToolName: recordingHandler(&calls, &seen)}
-	guarded := NewCapabilityGuard(guardLease(time.Hour), capability.ModeShadow, func(_ context.Context, _ capability.Call, d capability.Decision) {
+	guarded := guardFor(guardLease(time.Hour), capability.ModeShadow, func(_ context.Context, _ capability.Call, d capability.Decision) {
 		recorded = append(recorded, d)
 	}).Apply(handlers, nil)
 
@@ -129,7 +138,7 @@ func TestCapabilityGuard_Apply_RefusesAnEmptyTargetUnderANarrowLease(t *testing.
 	var seen json.RawMessage
 
 	handlers := map[string]ExecutorHandler{OpsExecToolName: recordingHandler(&calls, &seen)}
-	guarded := NewCapabilityGuard(guardLease(time.Hour), capability.ModeEnforce, nil).Apply(handlers, nil)
+	guarded := guardFor(guardLease(time.Hour), capability.ModeEnforce, nil).Apply(handlers, nil)
 
 	_, err := guarded[OpsExecToolName](context.Background(), OpsExecToolName, json.RawMessage(`{"command":"unit_logs"}`))
 
@@ -149,7 +158,7 @@ func TestCapabilityGuard_Apply_LeavesTheExitAloneUnderALeaseThatDoesNotNameIt(t 
 	var seen json.RawMessage
 
 	handlers := map[string]ExecutorHandler{DiagnosisToolName: recordingHandler(&calls, &seen)}
-	guarded := NewCapabilityGuard(guardLease(time.Hour), capability.ModeEnforce, nil).
+	guarded := guardFor(guardLease(time.Hour), capability.ModeEnforce, nil).
 		Apply(handlers, map[string]struct{}{DiagnosisToolName: {}})
 
 	result, err := guarded[DiagnosisToolName](context.Background(), DiagnosisToolName, json.RawMessage(`{}`))
@@ -214,5 +223,106 @@ func TestCapabilityGuard_ExtractCapabilityCall_ReadsTheDimensionTheLeaseJudges(t
 				t.Errorf("call = %+v, want %+v", got, tc.wants)
 			}
 		})
+	}
+}
+
+func TestCapabilityGuard_Apply_FilesTheApprovalItQuotes(t *testing.T) {
+	calls := 0
+	var seen json.RawMessage
+	var filed []capability.Call
+	var reasons []string
+
+	guard := NewCapabilityGuard(CapabilityGuardOptions{
+		Lease: guardLease(time.Hour),
+		Mode:  capability.ModeEnforce,
+		Request: func(_ context.Context, call capability.Call, reason string) (int64, error) {
+			filed = append(filed, call)
+			reasons = append(reasons, reason)
+
+			return 42, nil
+		},
+	})
+
+	_, err := guard.Apply(map[string]ExecutorHandler{OpsExecToolName: recordingHandler(&calls, &seen)}, nil)[OpsExecToolName](
+		context.Background(), OpsExecToolName, json.RawMessage(`{"target":"prod","command":"unit_logs"}`),
+	)
+
+	if err == nil {
+		t.Fatal("a host outside the lease must be refused")
+	}
+	if !strings.Contains(err.Error(), "审批 #42") {
+		t.Errorf("the refusal must quote the request it filed, got %q", err.Error())
+	}
+	if len(filed) != 1 || filed[0].Target != "prod" || filed[0].Command != "unit_logs" {
+		t.Fatalf("the filed request must name the refused call, got %+v", filed)
+	}
+	if len(reasons) != 1 || !strings.Contains(reasons[0], "prod") {
+		t.Errorf("the request must carry the reason, got %v", reasons)
+	}
+	if calls != 0 {
+		t.Errorf("the handler ran %d times, want 0", calls)
+	}
+}
+
+func TestCapabilityGuard_Apply_LetsTheNextCallThroughOnceAnApprovalExists(t *testing.T) {
+	calls := 0
+	var seen json.RawMessage
+	var grants []capability.Grant
+
+	guard := NewCapabilityGuard(CapabilityGuardOptions{
+		Lease:  guardLease(time.Hour),
+		Mode:   capability.ModeEnforce,
+		Grants: func(context.Context) []capability.Grant { return grants },
+	})
+	handlers := guard.Apply(map[string]ExecutorHandler{OpsExecToolName: recordingHandler(&calls, &seen)}, nil)
+	args := json.RawMessage(`{"target":"prod","command":"unit_logs"}`)
+
+	if _, err := handlers[OpsExecToolName](context.Background(), OpsExecToolName, args); err == nil {
+		t.Fatal("the call must be refused before anyone approved it")
+	}
+
+	grants = []capability.Grant{{
+		Tool:      OpsExecToolName,
+		Target:    "prod",
+		Command:   "unit_logs",
+		IssuedBy:  "1",
+		ExpiresAt: time.Now().Add(time.Hour),
+	}}
+
+	if _, err := handlers[OpsExecToolName](context.Background(), OpsExecToolName, args); err != nil {
+		t.Fatalf("the approved call must run, got %v", err)
+	}
+	if calls != 1 {
+		t.Errorf("handler calls = %d, want 1: the approval lifted exactly one attempt", calls)
+	}
+}
+
+func TestCapabilityGuard_Apply_DoesNotAskForAToolTheRoleNeverHeld(t *testing.T) {
+	calls := 0
+	var seen json.RawMessage
+	asked := 0
+
+	guard := NewCapabilityGuard(CapabilityGuardOptions{
+		Lease: guardLease(time.Hour),
+		Mode:  capability.ModeEnforce,
+		Request: func(context.Context, capability.Call, string) (int64, error) {
+			asked++
+
+			return 1, nil
+		},
+	})
+
+	_, err := guard.Apply(map[string]ExecutorHandler{TerminalToolName: recordingHandler(&calls, &seen)}, nil)[TerminalToolName](
+		context.Background(), TerminalToolName, json.RawMessage(`{"message":"id"}`),
+	)
+
+	if err == nil {
+		t.Fatal("a tool outside the role's lease must be refused")
+	}
+	if asked != 0 {
+		t.Errorf("filed %d requests: a tool grant would bypass the role tool table", asked)
+	}
+	if strings.Contains(err.Error(), "审批") {
+		t.Errorf("refusal %q promises an approval that cannot be granted", err.Error())
 	}
 }

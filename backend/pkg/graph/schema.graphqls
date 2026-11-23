@@ -302,6 +302,46 @@ type CapabilityDecision {
   createdAt: Time!
 }
 
+# A refusal the model was told to wait on; approving it writes a grant
+enum CapabilityRequestStatus {
+  pending
+  approved
+  denied
+}
+
+type CapabilityRequest {
+  id: ID!
+  flowId: ID!
+  subtaskId: ID
+  role: String!
+  tool: String!
+  target: String!
+  command: String!
+  shape: String!
+  traceProgram: String!
+  reason: String!
+  status: CapabilityRequestStatus!
+  decidedBy: String!
+  decidedAt: Time
+  createdAt: Time!
+}
+
+type CapabilityGrant {
+  id: ID!
+  flowId: ID!
+  subtaskId: ID
+  requestId: ID
+  tool: String!
+  target: String!
+  command: String!
+  shape: String!
+  traceProgram: String!
+  reason: String!
+  issuedBy: String!
+  expiresAt: Time!
+  createdAt: Time!
+}
+
 type Task {
   id: ID!
   title: String!
@@ -1039,6 +1079,8 @@ type Query {
   agentLogs(flowId: ID!): [AgentLog!]
   flowRoleActivity(flowId: ID!): FlowRoleActivity!
   capabilityDecisions(flowId: ID!, verdict: CapabilityVerdict, limit: Int): [CapabilityDecision!]!
+  capabilityRequests(flowId: ID!, status: CapabilityRequestStatus, limit: Int): [CapabilityRequest!]!
+  capabilityGrants(flowId: ID!): [CapabilityGrant!]!
   searchLogs(flowId: ID!): [SearchLog!]
   vectorStoreLogs(flowId: ID!): [VectorStoreLog!]
   toolCallLogs(flowId: ID!): [ToolCallLog!]
@@ -1096,6 +1138,7 @@ type Mutation {
   createFlow(modelProvider: String!, input: String!, flowType: FlowType, capabilityMode: CapabilityMode, resourceIds: [ID!]): Flow!
   putUserInput(flowId: ID!, input: String!, modelProvider: String, resourceIds: [ID!]): ResultType!
   stopFlow(flowId: ID!): ResultType!
+  decideCapabilityRequest(requestId: ID!, approve: Boolean!): CapabilityRequest!
   finishFlow(flowId: ID!): ResultType!
   deleteFlow(flowId: ID!): ResultType!
   renameFlow(flowId: ID!, title: String!): ResultType!

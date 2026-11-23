@@ -42,6 +42,13 @@ type graphDB struct {
 
 	decisions       []database.CapabilityDecision
 	decisionQueries []database.ListCapabilityDecisionsParams
+
+	requests       []database.CapabilityRequest
+	requestQueries []database.ListCapabilityRequestsParams
+	request        database.CapabilityRequest
+	decided        []database.DecideCapabilityRequestParams
+	grants         []database.CapabilityGrant
+	createdGrants  []database.CreateCapabilityGrantParams
 }
 
 func (db *graphDB) GetFlow(_ context.Context, id int64) (database.Flow, error) {
@@ -54,6 +61,42 @@ func (db *graphDB) ListCapabilityDecisions(
 	db.decisionQueries = append(db.decisionQueries, arg)
 
 	return db.decisions, nil
+}
+
+func (db *graphDB) ListCapabilityRequests(
+	_ context.Context, arg database.ListCapabilityRequestsParams,
+) ([]database.CapabilityRequest, error) {
+	db.requestQueries = append(db.requestQueries, arg)
+
+	return db.requests, nil
+}
+
+func (db *graphDB) ListActiveCapabilityGrants(context.Context, int64) ([]database.CapabilityGrant, error) {
+	return db.grants, nil
+}
+
+func (db *graphDB) GetCapabilityRequest(context.Context, int64) (database.CapabilityRequest, error) {
+	return db.request, nil
+}
+
+func (db *graphDB) DecideCapabilityRequest(
+	_ context.Context, arg database.DecideCapabilityRequestParams,
+) (database.CapabilityRequest, error) {
+	db.decided = append(db.decided, arg)
+
+	decided := db.request
+	decided.Status = arg.Status
+	decided.DecidedBy = arg.DecidedBy
+
+	return decided, nil
+}
+
+func (db *graphDB) CreateCapabilityGrant(
+	_ context.Context, arg database.CreateCapabilityGrantParams,
+) (database.CapabilityGrant, error) {
+	db.createdGrants = append(db.createdGrants, arg)
+
+	return database.CapabilityGrant{ID: 9, FlowID: arg.FlowID, Tool: arg.Tool, Target: arg.Target}, nil
 }
 
 func (db *graphDB) GetFlowContainers(context.Context, int64) ([]database.Container, error) {

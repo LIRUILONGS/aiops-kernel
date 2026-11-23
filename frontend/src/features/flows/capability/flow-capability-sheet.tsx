@@ -1,15 +1,24 @@
-import { useQuery } from '@apollo/client/react';
+import { useMutation, useQuery } from '@apollo/client/react';
 import { ShieldCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-import type { CapabilityDecisionFragmentFragment } from '@/graphql/types';
+import type { CapabilityDecisionFragmentFragment, CapabilityRequestFragmentFragment } from '@/graphql/types';
 
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
-import { CapabilityMode, CapabilityVerdict, FlowCapabilityDecisionsDocument, StatusType } from '@/graphql/types';
+import {
+    CapabilityMode,
+    CapabilityRequestStatus,
+    CapabilityVerdict,
+    DecideCapabilityRequestDocument,
+    FlowCapabilityDecisionsDocument,
+    FlowCapabilityRequestsDocument,
+    StatusType,
+} from '@/graphql/types';
 import { cn } from '@/lib/utils';
 import { formatName } from '@/lib/utils/format';
 import { useFlow } from '@/providers/flow-provider';
@@ -54,22 +63,58 @@ const formatTime = (value: string): string => {
 const decisionTitle = (decision: CapabilityDecisionFragmentFragment): string =>
     decision.command ? `${decision.tool} · ${decision.command}` : decision.tool;
 
+const requestTitle = (request: CapabilityRequestFragmentFragment): string =>
+    request.command ? `${request.tool} · ${request.command}` : request.tool;
+
 function FlowCapabilitySheet({ mode, onOpenChange, open }: FlowCapabilitySheetProps) {
     const { flowId, flowStatus } = useFlow();
     const [verdict, setVerdict] = useState<CapabilityVerdict | undefined>();
+    const [deciding, setDeciding] = useState<string | undefined>();
+    const [decideError, setDecideError] = useState<string | undefined>();
 
     const isLive = !!flowStatus && [StatusType.Created, StatusType.Running, StatusType.Waiting].includes(flowStatus);
 
+    const pollInterval = isLive ? 5_000 : 0;
+
     const { data, loading } = useQuery(FlowCapabilityDecisionsDocument, {
-        pollInterval: isLive ? 5_000 : 0,
+        pollInterval,
         skip: !open || !flowId,
         variables: { flowId: flowId ?? '', verdict },
     });
+
+    const { data: requestData } = useQuery(FlowCapabilityRequestsDocument, {
+        pollInterval,
+        skip: !open || !flowId,
+        variables: { flowId: flowId ?? '', status: CapabilityRequestStatus.Pending },
+    });
+
+    const [decide] = useMutation(DecideCapabilityRequestDocument);
 
     const decisions = useMemo(
         () => (data?.capabilityDecisions ?? []) as CapabilityDecisionFragmentFragment[],
         [data?.capabilityDecisions],
     );
+
+    const pending = useMemo(
+        () => (requestData?.capabilityRequests ?? []) as CapabilityRequestFragmentFragment[],
+        [requestData?.capabilityRequests],
+    );
+
+    const decideRequest = async (request: CapabilityRequestFragmentFragment, approve: boolean): Promise<void> => {
+        setDeciding(request.id);
+        setDecideError(undefined);
+
+        try {
+            await decide({
+                refetchQueries: [FlowCapabilityDecisionsDocument, FlowCapabilityRequestsDocument],
+                variables: { approve, requestId: request.id },
+            });
+        } catch (error) {
+            setDecideError(error instanceof Error ? error.message : String(error));
+        } finally {
+            setDeciding(undefined);
+        }
+    };
 
     return (
         <Sheet
@@ -87,6 +132,54 @@ function FlowCapabilitySheet({ mode, onOpenChange, open }: FlowCapabilitySheetPr
                     </SheetTitle>
                     <SheetDescription>{modeHints[mode]}</SheetDescription>
                 </SheetHeader>
+
+                {pending.length > 0 && (
+                    <section className="flex flex-col gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 p-2.5">
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium">待批准（{pending.length}）</span>
+                        </div>
+                        <ul className="flex flex-col gap-2">
+                            {pending.map((request) => (
+                                <li
+                                    className="rounded-md border bg-background p-2 text-xs"
+                                    key={request.id}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <span className="min-w-0 flex-1 truncate font-mono">
+                                            {requestTitle(request)}
+                                        </span>
+                                    </div>
+                                    <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                                        <span>{formatName(request.role)}</span>
+                                        {request.target && <span className="font-mono">{request.target}</span>}
+                                        {request.subtaskId && <span>子任务 #{request.subtaskId}</span>}
+                                    </div>
+                                    {request.reason && (
+                                        <p className="mt-1 leading-relaxed break-words">{request.reason}</p>
+                                    )}
+                                    <div className="mt-2 flex items-center justify-end gap-2">
+                                        <Button
+                                            disabled={!!deciding}
+                                            onClick={() => decideRequest(request, false)}
+                                            size="sm"
+                                            variant="ghost"
+                                        >
+                                            拒绝
+                                        </Button>
+                                        <Button
+                                            disabled={!!deciding}
+                                            onClick={() => decideRequest(request, true)}
+                                            size="sm"
+                                        >
+                                            {deciding === request.id ? '提交中…' : '批准 4 小时'}
+                                        </Button>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                        {decideError && <p className="text-destructive text-xs">{decideError}</p>}
+                    </section>
+                )}
 
                 <div className="flex flex-wrap items-center gap-1.5">
                     {filters.map((filter) => (

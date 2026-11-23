@@ -27,7 +27,7 @@
 
 有一处取舍写在这里，因为它是刻意的：读不到 flow、读不到 subtask、签发失败时，切面**不安装**并打一条 `Warn`，而不是让整个子任务失败。租约是加法，数据库回答不了的时候不该把一次正常的诊断变成错误；代价是那一轮跑在无租约状态，所以这条日志必须是 Warn 级别，运维能看见。
 
-还没做：策略文件的加载（今天只有代码里的默认值）、每工具调用预算、`ops_tunnel` 之外的形状阶梯（`workshop` 仍由 `OPSAGI_SANDBOX_NETWORK` 与模型共同决定）、批准通道（P3）。下面几节保留原计划与验收方式，作为后续的路线图。
+还没做：策略文件的加载（今天只有代码里的默认值）、每工具调用预算、`ops_tunnel` 之外的形状阶梯（`workshop` 仍由 `OPSAGI_SANDBOX_NETWORK` 与模型共同决定）。下面几节保留原计划与验收方式，作为后续的路线图。
 
 ## 0.6 这一轮的第二批：看得见，且不再静默
 
@@ -40,7 +40,23 @@
 | 看界面 | `frontend/src/features/flows/capability/`、`pages/flows/flow.tsx` | 非 `off` 的 flow 在标题旁挂一个“租约·观察/强制”徽章；`能力租约` 面板列出每条判定，可按“拦截 / 将被拦截 / 放行”筛，`would_deny` 逐条给出拒绝原因——这就是把 `shadow` 收窄成 `enforce` 的依据 |
 | 止血 | `pkg/config`、`pkg/opsremote/exec.go`、`pkg/opsremote/sandbox.go` | `OPSAGI_TARGETS` 非法或缺 `host` 时启动即失败；两条 `mysql_*` 命令补进公告目录，并加一条遍历 `catalog` 的守卫；非法 `mode` 在 dial 之前变成一条 `Refusal`，不再先去目标机拉镜像 |
 
-面板本身不做写操作：判定是运行时的产物，人只读它。真要有“批准一次例外”，那是 P3 的批准通道，需要子任务进入 `waiting` 并签发一条补充租约，和这里的只读面板是两件事。
+面板本身只读判定；写操作在下一节。
+
+## 0.7 这一轮的第三批：批准通道
+
+`enforce` 只有在“被拒之后还能继续”时才可交付。一个模型被拒后只会重试，没有别的动作可做；操作员也没有按钮可点。这一批补上从拒绝到批准的那条线。
+
+| 环节 | 位置 | 行为 |
+|---|---|---|
+| 归档 | `pkg/capability` 的 `Decision.NeedsApproval`、`pkg/tools/capability_guard.go` | 只有“能被一条批准解开”的拒绝才会归档：主机、命令、形状、eBPF 程序。工具不在角色表里、租约过期，都不归档——批准工具等于绕开角色工具表，批准过期等于取消有效期 |
+| 请求 | `capability_requests` | 每次拦截写一条 `pending`，按 `(flow, tool, target, command, shape, trace_program)` 去重，模型连续重试不会堆一屏副本；拒绝语句里带上请求号（`已提交审批 #42`），模型和操作员说的是同一个东西 |
+| 批准 | `mutation decideCapabilityRequest(requestId, approve)` | 批准写一条 `capability_grants`（有效期 4 小时），拒绝只改状态；两者都只对 `pending` 生效，重复点击返回“已不再是待批准状态”，不会写出第二条租约 |
+| 生效 | `pkg/providers/capability.go` 的 `capabilityGrants` | 批准**不重启子任务**：切面每次调用都重读一遍这条 flow 的有效批准，所以模型的下一次重试就通过了。代价是每次工具调用多一次小查询，换来的是“批准即时生效”而不是“下条子任务才生效” |
+| 边界 | 同上 | 批准是**加宽到具体调用**，不是放宽租约：`Grant.Permits` 要求工具与它写的每一维都相等，空维度不是通配；租约过期仍然硬拒，批准不能续命 |
+| 界面 | `frontend/src/features/flows/capability/flow-capability-sheet.tsx` | 面板顶部是“待批准（n）”，每条给出工具·命令、主机、角色、子任务与原因，两个按钮；批准后列表消失、判定列表出现新的 `allow`，flow 在跑时 5 秒轮询 |
+
+刻意没做同步等待：让工具调用挂住等操作员点按钮，会在没人看屏幕的夜里把子任务卡到超时，也把并发名额占住。批准是异步的，模型被拒后拿到的是“已提交审批”，它可以继续查别的，或者稍后重试；没有人批，它就一直是拒绝——这才是安全的方向。
+
 
 ## 1. 今天实际生效的四道闸门
 
@@ -130,11 +146,11 @@ type Lease struct {
 
 ### P3 升级闸门（4–5 人日）
 
-- 拒绝不是终点：`Authorize` 返回“需要批准”时，把子任务置为 `waiting`（复用 `ask` 的链路，`provider.go:867`），操作员在界面上批准后签发一条补充租约（新行、`IssuedBy=操作员`、带上限），再回到 `running`。
-- 批准界面：角色页显示当前租约与待批请求（两个 GraphQL 查询 + 一个 mutation），复用现有 `flows.edit` 权限。
-- 每次批准、续期、拒绝都写 `lease_decisions`，让“谁放开了什么”能倒查。
+- 拒绝不是终点：`Authorize` 返回 `NeedsApproval` 时，切面把这次调用归档成一条 `capability_requests`，拒绝语句里带上请求号。**没有做同步等待**：子任务不进入 `waiting`，它接着干别的，或者稍后重试。
+- 操作员在 `能力租约` 面板批准后写一条 `capability_grants`（4 小时），切面每次调用重读有效批准，所以模型的下一**次**重试就通过，不需要重启子任务。按子任务还是按 flow 生效在这里是同一个实现：批准行带 `subtask_id`，但读取按 flow 走，这样重规划出来的新子任务不会因为“换了 id 又变成没批过”再拦一次。
+- 每次批准、拒绝都落库（`decided_by`、`decided_at`），加上 `capability_decisions` 里的 `allow/deny`，“谁放开了什么、什么时候用的”能倒查。批准过期后同一调用再次被拒，会重新归档一条新的 `pending`。
 
-验收：workshop 请求在没有批准时永远拿不到；批准一次后只有这一个子任务拿到，批准过期后再次请求又回到 waiting。
+验收（已由测试钉住）：没有批准时越界调用永远是 `deny`；批准一次后同一调用通过，另一台主机、另一条命令仍然被拒；批准过期或被拒后重新被拦；重复点批准不会写出第二条租约。
 
 ### P4 下沉到 OS 边界（15–20 人日，单独立项）
 
@@ -240,6 +256,12 @@ limits:
 | `backend/pkg/opsremote/exec.go:77` | 只读命令目录 |
 | `backend/pkg/opsremote/sandbox.go:37` | probe / workshop 参数 |
 | `backend/pkg/opsremote/trace.go:159` | `SYS_ADMIN` 重试门 |
+| `backend/pkg/capability/capability.go` | `Authorize`、`Grant`、`ApprovedBy`：租约与批准的唯一判定点 |
+| `backend/pkg/tools/capability_guard.go` | 切面：`Apply` 包装、`refusal` 归档并引用请求号 |
+| `backend/pkg/providers/capability.go` | 签发租约、按调用重读批准、归档请求 |
+| `backend/pkg/graph/capability.go` | 行数上限与批准有效期常量 |
+| `backend/sqlc/models/capability.sql` | 租约、判定、请求、批准四张表的查询 |
+| `frontend/src/features/flows/capability/flow-capability-sheet.tsx` | 判定列表与“待批准”面板 |
 | `backend/pkg/providers/provider.go:740` | 每次执行重读 subtask 行 |
 | `backend/pkg/providers/provider.go:892` | 解析 mode、装配出口 |
 | `backend/pkg/providers/aiops_handlers.go:129` | 分析师链路独立执行器 |

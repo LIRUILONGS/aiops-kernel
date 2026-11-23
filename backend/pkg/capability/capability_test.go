@@ -189,3 +189,86 @@ func TestCapability_Mode_EnablingAndEnforcingAreDifferentQuestions(t *testing.T)
 		t.Error("enforce must do both")
 	}
 }
+
+func TestCapability_Authorize_LiftsARefusalOnlyForTheCallAGrantNames(t *testing.T) {
+	lease := &Lease{
+		Tools:     []string{"ops_exec"},
+		Targets:   []string{"lab"},
+		Commands:  []string{"unit_logs", "memory"},
+		Shapes:    []string{"probe"},
+		ExpiresAt: time.Date(2026, 11, 23, 12, 0, 0, 0, time.UTC),
+	}
+	now := time.Date(2026, 11, 23, 11, 0, 0, 0, time.UTC)
+	grant := Grant{
+		Tool:      "ops_exec",
+		Target:    "prod",
+		Command:   "unit_logs",
+		Shape:     "probe",
+		IssuedBy:  "operator",
+		ExpiresAt: time.Date(2026, 11, 23, 15, 0, 0, 0, time.UTC),
+	}
+
+	allowed := lease.Authorize(Call{Tool: "ops_exec", Target: "prod", Command: "unit_logs", Shape: "probe"}, now, grant)
+	if !allowed.Allowed() {
+		t.Fatalf("an approved call was refused: %q (%s)", allowed.Verdict, allowed.Reason)
+	}
+
+	otherHost := lease.Authorize(Call{Tool: "ops_exec", Target: "staging", Command: "unit_logs", Shape: "probe"}, now, grant)
+	if otherHost.Allowed() {
+		t.Error("the grant named prod, so staging must still be refused")
+	}
+
+	otherCommand := lease.Authorize(Call{Tool: "ops_exec", Target: "prod", Command: "established", Shape: "probe"}, now, grant)
+	if otherCommand.Allowed() {
+		t.Error("the grant named unit_logs, so another command must still be refused")
+	}
+}
+
+func TestCapability_Authorize_MarksOnlyWhatAnOperatorCanApprove(t *testing.T) {
+	now := time.Date(2026, 11, 23, 11, 0, 0, 0, time.UTC)
+	lease := &Lease{
+		Tools:     []string{"ops_exec"},
+		Targets:   []string{"lab"},
+		Commands:  []string{"unit_logs"},
+		Shapes:    []string{"probe"},
+		ExpiresAt: time.Date(2026, 11, 23, 12, 0, 0, 0, time.UTC),
+	}
+
+	outside := lease.Authorize(Call{Tool: "ops_exec", Target: "prod", Command: "unit_logs", Shape: "probe"}, now)
+	if !outside.NeedsApproval {
+		t.Errorf("an out-of-lease host must be approvable, got %+v", outside)
+	}
+
+	unknownTool := lease.Authorize(Call{Tool: "terminal", Target: "lab"}, now)
+	if unknownTool.NeedsApproval {
+		t.Error("a tool the role never held is not something an approval can grant")
+	}
+
+	expired := &Lease{Tools: []string{"ops_exec"}, Targets: []string{"lab"}, ExpiresAt: time.Date(2026, 11, 23, 10, 0, 0, 0, time.UTC)}
+	if decision := expired.Authorize(Call{Tool: "ops_exec", Target: "lab"}, now); decision.NeedsApproval {
+		t.Error("an expired lease needs a new lease, not an approval")
+	}
+}
+
+func TestCapability_Grant_Permits_RequiresEveryDimensionItNames(t *testing.T) {
+	grant := Grant{Tool: "ops_sandbox", Shape: "workshop"}
+
+	if !grant.Permits(Call{Tool: "ops_sandbox", Shape: "workshop"}) {
+		t.Error("the grant names the call exactly, so it must permit it")
+	}
+	if grant.Permits(Call{Tool: "ops_sandbox", Shape: "probe"}) {
+		t.Error("the grant named workshop, so probe is a different call")
+	}
+	if grant.Permits(Call{Tool: "ops_exec", Shape: "workshop"}) {
+		t.Error("the grant named ops_sandbox, not ops_exec")
+	}
+}
+
+func TestCapability_ApprovedBy_IgnoresAGrantThatHasExpired(t *testing.T) {
+	now := time.Date(2026, 11, 23, 12, 0, 0, 0, time.UTC)
+	grant := Grant{Tool: "ops_exec", Target: "prod", ExpiresAt: time.Date(2026, 11, 23, 11, 59, 0, 0, time.UTC)}
+
+	if ApprovedBy([]Grant{grant}, Call{Tool: "ops_exec", Target: "prod"}, now) {
+		t.Error("a grant that expired a minute ago must not lift anything")
+	}
+}

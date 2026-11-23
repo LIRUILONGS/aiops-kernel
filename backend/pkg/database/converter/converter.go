@@ -1,6 +1,7 @@
 package converter
 
 import (
+	"database/sql"
 	"encoding/json"
 	"sort"
 	"time"
@@ -39,11 +40,11 @@ func ConvertFlow(flow database.Flow, containers []database.Container) *model.Flo
 		Type: model.ProviderType(flow.ModelProviderType),
 	}
 	return &model.Flow{
-		ID:        flow.ID,
-		UserID:    flow.UserID,
-		Title:     flow.Title,
-		Status:    model.StatusType(flow.Status),
-		Type:      model.FlowType(flow.FlowType),
+		ID:     flow.ID,
+		UserID: flow.UserID,
+		Title:  flow.Title,
+		Status: model.StatusType(flow.Status),
+		Type:   model.FlowType(flow.FlowType),
 
 		CapabilityMode: ConvertCapabilityMode(flow.CapabilityMode),
 		Terminals:      ConvertContainers(containers),
@@ -92,6 +93,90 @@ func ConvertCapabilityDecision(decision database.CapabilityDecision) *model.Capa
 		Reason:    decision.Reason,
 		CreatedAt: decision.CreatedAt,
 	}
+}
+
+func ConvertCapabilityRequestStatus(status string) model.CapabilityRequestStatus {
+	switch model.CapabilityRequestStatus(status) {
+	case model.CapabilityRequestStatusApproved, model.CapabilityRequestStatusDenied:
+		return model.CapabilityRequestStatus(status)
+	default:
+		return model.CapabilityRequestStatusPending
+	}
+}
+
+func ConvertCapabilityRequests(requests []database.CapabilityRequest) []*model.CapabilityRequest {
+	converted := make([]*model.CapabilityRequest, 0, len(requests))
+	for _, request := range requests {
+		converted = append(converted, ConvertCapabilityRequest(request))
+	}
+
+	return converted
+}
+
+func ConvertCapabilityRequest(request database.CapabilityRequest) *model.CapabilityRequest {
+	return &model.CapabilityRequest{
+		ID:           request.ID,
+		FlowID:       request.FlowID,
+		SubtaskID:    nullableID(request.SubtaskID),
+		Role:         request.Role,
+		Tool:         request.Tool,
+		Target:       request.Target,
+		Command:      request.Command,
+		Shape:        request.Shape,
+		TraceProgram: request.TraceProgram,
+		Reason:       request.Reason,
+		Status:       ConvertCapabilityRequestStatus(request.Status),
+		DecidedBy:    request.DecidedBy,
+		DecidedAt:    nullableTime(request.DecidedAt),
+		CreatedAt:    request.CreatedAt,
+	}
+}
+
+func ConvertCapabilityGrants(grants []database.CapabilityGrant) []*model.CapabilityGrant {
+	converted := make([]*model.CapabilityGrant, 0, len(grants))
+	for _, grant := range grants {
+		converted = append(converted, ConvertCapabilityGrant(grant))
+	}
+
+	return converted
+}
+
+func ConvertCapabilityGrant(grant database.CapabilityGrant) *model.CapabilityGrant {
+	return &model.CapabilityGrant{
+		ID:           grant.ID,
+		FlowID:       grant.FlowID,
+		SubtaskID:    nullableID(grant.SubtaskID),
+		RequestID:    nullableID(grant.RequestID),
+		Tool:         grant.Tool,
+		Target:       grant.Target,
+		Command:      grant.Command,
+		Shape:        grant.Shape,
+		TraceProgram: grant.TraceProgram,
+		Reason:       grant.Reason,
+		IssuedBy:     grant.IssuedBy,
+		ExpiresAt:    grant.ExpiresAt,
+		CreatedAt:    grant.CreatedAt,
+	}
+}
+
+func nullableID(value sql.NullInt64) *int64 {
+	if !value.Valid {
+		return nil
+	}
+
+	converted := value.Int64
+
+	return &converted
+}
+
+func nullableTime(value sql.NullTime) *time.Time {
+	if !value.Valid {
+		return nil
+	}
+
+	converted := value.Time
+
+	return &converted
 }
 
 func ConvertContainers(containers []database.Container) []*model.Terminal {

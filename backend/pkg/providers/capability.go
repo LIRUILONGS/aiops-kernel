@@ -55,7 +55,99 @@ func (fp *flowProvider) capabilityGuard(ctx context.Context, subtaskID int64, ro
 		return nil
 	}
 
-	return tools.NewCapabilityGuard(lease, mode, fp.capabilityRecorder(lease, role))
+	return tools.NewCapabilityGuard(tools.CapabilityGuardOptions{
+		Lease:   lease,
+		Mode:    mode,
+		Grants:  fp.capabilityGrants(lease),
+		Record:  fp.capabilityRecorder(lease, role),
+		Request: fp.capabilityRequester(lease, role),
+	})
+}
+
+// capabilityGrants reloads the flow's approvals on every call. Reading them per
+// call is what makes an approval land on the running subtask's next attempt
+// instead of its next life.
+func (fp *flowProvider) capabilityGrants(lease *capability.Lease) func(ctx context.Context) []capability.Grant {
+	return func(ctx context.Context) []capability.Grant {
+		rows, err := fp.db.ListActiveCapabilityGrants(ctx, lease.FlowID)
+		if err != nil {
+			logrus.WithContext(ctx).WithError(err).WithField("flow_id", lease.FlowID).
+				Warn("capability: cannot read the approvals, this call is judged by the lease alone")
+
+			return nil
+		}
+
+		grants := make([]capability.Grant, 0, len(rows))
+		for _, row := range rows {
+			grants = append(grants, capability.Grant{
+				ID:           row.ID,
+				Tool:         row.Tool,
+				Target:       row.Target,
+				Command:      row.Command,
+				Shape:        row.Shape,
+				TraceProgram: row.TraceProgram,
+				Reason:       row.Reason,
+				IssuedBy:     row.IssuedBy,
+				ExpiresAt:    row.ExpiresAt,
+			})
+		}
+
+		return grants
+	}
+}
+
+// capabilityRequester files the approval a refusal is asking for. One pending
+// request per distinct call is enough: a model that retries the same refusal
+// must not bury the operator in copies of it.
+func (fp *flowProvider) capabilityRequester(
+	lease *capability.Lease,
+	role string,
+) func(ctx context.Context, call capability.Call, reason string) (int64, error) {
+	return func(ctx context.Context, call capability.Call, reason string) (int64, error) {
+		writeCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), capabilityRecordTimeout)
+		defer cancel()
+
+		lookup := database.FindPendingCapabilityRequestParams{
+			FlowID:       lease.FlowID,
+			Tool:         call.Tool,
+			Target:       call.Target,
+			Command:      call.Command,
+			Shape:        call.Shape,
+			TraceProgram: call.TraceProgram,
+		}
+
+		pending, err := fp.db.FindPendingCapabilityRequest(writeCtx, lookup)
+		switch {
+		case err == nil:
+			return pending.ID, nil
+		case !errors.Is(err, sql.ErrNoRows):
+			return 0, err
+		}
+
+		created, err := fp.db.CreateCapabilityRequest(writeCtx, database.CreateCapabilityRequestParams{
+			FlowID:       lease.FlowID,
+			SubtaskID:    sql.NullInt64{Int64: lease.SubtaskID, Valid: true},
+			Role:         role,
+			Tool:         call.Tool,
+			Target:       call.Target,
+			Command:      call.Command,
+			Shape:        call.Shape,
+			TraceProgram: call.TraceProgram,
+			Reason:       reason,
+		})
+		if err != nil {
+			return 0, err
+		}
+
+		logrus.WithContext(ctx).WithFields(logrus.Fields{
+			"flow_id":    lease.FlowID,
+			"subtask_id": lease.SubtaskID,
+			"tool":       call.Tool,
+			"target":     call.Target,
+		}).Info("capability: refusal filed as an approval request")
+
+		return created.ID, nil
+	}
 }
 
 // ensureLease returns the subtask's lease, issuing it once if this is the first
