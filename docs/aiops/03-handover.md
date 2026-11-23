@@ -2242,6 +2242,38 @@ flow 63 里两次调用都返回 `命令模板 "psi" 还留着未替换的占位
 
 两条 flow 一开始都停在"第一个工具调用之后没动静"。原因是靶场的 overlays 把模型改成了 `qwen3-4b-cpu`，而那个模型在网关上一次 10 token 的补全超过 120 秒——比产品自己的客户端超时还长，所以每条 flow 都在第二次 LLM 调用处卡住，`created`/`running` 状态上看着像死锁。换回 `deepseek-v4.1`（3.8 秒同一条请求）之后两分钟内就进 `running`。这件事与第 7 章第 16 条是同一类：请求没有超时，卡住以后没人说话。
 
+### 4.79 `ops_baseline` 能带上语句耗时，性能改动的证据不再只有负载（2026-11-23）
+
+4.76 记下的第 14 条在这里有了着落：`ops_diff` 以前只比主机指纹，于是"索引有没有用"只能靠操作员复测的 815 ms → 0.15–0.46 ms，而 `observed_gain` 按规定引用 `ops_diff` 的原文，引到的是 `load1 恶化 +20%`。
+
+#### 一、改动
+
+- `ops_baseline` 增加可选参数 `statement`（语句片段），配合 `container` + `database` 使用：工具在 `pg_stat_statements` 里取"包含这段文字、累计耗时最高"的那条，把 `calls` / `total_ms` / `mean_ms` / `rows` 记进指纹的 `postgres.query` 段，并在返回里写一行"语句段（匹配 …）"。
+- 两次采样都带同一个片段时，`ops_diff` 多出一行 `语句平均耗时`；两次匹配到的语句不同，则输出"匹配到的语句不同"，不会拿两条不同语句的耗时相减。
+- `pg_stat_statements` 目录命令补上了 `dbid` 过滤：以前它列的是整个实例的语句，`bench` 库里看到的可能是别的库的热点。
+
+#### 二、均值要按"两次采样之间"算，不能按累计
+
+第一版直接用 `mean_exec_time` 相减，第一次真机跑就露了馅：这条语句在 `bench` 库里的累计均值是 153.08 ms（16 次调用），索引建好后再跑，累计均值只会被历史慢查询拖着，几乎不动——甚至因为区间内又执行了几次慢查询而上升。`pg_stat_statements` 的 `mean_exec_time` 是生命周期平均，不是"最近一段"。
+
+现在 `ops_diff` 用的是区间均值：`(total_after − total_before) / (calls_after − calls_before)`，并把它写在"本区间"一列，旁边保留改前的累计均值作参照；两次采样之间没有新调用时，直接写"没有新调用"，不给出任何判定。
+
+#### 三、证据
+
+真机（lab 靶场，`opslab-db`/`bench`；`go test -tags live`，`OPSAGI_LIVE_TARGETS` 指向 lab）先采两次基线、再 `ops_diff`，中间让报表查询在靶场上跑了 5 次：
+
+| 指标 | 变化前 | 变化后 | 变化量 | 判定 |
+|---|---|---|---|---|
+| load1 | 24.4 | 26.6 | +2.2 (+9%) | 恶化 ← |
+| 语句平均耗时 | 907.72ms（累计） | 615.16ms（本区间） | 本区间 5 次 (-32%) | 改善 |
+
+同一套工具在 flow 110 里也跑过：模型按新参数采到了 `语句段（匹配 "order by abalance desc"）：调用 16 次，平均 153.08 ms，累计 2449.4 ms`，说明参数从 GraphQL 一路传到了 SSH 上的 psql。
+
+#### 四、跑出来的两个新情况
+
+- 采样编号的作用域是"当前 flow"：flow 111 只调 `ops_diff`、引用 flow 110 的 `base-2`，得到的是"可能已经过期"——错误信息本身写清楚了原因，但用户会以为是 16 条上限挤掉了。可以在措辞里点明"编号只在采集它的那条 flow 里有效"。
+- 模型仍然会绕开 `ask`：flow 112 的任务写死了"第二步必须 ask"，它却以"`create index if not exists` 是空操作、实例 CPU 已饱和"为由直接给了 `unverified`。这个判断本身没错（索引确实存在过、靶场 load1 已到 37），但它意味着"让模型照剧本走"不能当作验收手段——验收要落在工具层，见上面的 live tier。
+
 ## 5 环境
 
 ### 5.1 开发机
@@ -2477,12 +2509,11 @@ chore: fork OpsAGI as AIOps kernel; add design docs and incident prompts
 
 `taskWorker.PutInput` 在 `ListSubtasks` 里找第一个"未完成且 waiting"的子任务，把输入交给它，然后 `break`。flow 49 里两个子任务（148、149）几乎同时提问，操作员按顺序答了两条，两条都被 flow 接受（`putUserInput` 返回成功），但只有第一条在 `msglogs` 里留下了 `input` 记录（subtask_id=148），第二条被同一个子任务吃掉了；子任务 149 的 `ask` 从此没有答案，整条 flow 停在 `waiting`、不再产生任何工具调用。4.75 让每个等待中的子任务记下"开始等的时刻"、答案给最早那条提问，并把这三条行为写进了测试。
 
-### 14. `ops_diff` 比的是主机指纹，性能场景的"差值"不在里面
+### 14. `ops_diff` 比的是主机指纹，性能场景的"差值"不在里面（已修，见 4.79）
 
 flow 108 收口时暴露的：`verdict=improved` 的依据是操作员复测的 815.18 ms → 0.15–0.46 ms，而 `observed_gain` 按要求引用 `ops_diff` 的原文，引到的却是 `load1 12.2 → 14.8 恶化 +20%`、`cpu 16.3% → 19.1% 恶化 +17%`——因为改后那次采样正好压在 `CREATE INDEX CONCURRENTLY` 的尾巴上。根因是 `ops_baseline` 只采主机指纹（负载、CPU、内存、容器、Postgres 会话），那条语句的 `mean_exec_time` 从来没进过指纹，`ops_diff` 也就没有可比的数。
 
-- 落点：`ops_baseline` 增加可选参数（`container` + `database` + `rank` 或语句指纹），把该语句的 `calls`/`mean_exec_time`/`rows` 一起记进指纹；`ops_diff` 把这几项当普通数值比较，`optimization_result.observed_gain` 才有东西可引。
-- 验收：同一场景再跑一次，`ops_diff` 输出里出现"语句 mean_exec_time 815 ms → 0.2 ms 改善"，`observed_gain` 引到的是这一行而不是负载行。
+4.79 让 `ops_baseline` 接受 `statement`（语句片段）并把该语句的 `calls`/`total_ms`/`mean_ms`/`rows` 记进指纹，`ops_diff` 用"两次采样之间的调用"算区间均值；真机上已经打出 `语句平均耗时 907.72ms（累计） → 615.16ms（本区间），本区间 5 次 (-32%) 改善`。剩下的只有措辞问题（见下一条）。
 
 ### 15. 目标语句本身就是 EXPLAIN 时，`pg_explain` 会拼出两条（已修一半）
 
@@ -2492,7 +2523,11 @@ flow 108 里 `pg_explain` 取第 4 名，恰好是 agent 先前那条 `explain (
 
 还剩一种失败：`EXPLAIN (GENERIC_PLAN)` 推断不出占位符的类型——第 4 名是 `select pid, state, round(extract($1 from …))`，报 `syntax error at or near "$1"`；`$2 - $3` 这种则报 `operator is not unique`。工具应当把这类失败翻译成一句话（"这条语句带占位符，`EXPLAIN` 推断不出类型，请在应用侧复现或换一个 rank"），而不是把 Postgres 的原始报错丢给模型。
 
-### 16. 新会话可能永远停在 `created`
+### 16. 采样编号只在采集它的那条 flow 里有效
+
+flow 111 只调 `ops_diff`、把 flow 110 采到的 `base-2` 传进去，得到的是"可能已经过期（`ops_baseline` 只保留最近 16 次采样）"。真正的原因不是 16 条上限，而是采样表长在 flow 自己的工具实例上：换一条 flow 就换了一张表。错误信息里那句"16 次"会把人引到上限上，应该直接说"编号只在采集它的那条 flow 里有效，请在同一个任务里先采集再比对"。
+
+### 17. 新会话可能永远停在 `created`
 
 flow 58 / 59 / 60 在 12:26–12:47 之间创建，全部停在 `created`：`reserveFlow` 写完行、`prepareFlow` 起了，但 `CreateFlowWorker` 里的模型调用（`fwc.provs.NewFlowProvider`）没有自己的 deadline。flow 60 的那条连接（宿主机 `127.0.0.1:50723 → 127.0.0.1:18000`，建立于 20:46:42）在 25 分钟后仍然 `Established`，而同时直连网关只要 2.2 秒——一条死连接就足以让 flow 既不前进也不失败，界面上一直显示"创建中"。执行期的 agent 链有 `API call exceeded deadline`，准备期没有。
 
@@ -2501,7 +2536,7 @@ flow 58 / 59 / 60 在 12:26–12:47 之间创建，全部停在 `created`：`res
 
 ### 已经关掉的（不再列在上面）
 
-规划器替换（4.6）、性能链路与出口（4.7 / 4.12）、四角色委派（4.7）、seed/run CLI（4.9）、前端结论卡片与测量面板（4.12 / 4.13 / 4.17）、改名（4.10）、`ops_exec` 18 条命令（4.11）、`prom_query`（4.16）、`k8s_get`（4.26）、验收进 CI（4.25 / 4.27）、子任务并行（4.27）、人机回路（4.29）、交付门禁（4.30）、provider 配置桶改名（4.57）、死工具与死执行器（4.58）、文档正文重写（4.59）、镜像变量改名（4.60）、`functions`/`disabled` 死 API（4.61）、`ops_logs` 截断行数（4.72）、k8s 容器状态与 Pod 日志（4.73）、任务运行中的 `ask` 投递（4.74）、`ops_diff` 手抄指纹（4.74）、两条提问同时挂起时的答案路由（4.75）、第一条任务运行中的 `ask` 投递（4.77）。
+规划器替换（4.6）、性能链路与出口（4.7 / 4.12）、四角色委派（4.7）、seed/run CLI（4.9）、前端结论卡片与测量面板（4.12 / 4.13 / 4.17）、改名（4.10）、`ops_exec` 18 条命令（4.11）、`prom_query`（4.16）、`k8s_get`（4.26）、验收进 CI（4.25 / 4.27）、子任务并行（4.27）、人机回路（4.29）、交付门禁（4.30）、provider 配置桶改名（4.57）、死工具与死执行器（4.58）、文档正文重写（4.59）、镜像变量改名（4.60）、`functions`/`disabled` 死 API（4.61）、`ops_logs` 截断行数（4.72）、k8s 容器状态与 Pod 日志（4.73）、任务运行中的 `ask` 投递（4.74）、`ops_diff` 手抄指纹（4.74）、两条提问同时挂起时的答案路由（4.75）、第一条任务运行中的 `ask` 投递（4.77）、性能差值只来自主机指纹（4.79）。
 
 ## 8 踩过的坑
 
