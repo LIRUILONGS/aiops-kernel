@@ -248,7 +248,7 @@ export const MarkdownEditorToolbar = memo(function MarkdownEditorToolbar({
                     shrink below its content so the overflow actually engages; Undo/Redo live OUTSIDE it (below) so
                     they stay pinned right instead of scrolling away (ml-auto collapses to 0 once a flex row overflows). */}
                 <div
-                    className="flex min-w-0 flex-1 [scrollbar-width:none] items-center gap-0.5 overflow-x-auto overscroll-x-contain [&::-webkit-scrollbar]:hidden [&>*]:shrink-0"
+                    className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>*]:shrink-0"
                     ref={stripRef}
                 >
                     <HeadingMenu
