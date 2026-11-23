@@ -1,6 +1,7 @@
 package opsremote
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"sort"
@@ -34,12 +35,86 @@ type Fingerprint struct {
 // problem moves, which no host metric carries. It is absent unless the operator
 // named a container and a database, because those are target-specific.
 type PostgresBrief struct {
-	Container         string  `json:"container"`
-	Database          string  `json:"database"`
-	BlockedSessions   int     `json:"blocked_sessions"`
-	LongestWaitS      float64 `json:"longest_wait_s"`
-	IdleInTransaction int     `json:"idle_in_transaction"`
+	Container         string      `json:"container"`
+	Database          string      `json:"database"`
+	BlockedSessions   int         `json:"blocked_sessions"`
+	LongestWaitS      float64     `json:"longest_wait_s"`
+	IdleInTransaction int         `json:"idle_in_transaction"`
+	Query             *QueryBrief `json:"query,omitempty"`
 }
+
+// QueryBrief is one statement's timing from pg_stat_statements. Without it a
+// performance change can only be judged by host load, which is what the change
+// itself moves: an index build raises load while making the query fast.
+type QueryBrief struct {
+	Statement string  `json:"statement"`
+	Calls     int64   `json:"calls"`
+	TotalMS   float64 `json:"total_ms"`
+	MeanMS    float64 `json:"mean_ms"`
+	Rows      int64   `json:"rows"`
+}
+
+// statementWidth keeps a fingerprint small; the match is by substring, so the
+// prefix is enough to recognise the statement on the next sample.
+const statementWidth = 120
+
+// ParseQueryBrief picks the heaviest statement whose text contains want out of
+// the rows pg_stat_statements prints: calls|total_ms|mean_ms|rows|query.
+func ParseQueryBrief(want, output string) (QueryBrief, error) {
+	want = strings.TrimSpace(want)
+	if want == "" {
+		return QueryBrief{}, errors.New("语句片段不能为空")
+	}
+
+	for _, line := range strings.Split(strings.TrimSpace(output), "\n") {
+		fields := strings.SplitN(strings.TrimSpace(line), "|", 5)
+		if len(fields) != 5 {
+			continue
+		}
+
+		query := strings.TrimSpace(fields[4])
+		if !strings.Contains(query, want) {
+			continue
+		}
+
+		calls, err := strconv.ParseInt(strings.TrimSpace(fields[0]), 10, 64)
+		if err != nil {
+			return QueryBrief{}, fmt.Errorf("解析调用次数失败：%w", err)
+		}
+		total, err := strconv.ParseFloat(strings.TrimSpace(fields[1]), 64)
+		if err != nil {
+			return QueryBrief{}, fmt.Errorf("解析累计耗时失败：%w", err)
+		}
+		mean, err := strconv.ParseFloat(strings.TrimSpace(fields[2]), 64)
+		if err != nil {
+			return QueryBrief{}, fmt.Errorf("解析平均耗时失败：%w", err)
+		}
+		rows, err := strconv.ParseInt(strings.TrimSpace(fields[3]), 10, 64)
+		if err != nil {
+			return QueryBrief{}, fmt.Errorf("解析返回行数失败：%w", err)
+		}
+
+		return QueryBrief{
+			Statement: truncateRunes(query, statementWidth),
+			Calls:     calls,
+			TotalMS:   total,
+			MeanMS:    mean,
+			Rows:      rows,
+		}, nil
+	}
+
+	return QueryBrief{}, fmt.Errorf("pg_stat_statements 里没有包含 %q 的语句", want)
+}
+
+func truncateRunes(s string, limit int) string {
+	runes := []rune(s)
+	if len(runes) <= limit {
+		return s
+	}
+
+	return string(runes[:limit])
+}
+
 
 // ParsePostgresBrief reads the three numbers the summary command prints. The
 // command is a catalogue entry, so its shape is fixed here rather than guessed.
@@ -203,6 +278,8 @@ func CompareFingerprints(before, after Fingerprint) []Delta {
 			compareNumeric("最长锁等待", before.Postgres.LongestWaitS, after.Postgres.LongestWaitS, 0.5, "s", true),
 			compareNumeric("长事务会话", float64(before.Postgres.IdleInTransaction), float64(after.Postgres.IdleInTransaction), 1, "", true),
 		)
+
+		deltas = append(deltas, compareQueries(before.Postgres.Query, after.Postgres.Query)...)
 	}
 
 	mounts := unionKeys(before.Filesystems, after.Filesystems)
@@ -247,6 +324,31 @@ func CompareFingerprints(before, after Fingerprint) []Delta {
 	}
 
 	return deltas
+}
+
+// compareQueries produces the rows a performance change is judged by. A sample
+// without the statement contributes nothing, so an older fingerprint still
+// compares against a newer one on the host half alone.
+func compareQueries(before, after *QueryBrief) []Delta {
+	if before == nil || after == nil {
+		return nil
+	}
+
+	if before.Statement != after.Statement {
+		return []Delta{{
+			Field:    "语句",
+			Before:   truncateRunes(before.Statement, 40),
+			After:    truncateRunes(after.Statement, 40),
+			Change:   "匹配到的语句不同",
+			Verdict:  "变化",
+			Material: true,
+		}}
+	}
+
+	return []Delta{
+		compareNumeric("语句平均耗时", before.MeanMS, after.MeanMS, 0.1, "ms", true),
+		compareNumeric("语句累计耗时", before.TotalMS, after.TotalMS, 1.0, "ms", true),
+	}
 }
 
 // FormatDeltas renders the comparison as a fixed-width table. The material rows

@@ -526,6 +526,7 @@ type OpsBaselineArgs struct {
 	Label     string `json:"label,omitempty" jsonschema:"description=本次采样的标签，例如 before-change / after-change,example=before-change"`
 	Container string `json:"container,omitempty" jsonschema:"description=Postgres 所在容器名。与 database 一起给出时，指纹里会多一段数据库指标（锁等待会话数、最长等待秒数、长事务会话数）,example=opslab-db"`
 	Database  string `json:"database,omitempty" jsonschema:"description=数据库名，与 container 成对出现,example=shop"`
+	Statement string `json:"statement,omitempty" jsonschema:"description=语句片段。给出时（需要 container 与 database）把 pg_stat_statements 里包含这段文字、累计耗时最高的那条语句的调用次数与耗时一起记进指纹——性能场景的改动要靠它判断，主机负载只会因为建索引本身变差,example=where region = $1"`
 }
 
 // OpsDiffArgs compares two samples taken by ops_baseline. Each side is either the
@@ -575,6 +576,17 @@ func (o *opsTools) HandleBaseline(ctx context.Context, name string, args json.Ra
 			fp.Postgres = &brief
 			postgresNote = fmt.Sprintf("Postgres 段（%s/%s）：等待锁的会话 %d 个，最长等待 %.3f 秒，idle in transaction %d 个。\n",
 				brief.Container, brief.Database, brief.BlockedSessions, brief.LongestWaitS, brief.IdleInTransaction)
+
+			if fragment := strings.TrimSpace(parsed.Statement); fragment != "" {
+				query, queryErr := o.captureStatement(ctx, client, parsed.Container, parsed.Database, fragment)
+				if queryErr != nil {
+					postgresNote += "语句段未采集：" + queryErr.Error() + "\n"
+				} else {
+					fp.Postgres.Query = &query
+					postgresNote += fmt.Sprintf("语句段（匹配 %q）：调用 %d 次，平均 %.2f ms，累计 %.1f ms，返回 %d 行。\n",
+						fragment, query.Calls, query.MeanMS, query.TotalMS, query.Rows)
+				}
+			}
 		}
 	}
 
@@ -592,6 +604,9 @@ func (o *opsTools) HandleBaseline(ctx context.Context, name string, args json.Ra
 		b.WriteString(postgresNote)
 	}
 	b.WriteString("\n做完变更后再调一次 ops_baseline，然后用 ops_diff 把第一次的编号传给 before、第二次的传给 after（编号比指纹 JSON 可靠，别手抄 JSON）：\n")
+	if fp.Postgres != nil && fp.Postgres.Query != nil {
+		b.WriteString("两次采样都带同一个 statement 时，ops_diff 会多出「语句平均耗时」与「语句累计耗时」两行——性能改动要看这两行，主机负载会因为建索引本身变差。\n")
+	}
 	b.WriteString("指纹原文（需要时再读，不必整段抄进工具参数）：\n")
 	b.WriteString(string(payload))
 	b.WriteString("\n")
@@ -622,6 +637,28 @@ func (o *opsTools) capturePostgres(ctx context.Context, client *opsremote.Client
 
 	return opsremote.ParsePostgresBrief(container, database, res.Stdout)
 }
+
+// captureStatement takes one statement's timing into the same fingerprint. The
+// catalogue command lists the heaviest statements, so the fragment picks the
+// most expensive one that carries it — the statement a change was made for.
+func (o *opsTools) captureStatement(ctx context.Context, client *opsremote.Client, container, database, fragment string) (opsremote.QueryBrief, error) {
+	command, err := opsremote.Render("pg_stat_statements", map[string]string{
+		"Container": container,
+		"Database":  database,
+		"Lines":     "50",
+	})
+	if err != nil {
+		return opsremote.QueryBrief{}, err
+	}
+
+	res, err := client.RunCtx(ctx, command)
+	if err != nil {
+		return opsremote.QueryBrief{}, fmt.Errorf("执行语句列表失败：%w", err)
+	}
+
+	return opsremote.ParseQueryBrief(fragment, res.Stdout)
+}
+
 
 func (o *opsTools) HandleDiff(ctx context.Context, name string, args json.RawMessage) (string, error) {
 	var parsed OpsDiffArgs

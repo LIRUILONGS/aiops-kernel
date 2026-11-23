@@ -235,3 +235,87 @@ func TestFingerprint_CompareFingerprints_LeavesOutThePostgresRowsWhenOneSideHasN
 		}
 	}
 }
+
+func TestFingerprint_ParseQueryBrief_PicksTheHeaviestStatementWithTheFragment(t *testing.T) {
+	const output = "41|900.0|21.95|0|select count(*) from pgbench_accounts where region = $1\n" +
+		"12|9782.1|815.18|38|select aid, bid, abalance from pgbench_accounts where region = $1 order by abalance desc limit 10"
+
+	brief, err := ParseQueryBrief("order by abalance desc", output)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if brief.Calls != 12 || brief.MeanMS != 815.18 || brief.TotalMS != 9782.1 || brief.Rows != 38 {
+		t.Errorf("brief = %+v, want the second row", brief)
+	}
+	if !strings.Contains(brief.Statement, "order by abalance desc") {
+		t.Errorf("statement = %q, want the matched text kept for the next sample", brief.Statement)
+	}
+}
+
+func TestFingerprint_ParseQueryBrief_RefusesAFragmentNoRowCarries(t *testing.T) {
+	_, err := ParseQueryBrief("orders", "3|9.0|3.00|1|select 1")
+	if err == nil {
+		t.Fatal("parse an output with no match: want an error")
+	}
+	if !strings.Contains(err.Error(), "orders") {
+		t.Errorf("error = %q, want it to name the fragment", err)
+	}
+}
+
+func TestFingerprint_CompareFingerprints_JudgesAPerformanceChangeByItsStatement(t *testing.T) {
+	statement := "select aid, bid, abalance from pgbench_accounts where region = $1 order by abalance desc limit 10"
+	before := Fingerprint{Host: "lab-host", Load1: 12.2, Postgres: &PostgresBrief{
+		Container: "opslab-db",
+		Database:  "bench",
+		Query:     &QueryBrief{Statement: statement, Calls: 12, TotalMS: 9782.1, MeanMS: 815.18, Rows: 38},
+	}}
+	after := Fingerprint{Host: "lab-host", Load1: 14.8, Postgres: &PostgresBrief{
+		Container: "opslab-db",
+		Database:  "bench",
+		Query:     &QueryBrief{Statement: statement, Calls: 12, TotalMS: 9.6, MeanMS: 0.465, Rows: 38},
+	}}
+
+	rows := map[string]Delta{}
+	for _, delta := range CompareFingerprints(before, after) {
+		rows[delta.Field] = delta
+	}
+
+	mean, ok := rows["语句平均耗时"]
+	if !ok {
+		t.Fatalf("no row for the statement, got %v", rows)
+	}
+	if mean.Verdict != "改善" || !mean.Material {
+		t.Errorf("row = %+v, want a material improvement", mean)
+	}
+	if mean.Before != "815.2ms" || mean.After != "0.5ms" {
+		t.Errorf("before/after = %s/%s, want 815.2ms/0.5ms", mean.Before, mean.After)
+	}
+
+	load := rows["load1"]
+	if load.Verdict != "恶化" {
+		t.Errorf("row = %+v, want the load row to stay honest about the build", load)
+	}
+}
+
+func TestFingerprint_CompareFingerprints_SaysSoWhenTheMatchedStatementMoved(t *testing.T) {
+	before := Fingerprint{Host: "lab-host", Postgres: &PostgresBrief{Container: "db", Database: "bench",
+		Query: &QueryBrief{Statement: "select a from t where id = $1", MeanMS: 4}}}
+	after := Fingerprint{Host: "lab-host", Postgres: &PostgresBrief{Container: "db", Database: "bench",
+		Query: &QueryBrief{Statement: "select b from t where id = $1", MeanMS: 3}}}
+
+	rows := map[string]Delta{}
+	for _, delta := range CompareFingerprints(before, after) {
+		rows[delta.Field] = delta
+	}
+
+	moved, ok := rows["语句"]
+	if !ok {
+		t.Fatalf("no row telling the statements differ, got %v", rows)
+	}
+	if moved.Verdict != "变化" || !moved.Material {
+		t.Errorf("row = %+v, want a material change", moved)
+	}
+	if _, compared := rows["语句平均耗时"]; compared {
+		t.Error("compared the timings of two different statements")
+	}
+}
