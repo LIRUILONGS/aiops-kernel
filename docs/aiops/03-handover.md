@@ -2548,9 +2548,9 @@ flow 108 里 `pg_explain` 取第 4 名，恰好是 agent 先前那条 `explain (
 
 还剩一种失败：`EXPLAIN (GENERIC_PLAN)` 推断不出占位符的类型——第 4 名是 `select pid, state, round(extract($1 from …))`，报 `syntax error at or near "$1"`；`$2 - $3` 这种则报 `operator is not unique`。工具应当把这类失败翻译成一句话（"这条语句带占位符，`EXPLAIN` 推断不出类型，请在应用侧复现或换一个 rank"），而不是把 Postgres 的原始报错丢给模型。
 
-### 16. 采样编号只在采集它的那条 flow 里有效
+### 16. 采样编号只在采集它的那条 flow 里有效（措辞已改，见 4.79）
 
-flow 111 只调 `ops_diff`、把 flow 110 采到的 `base-2` 传进去，得到的是"可能已经过期（`ops_baseline` 只保留最近 16 次采样）"。真正的原因不是 16 条上限，而是采样表长在 flow 自己的工具实例上：换一条 flow 就换了一张表。错误信息里那句"16 次"会把人引到上限上，应该直接说"编号只在采集它的那条 flow 里有效，请在同一个任务里先采集再比对"。
+flow 111 只调 `ops_diff`、把 flow 110 采到的 `base-2` 传进去，得到的是"可能已经过期（`ops_baseline` 只保留最近 16 次采样）"。真正的原因不是 16 条上限，而是采样表长在 flow 自己的工具实例上：换一条 flow 就换了一张表。现在的措辞是"它既不是指纹 JSON，也不是这条任务采集过的采样编号——编号只在采集它的那条 flow 里有效（本 flow 还留着最近 16 次），请先用 ops_baseline 采一次再比对"；测试断言的是"只在采集它的那条 flow 里有效"这句，改词就会红。
 
 ### 17. 新会话可能长时间停在 `created`
 

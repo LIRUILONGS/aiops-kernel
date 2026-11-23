@@ -322,9 +322,9 @@ func TestOpsDiff_HandleDiff_NamesTheSideWhoseSampleIsGone(t *testing.T) {
 	if err == nil {
 		t.Fatal("an id that names no sample was accepted")
 	}
-	for _, want := range []string{"before", "base-99", "16"} {
+	for _, want := range []string{"before", "base-99", "只在采集它的那条 flow 里有效"} {
 		if !strings.Contains(err.Error(), want) {
-			t.Errorf("error %q does not tell the model %q, so it cannot tell a typo from an expired sample", err, want)
+			t.Errorf("error %q does not tell the model %q, so it cannot tell a typo from a sample taken in another flow", err, want)
 		}
 	}
 }

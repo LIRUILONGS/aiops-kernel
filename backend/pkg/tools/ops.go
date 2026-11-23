@@ -696,8 +696,8 @@ func (o *opsTools) fingerprintOf(side, value string) (opsremote.Fingerprint, err
 
 	var fp opsremote.Fingerprint
 	if err := json.Unmarshal([]byte(extractJSON(value)), &fp); err != nil {
-		return opsremote.Fingerprint{}, fmt.Errorf("解析 %s 失败（%q）：%w；如果这是采样编号，它可能已经过期（ops_baseline 只保留最近 %d 次采样），重新采一次 before 再比对",
-			side, clip(value, 60), err, baselineSamplesKept)
+		return opsremote.Fingerprint{}, fmt.Errorf("解析 %s 失败（%q）：它既不是指纹 JSON，也不是这条任务采集过的采样编号——编号只在采集它的那条 flow 里有效（本 flow 还留着最近 %d 次），请先用 ops_baseline 采一次再比对",
+			side, clip(value, 60), baselineSamplesKept)
 	}
 
 	return fp, nil
