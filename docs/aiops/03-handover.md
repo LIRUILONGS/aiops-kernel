@@ -2080,6 +2080,44 @@ assistant 单独验过一次（挂在一个已完成的 flow 上，问"lab 上 s
 
 验证：`TestOpsDiff_HandleDiff_TakesTheSampleIdsBaselineReturned`、`TestOpsDiff_HandleDiff_NamesTheSideWhoseSampleIsGone`、`TestOpsDiff_HandleDiff_StillTakesTheFingerprintItself`；把"按编号查找"那三行去掉，第一个测试立刻红（错误文本里能看到它退化成了"解析 before 失败：invalid character 'b'"）。真跑 flow 48：`ops_diff` 一次成功，返回 `共 50 项，其中显著变化 0 项` 的完整差值表——比之前那条 `invalid character ','` 强，但模型把同一个 after 采样传了两次（两次都是 `after-index`、同一秒），所以差值全是 0，结论只能写 `verdict=unverified`。原因是 `ops_baseline` 的提示行对第二次采样也写着 `before=<编号>`，模型分不清哪条是 after；改成"第一次的编号传给 before、第二次的传给 after"之后，同一条链再跑 flow 49 时它已经按 before/after 采了两次基线（`ops_baseline` 两次调用、编号 base-1 与 base-2 都出现在报告里）。
 
+### 4.75 两条提问同时挂起：答案按提问的先后分，不再按 id 分（2026-11-23）
+
+flow 49 停在 `waiting` 上再没动过：两个子任务都在等操作员，操作员按顺序答了两条，服务端两次都回 `success`，但 `msglogs` 里只留下一条 `input`，另一条提问永远没有答案。
+
+#### 一、证据先把嫌疑排掉了
+
+flow 49 的时序，从库里三张表拼起来：
+
+| 时刻 | 事件 | 子任务 |
+|---|---|---|
+| 09:07:30 | `ask` | 149 |
+| 09:07:43 | `ask` | 148 |
+| 09:07:48 | `input` | 148 |
+
+两条提问相隔 13 秒，149 先问；答案却落到了 148 上。也就是说问题不在"投递通道被谁堵住"——4.74 修的那条转发协程确实在跑——而在**投给谁**。
+
+#### 二、`PutInput` 挑的是 id 最小的，不是问得最早的那个
+
+`taskWorker.PutInput` 遍历 `ListSubtasks`，取第一个"未完成且在等"的子任务就 `break`；而 `subtaskController.ListSubtasks` 按 `GetSubtaskID()` 升序排。148 < 149，所以第一条答案给了 148，148 随即 `waiting=false`；第二条答案再进来时，已经没有任何正在等的子任务里"id 最小"的那条还开着——它要么再次落到 148（此时已被拒），要么落到 149，但 149 的 `ask` 在 agent 链上已经因为超时作废。
+
+无论哪种，149 的提问都拿不到答案，flow 永远停在 `waiting`。
+
+#### 三、修法：记住"什么时候开始等"，先问的先答
+
+`subtaskWorker` 多一个 `waitingSince`：进入 `waiting` 时记下时刻，`PutInput`、`completed`、状态改为 `running` 时清空。`taskWorker.PutInput` 不再取列表里的第一个，而是取 `waitingSince` 最早的那个；没有 `waitingSince` 的（旧数据、测试替身）保持列表顺序兜底。
+
+这样两条提问同时挂着时：第一条答案给 149，第二条给 148，与操作员在界面上看到的顺序一致。
+
+#### 四、测试
+
+`task_test.go` 新增三条：两条提问同时挂起时按提问先后分发；已经答过的子任务不会再吃第二条答案；任务本身不在等时直接拒绝。替身只实现路由读到的四个方法（`GetSubtaskID`、`IsCompleted`、`IsWaiting`、`WaitingSince`、`PutInput`），其余靠嵌入的接口兜底，免得为了测一条路由去补齐十三个方法。
+
+把 `waitingTarget` 里的排序换成"取第一个在等的"，前两条立刻红——这正是 flow 49 的行为。
+
+#### 五、还没做完的
+
+这一条只让"两条提问"能各自拿到答案。第 7 章第 9 条那个"完整性能闭环跑到 `verdict=improved`"还没有一次成型的记录：flow 49 卡在这条缺陷上，修完之后应当能跑完 before → DDL → after → `ops_diff` → `optimization_result`。下一次用 `bench` 库跑 `p2_baseline_diff` 就能验收。
+
 ## 5 环境
 
 ### 5.1 开发机
@@ -2309,13 +2347,13 @@ chore: fork OpsAGI as AIOps kernel; add design docs and incident prompts
 
 `flowWorker.PutInput` 把用户输入送进 `fw.input`，然后只等 `flowInputTimeout`（1 秒）看有没有人接收；唯一读这个 channel 的是 flow 主循环 `for { select { case flin = <-fw.input } }`。而 `taskWorker.Run` 在某个子任务 `waiting` 之后会继续跑下一个子任务（`OPSAGI_SUBTASK_CONCURRENCY=2` 时并行跑），整条 `runTask` 并不返回——于是答案只有在"整条任务跑完、回到主循环"的时间缝里才收得下，任务内部还在跑别的子任务时投递一律被拒。flow 39 就是后者：子任务 100 在 07:03:28 提问，子任务 101 转去查指标、二十分钟没停，这期间每 10 秒投递一次答案，全部 `input processing timeout`。4.74 起的转发协程把这条路接通了（flow 46 上三次提问第一次投递就被接收）；按键的是"一个任务里同时挂着两个提问"这种更窄的情况，见第 13 条。
 
-### 13. 两个子任务同时提问时，答案只喂给第一个
+### 13. 两个子任务同时提问时，答案只喂给第一个（已修，见 4.75）
 
-`taskWorker.PutInput` 在 `ListSubtasks` 里找第一个"未完成且 waiting"的子任务，把输入交给它，然后 `break`。flow 49 里两个子任务（148、149）几乎同时提问，操作员按顺序答了两条，两条都被 flow 接受（`putUserInput` 返回成功），但只有第一条在 `msglogs` 里留下了 `input` 记录（subtask_id=148），第二条被同一个子任务吃掉了；子任务 149 的 `ask` 从此没有答案，整条 flow 停在 `waiting`、不再产生任何工具调用。修法：输入本身要带"答哪一条问题"（`ask` 记下提问的子任务 id，`putUserInput` 按它路由），或者把"等待中的提问"排成队列逐条回答；现在这种"取第一个 waiting 就走"的写法在两个问题重叠时必然丢一个。
+`taskWorker.PutInput` 在 `ListSubtasks` 里找第一个"未完成且 waiting"的子任务，把输入交给它，然后 `break`。flow 49 里两个子任务（148、149）几乎同时提问，操作员按顺序答了两条，两条都被 flow 接受（`putUserInput` 返回成功），但只有第一条在 `msglogs` 里留下了 `input` 记录（subtask_id=148），第二条被同一个子任务吃掉了；子任务 149 的 `ask` 从此没有答案，整条 flow 停在 `waiting`、不再产生任何工具调用。4.75 让每个等待中的子任务记下"开始等的时刻"、答案给最早那条提问，并把这三条行为写进了测试。
 
 ### 已经关掉的（不再列在上面）
 
-规划器替换（4.6）、性能链路与出口（4.7 / 4.12）、四角色委派（4.7）、seed/run CLI（4.9）、前端结论卡片与测量面板（4.12 / 4.13 / 4.17）、改名（4.10）、`ops_exec` 18 条命令（4.11）、`prom_query`（4.16）、`k8s_get`（4.26）、验收进 CI（4.25 / 4.27）、子任务并行（4.27）、人机回路（4.29）、交付门禁（4.30）、provider 配置桶改名（4.57）、死工具与死执行器（4.58）、文档正文重写（4.59）、镜像变量改名（4.60）、`functions`/`disabled` 死 API（4.61）、`ops_logs` 截断行数（4.72）、k8s 容器状态与 Pod 日志（4.73）、任务运行中的 `ask` 投递（4.74）、`ops_diff` 手抄指纹（4.74）。
+规划器替换（4.6）、性能链路与出口（4.7 / 4.12）、四角色委派（4.7）、seed/run CLI（4.9）、前端结论卡片与测量面板（4.12 / 4.13 / 4.17）、改名（4.10）、`ops_exec` 18 条命令（4.11）、`prom_query`（4.16）、`k8s_get`（4.26）、验收进 CI（4.25 / 4.27）、子任务并行（4.27）、人机回路（4.29）、交付门禁（4.30）、provider 配置桶改名（4.57）、死工具与死执行器（4.58）、文档正文重写（4.59）、镜像变量改名（4.60）、`functions`/`disabled` 死 API（4.61）、`ops_logs` 截断行数（4.72）、k8s 容器状态与 Pod 日志（4.73）、任务运行中的 `ask` 投递（4.74）、`ops_diff` 手抄指纹（4.74）、两条提问同时挂起时的答案路由（4.75）。
 
 ## 8 踩过的坑
 
