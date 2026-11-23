@@ -2293,9 +2293,9 @@ chore: fork OpsAGI as AIOps kernel; add design docs and incident prompts
 
 `TestCatalog_BundledCatalogs_ShippedDataKeepsItsInvariants` 在"促销文写明的结束日已过"时变红，防的是目录悄悄按低价记成本。2026-11-22 它就红了（`openai/gpt-6-sol` 的促销写到 2026-11-21），4.71 把窗口延到 2026-12-31。真正的解法是有人拿厂商价目表核对一次再改，而不是续日期；下一次到期是 2026-12-31。
 
-### 9. 性能链路的后两步没有在真 flow 上覆盖
+### 9. 性能链路的后两步已经覆盖，但还没跑到 `verdict=improved`（部分完成，见 4.74）
 
-4.72 的 flow 16 走完了"定位 → 给 DDL → 操作员实施 → 回放验证"，但 `ops_baseline`（改后基线）与 `ops_diff`（前后差值）没被调用，`optimization_result` 也没出口——报告里是它自己点出来的。要覆盖这两步，需要一个由 agent 自己就能完成写操作的场景（比如索引已经建好、只差复测），或者给靶场开一个"允许一条 DDL"的白名单通道；后者是产品决定，不是代码缺口。
+4.72 的 flow 16 走完了"定位 → 给 DDL → 操作员实施 → 回放验证"，但 `ops_baseline`（改后基线）与 `ops_diff`（前后差值）没被调用，`optimization_result` 也没出口。4.74 之后这三步都在真 flow 上跑过了（flow 48/49：`ops_baseline` 两次、`ops_diff` 一次成功、`optimization_result` 一次出口），但还没有一次是"改前 → 改后 → 差值显著 → `improved`"的完整闭环：flow 48 把 after 采样拿了两遍，`ops_diff` 全是 0，agent 诚实地写了 `verdict=unverified`；flow 49 已经按 before/after 采了两次基线，卡在第 13 条那个"两个子任务同时提问"的缺陷上。剩下的是一条能自己走完写操作的场景——比如索引已经建好、只差复测——或者给靶场开一个"允许一条 DDL"的白名单通道。
 
 ### 10. `runqlat` 没有全局汇总，agent 只能按进程名读分桶
 
@@ -2305,9 +2305,9 @@ chore: fork OpsAGI as AIOps kernel; add design docs and incident prompts
 
 4.72 里 assistant 只用 1.3 分钟就答对了"哪些 seal-engraver 容器在跑"，但它把 4 个容器的表格写成了 5 行（多出的那行是自己拼错的），随后在正文里自我更正。flow 有多轮取证与 refiner 复核兜底，assistant 是一次成稿，这一档差距目前靠模型本身，没有结构性补偿。
 
-### 12. 子任务 `ask` 之后，答案进不来
+### 12. 子任务 `ask` 之后，答案进不来（已修，见 4.74）
 
-`flowWorker.PutInput` 把用户输入送进 `fw.input`，然后只等 `flowInputTimeout`（1 秒）看有没有人接收；唯一读这个 channel 的是 flow 主循环 `for { select { case flin = <-fw.input } }`（`pkg/controller/flow.go:1321`）。而 `taskWorker.Run` 在某个子任务 `waiting` 之后会继续跑下一个子任务（`OPSAGI_SUBTASK_CONCURRENCY=2` 时并行跑），整条 `runTask` 并不返回——于是答案只有在"整条任务跑完、回到主循环"的时间缝里才收得下，任务内部还在跑别的子任务时投递一律被拒。flow 39 就是后者：子任务 100 在 07:03:28 提问，子任务 101 转去查指标、二十分钟没停，这期间每 10 秒投递一次答案，全部 `input processing timeout`；界面上这个问题看得见、答不进去，等人真正答进去时，那条 parked 子任务可能已经被 `subtask_patch` 改掉或跳过。修法方向有两条，选一条即可：子任务 `waiting` 时任务不再起新的子任务（等答复或等它被改掉），或者把输入通道的读取挪到能并发跑的位置，并让 `putUserInput` 的报错区分"worker 正忙"和"没有人在等输入"——一个 1 秒超时把两件事说成同一件，操作员和 agent 都无从判断。
+`flowWorker.PutInput` 把用户输入送进 `fw.input`，然后只等 `flowInputTimeout`（1 秒）看有没有人接收；唯一读这个 channel 的是 flow 主循环 `for { select { case flin = <-fw.input } }`。而 `taskWorker.Run` 在某个子任务 `waiting` 之后会继续跑下一个子任务（`OPSAGI_SUBTASK_CONCURRENCY=2` 时并行跑），整条 `runTask` 并不返回——于是答案只有在"整条任务跑完、回到主循环"的时间缝里才收得下，任务内部还在跑别的子任务时投递一律被拒。flow 39 就是后者：子任务 100 在 07:03:28 提问，子任务 101 转去查指标、二十分钟没停，这期间每 10 秒投递一次答案，全部 `input processing timeout`。4.74 起的转发协程把这条路接通了（flow 46 上三次提问第一次投递就被接收）；按键的是"一个任务里同时挂着两个提问"这种更窄的情况，见第 13 条。
 
 ### 13. 两个子任务同时提问时，答案只喂给第一个
 
@@ -2315,7 +2315,7 @@ chore: fork OpsAGI as AIOps kernel; add design docs and incident prompts
 
 ### 已经关掉的（不再列在上面）
 
-规划器替换（4.6）、性能链路与出口（4.7 / 4.12）、四角色委派（4.7）、seed/run CLI（4.9）、前端结论卡片与测量面板（4.12 / 4.13 / 4.17）、改名（4.10）、`ops_exec` 18 条命令（4.11）、`prom_query`（4.16）、`k8s_get`（4.26）、验收进 CI（4.25 / 4.27）、子任务并行（4.27）、人机回路（4.29）、交付门禁（4.30）、provider 配置桶改名（4.57）、死工具与死执行器（4.58）、文档正文重写（4.59）、镜像变量改名（4.60）、`functions`/`disabled` 死 API（4.61）。
+规划器替换（4.6）、性能链路与出口（4.7 / 4.12）、四角色委派（4.7）、seed/run CLI（4.9）、前端结论卡片与测量面板（4.12 / 4.13 / 4.17）、改名（4.10）、`ops_exec` 18 条命令（4.11）、`prom_query`（4.16）、`k8s_get`（4.26）、验收进 CI（4.25 / 4.27）、子任务并行（4.27）、人机回路（4.29）、交付门禁（4.30）、provider 配置桶改名（4.57）、死工具与死执行器（4.58）、文档正文重写（4.59）、镜像变量改名（4.60）、`functions`/`disabled` 死 API（4.61）、`ops_logs` 截断行数（4.72）、k8s 容器状态与 Pod 日志（4.73）、任务运行中的 `ask` 投递（4.74）、`ops_diff` 手抄指纹（4.74）。
 
 ## 8 踩过的坑
 
