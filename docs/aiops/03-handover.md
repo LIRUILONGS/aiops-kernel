@@ -2401,9 +2401,13 @@ flow 108 收口时暴露的：`verdict=improved` 的依据是操作员复测的 
 - 落点：`ops_baseline` 增加可选参数（`container` + `database` + `rank` 或语句指纹），把该语句的 `calls`/`mean_exec_time`/`rows` 一起记进指纹；`ops_diff` 把这几项当普通数值比较，`optimization_result.observed_gain` 才有东西可引。
 - 验收：同一场景再跑一次，`ops_diff` 输出里出现"语句 mean_exec_time 815 ms → 0.2 ms 改善"，`observed_gain` 引到的是这一行而不是负载行。
 
-### 15. 目标语句本身就是 EXPLAIN 时，`pg_explain` 会拼出两条
+### 15. 目标语句本身就是 EXPLAIN 时，`pg_explain` 会拼出两条（已修一半）
 
-flow 108 里 `pg_explain` 取第 4 名，恰好是 agent 先前那条 `explain (analyze, …)`，模板在前面又加了一遍 `explain (format text, verbose off, generic_plan)`，`psql` 报 `syntax error at or near "explain"`。要么识别出"已经是 EXPLAIN"就原样执行，要么直接拒绝并说明为什么（`pg_stat_statements` 里不该拿 EXPLAIN 当被解释对象）。
+flow 108 里 `pg_explain` 取第 4 名，恰好是 agent 先前那条 `explain (analyze, …)`，模板在前面又加了一遍 `explain (format text, verbose off, generic_plan)`，`psql` 报 `syntax error at or near "explain"`；另一次取到的是 `drop index …`，成了 `explain drop index`。
+
+现在取语句时只保留以 `select`/`with`/`insert`/`update`/`delete`/`values`/`table` 开头的行，并排除工具自己的监控语句，于是 `bench` 库上的第 1、2 名真的变成了业务语句（`select count(*) from pgbench_accounts where region = $1` 与那条报表查询），不再是探针和 DDL。
+
+还剩一种失败：`EXPLAIN (GENERIC_PLAN)` 推断不出占位符的类型——第 4 名是 `select pid, state, round(extract($1 from …))`，报 `syntax error at or near "$1"`；`$2 - $3` 这种则报 `operator is not unique`。工具应当把这类失败翻译成一句话（"这条语句带占位符，`EXPLAIN` 推断不出类型，请在应用侧复现或换一个 rank"），而不是把 Postgres 的原始报错丢给模型。
 
 ### 已经关掉的（不再列在上面）
 
