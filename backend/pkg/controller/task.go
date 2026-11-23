@@ -325,17 +325,42 @@ func (tw *taskWorker) PutInput(ctx context.Context, input string) error {
 		return fmt.Errorf("task is not waiting")
 	}
 
-	for _, st := range tw.stc.ListSubtasks(ctx) {
-		if !st.IsCompleted() && st.IsWaiting() {
-			if err := st.PutInput(ctx, input); err != nil {
-				return fmt.Errorf("failed to put input to subtask %d: %w", st.GetSubtaskID(), err)
-			} else {
-				break
-			}
-		}
+	target := waitingTarget(tw.stc.ListSubtasks(ctx))
+	if target == nil {
+		return nil
+	}
+
+	if err := target.PutInput(ctx, input); err != nil {
+		return fmt.Errorf("failed to put input to subtask %d: %w", target.GetSubtaskID(), err)
 	}
 
 	return nil
+}
+
+// waitingTarget picks the subtask whose question has been open the longest. Two
+// subtasks of one batch can ask at the same moment, and the operator answers the
+// questions in the order they were shown; taking the first waiting subtask in id
+// order hands both answers to the one with the lower id and leaves the other's
+// question unanswered for good.
+func waitingTarget(subtasks []SubtaskWorker) SubtaskWorker {
+	var target SubtaskWorker
+	var oldest time.Time
+
+	for _, st := range subtasks {
+		if st.IsCompleted() || !st.IsWaiting() {
+			continue
+		}
+
+		since := st.WaitingSince()
+		switch {
+		case target == nil:
+			target, oldest = st, since
+		case !since.IsZero() && (oldest.IsZero() || since.Before(oldest)):
+			target, oldest = st, since
+		}
+	}
+
+	return target
 }
 
 func (tw *taskWorker) Run(ctx context.Context) error {

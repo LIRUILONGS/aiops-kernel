@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sync"
 	"testing"
+	"time"
 
 	"opsagi/pkg/database"
 	"opsagi/pkg/providers"
@@ -418,4 +419,107 @@ func TestTaskStatusAfterBatchError_ClosesOnABreakAndNotOnACancellation(t *testin
 			}
 		})
 	}
+}
+
+// waitingQuestion stands in for a subtask worker: the routing reads four methods, and
+// the embedded interface covers the rest of the contract.
+type waitingQuestion struct {
+	SubtaskWorker
+
+	id    int64
+	since time.Time
+	open  bool
+	got   []string
+}
+
+func (w *waitingQuestion) GetSubtaskID() int64 { return w.id }
+
+func (w *waitingQuestion) IsCompleted() bool { return false }
+
+func (w *waitingQuestion) IsWaiting() bool { return w.open }
+
+func (w *waitingQuestion) WaitingSince() time.Time { return w.since }
+
+func (w *waitingQuestion) PutInput(_ context.Context, input string) error {
+	w.got = append(w.got, input)
+	w.open = false
+
+	return nil
+}
+
+type waitingQuestions []*waitingQuestion
+
+func (q waitingQuestions) LoadSubtasks(context.Context, int64, TaskUpdater) error { return nil }
+
+func (q waitingQuestions) GenerateSubtasks(context.Context) error { return nil }
+
+func (q waitingQuestions) RefineSubtasks(context.Context) error { return nil }
+
+func (q waitingQuestions) PopSubtasks(context.Context, TaskUpdater, int) ([]SubtaskWorker, error) {
+	return nil, nil
+}
+
+func (q waitingQuestions) ListSubtasks(context.Context) []SubtaskWorker {
+	list := make([]SubtaskWorker, 0, len(q))
+	for _, question := range q {
+		list = append(list, question)
+	}
+
+	return list
+}
+
+func (q waitingQuestions) GetSubtask(_ context.Context, id int64) (SubtaskWorker, error) {
+	for _, question := range q {
+		if question.id == id {
+			return question, nil
+		}
+	}
+
+	return nil, nil
+}
+
+func (q waitingQuestions) InvalidateSubtasks([]int64) {}
+
+// TestTask_PutInput_AnswersTheOldestQuestionFirst pins what happens when two subtasks of
+// one batch wait at once: the question asked first takes the answer sent first.
+func TestTask_PutInput_AnswersTheOldestQuestionFirst(t *testing.T) {
+	asked := time.Date(2026, 11, 23, 9, 7, 30, 0, time.UTC)
+
+	early := &waitingQuestion{id: 149, since: asked, open: true}
+	late := &waitingQuestion{id: 148, since: asked.Add(13 * time.Second), open: true}
+
+	worker := &taskWorker{mx: &sync.RWMutex{}, stc: waitingQuestions{late, early}, waiting: true}
+
+	require.NoError(t, worker.PutInput(context.Background(), "the first answer"))
+	require.NoError(t, worker.PutInput(context.Background(), "the second answer"))
+
+	assert.Equal(t, []string{"the first answer"}, early.got)
+	assert.Equal(t, []string{"the second answer"}, late.got)
+}
+
+// TestTask_PutInput_LeavesAnAnsweredQuestionAlone covers the same routing with the other
+// outcome: a subtask that already took an answer must not take the next one as well.
+func TestTask_PutInput_LeavesAnAnsweredQuestionAlone(t *testing.T) {
+	answered := &waitingQuestion{id: 150, since: time.Date(2026, 11, 23, 9, 0, 0, 0, time.UTC), open: true}
+	silent := &waitingQuestion{id: 151, since: time.Date(2026, 11, 23, 9, 5, 0, 0, time.UTC), open: false}
+
+	worker := &taskWorker{mx: &sync.RWMutex{}, stc: waitingQuestions{answered, silent}, waiting: true}
+
+	require.NoError(t, worker.PutInput(context.Background(), "only answer"))
+	require.NoError(t, worker.PutInput(context.Background(), "the spare answer"))
+
+	assert.Equal(t, []string{"only answer"}, answered.got)
+	assert.Empty(t, silent.got)
+}
+
+// TestTask_PutInput_RefusesWhenTheTaskIsNotWaiting keeps the gate in front of the routing.
+func TestTask_PutInput_RefusesWhenTheTaskIsNotWaiting(t *testing.T) {
+	question := &waitingQuestion{id: 152, since: time.Now(), open: true}
+	worker := &taskWorker{mx: &sync.RWMutex{}, stc: waitingQuestions{question}, waiting: false}
+
+	err := worker.PutInput(context.Background(), "an answer nobody asked for")
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "task is not waiting")
+	assert.Empty(t, question.got)
 }

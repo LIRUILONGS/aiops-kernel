@@ -29,6 +29,7 @@ type SubtaskWorker interface {
 	GetDescription() string
 	IsCompleted() bool
 	IsWaiting() bool
+	WaitingSince() time.Time
 	GetStatus(ctx context.Context) (database.SubtaskStatus, error)
 	SetStatus(ctx context.Context, status database.SubtaskStatus) error
 	GetResult(ctx context.Context) (string, error)
@@ -39,11 +40,12 @@ type SubtaskWorker interface {
 }
 
 type subtaskWorker struct {
-	mx         *sync.RWMutex
-	subtaskCtx *SubtaskContext
-	updater    TaskUpdater
-	completed  bool
-	waiting    bool
+	mx           *sync.RWMutex
+	subtaskCtx   *SubtaskContext
+	updater      TaskUpdater
+	completed    bool
+	waiting      bool
+	waitingSince time.Time
 }
 
 func NewSubtaskWorker(
@@ -175,6 +177,15 @@ func (stw *subtaskWorker) IsWaiting() bool {
 	return stw.waiting
 }
 
+// WaitingSince reports when the subtask started waiting for an answer; the zero time
+// means it is not waiting. Answers go to the question that has been open the longest.
+func (stw *subtaskWorker) WaitingSince() time.Time {
+	stw.mx.RLock()
+	defer stw.mx.RUnlock()
+
+	return stw.waitingSince
+}
+
 func (stw *subtaskWorker) GetStatus(ctx context.Context) (database.SubtaskStatus, error) {
 	subtask, err := stw.subtaskCtx.DB.GetSubtask(ctx, stw.subtaskCtx.SubtaskID)
 	if err != nil {
@@ -201,6 +212,7 @@ func (stw *subtaskWorker) SetStatus(ctx context.Context, status database.Subtask
 			stw.mx.Lock()
 			stw.completed = true
 			stw.waiting = false
+			stw.waitingSince = time.Time{}
 			stw.mx.Unlock()
 
 			return nil
@@ -216,14 +228,17 @@ func (stw *subtaskWorker) SetStatus(ctx context.Context, status database.Subtask
 	case database.SubtaskStatusRunning:
 		stw.completed = false
 		stw.waiting = false
+		stw.waitingSince = time.Time{}
 		err = stw.updater.SetStatus(ctx, database.TaskStatusRunning)
 	case database.SubtaskStatusWaiting:
 		stw.completed = false
 		stw.waiting = true
+		stw.waitingSince = time.Now()
 		err = stw.updater.SetStatus(ctx, database.TaskStatusWaiting)
 	case database.SubtaskStatusFinished, database.SubtaskStatusFailed:
 		stw.completed = true
 		stw.waiting = false
+		stw.waitingSince = time.Time{}
 		// statuses Finished and Failed will be produced by stack from Run function call
 	default:
 		// status Created is not possible to set by this call
@@ -287,6 +302,7 @@ func (stw *subtaskWorker) PutInput(ctx context.Context, input string) error {
 	defer stw.mx.Unlock()
 
 	stw.waiting = false
+	stw.waitingSince = time.Time{}
 
 	return nil
 }
