@@ -11,6 +11,8 @@ import (
 
 	"opsagi/pkg/config"
 	"opsagi/pkg/opsremote"
+
+	"github.com/sirupsen/logrus"
 )
 
 // OpsTargetArgs selects the host a read-only probe talks to. The target id is
@@ -97,6 +99,11 @@ func NewOpsTools(cfg *config.Config) *opsTools {
 
 	var parsed []opsremote.Target
 	if err := json.Unmarshal([]byte(cfg.OpsTargets), &parsed); err != nil {
+		// Startup validation rejects this, so reaching it means the value was set
+		// after boot or the validator was bypassed. Say so: an empty toolset with
+		// no explanation reads as "this deployment has no hosts".
+		logrus.WithError(err).Error("OPSAGI_TARGETS cannot be parsed; every ops probe tool is disabled")
+
 		return tools
 	}
 	for _, target := range parsed {
@@ -316,6 +323,12 @@ func (o *opsTools) HandleSandbox(ctx context.Context, name string, args json.Raw
 	}
 
 	mode := opsremote.SandboxMode(parsed.Mode)
+	// Refuse an unknown shape before dialling: the check used to happen when the
+	// command line was built, which is after EnsureSandboxImage had already pulled
+	// an image onto the host for a box that would never run.
+	if err := opsremote.ValidateSandboxMode(mode); err != nil {
+		return "", Refuse("%s", err.Error())
+	}
 	if mode == opsremote.SandboxModeWorkshop && !o.sandboxNetwork {
 		return "", Refuse("作业形状需要出网，而操作员没有放开（OPSAGI_SANDBOX_NETWORK=false）：用 ask 申请安装，或继续用 probe 形状")
 	}

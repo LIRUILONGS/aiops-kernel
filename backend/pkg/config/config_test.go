@@ -463,3 +463,32 @@ func TestConfig_EveryVariableReachesTheContainer(t *testing.T) {
 		}
 	}
 }
+
+func TestConfig_ValidateOpsTargets_RejectsWhatTheToolsetWouldSilentlyDrop(t *testing.T) {
+	tests := []struct {
+		name  string
+		value string
+		wants string
+	}{
+		{name: "nothing configured", value: "", wants: ""},
+		{name: "a usable target", value: `[{"id":"lab","host":"10.0.0.10"}]`, wants: ""},
+		{name: "a broken array", value: `[{"id":"lab"`, wants: "not a valid JSON array"},
+		{name: "an entry without a host", value: `[{"id":"lab"}]`, wants: "no target with a host"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := Config{OpsTargets: tc.value}
+
+			err := cfg.ValidateOpsTargets()
+
+			if tc.wants == "" {
+				require.NoError(t, err)
+
+				return
+			}
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tc.wants)
+		})
+	}
+}

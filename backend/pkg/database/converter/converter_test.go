@@ -42,6 +42,13 @@ func converterTakesNoThinkingDepth(info *model.ModelReasoningInfo) bool {
 	return info != nil && info.TakesNoThinkingDepth != nil && *info.TakesNoThinkingDepth
 }
 
+func TestConverter_ConvertCapabilityMode_FallsBackToOffForAValueTheSchemaCannotRender(t *testing.T) {
+	assert.Equal(t, model.CapabilityModeEnforce, ConvertCapabilityMode("enforce"))
+	assert.Equal(t, model.CapabilityModeShadow, ConvertCapabilityMode("shadow"))
+	assert.Equal(t, model.CapabilityModeOff, ConvertCapabilityMode("enabled"))
+	assert.Equal(t, model.CapabilityModeOff, ConvertCapabilityMode(""))
+}
+
 func TestConverter_IsAgentTool_RecognisesAgentResultTools(t *testing.T) {
 	tests := []struct {
 		name          string

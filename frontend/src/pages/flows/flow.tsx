@@ -12,6 +12,7 @@ import {
     NotepadText,
     Pause,
     PencilLine,
+    ShieldCheck,
     Star,
     Trash,
 } from 'lucide-react';
@@ -43,10 +44,12 @@ import {
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import FlowCapabilitySheet from '@/features/flows/capability/flow-capability-sheet';
+import { capabilityModeLabel } from '@/features/flows/capability/mode-label';
 import FlowCentralTabs from '@/features/flows/flow-central-tabs';
 import FlowTabs from '@/features/flows/flow-tabs';
 import { useFlowDetailNavigation } from '@/features/flows/use-flow-detail-navigation';
-import { RenameFlowDocument, ResultType, StatusType } from '@/graphql/types';
+import { CapabilityMode, RenameFlowDocument, ResultType, StatusType } from '@/graphql/types';
 import { useBreakpoint } from '@/hooks/use-breakpoint';
 import { FLOW_TAB_VALUES, useFlowSideTab, useFlowTabDetection } from '@/hooks/use-flow-tab-detection';
 import { useIsOwnFlow } from '@/hooks/use-is-own-flow';
@@ -114,6 +117,7 @@ function Flow() {
     const [isFinishing, setIsFinishing] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isCapabilitySheetOpen, setIsCapabilitySheetOpen] = useState(false);
     const [renameFlowMutation, { loading: isRenameLoading }] = useMutation(RenameFlowDocument);
 
     useEffect(() => {
@@ -277,6 +281,15 @@ function Flow() {
                                         {flowTitle || 'Select a flow'}
                                     </BreadcrumbPage>
                                 )}
+                                {flow && flow.capabilityMode !== CapabilityMode.Off && (
+                                    <Badge
+                                        className="shrink-0 text-[10px] font-normal"
+                                        variant="outline"
+                                    >
+                                        <ShieldCheck className="size-3" />
+                                        租约·{capabilityModeLabel(flow.capabilityMode)}
+                                    </Badge>
+                                )}
                             </BreadcrumbItem>
                         </BreadcrumbList>
                     </Breadcrumb>
@@ -355,6 +368,13 @@ function Flow() {
                                     <DropdownMenuSeparator />
                                 </>
                             )}
+                            <DropdownMenuItem
+                                disabled={isFlowLoading}
+                                onClick={() => setIsCapabilitySheetOpen(true)}
+                            >
+                                <ShieldCheck className="size-3" />
+                                能力租约
+                            </DropdownMenuItem>
                             <DropdownMenuItem
                                 disabled={isFlowLoading}
                                 onClick={handleFlowRenameStart}
@@ -456,6 +476,13 @@ function Flow() {
                 itemName={flow?.title}
                 itemType="flow"
             />
+            {flow && (
+                <FlowCapabilitySheet
+                    mode={flow.capabilityMode}
+                    onOpenChange={setIsCapabilitySheetOpen}
+                    open={isCapabilitySheetOpen}
+                />
+            )}
         </>
     );
 }

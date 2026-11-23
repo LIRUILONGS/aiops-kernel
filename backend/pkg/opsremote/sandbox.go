@@ -61,6 +61,18 @@ func SandboxCommand(image string, mode SandboxMode) (string, error) {
 	return sandboxCommandNamed(image, "", mode)
 }
 
+// ValidateSandboxMode reports whether the shape exists, so a caller can refuse
+// a request before it opens a connection or pulls an image for a box it is
+// never going to run.
+func ValidateSandboxMode(mode SandboxMode) error {
+	switch mode {
+	case "", SandboxModeProbe, SandboxModeWorkshop:
+		return nil
+	default:
+		return fmt.Errorf("未知的采集容器形状 %q：只能是 %s 或 %s", mode, SandboxModeProbe, SandboxModeWorkshop)
+	}
+}
+
 // sandboxCommandNamed adds a name, which is how a run that outlived its timeout
 // is found again and removed: killing the ssh session leaves the container
 // running whatever the script started.
@@ -69,14 +81,13 @@ func sandboxCommandNamed(image, name string, mode SandboxMode) (string, error) {
 		image = SandboxImageDefault
 	}
 
-	var shape string
-	switch mode {
-	case "", SandboxModeProbe:
-		shape = sandboxProbeFlags
-	case SandboxModeWorkshop:
+	if err := ValidateSandboxMode(mode); err != nil {
+		return "", err
+	}
+
+	shape := sandboxProbeFlags
+	if mode == SandboxModeWorkshop {
 		shape = sandboxWorkshopFlags
-	default:
-		return "", fmt.Errorf("未知的采集容器形状 %q：只能是 %s 或 %s", mode, SandboxModeProbe, SandboxModeWorkshop)
 	}
 
 	named := ""

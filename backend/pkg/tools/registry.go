@@ -457,7 +457,9 @@ var registryDefinitions = map[string]llms.FunctionDefinition{
 			"pg_stat_activity（Postgres 容器里还在跑的查询，需 container 与 database）、pg_stat_statements（Postgres 里累计耗时最高的语句，需 container 与 database，可传 lines）、" +
 			"pg_locks（此刻的锁等待：谁被谁挡住、等了多少秒、卡在哪把未授予的锁上，需 container 与 database，可传 lines）、" +
 			"pg_lock_wait_summary（锁等待摘要：等待中的会话数、最长等待秒数、idle in transaction 会话数，需 container 与 database）、" +
-			"pg_explain（累计耗时第 N 条语句的执行计划：只取计划、不执行，需 container、database 与 rank，rank 从 1 起）。" +
+			"pg_explain（累计耗时第 N 条语句的执行计划：只取计划、不执行，需 container、database 与 rank，rank 从 1 起）、" +
+			"mysql_connections（MySQL 容器的连接上限与当前连接、被拒连接数，需 container）、" +
+			"mysql_processlist（MySQL 里此刻的连接清单：来源、用户、库、执行秒数与语句开头，需 container，可传 lines）。" +
 			"参数只允许字母、数字与 . _ - /，含空格或 shell 元字符会被拒绝。" +
 			"返回结果会带上真实执行的命令原文，写证据时直接引用它。",
 		Parameters: reflector.Reflect(&OpsExecArgs{}),

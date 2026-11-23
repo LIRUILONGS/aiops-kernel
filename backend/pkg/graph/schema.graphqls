@@ -16,6 +16,13 @@ enum CapabilityMode {
   enforce
 }
 
+# What the lease said about one tool call; would_deny is what enforce would have stopped
+enum CapabilityVerdict {
+  allow
+  deny
+  would_deny
+}
+
 enum StatusType {
   created
   running
@@ -275,10 +282,24 @@ type Flow {
   title: String!
   status: StatusType!
   type: FlowType!
+  capabilityMode: CapabilityMode!
   terminals: [Terminal!]
   provider: Provider!
   createdAt: Time!
   updatedAt: Time!
+}
+
+type CapabilityDecision {
+  id: ID!
+  flowId: ID!
+  subtaskId: ID
+  role: String!
+  tool: String!
+  target: String!
+  command: String!
+  verdict: CapabilityVerdict!
+  reason: String!
+  createdAt: Time!
 }
 
 type Task {
@@ -1017,6 +1038,7 @@ type Query {
   messageLogs(flowId: ID!): [MessageLog!]
   agentLogs(flowId: ID!): [AgentLog!]
   flowRoleActivity(flowId: ID!): FlowRoleActivity!
+  capabilityDecisions(flowId: ID!, verdict: CapabilityVerdict, limit: Int): [CapabilityDecision!]!
   searchLogs(flowId: ID!): [SearchLog!]
   vectorStoreLogs(flowId: ID!): [VectorStoreLog!]
   toolCallLogs(flowId: ID!): [ToolCallLog!]

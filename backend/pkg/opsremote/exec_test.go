@@ -1,6 +1,7 @@
 package opsremote
 
 import (
+	"slices"
 	"strings"
 	"testing"
 )
@@ -286,6 +287,15 @@ func TestExec_Catalogue_DescribesEveryEntryAndKeepsTheOrder(t *testing.T) {
 			if !strings.Contains(command.Template, "%"+param.Template+"%") {
 				t.Errorf("command %q declares %s but its template never uses it", command.ID, param.Template)
 			}
+		}
+	}
+
+	// A command that is callable but never announced is worse than one that does
+	// not exist: the model is told the catalogue is smaller than it is, while the
+	// validator keeps accepting an id nobody was shown.
+	for id := range catalog {
+		if !slices.Contains(catalogOrder, id) {
+			t.Errorf("catalogue entry %q is callable through Lookup but missing from catalogOrder, so no prompt lists it", id)
 		}
 	}
 }

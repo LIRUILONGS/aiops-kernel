@@ -94,6 +94,27 @@ func TestOpsTools_HandleSandbox_RefusesAnImageNameCarryingShellAsAnAnswer(t *tes
 	}
 }
 
+func TestOpsTools_HandleSandbox_RefusesAnUnknownShapeBeforeItDials(t *testing.T) {
+	// No targets: if the shape were checked after dialling, the answer would be
+	// "no host configured" rather than the shape that the model can correct.
+	tools := &opsTools{sandboxNetwork: true}
+
+	_, err := tools.HandleSandbox(t.Context(), OpsSandboxToolName, []byte(`{"target":"lab","script":"echo hi","mode":"root"}`))
+	if err == nil {
+		t.Fatal("an unknown shape was accepted")
+	}
+
+	reason, refused := refusalText(err)
+	if !refused {
+		t.Fatalf("error %q is not a refusal, so the model reads it as a broken tool", err)
+	}
+	for _, want := range []string{"root", "probe", "workshop"} {
+		if !strings.Contains(reason, want) {
+			t.Errorf("refusal %q does not mention %q", reason, want)
+		}
+	}
+}
+
 func TestOpsTools_HandleExec_AnswersAnEmptyCommandWithTheCatalogue(t *testing.T) {
 	tools := &opsTools{}
 

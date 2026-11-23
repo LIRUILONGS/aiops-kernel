@@ -101,16 +101,21 @@ func (q *Queries) GetOrCreateCapabilityLease(ctx context.Context, arg GetOrCreat
 }
 
 const listCapabilityDecisions = `-- name: ListCapabilityDecisions :many
-SELECT id, flow_id, subtask_id, lease_id, role, tool, target, command, verdict, reason, created_at FROM capability_decisions WHERE flow_id = $1 ORDER BY created_at DESC LIMIT $2
+SELECT id, flow_id, subtask_id, lease_id, role, tool, target, command, verdict, reason, created_at FROM capability_decisions
+WHERE flow_id = $1
+  AND ($2::text IS NULL OR verdict = $2::text)
+ORDER BY created_at DESC, id DESC
+LIMIT $3
 `
 
 type ListCapabilityDecisionsParams struct {
-	FlowID int64 `json:"flow_id"`
-	Limit  int64 `json:"limit"`
+	FlowID   int64          `json:"flow_id"`
+	Verdict  sql.NullString `json:"verdict"`
+	RowLimit int64          `json:"row_limit"`
 }
 
 func (q *Queries) ListCapabilityDecisions(ctx context.Context, arg ListCapabilityDecisionsParams) ([]CapabilityDecision, error) {
-	rows, err := q.db.QueryContext(ctx, listCapabilityDecisions, arg.FlowID, arg.Limit)
+	rows, err := q.db.QueryContext(ctx, listCapabilityDecisions, arg.FlowID, arg.Verdict, arg.RowLimit)
 	if err != nil {
 		return nil, err
 	}

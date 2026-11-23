@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"opsagi/pkg/config"
 	"opsagi/pkg/controller"
@@ -589,4 +590,59 @@ func TestSchemaResolvers_SettingsProviders_ReadsTheThinkingBudgetRuleOnTheConfig
 			t.Fatal("glm-5 is missing from the GLM catalogue")
 		})
 	}
+}
+
+func TestSchemaResolvers_CapabilityDecisions_ClampsTheLimitAndHandsTheFilterToTheQuery(t *testing.T) {
+	db := &graphDB{
+		flowOwner: 1,
+		decisions: []database.CapabilityDecision{{
+			ID:        9,
+			FlowID:    5,
+			SubtaskID: sql.NullInt64{Int64: 3, Valid: true},
+			Role:      "log_analyst",
+			Tool:      "ops_exec",
+			Target:    "staging",
+			Command:   "listen_ports",
+			Verdict:   "would_deny",
+			Reason:    "目标主机 staging 不在本子任务租约内",
+			CreatedAt: time.Date(2026, 1, 15, 11, 30, 0, 0, time.UTC),
+		}},
+	}
+	verdict := model.CapabilityVerdictWouldDeny
+	tooMany := 5000
+
+	got, err := graphResolver(db).Query().CapabilityDecisions(graphSessionContext("flows.view"), 5, &verdict, &tooMany)
+	require.NoError(t, err)
+
+	require.Len(t, db.decisionQueries, 1)
+	assert.Equal(t, database.ListCapabilityDecisionsParams{
+		FlowID:   5,
+		Verdict:  sql.NullString{String: "would_deny", Valid: true},
+		RowLimit: 1000,
+	}, db.decisionQueries[0])
+
+	require.Len(t, got, 1)
+	assert.Equal(t, model.CapabilityVerdictWouldDeny, got[0].Verdict)
+	require.NotNil(t, got[0].SubtaskID)
+	assert.Equal(t, int64(3), *got[0].SubtaskID)
+	assert.Equal(t, "目标主机 staging 不在本子任务租约内", got[0].Reason)
+}
+
+func TestSchemaResolvers_CapabilityDecisions_ReadsTheNewestRowsWhenNoFilterIsGiven(t *testing.T) {
+	db := &graphDB{flowOwner: 1}
+
+	_, err := graphResolver(db).Query().CapabilityDecisions(graphSessionContext("flows.view"), 5, nil, nil)
+	require.NoError(t, err)
+
+	require.Len(t, db.decisionQueries, 1)
+	assert.Equal(t, database.ListCapabilityDecisionsParams{FlowID: 5, RowLimit: 200}, db.decisionQueries[0])
+}
+
+func TestSchemaResolvers_CapabilityDecisions_KeepsAnotherUsersLogOutOfReach(t *testing.T) {
+	db := &graphDB{flowOwner: 2}
+
+	_, err := graphResolver(db).Query().CapabilityDecisions(graphSessionContext("flows.view"), 5, nil, nil)
+
+	require.ErrorIs(t, err, ErrForbidden)
+	assert.Empty(t, db.decisionQueries)
 }

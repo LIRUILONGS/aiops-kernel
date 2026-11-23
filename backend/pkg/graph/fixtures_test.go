@@ -39,10 +39,21 @@ type graphDB struct {
 	favorites        []database.AddFavoriteFlowParams
 	droppedFavorites []database.DeleteFavoriteFlowParams
 	flowTitles       []string
+
+	decisions       []database.CapabilityDecision
+	decisionQueries []database.ListCapabilityDecisionsParams
 }
 
 func (db *graphDB) GetFlow(_ context.Context, id int64) (database.Flow, error) {
 	return database.Flow{ID: id, UserID: db.flowOwner}, nil
+}
+
+func (db *graphDB) ListCapabilityDecisions(
+	_ context.Context, arg database.ListCapabilityDecisionsParams,
+) ([]database.CapabilityDecision, error) {
+	db.decisionQueries = append(db.decisionQueries, arg)
+
+	return db.decisions, nil
 }
 
 func (db *graphDB) GetFlowContainers(context.Context, int64) ([]database.Container, error) {

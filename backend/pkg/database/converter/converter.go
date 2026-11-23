@@ -5,6 +5,7 @@ import (
 	"sort"
 	"time"
 
+	"opsagi/pkg/capability"
 	"opsagi/pkg/database"
 	"opsagi/pkg/graph/model"
 	"opsagi/pkg/providers/pconfig"
@@ -43,10 +44,53 @@ func ConvertFlow(flow database.Flow, containers []database.Container) *model.Flo
 		Title:     flow.Title,
 		Status:    model.StatusType(flow.Status),
 		Type:      model.FlowType(flow.FlowType),
-		Terminals: ConvertContainers(containers),
-		Provider:  provider,
-		CreatedAt: flow.CreatedAt.Time,
-		UpdatedAt: flow.UpdatedAt.Time,
+
+		CapabilityMode: ConvertCapabilityMode(flow.CapabilityMode),
+		Terminals:      ConvertContainers(containers),
+		Provider:       provider,
+		CreatedAt:      flow.CreatedAt.Time,
+		UpdatedAt:      flow.UpdatedAt.Time,
+	}
+}
+
+// ConvertCapabilityMode keeps the enum total: a row written before the column
+// existed, or by a client that sent nothing, reads as off rather than failing the
+// whole query on an unknown enum value.
+func ConvertCapabilityMode(mode string) model.CapabilityMode {
+	if mode == string(capability.ModeShadow) || mode == string(capability.ModeEnforce) {
+		return model.CapabilityMode(mode)
+	}
+
+	return model.CapabilityMode(capability.ModeOff)
+}
+
+func ConvertCapabilityDecisions(decisions []database.CapabilityDecision) []*model.CapabilityDecision {
+	converted := make([]*model.CapabilityDecision, 0, len(decisions))
+	for _, decision := range decisions {
+		converted = append(converted, ConvertCapabilityDecision(decision))
+	}
+
+	return converted
+}
+
+func ConvertCapabilityDecision(decision database.CapabilityDecision) *model.CapabilityDecision {
+	var subtaskID *int64
+	if decision.SubtaskID.Valid {
+		value := decision.SubtaskID.Int64
+		subtaskID = &value
+	}
+
+	return &model.CapabilityDecision{
+		ID:        decision.ID,
+		FlowID:    decision.FlowID,
+		SubtaskID: subtaskID,
+		Role:      decision.Role,
+		Tool:      decision.Tool,
+		Target:    decision.Target,
+		Command:   decision.Command,
+		Verdict:   model.CapabilityVerdict(decision.Verdict),
+		Reason:    decision.Reason,
+		CreatedAt: decision.CreatedAt,
 	}
 }
 

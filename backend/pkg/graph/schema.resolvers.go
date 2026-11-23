@@ -1586,6 +1586,43 @@ func (r *queryResolver) FlowRoleActivity(ctx context.Context, flowID int64) (*mo
 	return converter.ConvertFlowRoleActivity(metrics, edges), nil
 }
 
+// CapabilityDecisions is the resolver for the capabilityDecisions field.
+func (r *queryResolver) CapabilityDecisions(ctx context.Context, flowID int64, verdict *model.CapabilityVerdict, limit *int) ([]*model.CapabilityDecision, error) {
+	uid, err := validatePermissionWithFlowID(ctx, "flows.view", flowID, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	r.Logger.WithFields(logrus.Fields{
+		"uid":  uid,
+		"flow": flowID,
+	}).Debug("get capability decisions")
+
+	requested := capabilityDecisionsDefaultLimit
+	if limit != nil && *limit > 0 {
+		requested = *limit
+	}
+	if requested > capabilityDecisionsMaxLimit {
+		requested = capabilityDecisionsMaxLimit
+	}
+
+	filter := sql.NullString{}
+	if verdict != nil {
+		filter = sql.NullString{String: string(*verdict), Valid: true}
+	}
+
+	decisions, err := r.DB.ListCapabilityDecisions(ctx, database.ListCapabilityDecisionsParams{
+		FlowID:   flowID,
+		Verdict:  filter,
+		RowLimit: int64(requested),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return converter.ConvertCapabilityDecisions(decisions), nil
+}
+
 // SearchLogs is the resolver for the searchLogs field.
 func (r *queryResolver) SearchLogs(ctx context.Context, flowID int64) ([]*model.SearchLog, error) {
 	uid, err := validatePermissionWithFlowID(ctx, "searchlogs.view", flowID, r.DB)

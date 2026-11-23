@@ -73,6 +73,8 @@ var (
 		"pg_locks",
 		"pg_lock_wait_summary",
 		"pg_explain",
+		"mysql_connections",
+		"mysql_processlist",
 	}
 	catalog = map[string]Command{
 		"listen_ports": {

@@ -23,6 +23,8 @@ fragment flowFragment on Flow {
     userId
     title
     status
+    type
+    capabilityMode
     terminals {
         ...terminalFragment
     }
@@ -31,6 +33,25 @@ fragment flowFragment on Flow {
     }
     createdAt
     updatedAt
+}
+
+fragment capabilityDecisionFragment on CapabilityDecision {
+    id
+    flowId
+    subtaskId
+    role
+    tool
+    target
+    command
+    verdict
+    reason
+    createdAt
+}
+
+query flowCapabilityDecisions($flowId: ID!, $verdict: CapabilityVerdict, $limit: Int) {
+    capabilityDecisions(flowId: $flowId, verdict: $verdict, limit: $limit) {
+        ...capabilityDecisionFragment
+    }
 }
 
 fragment terminalFragment on Terminal {

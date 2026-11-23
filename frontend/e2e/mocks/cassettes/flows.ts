@@ -19,6 +19,8 @@ import type {
 
 import {
     AgentType,
+    CapabilityMode,
+    FlowType,
     MessageLogType,
     ProviderType,
     ResultFormat,
@@ -56,12 +58,14 @@ export const makeFlow = (
     userId = SIGNED_IN_USER_ID,
 ): FlowFragmentFragment =>
     entity('Flow', {
+        capabilityMode: CapabilityMode.Off,
         createdAt: T,
         id,
         provider: PROVIDER,
         status,
         terminals: [terminal(id)],
         title,
+        type: FlowType.Auto,
         updatedAt: T,
         userId,
     });

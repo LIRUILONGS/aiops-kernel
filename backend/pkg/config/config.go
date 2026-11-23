@@ -1,6 +1,8 @@
 package config
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -8,6 +10,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"opsagi/pkg/opsremote"
 
 	"github.com/caarlos0/env/v10"
 	"github.com/google/uuid"
@@ -398,10 +402,37 @@ func NewConfig() (*Config, error) {
 		return nil, err
 	}
 
+	if err := config.ValidateOpsTargets(); err != nil {
+		return nil, err
+	}
+
 	ensureInstallationID(&config)
 	ensureLicenseKey(&config)
 
 	return &config, nil
+}
+
+// ValidateOpsTargets rejects a malformed OPSAGI_TARGETS at start-up. The toolset
+// treats a value it cannot parse as "no targets configured" and disables itself,
+// which is safe but silent: an operator who mistyped a comma loses every probe
+// tool and finds out from a flow that cannot reach the host they configured.
+func (c *Config) ValidateOpsTargets() error {
+	if strings.TrimSpace(c.OpsTargets) == "" {
+		return nil
+	}
+
+	var targets []opsremote.Target
+	if err := json.Unmarshal([]byte(c.OpsTargets), &targets); err != nil {
+		return fmt.Errorf("OPSAGI_TARGETS is not a valid JSON array: %w", err)
+	}
+
+	for _, target := range targets {
+		if strings.TrimSpace(target.Host) != "" {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("OPSAGI_TARGETS names no target with a host, so every probe tool would be disabled")
 }
 
 func ensureInstallationID(config *Config) {

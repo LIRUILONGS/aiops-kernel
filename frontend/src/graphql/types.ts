@@ -66,6 +66,12 @@ export enum CapabilityMode {
     Shadow = 'shadow',
 }
 
+export enum CapabilityVerdict {
+    Allow = 'allow',
+    Deny = 'deny',
+    WouldDeny = 'would_deny',
+}
+
 export type CreateApiTokenInput = {
     name?: string | null | undefined;
     ttl: number;
@@ -325,11 +331,34 @@ export type FlowFragmentFragment = {
     userId: string;
     title: string;
     status: StatusType;
+    type: FlowType;
+    capabilityMode: CapabilityMode;
     createdAt: string;
     updatedAt: string;
     terminals: Array<TerminalFragmentFragment> | null;
     provider: ProviderFragmentFragment;
 };
+
+export type CapabilityDecisionFragmentFragment = {
+    id: string;
+    flowId: string;
+    subtaskId: string | null;
+    role: string;
+    tool: string;
+    target: string;
+    command: string;
+    verdict: CapabilityVerdict;
+    reason: string;
+    createdAt: string;
+};
+
+export type FlowCapabilityDecisionsQueryVariables = Exact<{
+    flowId: string | number;
+    verdict?: CapabilityVerdict | null | undefined;
+    limit?: number | null | undefined;
+}>;
+
+export type FlowCapabilityDecisionsQuery = { capabilityDecisions: Array<CapabilityDecisionFragmentFragment> };
 
 export type TerminalFragmentFragment = {
     id: string;
@@ -1529,6 +1558,8 @@ export const FlowFragmentFragmentDoc = {
                     { kind: 'Field', name: { kind: 'Name', value: 'userId' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'title' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'capabilityMode' } },
                     {
                         kind: 'Field',
                         name: { kind: 'Name', value: 'terminals' },
@@ -1580,6 +1611,31 @@ export const FlowFragmentFragmentDoc = {
         },
     ],
 } as unknown as DocumentNode<FlowFragmentFragment, unknown>;
+export const CapabilityDecisionFragmentFragmentDoc = {
+    kind: 'Document',
+    definitions: [
+        {
+            kind: 'FragmentDefinition',
+            name: { kind: 'Name', value: 'capabilityDecisionFragment' },
+            typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'CapabilityDecision' } },
+            selectionSet: {
+                kind: 'SelectionSet',
+                selections: [
+                    { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'flowId' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'subtaskId' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'tool' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'target' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'command' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'verdict' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'reason' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                ],
+            },
+        },
+    ],
+} as unknown as DocumentNode<CapabilityDecisionFragmentFragment, unknown>;
 export const SubtaskFragmentFragmentDoc = {
     kind: 'Document',
     definitions: [
@@ -3269,6 +3325,85 @@ export const UserPreferencesFragmentFragmentDoc = {
         },
     ],
 } as unknown as DocumentNode<UserPreferencesFragmentFragment, unknown>;
+export const FlowCapabilityDecisionsDocument = {
+    kind: 'Document',
+    definitions: [
+        {
+            kind: 'OperationDefinition',
+            operation: 'query',
+            name: { kind: 'Name', value: 'flowCapabilityDecisions' },
+            variableDefinitions: [
+                {
+                    kind: 'VariableDefinition',
+                    variable: { kind: 'Variable', name: { kind: 'Name', value: 'flowId' } },
+                    type: { kind: 'NonNullType', type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } } },
+                },
+                {
+                    kind: 'VariableDefinition',
+                    variable: { kind: 'Variable', name: { kind: 'Name', value: 'verdict' } },
+                    type: { kind: 'NamedType', name: { kind: 'Name', value: 'CapabilityVerdict' } },
+                },
+                {
+                    kind: 'VariableDefinition',
+                    variable: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
+                    type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+                },
+            ],
+            selectionSet: {
+                kind: 'SelectionSet',
+                selections: [
+                    {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'capabilityDecisions' },
+                        arguments: [
+                            {
+                                kind: 'Argument',
+                                name: { kind: 'Name', value: 'flowId' },
+                                value: { kind: 'Variable', name: { kind: 'Name', value: 'flowId' } },
+                            },
+                            {
+                                kind: 'Argument',
+                                name: { kind: 'Name', value: 'verdict' },
+                                value: { kind: 'Variable', name: { kind: 'Name', value: 'verdict' } },
+                            },
+                            {
+                                kind: 'Argument',
+                                name: { kind: 'Name', value: 'limit' },
+                                value: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
+                            },
+                        ],
+                        selectionSet: {
+                            kind: 'SelectionSet',
+                            selections: [
+                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'capabilityDecisionFragment' } },
+                            ],
+                        },
+                    },
+                ],
+            },
+        },
+        {
+            kind: 'FragmentDefinition',
+            name: { kind: 'Name', value: 'capabilityDecisionFragment' },
+            typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'CapabilityDecision' } },
+            selectionSet: {
+                kind: 'SelectionSet',
+                selections: [
+                    { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'flowId' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'subtaskId' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'tool' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'target' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'command' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'verdict' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'reason' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                ],
+            },
+        },
+    ],
+} as unknown as DocumentNode<FlowCapabilityDecisionsQuery, FlowCapabilityDecisionsQueryVariables>;
 export const FlowsDocument = {
     kind: 'Document',
     definitions: [
@@ -3329,6 +3464,8 @@ export const FlowsDocument = {
                     { kind: 'Field', name: { kind: 'Name', value: 'userId' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'title' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'capabilityMode' } },
                     {
                         kind: 'Field',
                         name: { kind: 'Name', value: 'terminals' },
@@ -4912,6 +5049,8 @@ export const FlowDocument = {
                     { kind: 'Field', name: { kind: 'Name', value: 'userId' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'title' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'capabilityMode' } },
                     {
                         kind: 'Field',
                         name: { kind: 'Name', value: 'terminals' },
@@ -5529,6 +5668,8 @@ export const FlowReportDocument = {
                     { kind: 'Field', name: { kind: 'Name', value: 'userId' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'title' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'capabilityMode' } },
                     {
                         kind: 'Field',
                         name: { kind: 'Name', value: 'terminals' },
@@ -7608,6 +7749,8 @@ export const CreateFlowDocument = {
                     { kind: 'Field', name: { kind: 'Name', value: 'userId' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'title' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'capabilityMode' } },
                     {
                         kind: 'Field',
                         name: { kind: 'Name', value: 'terminals' },
@@ -7970,6 +8113,8 @@ export const CreateAssistantDocument = {
                     { kind: 'Field', name: { kind: 'Name', value: 'userId' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'title' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'capabilityMode' } },
                     {
                         kind: 'Field',
                         name: { kind: 'Name', value: 'terminals' },
@@ -10618,6 +10763,8 @@ export const FlowCreatedDocument = {
                     { kind: 'Field', name: { kind: 'Name', value: 'userId' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'title' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'capabilityMode' } },
                     {
                         kind: 'Field',
                         name: { kind: 'Name', value: 'terminals' },
@@ -10701,6 +10848,8 @@ export const FlowDeletedDocument = {
                     { kind: 'Field', name: { kind: 'Name', value: 'userId' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'title' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'capabilityMode' } },
                     {
                         kind: 'Field',
                         name: { kind: 'Name', value: 'terminals' },
@@ -10784,6 +10933,8 @@ export const FlowUpdatedDocument = {
                     { kind: 'Field', name: { kind: 'Name', value: 'userId' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'title' } },
                     { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'capabilityMode' } },
                     {
                         kind: 'Field',
                         name: { kind: 'Name', value: 'terminals' },

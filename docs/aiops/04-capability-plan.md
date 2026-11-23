@@ -27,15 +27,28 @@
 
 有一处取舍写在这里，因为它是刻意的：读不到 flow、读不到 subtask、签发失败时，切面**不安装**并打一条 `Warn`，而不是让整个子任务失败。租约是加法，数据库回答不了的时候不该把一次正常的诊断变成错误；代价是那一轮跑在无租约状态，所以这条日志必须是 Warn 级别，运维能看见。
 
-还没做：策略文件的加载（今天只有代码里的默认值）、每工具调用预算、`ops_tunnel` 之外的形状阶梯（`workshop` 仍由 `OPSAGI_SANDBOX_NETWORK` 与模型共同决定）、批准通道（P3）、以及 P0 里那三个 fail-open 修复。下面几节保留原计划与验收方式，作为后续的路线图。
+还没做：策略文件的加载（今天只有代码里的默认值）、每工具调用预算、`ops_tunnel` 之外的形状阶梯（`workshop` 仍由 `OPSAGI_SANDBOX_NETWORK` 与模型共同决定）、批准通道（P3）。下面几节保留原计划与验收方式，作为后续的路线图。
+
+## 0.6 这一轮的第二批：看得见，且不再静默
+
+`shadow` 只有在数据能被读出来时才有意义，所以这一批先把“开关现在是什么、它判了什么”搬到界面上，再把 P0 的三处静默失败堵上。
+
+| 面 | 位置 | 行为 |
+|---|---|---|
+| 读开关 | `pkg/graph/schema.graphqls` 的 `Flow.capabilityMode`、`pkg/database/converter` | flow 查询直接带回开关；库里出现未知值（老行、外部写入）时按 `off` 渲染，不让整条查询因为一个枚举值失败 |
+| 读判定 | `query capabilityDecisions(flowId, verdict, limit)` | 只读一条 flow 的尾部：`limit` 缺省 200、上限 1000，`verdict` 为空表示不过滤；权限复用 `flows.view` 与已有的“flow 属于谁”校验 |
+| 看界面 | `frontend/src/features/flows/capability/`、`pages/flows/flow.tsx` | 非 `off` 的 flow 在标题旁挂一个“租约·观察/强制”徽章；`能力租约` 面板列出每条判定，可按“拦截 / 将被拦截 / 放行”筛，`would_deny` 逐条给出拒绝原因——这就是把 `shadow` 收窄成 `enforce` 的依据 |
+| 止血 | `pkg/config`、`pkg/opsremote/exec.go`、`pkg/opsremote/sandbox.go` | `OPSAGI_TARGETS` 非法或缺 `host` 时启动即失败；两条 `mysql_*` 命令补进公告目录，并加一条遍历 `catalog` 的守卫；非法 `mode` 在 dial 之前变成一条 `Refusal`，不再先去目标机拉镜像 |
+
+面板本身不做写操作：判定是运行时的产物，人只读它。真要有“批准一次例外”，那是 P3 的批准通道，需要子任务进入 `waiting` 并签发一条补充租约，和这里的只读面板是两件事。
 
 ## 1. 今天实际生效的四道闸门
 
 | 闸门 | 代码 | 它拦住了什么 | 它没拦住什么 |
 |---|---|---|---|
 | 角色工具表 | `tools.go:256`（`analystToolset`）、`tools.go:903`（commander 硬编码） | 某角色根本拿不到某工具 | 没有任何“这个子任务只许查这台主机”的收窄；分析师拿到 `ops_exec` 就是全目录；同一次 flow 里 commander 与 change_analyst 的命令面一样宽 |
-| 目标主机清单 | `ops.go:126`（`resolve`） | 连不到 `OPSAGI_TARGETS` 之外的地址 | 任何拿到 `ops_*` 的子任务都能打任意一台已配置主机；`target` 留空等于第一台；`OPSAGI_TARGETS` 解析失败会**静默**变空表（`ops.go:99`） |
-| 只读命令目录 | `opsremote/exec.go:40`、`:77` | 只能跑 24 条写死在代码里的只读命令，参数按字符集校验 | 目录不按角色或任务切分；参数是正则字符集不是枚举值；`mysql_connections` / `mysql_processlist` 可调用但没进 `catalogOrder`（`:199`、`:205`），公告目录与真实目录已经漂移 |
+| 目标主机清单 | `ops.go:126`（`resolve`） | 连不到 `OPSAGI_TARGETS` 之外的地址 | 任何拿到 `ops_*` 的子任务都能打任意一台已配置主机；`target` 留空等于第一台。`OPSAGI_TARGETS` 解析失败曾静默变空表，现在启动即失败（见 0.6） |
+| 只读命令目录 | `opsremote/exec.go:40`、`:77` | 只能跑 24 条写死在代码里的只读命令，参数按字符集校验 | 目录不按角色或任务切分；参数是正则字符集不是枚举值。`mysql_connections` / `mysql_processlist` 曾可调用但不在公告目录里，现已补齐并加守卫（见 0.6） |
 | 采集容器形状 | `opsremote/sandbox.go:37`（probe）、`:50`（workshop）、`trace.go:14` | probe 只读、无网、256MB；宿主机 `/proc`、`/sys` 只读挂载 | 形状是模型选的（`ops.go:300`）；workshop 只要操作员放开出网就是可写 + 出网 + `SETUID/SETGID`；`ops_trace` 的 `SYS_ADMIN` 由目标机 stderr 里的两个子串触发（`trace.go:159`），越权升级的开关握在被检查的机器手里 |
 
 这四道闸门之外，还有两处“看起来像权限、其实只是提示”：
@@ -86,8 +99,8 @@ type Lease struct {
 先不拦，只记录“本该拦”。这样能在收紧之前知道收窄到什么程度不会把系统卡死。
 
 - ~~新开关 `OPSAGI_LEASE_MODE=off|shadow|enforce`~~：开关落地成了每 flow 的选择（见 0.5），不再用环境变量；`shadow` 下按计划与策略算出应当允许的集合，与真实调用比对，把 `would_deny` 写进 `capability_decisions`，**不改变行为**。
-- 修三个 fail-open：
-  - `OPSAGI_TARGETS` 解析失败在启动时报错退出，不再静默变空表（`ops.go:99`）。
+- 修三个 fail-open：（已落地，见 0.6）
+  - `OPSAGI_TARGETS` 解析失败在启动时报错退出，不再静默变空表（`config.go` 的 `ValidateOpsTargets`）。
   - `mysql_connections`、`mysql_processlist` 补进 `catalogOrder`，并让守卫测试遍历 `catalog` 而不是 `Commands()`（`registry_test.go:265`）。
   - `ops_sandbox` 的非法 `mode` 在 dial 之前就拒绝（今天会先在目标机上跑一次 docker）。
 - 交付一份一天的 shadow 数据：`would_deny` 按原因分组（主机越界 / 命令越界 / 形状越界 / 预算超限），这张表决定 P1 的默认策略。
@@ -239,3 +252,8 @@ limits:
 | `backend/pkg/tools/capability_guard.go` | `CapabilityGuard.Apply`，切面包裹、`off` 时原样返回 |
 | `backend/pkg/providers/capability.go` | 签发点与审计写入，懒签发 + `Warn` 降级 |
 | `backend/pkg/graph/flowtype.go` | `convertCapabilityMode`，缺省 `off` |
+| `backend/pkg/graph/capability.go` | 判定列表的缺省与上限（200 / 1000） |
+| `backend/pkg/database/converter/converter.go` | `ConvertCapabilityMode`、`ConvertCapabilityDecision`，未知枚举归一成 `off` |
+| `backend/pkg/config/config.go` | `ValidateOpsTargets`，`OPSAGI_TARGETS` 在启动时校验 |
+| `frontend/src/features/flows/capability/flow-capability-sheet.tsx` | 判定面板：按 verdict 筛、`would_deny` 展示拒绝原因 |
+| `frontend/src/features/flows/capability/mode-label.ts` | 开关的中文标签，徽章与面板共用 |

@@ -24,4 +24,8 @@ VALUES (
 );
 
 -- name: ListCapabilityDecisions :many
-SELECT * FROM capability_decisions WHERE flow_id = $1 ORDER BY created_at DESC LIMIT $2;
+SELECT * FROM capability_decisions
+WHERE flow_id = sqlc.arg(flow_id)
+  AND (sqlc.narg(verdict)::text IS NULL OR verdict = sqlc.narg(verdict)::text)
+ORDER BY created_at DESC, id DESC
+LIMIT sqlc.arg(row_limit);

@@ -133,6 +133,19 @@ type AssistantLog struct {
 	CreatedAt    time.Time      `json:"createdAt"`
 }
 
+type CapabilityDecision struct {
+	ID        int64             `json:"id"`
+	FlowID    int64             `json:"flowId"`
+	SubtaskID *int64            `json:"subtaskId,omitempty"`
+	Role      string            `json:"role"`
+	Tool      string            `json:"tool"`
+	Target    string            `json:"target"`
+	Command   string            `json:"command"`
+	Verdict   CapabilityVerdict `json:"verdict"`
+	Reason    string            `json:"reason"`
+	CreatedAt time.Time         `json:"createdAt"`
+}
+
 type CreateAPITokenInput struct {
 	Name *string `json:"name,omitempty"`
 	TTL  int     `json:"ttl"`
@@ -196,15 +209,16 @@ type DefaultProvidersConfig struct {
 }
 
 type Flow struct {
-	ID        int64       `json:"id"`
-	UserID    int64       `json:"userId"`
-	Title     string      `json:"title"`
-	Status    StatusType  `json:"status"`
-	Type      FlowType    `json:"type"`
-	Terminals []*Terminal `json:"terminals,omitempty"`
-	Provider  *Provider   `json:"provider"`
-	CreatedAt time.Time   `json:"createdAt"`
-	UpdatedAt time.Time   `json:"updatedAt"`
+	ID             int64          `json:"id"`
+	UserID         int64          `json:"userId"`
+	Title          string         `json:"title"`
+	Status         StatusType     `json:"status"`
+	Type           FlowType       `json:"type"`
+	CapabilityMode CapabilityMode `json:"capabilityMode"`
+	Terminals      []*Terminal    `json:"terminals,omitempty"`
+	Provider       *Provider      `json:"provider"`
+	CreatedAt      time.Time      `json:"createdAt"`
+	UpdatedAt      time.Time      `json:"updatedAt"`
 }
 
 type FlowAssistant struct {
@@ -830,6 +844,49 @@ func (e *CapabilityMode) UnmarshalGQL(v interface{}) error {
 }
 
 func (e CapabilityMode) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type CapabilityVerdict string
+
+const (
+	CapabilityVerdictAllow     CapabilityVerdict = "allow"
+	CapabilityVerdictDeny      CapabilityVerdict = "deny"
+	CapabilityVerdictWouldDeny CapabilityVerdict = "would_deny"
+)
+
+var AllCapabilityVerdict = []CapabilityVerdict{
+	CapabilityVerdictAllow,
+	CapabilityVerdictDeny,
+	CapabilityVerdictWouldDeny,
+}
+
+func (e CapabilityVerdict) IsValid() bool {
+	switch e {
+	case CapabilityVerdictAllow, CapabilityVerdictDeny, CapabilityVerdictWouldDeny:
+		return true
+	}
+	return false
+}
+
+func (e CapabilityVerdict) String() string {
+	return string(e)
+}
+
+func (e *CapabilityVerdict) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = CapabilityVerdict(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid CapabilityVerdict", str)
+	}
+	return nil
+}
+
+func (e CapabilityVerdict) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
