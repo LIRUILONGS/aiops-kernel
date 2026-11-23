@@ -141,7 +141,7 @@ function FlowCapabilitySheet({ mode, onOpenChange, open }: FlowCapabilitySheetPr
                         <ul className="flex flex-col gap-2">
                             {pending.map((request) => (
                                 <li
-                                    className="rounded-md border bg-background p-2 text-xs"
+                                    className="bg-background rounded-md border p-2 text-xs"
                                     key={request.id}
                                 >
                                     <div className="flex items-center gap-2">
