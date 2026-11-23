@@ -340,7 +340,7 @@ func (c *creatingController) registered() bool {
 func (c *creatingController) create(t *testing.T) int64 {
 	t.Helper()
 
-	flowID, err := c.fc.CreateFlow(context.Background(), 1, "scan it", "auto", "anthropic", "anthropic", nil)
+	flowID, err := c.fc.CreateFlow(context.Background(), 1, "scan it", "auto", "off", "anthropic", "anthropic", nil)
 	require.NoError(t, err)
 
 	return flowID
@@ -351,7 +351,7 @@ func TestFlows_CreateFlow_AnswersAndAnnouncesTheFlowBeforePreparingIt(t *testing
 
 	answered := make(chan int64, 1)
 	go func() {
-		flowID, _ := c.fc.CreateFlow(context.Background(), 1, "scan it", "auto", "anthropic", "anthropic", nil)
+		flowID, _ := c.fc.CreateFlow(context.Background(), 1, "scan it", "auto", "off", "anthropic", "anthropic", nil)
 		answered <- flowID
 	}()
 
@@ -388,7 +388,7 @@ func TestFlows_PrepareFlow_OutlivesTheRequestThatAskedForIt(t *testing.T) {
 	c := newCreatingController(t, nil)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	flowID, err := c.fc.CreateFlow(ctx, 1, "scan it", "auto", "anthropic", "anthropic", nil)
+	flowID, err := c.fc.CreateFlow(ctx, 1, "scan it", "auto", "off", "anthropic", "anthropic", nil)
 	require.NoError(t, err)
 
 	c.waitForPreparation(t)
@@ -399,6 +399,32 @@ func TestFlows_PrepareFlow_OutlivesTheRequestThatAskedForIt(t *testing.T) {
 	ready, err := c.fc.GetFlow(context.Background(), flowID)
 	require.NoError(t, err)
 	assert.Same(t, c.worker, ready)
+}
+
+func TestFlows_CreateFlow_StoresTheCapabilitySwitchTheOperatorChose(t *testing.T) {
+	cases := []struct{ name, requested, wants string }{
+		{name: "off", requested: "off", wants: "off"},
+		{name: "shadow", requested: "shadow", wants: "shadow"},
+		{name: "enforce", requested: "enforce", wants: "enforce"},
+		{name: "a value the runtime does not know", requested: "enabled", wants: "off"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			c := newCreatingController(t, nil)
+
+			ctx, cancel := context.WithCancel(context.Background())
+			_, err := c.fc.CreateFlow(ctx, 1, "scan it", "auto", tc.requested, "anthropic", "anthropic", nil)
+			require.NoError(t, err)
+
+			c.waitForPreparation(t)
+			cancel()
+			close(c.release)
+			c.waitUntilSettled(t)
+
+			assert.Equal(t, tc.wants, c.q.createParams.CapabilityMode)
+		})
+	}
 }
 
 func TestFlows_FailFlow_RecordsWhyAndMarksTheFlowFailed(t *testing.T) {

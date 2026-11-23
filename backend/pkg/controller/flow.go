@@ -11,6 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"opsagi/pkg/capability"
 	"opsagi/pkg/cast"
 	"opsagi/pkg/config"
 	"opsagi/pkg/database"
@@ -81,10 +82,13 @@ type newFlowWorkerCtx struct {
 	userID    int64
 	input     string
 	flowType  string
-	dryRun    bool
-	prvname   provider.ProviderName
-	prvtype   provider.ProviderType
-	resources []database.UserResource
+	// capabilityMode is the per-flow switch: off keeps the runtime exactly as it
+	// was, shadow records what a lease would refuse, enforce refuses.
+	capabilityMode string
+	dryRun         bool
+	prvname        provider.ProviderName
+	prvtype        provider.ProviderType
+	resources      []database.UserResource
 
 	flowWorkerCtx
 }
@@ -152,6 +156,7 @@ func reserveFlow(ctx context.Context, fwc newFlowWorkerCtx) (database.Flow, erro
 		ToolCallIDTemplate: cast.ToolCallIDTemplate,
 		UserID:             fwc.userID,
 		FlowType:           fwc.flowType,
+		CapabilityMode:     string(capability.ParseMode(fwc.capabilityMode)),
 	})
 	if err != nil {
 		obs.LogErrorOrCancel(logrus.WithContext(ctx), err, "failed to create flow in DB")

@@ -9,6 +9,13 @@ enum FlowType {
   optimization
 }
 
+# Per-flow switch for the capability lease
+enum CapabilityMode {
+  off
+  shadow
+  enforce
+}
+
 enum StatusType {
   created
   running
@@ -1064,7 +1071,7 @@ type Query {
 
 type Mutation {
   # Flow management
-  createFlow(modelProvider: String!, input: String!, flowType: FlowType, resourceIds: [ID!]): Flow!
+  createFlow(modelProvider: String!, input: String!, flowType: FlowType, capabilityMode: CapabilityMode, resourceIds: [ID!]): Flow!
   putUserInput(flowId: ID!, input: String!, modelProvider: String, resourceIds: [ID!]): ResultType!
   stopFlow(flowId: ID!): ResultType!
   finishFlow(flowId: ID!): ResultType!

@@ -56,6 +56,7 @@ describe('RetryMeasurement', () => {
 
         await waitFor(() => expect(navigate).toHaveBeenCalledWith('/flows/42'));
         expect(createFlow).toHaveBeenCalledWith({
+            capabilityMode: 'off',
             message: '把 caddy 容器的 p99 延迟降下来',
             providerName: 'custom',
             resourceIds: [],

@@ -236,6 +236,11 @@ type CommanderExecutorConfig struct {
 	MetricsAnalyst ExecutorHandler
 	ChangeAnalyst  ExecutorHandler
 	Summarizer     SummarizeHandler
+
+	// Capability is the flow's lease check, or nil when the flow did not opt in.
+	// It wraps the evidence handlers at the end of this constructor; a nil guard
+	// leaves them exactly as they were built.
+	Capability *CapabilityGuard
 }
 
 // AnalystExecutorConfig is one specialist: the evidence face its role owns and
@@ -248,6 +253,12 @@ type AnalystExecutorConfig struct {
 	Finding    ExecutorHandler
 	AskUser    ExecutorHandler
 	Summarizer SummarizeHandler
+
+	// Capability is the flow's lease check, or nil when the flow did not opt in.
+	// An analyst chain builds its own executor, so the guard has to be passed in
+	// here as well: a check only on the commander's executor would leave every
+	// delegated probe unguarded.
+	Capability *CapabilityGuard
 }
 
 // analystToolset is the evidence a role may read. The split is the role's
@@ -992,6 +1003,8 @@ func (fte *flowToolsExecutor) GetCommanderExecutor(cfg CommanderExecutorConfig) 
 		}
 	}
 
+	handlers = cfg.Capability.Apply(handlers, barriers)
+
 	return &customExecutor{
 		userID:      fte.userID,
 		flowID:      fte.flowID,
@@ -1063,6 +1076,8 @@ func (fte *flowToolsExecutor) GetAnalystExecutor(cfg AnalystExecutorConfig) (Con
 		handlers[AskUserToolName] = cfg.AskUser
 		barriers[AskUserToolName] = struct{}{}
 	}
+
+	handlers = cfg.Capability.Apply(handlers, barriers)
 
 	return &customExecutor{
 		userID:      fte.userID,

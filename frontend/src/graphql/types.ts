@@ -60,6 +60,12 @@ export type AgentsConfigInput = {
     simpleJson: AgentConfigInput;
 };
 
+export enum CapabilityMode {
+    Enforce = 'enforce',
+    Off = 'off',
+    Shadow = 'shadow',
+}
+
 export type CreateApiTokenInput = {
     name?: string | null | undefined;
     ttl: number;
@@ -1067,6 +1073,7 @@ export type CreateFlowMutationVariables = Exact<{
     modelProvider: string;
     input: string;
     flowType?: FlowType | null | undefined;
+    capabilityMode?: CapabilityMode | null | undefined;
     resourceIds?: Array<string | number> | string | number | null | undefined;
 }>;
 
@@ -7509,6 +7516,11 @@ export const CreateFlowDocument = {
                 },
                 {
                     kind: 'VariableDefinition',
+                    variable: { kind: 'Variable', name: { kind: 'Name', value: 'capabilityMode' } },
+                    type: { kind: 'NamedType', name: { kind: 'Name', value: 'CapabilityMode' } },
+                },
+                {
+                    kind: 'VariableDefinition',
                     variable: { kind: 'Variable', name: { kind: 'Name', value: 'resourceIds' } },
                     type: {
                         kind: 'ListType',
@@ -7537,6 +7549,11 @@ export const CreateFlowDocument = {
                                 kind: 'Argument',
                                 name: { kind: 'Name', value: 'flowType' },
                                 value: { kind: 'Variable', name: { kind: 'Name', value: 'flowType' } },
+                            },
+                            {
+                                kind: 'Argument',
+                                name: { kind: 'Name', value: 'capabilityMode' },
+                                value: { kind: 'Variable', name: { kind: 'Name', value: 'capabilityMode' } },
                             },
                             {
                                 kind: 'Argument',

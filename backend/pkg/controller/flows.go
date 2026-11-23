@@ -31,6 +31,7 @@ type FlowController interface {
 		userID int64,
 		input string,
 		flowType string,
+		capabilityMode string,
 		prvname provider.ProviderName,
 		prvtype provider.ProviderType,
 		resources []database.UserResource,
@@ -275,18 +276,20 @@ func (fc *flowController) CreateFlow(
 	userID int64,
 	input string,
 	flowType string,
+	capabilityMode string,
 	prvname provider.ProviderName,
 	prvtype provider.ProviderType,
 	resources []database.UserResource,
 ) (int64, error) {
 	fwc := newFlowWorkerCtx{
-		userID:        userID,
-		input:         input,
-		flowType:      flowType,
-		prvname:       prvname,
-		prvtype:       prvtype,
-		resources:     resources,
-		flowWorkerCtx: fc.flowWorkerCtx(),
+		userID:         userID,
+		input:          input,
+		flowType:       flowType,
+		capabilityMode: capabilityMode,
+		prvname:        prvname,
+		prvtype:        prvtype,
+		resources:      resources,
+		flowWorkerCtx:  fc.flowWorkerCtx(),
 	}
 
 	flow, err := reserveFlow(ctx, fwc)

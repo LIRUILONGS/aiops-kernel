@@ -141,4 +141,41 @@ describe('FlowForm attachments', () => {
 
         expect(await screen.findByRole('button', { name: 'Remove scope.txt' })).toBeInTheDocument();
     });
+
+    it('asks for no lease unless the operator turns the switch on', async () => {
+        const user = userEvent.setup({ delay: null });
+        const onSubmit = vi.fn().mockResolvedValue(true);
+
+        render(
+            <FlowForm
+                defaultValues={{ providerName: 'openai' }}
+                onSubmit={onSubmit}
+            />,
+        );
+
+        await user.type(screen.getByRole('textbox'), 'scan it');
+        await user.click(screen.getByRole('button', { name: '提交' }));
+
+        await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
+        expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({ capabilityMode: 'off' });
+    });
+
+    it('submits the lease mode the operator picked over the default', async () => {
+        const user = userEvent.setup({ delay: null });
+        const onSubmit = vi.fn().mockResolvedValue(true);
+
+        render(
+            <FlowForm
+                defaultValues={{ providerName: 'openai' }}
+                onSubmit={onSubmit}
+            />,
+        );
+
+        await user.type(screen.getByRole('textbox'), 'scan it');
+        await user.click(screen.getByRole('button', { name: '强制' }));
+        await user.click(screen.getByRole('button', { name: '提交' }));
+
+        await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
+        expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({ capabilityMode: 'enforce' });
+    });
 });

@@ -1045,8 +1045,8 @@ mutation deleteFlowTemplate($templateId: ID!) {
 
 # ==================== Flows ====================
 
-mutation createFlow($modelProvider: String!, $input: String!, $flowType: FlowType, $resourceIds: [ID!]) {
-    createFlow(modelProvider: $modelProvider, input: $input, flowType: $flowType, resourceIds: $resourceIds) {
+mutation createFlow($modelProvider: String!, $input: String!, $flowType: FlowType, $capabilityMode: CapabilityMode, $resourceIds: [ID!]) {
+    createFlow(modelProvider: $modelProvider, input: $input, flowType: $flowType, capabilityMode: $capabilityMode, resourceIds: $resourceIds) {
         ...flowFragment
     }
 }

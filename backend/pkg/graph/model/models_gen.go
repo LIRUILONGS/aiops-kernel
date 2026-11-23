@@ -790,6 +790,49 @@ func (e AgentType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type CapabilityMode string
+
+const (
+	CapabilityModeOff     CapabilityMode = "off"
+	CapabilityModeShadow  CapabilityMode = "shadow"
+	CapabilityModeEnforce CapabilityMode = "enforce"
+)
+
+var AllCapabilityMode = []CapabilityMode{
+	CapabilityModeOff,
+	CapabilityModeShadow,
+	CapabilityModeEnforce,
+}
+
+func (e CapabilityMode) IsValid() bool {
+	switch e {
+	case CapabilityModeOff, CapabilityModeShadow, CapabilityModeEnforce:
+		return true
+	}
+	return false
+}
+
+func (e CapabilityMode) String() string {
+	return string(e)
+}
+
+func (e *CapabilityMode) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = CapabilityMode(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid CapabilityMode", str)
+	}
+	return nil
+}
+
+func (e CapabilityMode) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type FlowType string
 
 const (

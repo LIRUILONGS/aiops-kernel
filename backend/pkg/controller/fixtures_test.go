@@ -380,12 +380,13 @@ const (
 type createFakeQuerier struct {
 	database.Querier
 
-	mx        sync.Mutex
-	flow      database.Flow
-	createErr error
-	statuses  []database.FlowStatus
-	messages  []database.CreateMsgLogParams
-	results   []database.CreateResultMsgLogParams
+	mx           sync.Mutex
+	flow         database.Flow
+	createParams database.CreateFlowParams
+	createErr    error
+	statuses     []database.FlowStatus
+	messages     []database.CreateMsgLogParams
+	results      []database.CreateResultMsgLogParams
 
 	readDelay         time.Duration
 	assistant         database.Assistant
@@ -404,6 +405,7 @@ func (f *createFakeQuerier) CreateFlow(ctx context.Context, arg database.CreateF
 	if f.createErr != nil {
 		return database.Flow{}, f.createErr
 	}
+	f.createParams = arg
 	f.flow = database.Flow{ID: reservedFlowID, UserID: arg.UserID, Status: arg.Status, Title: arg.Title}
 
 	return f.flow, nil

@@ -32,7 +32,7 @@ import (
 )
 
 // CreateFlow is the resolver for the createFlow field.
-func (r *mutationResolver) CreateFlow(ctx context.Context, modelProvider string, input string, flowType *model.FlowType, resourceIds []int64) (*model.Flow, error) {
+func (r *mutationResolver) CreateFlow(ctx context.Context, modelProvider string, input string, flowType *model.FlowType, capabilityMode *model.CapabilityMode, resourceIds []int64) (*model.Flow, error) {
 	uid, _, err := validatePermission(ctx, "flows.create")
 	if err != nil {
 		return nil, err
@@ -67,7 +67,7 @@ func (r *mutationResolver) CreateFlow(ctx context.Context, modelProvider string,
 	}
 	prvtype := prv.Type()
 
-	flowID, err := r.Controller.CreateFlow(ctx, uid, input, convertFlowType(flowType), prvname, prvtype, dbResources)
+	flowID, err := r.Controller.CreateFlow(ctx, uid, input, convertFlowType(flowType), convertCapabilityMode(capabilityMode), prvname, prvtype, dbResources)
 	if err != nil {
 		return nil, err
 	}

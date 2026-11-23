@@ -54,6 +54,14 @@ const TARGET_TYPES = [
     { hint: 'Find a bottleneck and measure the change', label: 'Performance', value: 'optimization' as const },
 ];
 
+// The lease switch is chosen once per flow. `off` runs the runtime untouched;
+// `shadow` records what a lease would refuse; `enforce` refuses.
+const CAPABILITY_MODES = [
+    { hint: '不启用能力租约，工具调用与之前完全相同', label: '关闭', value: 'off' as const },
+    { hint: '只记录会被拦下的调用，实际不拦，用于先看策略的影响', label: '观察', value: 'shadow' as const },
+    { hint: '越出子任务租约的调用直接拒绝', label: '强制', value: 'enforce' as const },
+];
+
 const GOAL_FIELDS = [
     {
         label: 'Metric',
@@ -65,6 +73,7 @@ const GOAL_FIELDS = [
 ];
 
 const formSchema = z.object({
+    capabilityMode: z.enum(['off', 'shadow', 'enforce']),
     goalConstraint: z.string().optional(),
     goalMetric: z.string().optional(),
     goalTarget: z.string().optional(),
@@ -164,6 +173,7 @@ export function FlowForm({
 
     const form = useAppForm<FlowFormValues>({
         defaultValues: {
+            capabilityMode: defaultValues?.capabilityMode ?? 'off',
             goalConstraint: defaultValues?.goalConstraint ?? '',
             goalMetric: defaultValues?.goalMetric ?? '',
             goalTarget: defaultValues?.goalTarget ?? '',
@@ -551,7 +561,7 @@ export function FlowForm({
                                         control={control}
                                         name="targetType"
                                         render={({ field: targetField }) => (
-                                            <div className="flex items-center gap-1">
+                                            <div className="flex flex-wrap items-center gap-1">
                                                 {TARGET_TYPES.map((option) => (
                                                     <InputGroupButton
                                                         aria-pressed={targetField.value === option.value}
@@ -568,6 +578,33 @@ export function FlowForm({
                                                         {option.label}
                                                     </InputGroupButton>
                                                 ))}
+                                                <FormField
+                                                    control={control}
+                                                    name="capabilityMode"
+                                                    render={({ field: leaseField }) => (
+                                                        <div className="ml-auto flex items-center gap-1">
+                                                            <span className="text-muted-foreground text-[10px] leading-none">
+                                                                能力租约
+                                                            </span>
+                                                            {CAPABILITY_MODES.map((option) => (
+                                                                <InputGroupButton
+                                                                    aria-pressed={leaseField.value === option.value}
+                                                                    className={cn(
+                                                                        'text-xs',
+                                                                        leaseField.value === option.value && 'bg-accent',
+                                                                    )}
+                                                                    disabled={isFormDisabled}
+                                                                    key={option.value}
+                                                                    onClick={() => leaseField.onChange(option.value)}
+                                                                    title={option.hint}
+                                                                    variant="ghost"
+                                                                >
+                                                                    {option.label}
+                                                                </InputGroupButton>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                />
                                             </div>
                                         )}
                                     />

@@ -9,6 +9,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/sqlc-dev/pqtype"
@@ -905,6 +906,36 @@ type Assistantlog struct {
 	Thinking     sql.NullString     `json:"thinking"`
 }
 
+type CapabilityDecision struct {
+	ID        int64         `json:"id"`
+	FlowID    int64         `json:"flow_id"`
+	SubtaskID sql.NullInt64 `json:"subtask_id"`
+	LeaseID   sql.NullInt64 `json:"lease_id"`
+	Role      string        `json:"role"`
+	Tool      string        `json:"tool"`
+	Target    string        `json:"target"`
+	Command   string        `json:"command"`
+	Verdict   string        `json:"verdict"`
+	Reason    string        `json:"reason"`
+	CreatedAt time.Time     `json:"created_at"`
+}
+
+type CapabilityLease struct {
+	ID            int64     `json:"id"`
+	FlowID        int64     `json:"flow_id"`
+	SubtaskID     int64     `json:"subtask_id"`
+	Role          string    `json:"role"`
+	Mode          string    `json:"mode"`
+	Targets       []string  `json:"targets"`
+	Tools         []string  `json:"tools"`
+	Commands      []string  `json:"commands"`
+	Shapes        []string  `json:"shapes"`
+	TracePrograms []string  `json:"trace_programs"`
+	IssuedBy      string    `json:"issued_by"`
+	ExpiresAt     time.Time `json:"expires_at"`
+	CreatedAt     time.Time `json:"created_at"`
+}
+
 type Container struct {
 	ID             int64           `json:"id"`
 	Type           ContainerType   `json:"type"`
@@ -934,6 +965,7 @@ type Flow struct {
 	ModelProviderType  ProviderType   `json:"model_provider_type"`
 	ToolCallIDTemplate string         `json:"tool_call_id_template"`
 	FlowType           string         `json:"flow_type"`
+	CapabilityMode     string         `json:"capability_mode"`
 }
 
 type FlowTemplate struct {

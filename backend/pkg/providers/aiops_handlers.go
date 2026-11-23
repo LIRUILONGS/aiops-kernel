@@ -126,6 +126,9 @@ func (fp *flowProvider) performAnalyst(
 		},
 		Summarizer: fp.GetSummarizeResultHandler(taskID, subtaskID),
 	}
+	if subtaskID != nil {
+		cfg.Capability = fp.capabilityGuard(ctx, *subtaskID, role)
+	}
 	executor, err := fp.executor.GetAnalystExecutor(cfg)
 	if err != nil {
 		return "", fmt.Errorf("failed to get %s executor: %w", role, err)

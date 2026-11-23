@@ -370,7 +370,7 @@ type ComplexityRoot struct {
 		CallAssistant           func(childComplexity int, flowID int64, assistantID int64, input string, resourceIds []int64) int
 		CreateAPIToken          func(childComplexity int, input model.CreateAPITokenInput) int
 		CreateAssistant         func(childComplexity int, flowID int64, modelProvider string, input string, resourceIds []int64) int
-		CreateFlow              func(childComplexity int, modelProvider string, input string, flowType *model.FlowType, resourceIds []int64) int
+		CreateFlow              func(childComplexity int, modelProvider string, input string, flowType *model.FlowType, capabilityMode *model.CapabilityMode, resourceIds []int64) int
 		CreateFlowTemplate      func(childComplexity int, input model.CreateFlowTemplateInput) int
 		CreateKnowledgeDocument func(childComplexity int, input model.CreateKnowledgeDocumentInput) int
 		CreatePrompt            func(childComplexity int, typeArg model.PromptType, template string) int
@@ -785,7 +785,7 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	CreateFlow(ctx context.Context, modelProvider string, input string, flowType *model.FlowType, resourceIds []int64) (*model.Flow, error)
+	CreateFlow(ctx context.Context, modelProvider string, input string, flowType *model.FlowType, capabilityMode *model.CapabilityMode, resourceIds []int64) (*model.Flow, error)
 	PutUserInput(ctx context.Context, flowID int64, input string, modelProvider *string, resourceIds []int64) (model.ResultType, error)
 	StopFlow(ctx context.Context, flowID int64) (model.ResultType, error)
 	FinishFlow(ctx context.Context, flowID int64) (model.ResultType, error)
@@ -2458,7 +2458,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateFlow(childComplexity, args["modelProvider"].(string), args["input"].(string), args["flowType"].(*model.FlowType), args["resourceIds"].([]int64)), true
+		return e.complexity.Mutation.CreateFlow(childComplexity, args["modelProvider"].(string), args["input"].(string), args["flowType"].(*model.FlowType), args["capabilityMode"].(*model.CapabilityMode), args["resourceIds"].([]int64)), true
 
 	case "Mutation.createFlowTemplate":
 		if e.complexity.Mutation.CreateFlowTemplate == nil {
@@ -5531,11 +5531,16 @@ func (ec *executionContext) field_Mutation_createFlow_args(ctx context.Context, 
 		return nil, err
 	}
 	args["flowType"] = arg2
-	arg3, err := ec.field_Mutation_createFlow_argsResourceIds(ctx, rawArgs)
+	arg3, err := ec.field_Mutation_createFlow_argsCapabilityMode(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["resourceIds"] = arg3
+	args["capabilityMode"] = arg3
+	arg4, err := ec.field_Mutation_createFlow_argsResourceIds(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["resourceIds"] = arg4
 	return args, nil
 }
 func (ec *executionContext) field_Mutation_createFlow_argsModelProvider(
@@ -5601,6 +5606,28 @@ func (ec *executionContext) field_Mutation_createFlow_argsFlowType(
 	}
 
 	var zeroVal *model.FlowType
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_createFlow_argsCapabilityMode(
+	ctx context.Context,
+	rawArgs map[string]interface{},
+) (*model.CapabilityMode, error) {
+	// We won't call the directive if the argument is null.
+	// Set call_argument_directives_with_null to true to call directives
+	// even if the argument is null.
+	_, ok := rawArgs["capabilityMode"]
+	if !ok {
+		var zeroVal *model.CapabilityMode
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("capabilityMode"))
+	if tmp, ok := rawArgs["capabilityMode"]; ok {
+		return ec.unmarshalOCapabilityMode2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐCapabilityMode(ctx, tmp)
+	}
+
+	var zeroVal *model.CapabilityMode
 	return zeroVal, nil
 }
 
@@ -18781,7 +18808,7 @@ func (ec *executionContext) _Mutation_createFlow(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateFlow(rctx, fc.Args["modelProvider"].(string), fc.Args["input"].(string), fc.Args["flowType"].(*model.FlowType), fc.Args["resourceIds"].([]int64))
+		return ec.resolvers.Mutation().CreateFlow(rctx, fc.Args["modelProvider"].(string), fc.Args["input"].(string), fc.Args["flowType"].(*model.FlowType), fc.Args["capabilityMode"].(*model.CapabilityMode), fc.Args["resourceIds"].([]int64))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -47022,6 +47049,22 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	}
 	res := graphql.MarshalBoolean(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOCapabilityMode2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐCapabilityMode(ctx context.Context, v interface{}) (*model.CapabilityMode, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.CapabilityMode)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOCapabilityMode2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐCapabilityMode(ctx context.Context, sel ast.SelectionSet, v *model.CapabilityMode) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOFloat2ᚖfloat64(ctx context.Context, v interface{}) (*float64, error) {

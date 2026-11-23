@@ -895,6 +895,7 @@ func (fp *flowProvider) PerformAgentChain(ctx context.Context, taskID, subtaskID
 		TaskID:     taskID,
 		SubtaskID:  subtaskID,
 		Summarizer: fp.GetSummarizeResultHandler(&taskID, &subtaskID),
+		Capability: fp.capabilityGuard(ctx, subtaskID, "commander"),
 	}
 	if optimizationMode {
 		cfg.Optimization = barrier

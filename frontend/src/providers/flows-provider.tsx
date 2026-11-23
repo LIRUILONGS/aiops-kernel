@@ -7,6 +7,7 @@ import type { FlowFragmentFragment, FlowsQuery } from '@/graphql/types';
 
 import { composeFlowInput } from '@/features/flows/performance/compose-input';
 import {
+    CapabilityMode,
     CreateAssistantDocument,
     CreateFlowDocument,
     DeleteFlowDocument,
@@ -66,7 +67,7 @@ export function FlowsProvider({ children }: FlowsProviderProps) {
 
     const createFlow = useCallback(
         async (values: FlowFormValues) => {
-            const { providerName, resourceIds, targetType } = values;
+            const { capabilityMode, providerName, resourceIds, targetType } = values;
 
             const input = composeFlowInput(values);
             const modelProvider = providerName.trim();
@@ -78,6 +79,8 @@ export function FlowsProvider({ children }: FlowsProviderProps) {
             try {
                 const { data } = await createFlowMutation({
                     variables: {
+                        capabilityMode:
+                            capabilityMode === 'off' ? undefined : (capabilityMode as CapabilityMode),
                         flowType: targetType === 'auto' ? undefined : (targetType as FlowType),
                         input,
                         modelProvider,

@@ -89,6 +89,7 @@ type Querier interface {
 	// Get total count of assistants for a specific flow
 	GetAssistantsCountForFlow(ctx context.Context, flowID int64) (int64, error)
 	GetCallToolcall(ctx context.Context, callID string) (Toolcall, error)
+	GetCapabilityLease(ctx context.Context, subtaskID int64) (CapabilityLease, error)
 	GetContainerTermLogs(ctx context.Context, containerID int64) ([]Termlog, error)
 	GetContainers(ctx context.Context) ([]Container, error)
 	GetFlow(ctx context.Context, id int64) (Flow, error)
@@ -138,6 +139,10 @@ type Querier interface {
 	GetMsgChain(ctx context.Context, id int64) (Msgchain, error)
 	// Get all msgchains for a flow (including task and subtask level)
 	GetMsgchainsForFlow(ctx context.Context, flowID int64) ([]GetMsgchainsForFlowRow, error)
+	// The lease is keyed by subtask: one execution scope per subtask. A re-plan
+	// deletes the subtask rows, and the foreign key cascades the lease away with
+	// them. Re-issuing keeps the row (and its audit trail) instead of replacing it.
+	GetOrCreateCapabilityLease(ctx context.Context, arg GetOrCreateCapabilityLeaseParams) (CapabilityLease, error)
 	GetPrompts(ctx context.Context) ([]Prompt, error)
 	GetProvider(ctx context.Context, id int64) (Provider, error)
 	GetProviders(ctx context.Context) ([]Provider, error)
@@ -253,10 +258,12 @@ type Querier interface {
 	InsertKnowledgeDocument(ctx context.Context, arg InsertKnowledgeDocumentParams) (string, error)
 	// List all knowledge documents excluding the noisy memory type (admin view).
 	ListAllKnowledgeDocuments(ctx context.Context) ([]ListAllKnowledgeDocumentsRow, error)
+	ListCapabilityDecisions(ctx context.Context, arg ListCapabilityDecisionsParams) ([]CapabilityDecision, error)
 	// List non-memory knowledge documents belonging to a specific flow (admin scoped).
 	ListFlowKnowledgeDocuments(ctx context.Context, flowID sql.NullString) ([]ListFlowKnowledgeDocumentsRow, error)
 	// List all non-memory knowledge documents owned by a specific user (user-scoped view).
 	ListUserKnowledgeDocuments(ctx context.Context, userID sql.NullString) ([]ListUserKnowledgeDocumentsRow, error)
+	RecordCapabilityDecision(ctx context.Context, arg RecordCapabilityDecisionParams) error
 	SaveAssistantLog(ctx context.Context, arg SaveAssistantLogParams) error
 	SaveAssistantLogContent(ctx context.Context, arg SaveAssistantLogContentParams) error
 	// Vector similarity search over all knowledge documents (admin view, no user filter).

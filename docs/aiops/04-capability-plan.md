@@ -10,6 +10,25 @@
 
 下一步不是再写一版提示词，而是把这四道闸门收进一个**任务级能力租约**：由结构化计划派生、由代码签发、在每次工具调用前强制、随子任务结束回收、可审计也能在重启后恢复。分四步走，先观测再强制，最后把强制点下沉到 SSH 与目标机边界。
 
+## 0.5 这一轮已经落地的部分
+
+开关的粒度是**每个 flow**，不是环境变量：新建 flow 时选“关闭 / 观察 / 强制”，值存在 `flows.capability_mode`（`off` 为默认，老 flow 全部落在 `off`）。改环境变量会一次性影响所有 flow，正好反过来：先在一条 flow 上试策略，再决定要不要默认打开。
+
+| 层 | 位置 | 行为 |
+|---|---|---|
+| 开关 | `backend/migrations/sql/20261123120000_add_capability_leases.sql`、`pkg/controller/flow.go` | `off \| shadow \| enforce`，`CHECK` 兜底；未知值在写库前被 `capability.ParseMode` 归一到 `off` |
+| 切面 | `pkg/tools/capability_guard.go` | `CapabilityGuard.Apply` 在 `GetCommanderExecutor` / `GetAnalystExecutor` 的最后一步包住 handler 表；`off` 时原样返回，不做任何包装，也不写一条记录 |
+| 判定 | `pkg/capability` | `Lease.Authorize(call, now)` 依次判工具、主机、命令、形状、eBPF 程序；空列表不是通配，缺省拒绝；`*` 是唯一的“全部” |
+| 签发 | `pkg/providers/capability.go` | 子任务第一次执行时按 `subtaskMode` 从策略里签发一条租约，写 `capability_leases`（`subtask_id` 唯一，重规划级联删除）；重启用同一行，不重新放宽 |
+| 审计 | `capability_decisions` | 每条判定一条记录；`shadow` 下把 `deny` 存成 `would_deny`，`enforce` 下存 `deny` |
+| 拒绝通道 | `pkg/tools/refusal.go` | 继续用 `Refusal`，模型看到的是“为什么被拒、怎么才能申请”，不是工具坏了 |
+
+默认策略（`capability.DefaultPolicy`）刻意等于今天的语义：全部已配置主机、角色自己的全部工具、整个只读目录、`probe` 形状、8 小时有效期。打开 `enforce` 不会立刻改变一条正在工作的 flow 的行为——只有把策略改窄之后它才开始咬人。要把策略收紧，改 `DefaultPolicy` 一处即可，判定点不用动。
+
+有一处取舍写在这里，因为它是刻意的：读不到 flow、读不到 subtask、签发失败时，切面**不安装**并打一条 `Warn`，而不是让整个子任务失败。租约是加法，数据库回答不了的时候不该把一次正常的诊断变成错误；代价是那一轮跑在无租约状态，所以这条日志必须是 Warn 级别，运维能看见。
+
+还没做：策略文件的加载（今天只有代码里的默认值）、每工具调用预算、`ops_tunnel` 之外的形状阶梯（`workshop` 仍由 `OPSAGI_SANDBOX_NETWORK` 与模型共同决定）、批准通道（P3）、以及 P0 里那三个 fail-open 修复。下面几节保留原计划与验收方式，作为后续的路线图。
+
 ## 1. 今天实际生效的四道闸门
 
 | 闸门 | 代码 | 它拦住了什么 | 它没拦住什么 |
@@ -66,7 +85,7 @@ type Lease struct {
 
 先不拦，只记录“本该拦”。这样能在收紧之前知道收窄到什么程度不会把系统卡死。
 
-- 新开关 `OPSAGI_LEASE_MODE=off|shadow|enforce`，默认 `off`；`shadow` 下按计划与策略表算出应当允许的集合，与真实调用比对，把 `would_deny` 写进新表 `lease_decisions`（或 `toolcalls` 的附加列），**不改变行为**。
+- ~~新开关 `OPSAGI_LEASE_MODE=off|shadow|enforce`~~：开关落地成了每 flow 的选择（见 0.5），不再用环境变量；`shadow` 下按计划与策略算出应当允许的集合，与真实调用比对，把 `would_deny` 写进 `capability_decisions`，**不改变行为**。
 - 修三个 fail-open：
   - `OPSAGI_TARGETS` 解析失败在启动时报错退出，不再静默变空表（`ops.go:99`）。
   - `mysql_connections`、`mysql_processlist` 补进 `catalogOrder`，并让守卫测试遍历 `catalog` 而不是 `Commands()`（`registry_test.go:265`）。
@@ -77,16 +96,13 @@ type Lease struct {
 
 ### P1 租约内核（8–10 人日）
 
-- 新包 `backend/pkg/capability`：`Lease`、`Policy`、`Issue(plan, flow, policy) (Lease, error)`、`Authorize(lease, call) error`、`Revoke`。
-- 新迁移 `capability_leases`（见第 4 节），sqlc 再生成。
-- 签发点两处：
-  - `createPlannedSubtask`（`controller/subtasks.go:106`）写完 `plan_mode` 同期写租约；
-  - `PerformAgentChain`（`provider.go:740` 之后、`:892` 解析出 mode 的地方）在缺少租约时按策略补发一条，保证老数据也能跑。
-  - 重规划删除 `created` 行时（`subtasks.go:162`），撤销对应租约。
-- 强制点一处：`customExecutor.Execute` 在 `handlers[name]` 之后、写消息日志之前调用 `Authorize`；拒绝走 `Refuse(...)`，文案说清“哪条策略、怎么申请”。
-- 注入点：`GetCommanderExecutor`（`tools.go:903`）与 `GetAnalystExecutor`（`tools.go:1014`）都把 lease 放进 `customExecutor`；分析师链路是独立执行器（`aiops_handlers.go:129`），漏了它 commander 的检查就形同虚设。
-- 恢复：`LoadSubtaskWorker` 把 `running` 改回 `created` 时（`subtask.go:95`），从表里重读租约；已过期就按失败处理并说明原因，不静默续期。
-- 默认策略 = 今天的语义（全部主机、全目录、probe 优先），只有 `OPSAGI_LEASE_MODE=enforce` 才按策略表收窄，保证可以先上线再收紧。
+- 新包 `backend/pkg/capability`：`Lease`、`Policy`、`Issue(plan, flow, policy) (Lease, error)`、`Authorize(lease, call) error`、`Revoke`。（已落地：`capability.Lease` / `capability.Policy` / `Lease.Authorize` / `Policy.Issue`；`Revoke` 由 `subtask_id` 级联删除替代。）
+- 新迁移 `capability_leases`（见第 4 节），sqlc 再生成。（已落地，见 `20261123120000_add_capability_leases.sql`。）
+- 签发点：`PerformAgentChain`（`provider.go:712` 之后、解析出 mode 的地方）在缺少租约时按策略补发一条，保证老数据也能跑，重启用同一行。（已落地；`createPlannedSubtask` 同期写租约没有做，因为懒签发已经覆盖重启与老数据。）
+- 强制点：`CapabilityGuard.Apply` 在构造执行器时包住 handler 表，而不是改 `Execute`；`Execute` 仍是唯一漏斗，切面只是 handler 的外层。拒绝走 `Refuse(...)`，文案说清越界的是哪一维、该怎么办。（已落地。）
+- 注入点：`GetCommanderExecutor`（`tools.go:903`）与 `GetAnalystExecutor`（`tools.go:1014`）都接受 `Capability`，分析师链路是独立执行器（`aiops_handlers.go:129`），漏了它 commander 的检查就形同虚设。（已落地。）
+- 恢复：切点从 `LoadSubtaskWorker` 移到签发处——租约按 `subtask_id` 唯一，`running` 改回 `created` 后重新执行时读的是同一行；已过期就拒绝，不静默续期。（已落地。）
+- 默认策略 = 今天的语义（全部主机、全目录、probe 优先），只有 `enforce` 才按策略表收窄，保证可以先上线再收紧。（已落地：`DefaultPolicy`。）
 
 验收：`enforce` 下，计划只写了 `lab` 的子任务对 `prod` 调 `ops_exec` 得到拒绝、没有 SSH 握手、`lease_decisions` 记一条 denied；把拒绝那一行删掉，测试必须红。
 
@@ -119,28 +135,46 @@ type Lease struct {
 
 ## 4. 数据模型与配置草案
 
+已落地的两张表（`20261123120000_add_capability_leases.sql`）：租约一行对应一个子任务，`subtask_id` 唯一让“重新签发”变成 `ON CONFLICT DO UPDATE SET role = capability_leases.role`——重规划级联删除子任务时租约跟着走，重启后重读的是同一行。
+
 ```sql
+ALTER TABLE flows ADD COLUMN capability_mode TEXT NOT NULL DEFAULT 'off'
+    CHECK (capability_mode IN ('off', 'shadow', 'enforce'));
+
 CREATE TABLE capability_leases (
     id              BIGSERIAL PRIMARY KEY,
     flow_id         BIGINT NOT NULL REFERENCES flows(id) ON DELETE CASCADE,
-    subtask_id      BIGINT REFERENCES subtasks(id) ON DELETE CASCADE,
+    subtask_id      BIGINT NOT NULL UNIQUE REFERENCES subtasks(id) ON DELETE CASCADE,
     role            TEXT NOT NULL,
-    mode            TEXT NOT NULL CHECK (mode IN ('diagnosis', 'optimization')),
-    targets         TEXT[] NOT NULL DEFAULT '{}',
-    tools           TEXT[] NOT NULL DEFAULT '{}',
-    commands        TEXT[] NOT NULL DEFAULT '{}',
-    shapes          TEXT[] NOT NULL DEFAULT '{}',
-    trace_programs  TEXT[] NOT NULL DEFAULT '{}',
-    max_calls       JSONB NOT NULL DEFAULT '{}',
+    mode            TEXT NOT NULL,           -- 计划模式：diagnosis / optimization
+    targets         TEXT[] NOT NULL,
+    tools           TEXT[] NOT NULL,
+    commands        TEXT[] NOT NULL,
+    shapes          TEXT[] NOT NULL,
+    trace_programs  TEXT[] NOT NULL,
     issued_by       TEXT NOT NULL,
     expires_at      TIMESTAMPTZ NOT NULL,
-    revoked_at      TIMESTAMPTZ,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE INDEX capability_leases_subtask_idx ON capability_leases (subtask_id) WHERE revoked_at IS NULL;
+
+CREATE TABLE capability_decisions (
+    id          BIGSERIAL PRIMARY KEY,
+    flow_id     BIGINT NOT NULL REFERENCES flows(id) ON DELETE CASCADE,
+    subtask_id  BIGINT REFERENCES subtasks(id) ON DELETE CASCADE,
+    lease_id    BIGINT REFERENCES capability_leases(id) ON DELETE SET NULL,
+    role        TEXT NOT NULL,
+    tool        TEXT NOT NULL,
+    target      TEXT NOT NULL DEFAULT '',
+    command     TEXT NOT NULL DEFAULT '',
+    verdict     TEXT NOT NULL CHECK (verdict IN ('allow', 'deny', 'would_deny')),
+    reason      TEXT NOT NULL DEFAULT '',
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 ```
 
-策略文件（`OPSAGI_POLICY`，YAML，按 flow_type 给默认行；缺省值就是今天的语义）：
+`max_calls`、`revoked_at` 与按 flow 类型的策略文件仍在路线图上；今天策略只有代码里的 `capability.DefaultPolicy` 一处，字段面就是上面这五行数组。
+
+策略文件（`OPSAGI_POLICY`，YAML，按 flow_type 给默认行；缺省值就是今天的语义）——**尚未实现**，下面是目标格式：
 
 ```yaml
 modes:
@@ -200,3 +234,8 @@ limits:
 | `backend/pkg/controller/subtask.go:95` | 重启时 `running` 改回 `created` |
 | `backend/pkg/docker/worker_spec.go:18` | flow 容器规格（无内存/CPU 限制） |
 | `backend/pkg/tools/args.go:56` | 计划的机器可读字段 |
+| `backend/pkg/capability/capability.go` | `Lease.Authorize`、`Mode`、`Verdict`，纯判定，不认识数据库 |
+| `backend/pkg/capability/policy.go` | `DefaultPolicy`、`Policy.Issue`，今天的语义写在唯一一处 |
+| `backend/pkg/tools/capability_guard.go` | `CapabilityGuard.Apply`，切面包裹、`off` 时原样返回 |
+| `backend/pkg/providers/capability.go` | 签发点与审计写入，懒签发 + `Warn` 降级 |
+| `backend/pkg/graph/flowtype.go` | `convertCapabilityMode`，缺省 `off` |

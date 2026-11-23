@@ -34,6 +34,7 @@ function RetryMeasurement({ verdict }: { verdict: string }) {
 
         try {
             const flowId = await createFlow({
+                capabilityMode: 'off',
                 message: input,
                 providerName,
                 resourceIds: [],
