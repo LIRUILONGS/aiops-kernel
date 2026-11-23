@@ -134,7 +134,10 @@ function FlowCapabilitySheet({ mode, onOpenChange, open }: FlowCapabilitySheetPr
                                 >
                                     <div className="flex items-center gap-2">
                                         <Badge
-                                            className={cn('shrink-0 border text-[10px]', verdictStyles[decision.verdict])}
+                                            className={cn(
+                                                'shrink-0 border text-[10px]',
+                                                verdictStyles[decision.verdict],
+                                            )}
                                             variant="outline"
                                         >
                                             {verdictLabels[decision.verdict]}
