@@ -2003,10 +2003,12 @@ flow 96 的时间线（UTC）：
 3. **工具参数被截断的那一次，隔离复现两次都没再现**。04:08 那批 flow（同一部署、同一网关）出现 `tool call has invalid JSON arguments` 与 `subtasks array is missing`，当时同时挂着"按角色配模型"的文件和 `LLM_SERVER_PRESERVE_REASONING=true`。用独立数据库起了一个旁路实例分别试：只挂角色配置（6 分钟，无异常）、角色配置 + 保留推理（6 分钟，无异常），两次都没再现；网关对 `max_tokens` 4096/8192/16384/32768 的探测也全部返回合法 JSON 的 `tool_calls`。结论只能是"观察项"，不是"已修复"——把配置撤掉后十六个 flow 再没出现过同样的报错。
 4. **`base+2*flowID` 的端口派生会撞上宿主占用**。flow 12 建流 3 秒后 `failed`：`failed to bind port 0.0.0.0:40024: bind: address already in use`。端口是确定性算出来的，撞上任何宿主占用或 Windows 的保留段就没有退路。这一轮把 base 挪到 40000 绕开，但从产品角度这是个设计取舍（确定性端口方便操作员预开防火墙，代价是撞了只能改配置），写进第 8 章而不是偷偷改掉。
 5. **日志集是历史归档，不是"正在发生"的现场**。Linux_2k 的时间戳是 2005 年，多份归档里没有任何本次窗口的痕迹；flow 9 因此给出 `failed`，flow 11 给出"部分成功"。这不是产品错，是这一轮数据集的边界：验证"能不能从真实日志文本里读出真实的分布"是够的，验证"当前是否有异常"不够——那需要现场采集，不是归档。
+6. **`auto` 模式下，一句"性能优化任务"也可能被判成事故**。flow 27 的任务第一句就是"性能优化任务"，规划器仍给出 `mode=diagnosis` 的计划，第一条子任务甚至是"验证占位假设"（模型自己写的占位符），于是 `optimization_result` 根本不在工具表里，整条 flow 以一次浅诊断收尾。`createFlow` 本来就有 `flowType`（取值 `auto` / `diagnosis` / `optimization`，界面上建流时会传），显式声明 `optimization` 之后 flow 34/39 的计划立刻变成性能链路。结论：操作员知道任务性质时应当显式声明，`auto` 只适合"确实不确定"的场合，不该当默认值用。
+7. **一个子任务 `ask` 之后，答案送不进去**。flow 39 在 07:03:28 由子任务 100 提出问题，之后十几分钟里每 10 秒试一次 `putUserInput`，每次都是 `input processing timeout: input was not accepted`。机制在第 7 章第 12 条。
 
 #### 五、覆盖到哪、没覆盖到哪
 
-21 种工具被真的调过：`ask`、`change_analyst`、`change_finding`、`diagnosis`、`k8s_get`、`log_analyst`、`log_finding`、`metric_finding`、`metrics_analyst`、`ops_baseline`、`ops_containers`、`ops_exec`、`ops_logs`、`ops_sandbox`、`ops_system`、`ops_trace`、`ops_watch`、`prom_query`、`report_result`、`subtask_list`、`subtask_patch`。没覆盖到的：`ops_diff` 与 `optimization_result`（flow 16 缺了最后两步，落进第 7 章）、`browser` / `web_search` / `search_*`（靶场没有外网检索需求，且记忆库没开 embedder）、`terminal` / `file`（运维角色的工具面里故意没有它们）。
+23 种工具被真的调过：`ask`、`change_analyst`、`change_finding`、`diagnosis`、`k8s_get`、`log_analyst`、`log_finding`、`metric_finding`、`metrics_analyst`、`ops_baseline`、`ops_containers`、`ops_diff`、`ops_exec`、`ops_logs`、`ops_sandbox`、`ops_system`、`ops_trace`、`ops_watch`、`optimization_result`、`prom_query`、`report_result`、`subtask_list`、`subtask_patch`。`ops_diff` 与 `optimization_result` 是这一节的 flow 16 缺的尾巴，由 flow 46 补上（`ops_diff` 头两次因为要手抄指纹 JSON 而失败，见 4.74）。没覆盖到的：`browser` / `web_search` / `search_*`（靶场没有外网检索需求，且记忆库没开 embedder）、`terminal` / `file`（运维角色的工具面里故意没有它们）。
 
 assistant 单独验过一次（挂在一个已完成的 flow 上，问"lab 上 seal-engraver- 开头的容器有哪些"）：1.3 分钟答完，答案来自 `ops_containers` 的真实返回（5 条容器、`seal-engraver-postgres` 已退出、退出码 0），结论正确；但正文里出现了一行自己拼错的表格行并在下一段自我更正——单次问答没有 flow 的多轮取证兜底，这一档质量不如 flow，记在第 7 章。
 
@@ -2055,6 +2057,28 @@ assistant 单独验过一次（挂在一个已完成的 flow 上，问"lab 上 s
 #### 六、慢查询那条链的实测数字
 
 `bench` 库的报表查询在没有任何索引时是 `Parallel Seq Scan`，`Execution Time: 1240.994 ms`（`explain (analyze, buffers)`，5,000,000 行）；`pg_stat_statements` 里同一条语句 `calls=3，mean_exec_time=1070.75 ms`。操作员按 agent 给的 DDL 建索引后，同一条 SQL 三次回放落在 `0.16～0.18 ms`。flow 35 的报告把这组数字引用了，并且自己点明"建索引后的独立复测、after 基线、`ops_diff`、`optimization_result` 这四步没做，verdict 没有实测依据"——这个自我限界要保留，它比一个漂亮的"优化成功"更可信。
+
+### 4.74 性能链路补完：答案接得进去，差值自己算（2026-11-23）
+
+上一节留下两件事：`ops_diff` 与 `optimization_result` 没被真正走通，以及"操作员回答问题"这条路只在任务停下来之后才通。这一节把两件都改掉，都在真 flow 上验过。
+
+#### 一、`ask` 的答案进不来
+
+症状：flow 39（`flow_type=optimization`）在 07:03:28 由子任务 100 提问，之后二十分钟里每 10 秒投一次 `putUserInput`，每次都回 `input processing timeout: input was not accepted`；同时子任务 101 在正常跑指标查询。界面上问题看得见，答不进去。
+
+机制：`flowWorker.PutInput` 把输入送进 `fw.input`，只等 `flowInputTimeout`（1 秒）；唯一读这个 channel 的是 flow 主循环（`pkg/controller/flow.go` 里 `for { select { case flin = <-fw.input } }`）。`taskWorker.Run` 在一个子任务 `waiting` 之后并不返回，它继续跑同批的下一个子任务（`OPSAGI_SUBTASK_CONCURRENCY=2` 时是并行的），于是 `runTask` 一直占着主循环，答案只在"整条任务跑完"的那道缝里才收得下。
+
+改法：`runTask` 在任务运行期间起一个读 `fw.input` 的转发协程（`forwardInputWhileRunning`），把它交给 `task.PutInput`；任务不在 waiting 时，把 `task is not waiting` 原样回给调用者——这样"worker 正忙"和"没人等输入"是两句不同的话，而不是同一个 1 秒超时。
+
+验证：`TestFlow_PutInput_ReachesATaskThatIsStillRunning`；把转发协程那两行去掉，测试立刻红，报出的正是线上那条 `flow 7 input processing timeout: input was not accepted`。真跑 flow 46（同一场景、同一靶场）：三次 `ask`（266 / 270 / 281）的答案**第一次投递就被接收**，操作员脚本日志是 `accepted on attempt 1`。
+
+#### 二、`ops_diff` 要模型手抄一整段指纹 JSON
+
+症状：flow 46 两次调 `ops_diff` 都失败，原文 `解析 after 失败：invalid character ',' after object key`。入参本来就是 `before` / `after` 两个"指纹 JSON 字符串"，模型得把 `ops_baseline` 打出来的整段 JSON 重抄一遍，抄坏一个逗号就整条失败，而重抄本身没有任何价值。
+
+改法：`ops_baseline` 把指纹留在本 flow 的 `baselineSamples`（最近 16 次），结果里给出采样编号（`base-3`）并明说"编号比指纹 JSON 可靠"；`ops_diff` 的 `before` / `after` 改成接受编号，编号过期时回一句带编号与其保留条数的说明；直接传 JSON 仍然可用，老调用不破。
+
+验证：`TestOpsDiff_HandleDiff_TakesTheSampleIdsBaselineReturned`、`TestOpsDiff_HandleDiff_NamesTheSideWhoseSampleIsGone`、`TestOpsDiff_HandleDiff_StillTakesTheFingerprintItself`；把"按编号查找"那三行去掉，第一个测试立刻红（错误文本里能看到它退化成了"解析 before 失败：invalid character 'b'"）。
 
 ## 5 环境
 
@@ -2280,6 +2304,10 @@ chore: fork OpsAGI as AIOps kernel; add design docs and incident prompts
 ### 11. assistant 的单次问答质量不如 flow
 
 4.72 里 assistant 只用 1.3 分钟就答对了"哪些 seal-engraver 容器在跑"，但它把 4 个容器的表格写成了 5 行（多出的那行是自己拼错的），随后在正文里自我更正。flow 有多轮取证与 refiner 复核兜底，assistant 是一次成稿，这一档差距目前靠模型本身，没有结构性补偿。
+
+### 12. 子任务 `ask` 之后，答案进不来
+
+`flowWorker.PutInput` 把用户输入送进 `fw.input`，然后只等 `flowInputTimeout`（1 秒）看有没有人接收；唯一读这个 channel 的是 flow 主循环 `for { select { case flin = <-fw.input } }`（`pkg/controller/flow.go:1321`）。而 `taskWorker.Run` 在某个子任务 `waiting` 之后会继续跑下一个子任务（`OPSAGI_SUBTASK_CONCURRENCY=2` 时并行跑），整条 `runTask` 并不返回——于是答案只有在"整条任务跑完、回到主循环"的时间缝里才收得下，任务内部还在跑别的子任务时投递一律被拒。flow 39 就是后者：子任务 100 在 07:03:28 提问，子任务 101 转去查指标、二十分钟没停，这期间每 10 秒投递一次答案，全部 `input processing timeout`；界面上这个问题看得见、答不进去，等人真正答进去时，那条 parked 子任务可能已经被 `subtask_patch` 改掉或跳过。修法方向有两条，选一条即可：子任务 `waiting` 时任务不再起新的子任务（等答复或等它被改掉），或者把输入通道的读取挪到能并发跑的位置，并让 `putUserInput` 的报错区分"worker 正忙"和"没有人在等输入"——一个 1 秒超时把两件事说成同一件，操作员和 agent 都无从判断。
 
 ### 已经关掉的（不再列在上面）
 

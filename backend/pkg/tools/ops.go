@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"opsagi/pkg/config"
@@ -31,10 +32,56 @@ type opsTools struct {
 	order   []string
 	timeout time.Duration
 
+	samples baselineSamples
+
 	sandboxPull    bool
 	sandboxNetwork bool
 	sandboxBPF     bool
 	bpfImage       string
+}
+
+// baselineSamplesKept bounds what one flow keeps in memory. A flow takes a handful of
+// samples around a change; past that the old ones are only useful for a comparison that
+// already happened.
+const baselineSamplesKept = 16
+
+// baselineSamples holds the fingerprints ops_baseline returned so ops_diff can take two
+// ids instead of two blobs. Retyping a fingerprint into a string argument is where the
+// model that asked for the diff got it wrong: the id it can copy.
+type baselineSamples struct {
+	mx   sync.Mutex
+	seq  int
+	keep []string
+	byID map[string]opsremote.Fingerprint
+}
+
+func (s *baselineSamples) put(fp opsremote.Fingerprint) string {
+	s.mx.Lock()
+	defer s.mx.Unlock()
+
+	if s.byID == nil {
+		s.byID = make(map[string]opsremote.Fingerprint)
+	}
+
+	s.seq++
+	id := fmt.Sprintf("base-%d", s.seq)
+	s.byID[id] = fp
+	s.keep = append(s.keep, id)
+	if len(s.keep) > baselineSamplesKept {
+		delete(s.byID, s.keep[0])
+		s.keep = s.keep[1:]
+	}
+
+	return id
+}
+
+func (s *baselineSamples) get(id string) (opsremote.Fingerprint, bool) {
+	s.mx.Lock()
+	defer s.mx.Unlock()
+
+	fp, ok := s.byID[strings.TrimSpace(id)]
+
+	return fp, ok
 }
 
 // NewOpsTools builds the read-only probe toolset from configuration. No targets
@@ -468,10 +515,11 @@ type OpsBaselineArgs struct {
 	Database  string `json:"database,omitempty" jsonschema:"description=数据库名，与 container 成对出现,example=shop"`
 }
 
-// OpsDiffArgs compares two samples taken by ops_baseline.
+// OpsDiffArgs compares two samples taken by ops_baseline. Each side is either the
+// sample id ops_baseline returned or the fingerprint JSON it printed.
 type OpsDiffArgs struct {
-	Before string `json:"before" jsonschema:"description=ops_baseline 返回的 before 指纹 JSON"`
-	After  string `json:"after" jsonschema:"description=ops_baseline 返回的 after 指纹 JSON"`
+	Before string `json:"before" jsonschema_description:"ops_baseline 返回的采样编号（形如 base-3）或它的指纹 JSON"`
+	After  string `json:"after" jsonschema_description:"ops_baseline 返回的采样编号（形如 base-5）或它的指纹 JSON"`
 }
 
 func (o *opsTools) HandleBaseline(ctx context.Context, name string, args json.RawMessage) (string, error) {
@@ -523,13 +571,15 @@ func (o *opsTools) HandleBaseline(ctx context.Context, name string, args json.Ra
 	}
 
 	var b strings.Builder
-	fmt.Fprintf(&b, "已采集基线 %q（目标 %s，主机 %s）\n", label, target.ID, fp.Host)
+	sampleID := o.samples.put(fp)
+	fmt.Fprintf(&b, "已采集基线 %q（采样编号 %s，目标 %s，主机 %s）\n", label, sampleID, target.ID, fp.Host)
 	fmt.Fprintf(&b, "负载 %.2f，CPU %.1f%%，内存 %d/%d MB，磁盘根分区 %.0f%%\n",
 		fp.Load1, fp.CPUPercent, fp.MemUsedMB, fp.MemTotalMB, fp.Filesystems["/"])
 	if postgresNote != "" {
 		b.WriteString(postgresNote)
 	}
-	b.WriteString("\n把下面这一整行原样保存下来，做完变更后再次调用 ops_baseline 采一个 after，再用 ops_diff 对比：\n")
+	b.WriteString("\n做完变更后再调一次 ops_baseline，然后用 ops_diff 把第一次的编号传给 before、第二次的传给 after（编号比指纹 JSON 可靠，别手抄 JSON）：\n")
+	b.WriteString("指纹原文（需要时再读，不必整段抄进工具参数）：\n")
 	b.WriteString(string(payload))
 	b.WriteString("\n")
 
@@ -566,24 +616,51 @@ func (o *opsTools) HandleDiff(ctx context.Context, name string, args json.RawMes
 		return "", fmt.Errorf("解析参数失败：%w", err)
 	}
 	if strings.TrimSpace(parsed.Before) == "" || strings.TrimSpace(parsed.After) == "" {
-		return "", fmt.Errorf("before 与 after 都是必填：请分别填入两次 ops_baseline 返回的指纹 JSON")
+		return "", fmt.Errorf("before 与 after 都是必填：请分别填入两次 ops_baseline 返回的采样编号（形如 base-3）")
 	}
 
-	var before, after opsremote.Fingerprint
-	if err := json.Unmarshal([]byte(extractJSON(parsed.Before)), &before); err != nil {
-		return "", fmt.Errorf("解析 before 失败：%w", err)
+	before, err := o.fingerprintOf("before", parsed.Before)
+	if err != nil {
+		return "", err
 	}
-	if err := json.Unmarshal([]byte(extractJSON(parsed.After)), &after); err != nil {
-		return "", fmt.Errorf("解析 after 失败：%w", err)
+	after, err := o.fingerprintOf("after", parsed.After)
+	if err != nil {
+		return "", err
 	}
 	if before.Host == "" || after.Host == "" {
-		return "", fmt.Errorf("指纹里缺少主机信息，请确认传入的是 ops_baseline 的输出")
+		return "", fmt.Errorf("指纹里缺少主机信息，请确认传入的是 ops_baseline 的采样编号或输出")
 	}
 	if before.Host != after.Host {
 		return "", fmt.Errorf("两次采样来自不同主机（%s 与 %s），无法对比", before.Host, after.Host)
 	}
 
 	return opsremote.FormatDeltas(before, after, opsremote.CompareFingerprints(before, after)), nil
+}
+
+// fingerprintOf resolves one side of a diff: the sample id ops_baseline returned, or the
+// fingerprint JSON itself for a caller that pasted the whole result.
+func (o *opsTools) fingerprintOf(side, value string) (opsremote.Fingerprint, error) {
+	if fp, ok := o.samples.get(value); ok {
+		return fp, nil
+	}
+
+	var fp opsremote.Fingerprint
+	if err := json.Unmarshal([]byte(extractJSON(value)), &fp); err != nil {
+		return opsremote.Fingerprint{}, fmt.Errorf("解析 %s 失败（%q）：%w；如果这是采样编号，它可能已经过期（ops_baseline 只保留最近 %d 次采样），重新采一次 before 再比对",
+			side, clip(value, 60), err, baselineSamplesKept)
+	}
+
+	return fp, nil
+}
+
+// clip shortens a value for an error message: a pasted fingerprint would otherwise fill
+// the refusal with the thing the model already has.
+func clip(value string, limit int) string {
+	if len(value) <= limit {
+		return value
+	}
+
+	return value[:limit] + "…"
 }
 
 // extractJSON tolerates a fingerprint pasted together with the sentence around

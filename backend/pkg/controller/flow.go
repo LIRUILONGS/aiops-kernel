@@ -1433,7 +1433,39 @@ func (fw *flowWorker) runTask(spanName, input string, task TaskWorker) error {
 	defer fw.taskWG.Done()
 	defer fw.signalTaskComplete()
 
+	stopForwarding := fw.forwardInputWhileRunning(ctx, task)
+	defer stopForwarding()
+
 	return fw.execTask(ctx, spanName, input, task)
+}
+
+// forwardInputWhileRunning keeps the flow's input channel drained for as long as a task
+// runs. A task returns to the flow loop only when its whole batch is done, and a sibling
+// subtask may keep working for minutes after one of them has asked a question; without a
+// reader here the answer is refused by the one-second timeout PutInput waits with, and an
+// operator sees a question that cannot be answered.
+func (fw *flowWorker) forwardInputWhileRunning(ctx context.Context, task TaskWorker) func() {
+	ctx, cancel := context.WithCancel(ctx)
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case flin := <-fw.input:
+				err := task.PutInput(ctx, flin.input)
+				if err != nil {
+					// "task is not waiting" is the honest answer here: the caller can
+					// tell a busy worker from one that never took the input.
+					flin.reply.deliver(fmt.Errorf("flow %d: %w", fw.flowCtx.FlowID, err))
+					continue
+				}
+				flin.reply.deliver(nil)
+			}
+		}
+	}()
+
+	return cancel
 }
 
 // execTask executes a task using an already-prepared context and cancel function.

@@ -688,3 +688,88 @@ func TestFlow_PutInput_SaysWhetherTheInputWasAccepted(t *testing.T) {
 		assert.NoError(t, err, "a slow worker is the ordinary case and has always been quiet")
 	})
 }
+
+// answerableTask blocks inside Run so the flow is mid-task while an answer arrives,
+// which is the state an operator answering a subtask's question is in.
+type answerableTask struct {
+	TaskWorker
+
+	waiting atomic.Bool
+	started chan struct{}
+	release chan struct{}
+	inputs  chan string
+}
+
+func (t *answerableTask) GetTaskID() int64                          { return 12 }
+func (t *answerableTask) GetTitle() string                          { return "look at the slow query" }
+func (t *answerableTask) IsCompleted() bool                         { return false }
+func (t *answerableTask) IsWaiting() bool                           { return t.waiting.Load() }
+func (t *answerableTask) GetResult(context.Context) (string, error) { return "", nil }
+func (t *answerableTask) GetStatus(context.Context) (database.TaskStatus, error) {
+	return database.TaskStatusWaiting, nil
+}
+
+func (t *answerableTask) PutInput(_ context.Context, input string) error {
+	if !t.waiting.Load() {
+		return errors.New("task is not waiting")
+	}
+	t.inputs <- input
+
+	return nil
+}
+
+func (t *answerableTask) Run(context.Context) error {
+	close(t.started)
+	<-t.release
+
+	return nil
+}
+
+func TestFlow_PutInput_ReachesATaskThatIsStillRunning(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	flowCtx := &FlowContext{FlowID: 7, Provider: &lateInputFakeFlowProvider{}}
+	fw := &flowWorker{
+		wg:      &sync.WaitGroup{},
+		ctx:     ctx,
+		cancel:  cancel,
+		taskMX:  &sync.Mutex{},
+		taskST:  func() {},
+		taskWG:  &sync.WaitGroup{},
+		taskCCH: make(chan struct{}),
+		input:   make(chan flowInput),
+		flowCtx: flowCtx,
+		logger:  logrus.WithField("flow_id", flowCtx.FlowID),
+	}
+
+	task := &answerableTask{
+		started: make(chan struct{}),
+		release: make(chan struct{}),
+		inputs:  make(chan string, 1),
+	}
+
+	done := make(chan error, 1)
+	go func() { done <- fw.runTask("test", "start", task) }()
+	controllerReceive(t, task.started, "the task to start")
+
+	callCtx, callCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer callCancel()
+
+	task.waiting.Store(true)
+	err := fw.PutInput(callCtx, "the answer", &lateInputFakeProvider{}, nil)
+	require.NoError(t, err, "a task that is still running must accept the answer to its own question")
+	assert.NotErrorIs(t, err, ErrInputNotAccepted)
+
+	select {
+	case got := <-task.inputs:
+		assert.Equal(t, "the answer", got)
+	case <-time.After(5 * time.Second):
+		t.Fatal("the answer never reached the task")
+	}
+
+	close(task.release)
+	controllerReceive(t, done, "the task to finish")
+}

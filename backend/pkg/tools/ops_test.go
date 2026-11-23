@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
@@ -256,5 +257,74 @@ func TestFormatLogs_CutTailReportsHowManyLinesWereDropped(t *testing.T) {
 	}
 	if len(formatted) > 12*1024 {
 		t.Errorf("result is %d bytes, which overruns the size the tool promises the model", len(formatted))
+	}
+}
+
+func TestOpsDiff_HandleDiff_TakesTheSampleIdsBaselineReturned(t *testing.T) {
+	t.Parallel()
+
+	tools := &opsTools{}
+	before := opsremote.Fingerprint{Label: "before", Host: "lab", Load1: 22.4, CPUPercent: 88}
+	after := opsremote.Fingerprint{Label: "after", Host: "lab", Load1: 0.9, CPUPercent: 12}
+	beforeID := tools.samples.put(before)
+	afterID := tools.samples.put(after)
+
+	args, err := json.Marshal(OpsDiffArgs{Before: beforeID, After: afterID})
+	if err != nil {
+		t.Fatalf("marshal args: %v", err)
+	}
+
+	rendered, err := tools.HandleDiff(t.Context(), OpsDiffToolName, args)
+	if err != nil {
+		t.Fatalf("the ids ops_baseline printed were refused: %v", err)
+	}
+
+	for _, want := range []string{"before", "after", "22.4", "0.9"} {
+		if !strings.Contains(rendered, want) {
+			t.Errorf("diff %q does not show %q, so the two samples were not the ones the ids named", rendered, want)
+		}
+	}
+}
+
+func TestOpsDiff_HandleDiff_NamesTheSideWhoseSampleIsGone(t *testing.T) {
+	t.Parallel()
+
+	tools := &opsTools{}
+	afterID := tools.samples.put(opsremote.Fingerprint{Label: "after", Host: "lab", Load1: 0.9})
+
+	args, err := json.Marshal(OpsDiffArgs{Before: "base-99", After: afterID})
+	if err != nil {
+		t.Fatalf("marshal args: %v", err)
+	}
+
+	_, err = tools.HandleDiff(t.Context(), OpsDiffToolName, args)
+	if err == nil {
+		t.Fatal("an id that names no sample was accepted")
+	}
+	for _, want := range []string{"before", "base-99", "16"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error %q does not tell the model %q, so it cannot tell a typo from an expired sample", err, want)
+		}
+	}
+}
+
+func TestOpsDiff_HandleDiff_StillTakesTheFingerprintItself(t *testing.T) {
+	t.Parallel()
+
+	tools := &opsTools{}
+	args, err := json.Marshal(OpsDiffArgs{
+		Before: `{"label":"before","host":"lab","load1":22.4}`,
+		After:  `{"label":"after","host":"lab","load1":0.9}`,
+	})
+	if err != nil {
+		t.Fatalf("marshal args: %v", err)
+	}
+
+	rendered, err := tools.HandleDiff(t.Context(), OpsDiffToolName, args)
+	if err != nil {
+		t.Fatalf("a caller that pasted the fingerprint itself was refused: %v", err)
+	}
+	if !strings.Contains(rendered, "22.4") {
+		t.Errorf("diff %q does not carry the pasted numbers", rendered)
 	}
 }
