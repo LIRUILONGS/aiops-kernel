@@ -771,5 +771,7 @@ func TestFlow_PutInput_ReachesATaskThatIsStillRunning(t *testing.T) {
 	}
 
 	close(task.release)
-	controllerReceive(t, done, "the task to finish")
+	if err := controllerReceive(t, done, "the task to finish"); err != nil {
+		t.Fatalf("runTask returned %v, want the answer to end the task quietly", err)
+	}
 }
