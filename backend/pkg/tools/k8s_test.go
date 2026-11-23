@@ -42,7 +42,7 @@ func TestK8s_HandleGet_SaysWhyAPodIsNotRunning(t *testing.T) {
 	body := `{"items":[{"metadata":{"name":"web-5d8-abc","namespace":"shop"},
 		"spec":{"nodeName":""},
 		"status":{"phase":"Pending","containerStatuses":[{"name":"web","restartCount":3,
-		"waiting":{"reason":"ImagePullBackOff","message":"Back-off pulling image \"nginx:1.99\""}}]}}]}`
+		"state":{"waiting":{"reason":"ImagePullBackOff","message":"Back-off pulling image \"nginx:1.99\""}}}]}}]}`
 
 	tools := k8sTestTools(t, nil, body)
 
@@ -55,6 +55,76 @@ func TestK8s_HandleGet_SaysWhyAPodIsNotRunning(t *testing.T) {
 		if !strings.Contains(out, want) {
 			t.Errorf("the rendering is missing %q:\n%s", want, out)
 		}
+	}
+}
+
+func TestK8s_HandleGet_ReportsTheExitCodeOfTheLastRun(t *testing.T) {
+	body := `{"items":[{"metadata":{"name":"api-78695cf464-tw89g","namespace":"opslab"},
+		"status":{"phase":"Running","containerStatuses":[{"name":"api","restartCount":8,
+		"state":{"waiting":{"reason":"CrashLoopBackOff","message":"back-off 5m0s restarting failed container"}},
+		"lastState":{"terminated":{"exitCode":78,"reason":"Error"}}}]}}]}`
+
+	tools := k8sTestTools(t, nil, body)
+
+	out, err := tools.HandleGet(context.Background(), K8sGetToolName, json.RawMessage(`{"what":"pods","namespace":"opslab"}`))
+	if err != nil {
+		t.Fatalf("HandleGet: %v", err)
+	}
+
+	for _, want := range []string{"restarts=8", "exit=78", "CrashLoopBackOff"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("a CrashLoopBackOff has to carry its exit code, missing %q:\n%s", want, out)
+		}
+	}
+}
+
+func TestK8s_HandleGet_ReadsTheTailOfAPodLog(t *testing.T) {
+	var query string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		query = r.URL.Path + "?" + r.URL.RawQuery
+		_, _ = w.Write([]byte("starting orders-api v2.4.1\nFATAL: DATABASE_URL is not set; refusing to start\n"))
+	}))
+	t.Cleanup(server.Close)
+
+	tools := NewK8sTools(&config.Config{K8sAPIURL: server.URL})
+
+	out, err := tools.HandleGet(context.Background(), K8sGetToolName,
+		json.RawMessage(`{"what":"logs","namespace":"opslab","name":"api-78695cf464-tw89g","container":"api","tail_lines":50}`))
+	if err != nil {
+		t.Fatalf("HandleGet: %v", err)
+	}
+
+	if !strings.Contains(query, "/api/v1/namespaces/opslab/pods/api-78695cf464-tw89g/log") ||
+		!strings.Contains(query, "tailLines=50") || !strings.Contains(query, "container=api") {
+		t.Errorf("the log request has to name the Pod and the tail, got %q", query)
+	}
+
+	if !strings.Contains(out, "FATAL: DATABASE_URL is not set") || !strings.Contains(out, "最后 50 行") {
+		t.Errorf("the process output and how much of it was asked for both have to survive:\n%s", out)
+	}
+}
+
+func TestK8s_HandleGet_RefusesALogReadWithoutAPodName(t *testing.T) {
+	tools := k8sTestTools(t, nil, `{"items":[]}`)
+
+	_, err := tools.HandleGet(context.Background(), K8sGetToolName, json.RawMessage(`{"what":"logs","namespace":"opslab"}`))
+	if err == nil || !strings.Contains(err.Error(), "name") {
+		t.Fatalf("a log read without a Pod is a configuration mistake, got %v", err)
+	}
+}
+
+func TestK8s_HandleGet_SaysWhenAContainerWroteNothing(t *testing.T) {
+	tools := k8sTestTools(t, nil, "")
+
+	out, err := tools.HandleGet(context.Background(), K8sGetToolName,
+		json.RawMessage(`{"what":"logs","namespace":"opslab","name":"api-78695cf464-tw89g"}`))
+	if err != nil {
+		t.Fatalf("HandleGet: %v", err)
+	}
+
+	if !strings.Contains(out, "没有任何输出") {
+		t.Errorf("an empty log is evidence of its own and must not read as a failure:\n%s", out)
 	}
 }
 

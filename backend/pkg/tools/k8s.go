@@ -9,9 +9,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -24,14 +26,18 @@ import (
 // incident is actually argued with: what is running, why it is not, and what the
 // scheduler and the kubelet said about it.
 type K8sGetArgs struct {
-	What      string `json:"what" jsonschema:"required,enum=pods,enum=events,enum=deployments,enum=nodes" jsonschema_description:"要读哪一类对象：pods / events / deployments / nodes"`
+	What      string `json:"what" jsonschema:"required,enum=pods,enum=events,enum=deployments,enum=nodes,enum=logs" jsonschema_description:"要读哪一类对象：pods / events / deployments / nodes / logs"`
 	Namespace string `json:"namespace,omitempty" jsonschema:"description=命名空间，留空表示所有命名空间,example=shop"`
-	Name      string `json:"name,omitempty" jsonschema:"description=只看名字里包含这段文字的对象,example=web-"`
+	Name      string `json:"name,omitempty" jsonschema:"description=列表时只看名字里包含这段文字的对象；what=logs 时是 Pod 名,example=web-"`
+	Container string `json:"container,omitempty" jsonschema:"description=what=logs 时读哪个容器，留空由集群决定"`
+	TailLines int    `json:"tail_lines,omitempty" jsonschema:"description=what=logs 时读最后多少行，默认 200，上限 2000"`
 }
 
 const (
 	k8sRequestTimeout = 30 * time.Second
 	k8sMaxItems       = 200
+	k8sMaxLogLines    = 2000
+	k8sMaxLogBytes    = 8000
 )
 
 type k8sTools struct {
@@ -257,6 +263,10 @@ func (k *k8sTools) HandleGet(ctx context.Context, _ string, args json.RawMessage
 		return "", err
 	}
 
+	if strings.TrimSpace(parsed.What) == "logs" {
+		return renderK8sLogs(parsed, body), nil
+	}
+
 	return renderK8s(parsed, body)
 }
 
@@ -272,8 +282,10 @@ func k8sPath(args K8sGetArgs) (string, error) {
 		apiPrefix, resource = "/apis/apps/v1", "deployments"
 	case "nodes":
 		return "/api/v1/nodes", nil
+	case "logs":
+		return k8sLogPath(args)
 	default:
-		return "", fmt.Errorf("what=%q 不是 pods / events / deployments / nodes 之一", args.What)
+		return "", fmt.Errorf("what=%q 不是 pods / events / deployments / nodes / logs 之一", args.What)
 	}
 
 	namespace := strings.TrimSpace(args.Namespace)
@@ -282,6 +294,53 @@ func k8sPath(args K8sGetArgs) (string, error) {
 	}
 
 	return fmt.Sprintf("%s/namespaces/%s/%s", apiPrefix, namespace, resource), nil
+}
+
+// k8sLogPath is the one read that needs a single named object: a log belongs to one
+// Pod, so there is no list to filter and an empty name is an error, not a wildcard.
+func k8sLogPath(args K8sGetArgs) (string, error) {
+	namespace := strings.TrimSpace(args.Namespace)
+	name := strings.TrimSpace(args.Name)
+	if namespace == "" || name == "" {
+		return "", fmt.Errorf("what=logs 需要 namespace 和 Pod 名（name），例如 {\"what\":\"logs\",\"namespace\":\"shop\",\"name\":\"web-5d8-abc\"}")
+	}
+
+	query := url.Values{}
+	query.Set("tailLines", strconv.Itoa(k8sTailLines(args)))
+	if container := strings.TrimSpace(args.Container); container != "" {
+		query.Set("container", container)
+	}
+
+	return fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/log?%s", namespace, url.PathEscape(name), query.Encode()), nil
+}
+
+func k8sTailLines(args K8sGetArgs) int {
+	switch {
+	case args.TailLines <= 0:
+		return 200
+	case args.TailLines > k8sMaxLogLines:
+		return k8sMaxLogLines
+	default:
+		return args.TailLines
+	}
+}
+
+// renderK8sLogs keeps the tail of what the process wrote. The heading repeats the
+// request so a conclusion can say how much of the log it actually saw.
+func renderK8sLogs(args K8sGetArgs, body []byte) string {
+	header := fmt.Sprintf("Pod 日志（%s/%s", args.Namespace, args.Name)
+	if container := strings.TrimSpace(args.Container); container != "" {
+		header += "，container=" + container
+	}
+
+	header += fmt.Sprintf("，最后 %d 行）", k8sTailLines(args))
+
+	text := strings.TrimSpace(string(body))
+	if text == "" {
+		return header + "\n（这个容器没有任何输出：Pod 刚启动，或者进程在写第一行之前就退出了）"
+	}
+
+	return header + "\n" + cutTail(text, k8sMaxLogBytes)
 }
 
 func (k *k8sTools) get(ctx context.Context, path string) ([]byte, error) {
@@ -393,9 +452,13 @@ func k8sObjectRow(what, namespace, name string, item map[string]any) string {
 	case "pods":
 		phase := k8sString(item, "status", "phase")
 		node := k8sString(item, "spec", "nodeName")
-		restarts, reasons := k8sContainerStates(item)
+		restarts, exits, reasons := k8sContainerStates(item)
 
 		row := fmt.Sprintf("%-52s %-9s restarts=%d", prefix, phase, restarts)
+		if len(exits) > 0 {
+			row += " exit=" + strings.Join(exits, ",")
+		}
+
 		if node != "" {
 			row += " node=" + node
 		}
@@ -441,10 +504,15 @@ func k8sEventRow(namespace, name string, item map[string]any) string {
 		namespace, last, object, count, reason, name, message)
 }
 
-func k8sContainerStates(item map[string]any) (int, []string) {
+// k8sContainerStates reads the two things a CrashLoopBackOff is argued with: how
+// many times it restarted, and what the container said the last time it died. The
+// exit code lives under lastState once the container is back in waiting, which is
+// exactly the state an operator sees during the loop.
+func k8sContainerStates(item map[string]any) (int, []string, []string) {
 	statuses, _ := dig(item, "status", "containerStatuses").([]any)
 
 	restarts := 0
+	exits := make([]string, 0, len(statuses))
 	reasons := make([]string, 0, len(statuses))
 
 	for _, raw := range statuses {
@@ -455,31 +523,65 @@ func k8sContainerStates(item map[string]any) (int, []string) {
 
 		restarts += int(numOrZero(status["restartCount"]))
 
-		for _, key := range []string{"waiting", "terminated"} {
+		containerName := stringOrEmpty(status["name"])
+
+		for _, key := range []string{"state"} {
 			state, _ := status[key].(map[string]any)
 			if state == nil {
 				continue
 			}
 
-			reason := stringOrEmpty(state["reason"])
-			if reason == "" {
-				continue
+			if terminated, ok := state["terminated"].(map[string]any); ok {
+				exits = appendExit(exits, containerName, terminated)
 			}
 
-			entry := fmt.Sprintf("%s: %s", stringOrEmpty(status["name"]), reason)
-			if message := stringOrEmpty(state["message"]); message != "" {
-				if len(message) > 160 {
-					message = message[:160] + "…"
-				}
-
-				entry += ": " + strings.Join(strings.Fields(message), " ")
+			if waiting, ok := state["waiting"].(map[string]any); ok {
+				reasons = appendReason(reasons, containerName, waiting)
 			}
+		}
 
-			reasons = append(reasons, entry)
+		last, _ := status["lastState"].(map[string]any)
+		if last != nil {
+			if terminated, ok := last["terminated"].(map[string]any); ok {
+				exits = appendExit(exits, containerName, terminated)
+				reasons = appendReason(reasons, containerName, terminated)
+			}
 		}
 	}
 
-	return restarts, reasons
+	return restarts, exits, reasons
+}
+
+func appendExit(exits []string, containerName string, terminated map[string]any) []string {
+	code, ok := terminated["exitCode"]
+	if !ok {
+		return exits
+	}
+
+	entry := fmt.Sprintf("%v", code)
+	if containerName != "" && len(exits) > 0 {
+		entry = containerName + "=" + entry
+	}
+
+	return append(exits, entry)
+}
+
+func appendReason(reasons []string, containerName string, state map[string]any) []string {
+	reason := stringOrEmpty(state["reason"])
+	if reason == "" {
+		return reasons
+	}
+
+	entry := fmt.Sprintf("%s: %s", containerName, reason)
+	if message := stringOrEmpty(state["message"]); message != "" {
+		if len(message) > 160 {
+			message = message[:160] + "…"
+		}
+
+		entry += ": " + strings.Join(strings.Fields(message), " ")
+	}
+
+	return append(reasons, entry)
 }
 
 func k8sDeploymentImages(item map[string]any) string {

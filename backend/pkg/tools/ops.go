@@ -683,17 +683,26 @@ func formatLogs(target opsremote.Target, label string, res opsremote.Result) str
 
 	const maxBody = 8000
 	if len(body) > maxBody {
-		// The count matters more than the cut itself: an agent that asked for 500
-		// lines and silently gets 60 concludes the rest of the log is healthy.
-		tail := body[len(body)-maxBody:]
-		if idx := strings.IndexByte(tail, '\n'); idx >= 0 && idx+1 < len(tail) {
-			tail = tail[idx+1:]
-		}
-		body = fmt.Sprintf("…（日志过长：共 %d 行，这里只保留最后 %d 行；要更早的内容就缩小 range 或换个来源再取一次）\n%s",
-			strings.Count(body, "\n")+1, strings.Count(tail, "\n")+1, tail)
+		body = cutTail(body, maxBody)
 	}
 
 	return b.String() + body
+}
+
+// cutTail answers "how much of it did I get": an agent that asked for 500 lines and
+// silently receives 60 concludes the rest of the log is healthy.
+func cutTail(body string, maxBody int) string {
+	if len(body) <= maxBody {
+		return body
+	}
+
+	tail := body[len(body)-maxBody:]
+	if idx := strings.IndexByte(tail, '\n'); idx >= 0 && idx+1 < len(tail) {
+		tail = tail[idx+1:]
+	}
+
+	return fmt.Sprintf("…（日志过长：共 %d 行，这里只保留最后 %d 行；要更早的内容就缩小 range 或换个来源再取一次）\n%s",
+		strings.Count(body, "\n")+1, strings.Count(tail, "\n")+1, tail)
 }
 
 // formatExec prints what was run before what came back, so a conclusion can name

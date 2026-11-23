@@ -495,8 +495,9 @@ var registryDefinitions = map[string]llms.FunctionDefinition{
 	},
 	K8sGetToolName: {
 		Name: K8sGetToolName,
-		Description: "从集群里读一类只读对象：pods（含重启次数与卡住的原因）、events（控制面说过的话）、deployments、nodes。" +
-			"k8s 里的故障证据几乎都在 events 和 pod 的 waiting 原因里，先读这两样再下结论。" +
+		Description: "从集群里读一类只读对象：pods（含重启次数、上一次的退出码与卡住的原因）、events（控制面说过的话）、deployments、nodes、logs（某个 Pod 的容器日志尾部）。" +
+			"k8s 里的故障证据几乎都在 events、pod 的 waiting 原因和进程退出前写的那几行日志里，先读这三样再下结论。" +
+			"what=logs 时必须给 namespace 和 Pod 名（name），用 tail_lines 控制尾部行数（默认 200，上限 2000）。" +
 			"读的是配置好的那个集群，不经过目标主机的 shell；没有配集群时这个工具不会出现。",
 		Parameters: reflector.Reflect(&K8sGetArgs{}),
 	},
