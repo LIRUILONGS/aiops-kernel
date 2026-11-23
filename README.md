@@ -246,6 +246,7 @@ scripts/                 命令行工具与批测脚本
 - [M0 计划](docs/aiops/01-m0-plan.md) — 只读诊断的端到端目标与验收口径
 - [改造清单](docs/aiops/02-changes.md) — 相对上游的删 / 改 / 留 / 增，精确到路径
 - [交接文档](docs/aiops/03-handover.md) — 当前状态、验证到什么程度、哪里还没验证（另有 [.docx](docs/aiops/03-handover.docx)）
+- [能力租约方案](docs/aiops/04-capability-plan.md) — 从角色白名单到任务级能力租约的路线，尚未实施
 - [平台参考](docs/platform-reference.md) — 从上游继承的部署与提供商配置细节
 
 ---
