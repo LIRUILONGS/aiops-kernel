@@ -233,6 +233,11 @@ func TestExec_Render_BuildsTheCommandFromTheTemplateAndTheValidatedValue(t *test
 			args: map[string]string{"Container": "opslab-db", "Database": "shop", "Rank": "2"},
 			want: "^(select|with|insert|update|delete|values|table)",
 		},
+		{
+			name: "a literal percent reaches the host as one percent",
+			id:   "psi",
+			want: `printf "%s: " "$f"`,
+		},
 	}
 
 	for _, tc := range tests {

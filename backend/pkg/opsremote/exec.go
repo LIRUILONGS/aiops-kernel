@@ -110,7 +110,7 @@ var (
 		"psi": {
 			ID:          "psi",
 			Description: "PSI 压力停顿：CPU、IO、内存各自有多少时间被拖住，以及最短停顿 10 秒与 60 秒的占比（/proc/pressure）",
-			Template:    `for f in cpu io memory; do printf "%s: " "$f"; cat /proc/pressure/$f 2>/dev/null || echo unavailable; done`,
+			Template:    `for f in cpu io memory; do printf "%%s: " "$f"; cat /proc/pressure/$f 2>/dev/null || echo unavailable; done`,
 		},
 		"top_cpu": {
 			ID:          "top_cpu",
@@ -216,7 +216,7 @@ var (
 		"pg_stat_statements": {
 			ID:          "pg_stat_statements",
 			Description: "Postgres 容器里累计耗时最高的 N 条语句：调用次数、总耗时、平均耗时、返回行数与语句开头（需要库名与 pg_stat_statements 扩展）",
-			Template:    `docker exec %Container% psql -U postgres -d %Database% -Atc "select calls, round(total_exec_time::numeric, 1) total_ms, round(mean_exec_time::numeric, 2) mean_ms, rows, left(translate(query, chr(10) || chr(13) || chr(9), '   '), 160) query from pg_stat_statements order by total_exec_time desc limit %Lines%" 2>&1`,
+			Template:    `docker exec %Container% psql -U postgres -d %Database% -Atc "select calls, round(total_exec_time::numeric, 1) total_ms, round(mean_exec_time::numeric, 2) mean_ms, rows, left(translate(query, chr(10) || chr(13) || chr(9), '   '), 160) query from pg_stat_statements where dbid = (select oid from pg_database where datname = current_database()) order by total_exec_time desc limit %Lines%" 2>&1`,
 			Params: []Param{
 				{Template: "Container", Kind: ParamName},
 				{Template: "Database", Kind: ParamName},
@@ -314,12 +314,22 @@ func Render(id string, args map[string]string) (string, error) {
 		rendered = strings.ReplaceAll(rendered, placeholder, value)
 	}
 
+	// A command that needs a literal percent writes it as %% and gets one back, so
+	// the check below still catches a placeholder nobody substituted. Shell
+	// commands need that percent: printf formats, and date +%s in anything sampled
+	// over time.
+	rendered = strings.ReplaceAll(rendered, "%%", escapedPercent)
+
 	if idx := strings.Index(rendered, "%"); idx >= 0 {
 		return "", fmt.Errorf("命令模板 %q 还留着未替换的占位符", id)
 	}
 
-	return rendered, nil
+	return strings.ReplaceAll(rendered, escapedPercent, "%"), nil
 }
+
+// escapedPercent stands in for %% while the leftover-placeholder check runs: it
+// cannot appear in a template, so the check sees only percents nothing escaped.
+const escapedPercent = "\x00"
 
 // Watch bounds: a watch is a short window, not a monitor. The upper end is what
 // one agent turn can wait for without the host being sampled by a process nobody
