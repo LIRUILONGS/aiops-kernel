@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -227,5 +228,33 @@ func TestRegistry_OpsTraceDescriptionNamesEveryCatalogueScript(t *testing.T) {
 	}
 	if !strings.Contains(definition.Description, "OPSAGI_SANDBOX_BPF") {
 		t.Error("the description does not say what turns the tool on")
+	}
+}
+
+func TestFormatLogs_CutTailReportsHowManyLinesWereDropped(t *testing.T) {
+	t.Parallel()
+
+	var stdout strings.Builder
+	for lines := 1; lines <= 400; lines++ {
+		fmt.Fprintf(&stdout, "2026-11-23T04:21:%02dZ line %d the guard rejected the connection to 10.0.0.7\n", lines%60, lines)
+	}
+
+	formatted := formatLogs(
+		opsremote.Target{ID: "lab", Host: "192.0.2.10", Port: 22},
+		"容器 opslab-log-apache 日志",
+		opsremote.Result{ExitCode: 0, Stdout: stdout.String()},
+	)
+
+	if want := "共 400 行"; !strings.Contains(formatted, want) {
+		t.Errorf("result does not state the total line count (%q), so a partial sample reads as the whole log", want)
+	}
+	if !strings.Contains(formatted, "line 400 the guard rejected") {
+		t.Error("the newest line was not kept")
+	}
+	if strings.Contains(formatted, "line 1 the guard rejected") {
+		t.Error("the oldest line survived, so the cut is not a tail")
+	}
+	if len(formatted) > 12*1024 {
+		t.Errorf("result is %d bytes, which overruns the size the tool promises the model", len(formatted))
 	}
 }

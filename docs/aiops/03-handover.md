@@ -1935,6 +1935,81 @@ flow 96 的时间线（UTC）：
 
 这条测试是故意的：促销文到期而不改，flow 记的成本就低于厂商实际收费。手头没有厂商价目表，所以先把窗口延到 2026-12-31（与 `gemini` 那三个模型的到期日一致），并把"到期前要真的核对一次价格"写进第 7 章——续日期只是把闹钟往后拨，不是解决。
 
+### 4.72 全真模型 × 真实数据集：十六个 flow 在同一个容器部署上并发跑（2026-11-23）
+
+前 71 节的验收有两处偷懒：一次只跑一个场景，而且很多是用 mock 模型验"工具被调到了"而不是"结论对不对"。这一轮把两处都改掉——被测的是要交付的那个镜像，模型是真的（`deepseek-v4.1`），输入是真实基础设施上的真实故障和六个真实日志集。
+
+#### 一、被测对象就是要发的那个镜像
+
+`docker build -t local/opsagi:latest .` 从仓库 `Dockerfile` 构建（608 MB），起法是 `docker compose -f docker-compose.yml -f D:\Temp\matrix\compose.lab.yml up -d --no-build opsagi`。overlay 只做两件事：覆盖环境变量、挂文件。
+
+| 变量 | 值 | 为什么是这个值 |
+|---|---|---|
+| `SERVER_USE_SSL` / `SERVER_PORT` | `false` / `8443` | 本机验收不签证书，UI 与 API 同一个端口 |
+| `ASK_USER` / `UNATTENDED` | `true` / `false` | 这一轮要验的就是人在回路：闸门停车、操作员答复、链继续 |
+| `OPSAGI_SUBTASK_CONCURRENCY` | `2` | 一个 flow 内两条子任务并行 |
+| `DOCKER_PORTS_BASE` | `40000` | 终端容器 `base+2*flowID`；28200 那一段撞了宿主已占端口 |
+| `PROMETHEUS_URL` | `http://host.docker.internal:9090` | 靶场 node_exporter + Prometheus |
+| `K8S_KUBECONFIG` | `/config/kubeconfig` | 指向 `https://opslab-k3s:6443`，见本节第四节 |
+| `OPSAGI_SANDBOX_BPF` | `true` | 打开 `ops_trace`（eBPF 场景要用） |
+| `OPSAGI_TARGETS` | `[{id:lab, host:host.docker.internal, port:2222, user:root, key_file:/keys/labkey}]` | 容器里的 ssh 通过宿主转发到靶场 |
+
+模型侧先按角色配过八桶（`LLM_SERVER_CONFIG_PATH` 指向一份 `deepseek-agents.yml`，八个 `agents` 段全部 `deepseek-v4.1`，`settingsProviders` 查询确认八个桶都落到了这个模型），后来整份配置从部署里撤掉，模型改由 `LLM_SERVER_MODEL` 决定——原因见第四节第 3 条。数据库是 compose 里的 `pgvector`（`127.0.0.1:5434`），`DATABASE_URL` 指向 `opsagidb`。
+
+#### 二、数据集和靶场
+
+日志集是 Loghub 的 2k 采样（`D:\Temp\datasets\`），每个集子用一条 `busybox` 容器把它挂成 `/archive/app.log` 再 `cat` 到标准输出后 `sleep infinity`，于是 `ops_logs` 从容器日志里读到的是**真实的归档日志文本**，不是我们编的。
+
+| 数据集 | 行数 | 字节 | 投料容器 | 里面真有什么 |
+|---|---|---|---|---|
+| HDFS_2k | 2000 | 288 KB | `opslab-log-hdfs` | 80 条 `Got exception while serving blk_*`，DataNode 侧 WARN 快照 |
+| Linux_2k | 2000 | 216 KB | `opslab-log-linux` | 538 条口令失败，来源 IP 高度集中（`150.183.249.110` 一条 IP 80 次） |
+| Apache_2k | 2000 | 171 KB | `opslab-log-apache` | 595 条 `[error] mod_jk child workerEnv in error state 6` |
+| OpenStack_2k | 2000 | 595 KB | `opslab-log-openstack` | 31 条 WARNING、大量重复 INFO |
+| Spark_2k | 2000 | 196 KB | `opslab-log-spark` | 全 INFO，一条错误都没有——对照组 |
+| Zookeeper_2k | 2000 | 280 KB | `opslab-log-zookeeper` | 13 条 ERROR、1318 条 WARN、5 处 Exception |
+
+基础设施侧是同一台靶场上的真容器：`opslab-db`（pgbench scale 50 = 500 万行，另有一个 `lockdb` 专门做行锁）、`opslab-prom` + `opslab-node-exporter`、`opslab-k3s`（k3s v1.30.4，`api` 工作负载 CrashLoopBackOff）、`opslab-app`（nginx 反代到 `127.0.0.1:8099`，那个端口没人监听）、以及 seal-engraver 那一套（backend / postgres / minio / redis，其中 postgres 被外部 `docker stop` 过）。
+
+#### 三、场景矩阵
+
+十六个 flow 在同一套部署上跑（并发 2～4 个），共 619 次工具调用、21 种工具，全部是真模型。用时是从建 flow 到它最后一次状态变化的墙钟时间。
+
+| 场景 | flow | 用时 | 结束状态 | 关键工具 | 结论 |
+|---|---|---|---|---|---|
+| seal-engraver 500、健康检查仍 200（容器部署路径） | 6 | 25 min | `waiting` | ops_containers, ops_logs, ops_exec, ops_sandbox | 定位到 postgres 容器已退出、backend 在 DNS 解析处抛 `gaierror`；随后追问"谁在反复停它"，越出工具边界转成 `ask` 停车 |
+| Prometheus 里 load1 持续偏高 | 3 / 7 | 13 min / 87 min（写稿时仍在跑） | `waiting` / `running` | prom_query, ops_watch, ops_system, ops_exec | 用 `node_load1` 曲线定位峰值窗口，再落到进程与容器；flow 3 十三分钟出报告，flow 7 复跑时把 `prom_query` 打到了 58 次，比第一轮深得多 |
+| 长事务持锁，update 卡住 | 14 | 12 min | `waiting` | ops_exec, ops_watch, ops_sandbox, ask | 实时读出 `blocked_pid` / `blocker_pid` / 等待 2978 秒，判定需要终止阻塞会话，`ask` 请求授权 |
+| nginx 全线 502 | 15 | 17 min | `waiting` | ops_logs, ops_exec, ops_containers, diagnosis | 五步取证走完，根因是上游 `127.0.0.1:8099` 没人监听，报告引用了 nginx 的 `connect() failed` 原文 |
+| 慢查询 649ms → 10ms 以内 | 16 | 17 min | `waiting` | ops_exec, ops_baseline, ask | 从 `pg_stat_statements` 找到语句、读出 `Limit → Gather Merge → Sort → Parallel Seq Scan`，给出 DDL；操作员执行后回放 `Execution Time: 0.440 ms` |
+| k8s `api` Pod CrashLoopBackOff | 4 → 13 | 3 min → 79 min | `failed` → `waiting` | k8s_get, ops_logs, ops_exec, prom_query | 第一次 3 分钟就 `failed`（kubeconfig 指错端点，见第四节第 2 条）；换端点后五条子任务走完，结论是"部分取证成功"：机制（容器数秒内非零退出、kubelet 反复 Restart）与五项候选排除都拿到了，但 exitCode 与退出前日志取不到——控制面-only 的 k3s 没有 kubelet，`pods/log` 必然失败，即第 7 章第 2 条 |
+| CPU 调度排队（eBPF） | 5 | 61 min | `waiting` | ops_trace, ops_watch, ops_system, ops_exec | `runqlat` + `biolatency`：根因收敛到两个 `cpu.max=2.0` 的压测容器被 cgroup quota 近 100% 周期节流、宿主 CPU PSI `some avg10=42.23`；IO 方向被 `biolatency` 正面排除 |
+| HDFS 日志：DataNode 块服务异常 | 8 | 16 min | `waiting` | ops_logs, ops_sandbox, log_analyst, log_finding | 从容器日志里数出 80 条 `Got exception while serving blk_*` 并给出影响面 |
+| 一台对外主机的 SSH 暴破告警 | 9 | 43 min | `failed` | ops_logs, ops_exec, ask, log_analyst | 报告写"未完成（证据缺失，非事件证伪）"：靶场的 Linux_2k 归档是 2005 年的开机自检段，宿主也没有 `/var/log/secure`，agent 拒绝在没有原文的情况下下结论 |
+| Apache + Tomcat（mod_jk）日志健康评估 | 11 | 36 min | `waiting` | ops_logs, ops_exec, log_analyst, diagnosis | 数出 595 条 `workerEnv in error state 6`，同时指出日志源本身是回放的历史归档，结论只能覆盖那段历史 |
+| Spark 作业"不稳定"（对照） | 10 | 22 min | `waiting` | ops_logs, ops_exec, log_analyst, diagnosis | 全 INFO 的对照组：没编造异常，而是说明只能覆盖可读的尾部 62 行、不在这段里 |
+| Zookeeper 集群抖动 | 17 | 写稿时仍在跑 | `running` | ops_logs, ops_sandbox, log_analyst | 已进入第 3、4 条子任务：在"QuorumCnxManager 连接异常"与"选举风暴"之间做取舍，并要求核对时间窗前后的配置变更 |
+
+三件事值得单独记：
+
+1. **9 / 11 / 10 三个 flow 自己发现了"日志源不可信"**，并把这件事写成了结论的第一句（"busybox 回放 2005 年 error_log"、"本机没有 `/var/log/secure`，这是取证通道的缺口，不能当作没有发生爆破"）。一个只会照着注入的异常下结论的实现，会在这三个场景里全部判错。
+2. **16 的改善有操作员回传的第二方证据**（`Execution Time: 0.440 ms`），但 agent 自己在报告里点明"第 5、6 步缺失：改后 `ops_baseline` 未采、无 `ops_diff`、没有 `optimization_result` 收口"，没有把"一条回放输出"说成完整闭环。这条诚实要保留。
+3. **5 的报告同样自评"部分成功"**：根因收敛了，但任务点名的 `runqlat` 全局 p50/p99 始终没取到（默认按进程名分桶、没有汇总行），它把这件事写进了结论而不是含糊过去。
+
+#### 四、这一轮跑出来的五个问题
+
+1. **`ops_logs` 说"上限 500 行"，实际给的是 8 KB**。flow 10 的 agent 发现"申请的 500 行被截断，只读到尾部 62 行"——`formatLogs` 的 `maxBody` 是 8000 字节，Apache/HDFS 这类日志一行 80～120 字节，500 行约 50 KB。截断本身是对的（保护上下文），但结果只写一句"已截断，仅保留末尾内容"，agent 无从知道自己的样本占全文多少。改法：截断时把 `共 N 行，这里只保留最后 M 行` 写在结果开头，并在 `lines` 的 schema 描述里把 8 KB 这件事说明白；`TestFormatLogs_CutTailReportsHowManyLinesWereDropped` 钉住它，把总数换成 `0` 会红（验过）。
+2. **容器里的 k8s 端点不是产品缺陷，但暴露了报错可读性**。第一次 k8s 场景 3 分钟就 `failed`，原文是 `Get "https://host.docker.internal:16443/version": http: server gave HTTP response to HTTPS client`。真正的原因是靶场把 k3s 的 6443 发布成宿主 16443，而 Docker Desktop 在那个端口上回的第一次应答不是 TLS；把 `opslab-k3s` 接进 `opsagi-network`、kubeconfig 改成 `https://opslab-k3s:6443` + `insecure-skip-tls-verify` 之后，flow 13 的 `k8s_get` 正常了（31 次调用）。接线是靶场的事，但这条错误原文对 agent 是有用的，它照着改了方向。
+3. **工具参数被截断的那一次，隔离复现两次都没再现**。04:08 那批 flow（同一部署、同一网关）出现 `tool call has invalid JSON arguments` 与 `subtasks array is missing`，当时同时挂着"按角色配模型"的文件和 `LLM_SERVER_PRESERVE_REASONING=true`。用独立数据库起了一个旁路实例分别试：只挂角色配置（6 分钟，无异常）、角色配置 + 保留推理（6 分钟，无异常），两次都没再现；网关对 `max_tokens` 4096/8192/16384/32768 的探测也全部返回合法 JSON 的 `tool_calls`。结论只能是"观察项"，不是"已修复"——把配置撤掉后十六个 flow 再没出现过同样的报错。
+4. **`base+2*flowID` 的端口派生会撞上宿主占用**。flow 12 建流 3 秒后 `failed`：`failed to bind port 0.0.0.0:40024: bind: address already in use`。端口是确定性算出来的，撞上任何宿主占用或 Windows 的保留段就没有退路。这一轮把 base 挪到 40000 绕开，但从产品角度这是个设计取舍（确定性端口方便操作员预开防火墙，代价是撞了只能改配置），写进第 8 章而不是偷偷改掉。
+5. **日志集是历史归档，不是"正在发生"的现场**。Linux_2k 的时间戳是 2005 年，多份归档里没有任何本次窗口的痕迹；flow 9 因此给出 `failed`，flow 11 给出"部分成功"。这不是产品错，是这一轮数据集的边界：验证"能不能从真实日志文本里读出真实的分布"是够的，验证"当前是否有异常"不够——那需要现场采集，不是归档。
+
+#### 五、覆盖到哪、没覆盖到哪
+
+21 种工具被真的调过：`ask`、`change_analyst`、`change_finding`、`diagnosis`、`k8s_get`、`log_analyst`、`log_finding`、`metric_finding`、`metrics_analyst`、`ops_baseline`、`ops_containers`、`ops_exec`、`ops_logs`、`ops_sandbox`、`ops_system`、`ops_trace`、`ops_watch`、`prom_query`、`report_result`、`subtask_list`、`subtask_patch`。没覆盖到的：`ops_diff` 与 `optimization_result`（flow 16 缺了最后两步，落进第 7 章）、`browser` / `web_search` / `search_*`（靶场没有外网检索需求，且记忆库没开 embedder）、`terminal` / `file`（运维角色的工具面里故意没有它们）。
+
+assistant 单独验过一次（挂在一个已完成的 flow 上，问"lab 上 seal-engraver- 开头的容器有哪些"）：1.3 分钟答完，答案来自 `ops_containers` 的真实返回（5 条容器、`seal-engraver-postgres` 已退出、退出码 0），结论正确；但正文里出现了一行自己拼错的表格行并在下一段自我更正——单次问答没有 flow 的多轮取证兜底，这一档质量不如 flow，记在第 7 章。
+
 ## 5 环境
 
 ### 5.1 开发机
@@ -1986,9 +2061,42 @@ OPSAGI_TARGETS=[{"id":"lab","host":"lab-host","port":62154,"user":"root","passwo
 - 上面还跑着用户自己的 `caddy` 和 `imgli` 两个容器，**占用 80/443 对外服务**，任何操作都不要动它们，也不要占这两个端口。
 - 镜像源是阿里云镜像，只认 `:latest` 标签，`alpine:3.20` 这类带具体版本的标签会拉取失败。靶场的 compose 已全部改成 `:latest`。
 
+### 5.4 容器化验收环境（2026-11-23 起用这套）
+
+本机验收现在跑容器而不是 exe：`local/opsagi:latest` 从仓库 `Dockerfile` 构建，`docker compose -f docker-compose.yml -f D:\Temp\matrix\compose.lab.yml up -d --no-build opsagi` 起，UI 与 API 都在 `http://127.0.0.1:8443`，数据库是 compose 里的 `pgvector`（宿主 `127.0.0.1:5434`）。
+
+| 项 | 值 |
+|---|---|
+| 镜像 | `local/opsagi:latest`（608 MB，`Dockerfile` 构建，`docker build -t local/opsagi:latest .`） |
+| 入口 | `http://127.0.0.1:8443`（`SERVER_USE_SSL=false`，静态前端同端口） |
+| 数据库 | `postgres://postgres:postgres@127.0.0.1:5434/opsagidb?sslmode=disable` |
+| 账号 | 验收用管理员在库里建，口令不进仓库 |
+| 靶场通道 | `OPSAGI_TARGETS` 里的 `host.docker.internal:2222`，私钥挂 `/keys/labkey:ro` |
+| 终端容器 | `opsagi-terminal-<flowID>`，端口 `DOCKER_PORTS_BASE + 2*flowID`，这一轮 base=40000 |
+| 网络 | `opsagi-network`；靶场的 k3s 容器也接到这个网络，kubeconfig 指向 `https://opslab-k3s:6443` |
+
+`compose.lab.yml` 在 `D:\Temp\matrix\`，只覆盖环境变量和三个只读挂载（私钥、kubeconfig、角色配置），不改镜像、不改命令。验收脚本（场景定义、驱动、报表）也在那个目录。
+
+### 5.5 数据集
+
+`D:\Temp\datasets\` 下是 Loghub 的六个 2k 采样，每个 2000 行，用来验"从真实日志文本里读数"这件事：
+
+| 文件 | 字节 | 特征 | 投料容器 |
+|---|---|---|---|
+| `HDFS_2k.log` | 288 KB | 80 条块服务 WARN | `opslab-log-hdfs` |
+| `Linux_2k.log` | 216 KB | 538 条口令失败，来源 IP 集中 | `opslab-log-linux` |
+| `Apache_2k.log` | 171 KB | 595 条 mod_jk `error state 6` | `opslab-log-apache` |
+| `OpenStack_2k.log` | 595 KB | 31 条 WARNING | `opslab-log-openstack` |
+| `Spark_2k.log` | 196 KB | 全 INFO（对照组） | `opslab-log-spark` |
+| `Zookeeper_2k.log` | 280 KB | 13 条 ERROR、1318 条 WARN | `opslab-log-zookeeper` |
+
+每个容器把文件挂成 `/archive/app.log`、`cat` 到标准输出后 `sleep infinity`，`ops_logs` 读的就是这份归档原文。归档是历史的（Linux_2k 的时间戳是 2005 年），这一点在 4.72 第四节第 5 条里写清楚了：能验"读得对不对"，不能验"现在有没有事"。
+
 ## 6 提交记录
 
 ```
+fix(tools): say how many lines a truncated log cut dropped                    # 4.72 四-1
+docs(handover): sixteen flows on the shipped image, real model, real datasets  # 4.72
 refactor: rename the product, the environment and the container paths   # 4.10
 feat(tools): add ops_exec, a catalogue of read-only commands   # 4.11
 feat(tools): read the change timeline out of the state on the host   # 4.11 的四条变更命令
@@ -2068,14 +2176,14 @@ chore: fork OpsAGI as AIOps kernel; add design docs and incident prompts
 
 目标里点名的六件事（P0 规划器、P0 性能链路、P1 四角色委派、P1 seed/run CLI、P1 前端、P2 改名与取证工具）都已交付、都有实机证据，逐条记录在第 4 章。这一章只留**还没做到、且不是"再写点代码"就能做到**的部分，每条写清卡在哪、需要什么资源、验收标准是什么。
 
-### 1. 慢查询场景已完成（4.31 / 4.33），只剩两个可选改进
+### 1. 慢查询场景已完成（4.31 / 4.33 / 4.72），只剩两个可选改进
 
-靶场上有一个 `opslab-db`（Postgres 16 + `pg_stat_statements` + 200 万行 `orders`），目录里有 `pg_stat_activity` / `pg_stat_statements`，flow 60 自己走完了 167ms → 0.22ms 的全过程并收成 `improved`。
+靶场上有一个 `opslab-db`（Postgres 16 + `pg_stat_statements` + 200 万行 `orders`，2026-11-23 又加了 500 万行的 `bench` 与专门做行锁的 `lockdb`），目录里有 `pg_stat_activity` / `pg_stat_statements`，flow 60 自己走完了 167ms → 0.22ms 的全过程并收成 `improved`；4.72 的 flow 16 在 `bench` 上把 649ms 打到 0.440ms、flow 14 在 `lockdb` 上读出了完整的锁等待链。
 
 可选的下一步：
 
 1. `EXPLAIN` 目前只能靠操作员代跑（目录不接受自由 SQL，这是有意的）。可以加一条只读命令"解释累计耗时第 N 条语句"，参数只有序号与库名，把这次的人机往返省掉一半。
-2. 锁竞争场景还没搭：`pg_locks` + 两会话互相等待。比慢查询更容易搭，价值也高。
+2. 锁竞争场景已经搭起来（`lockdb`），但"改完真的好了"这一半还没验：需要一个允许写操作的方式释放阻塞，或者把持有者做成可配置时长的自愈事务。
 
 已经压过的是 CPU 饱和（4.28 / 4.29：`yes` 打满 2 核，基线 1.98 → 复测 0.41，`improved`）。真实运维里更常见的是慢查询、连接池耗尽、行锁等待——它们要求靶场上有一个真数据库，并且能人为制造"同一个查询，改前 800ms、改后 40ms"。
 
@@ -2114,6 +2222,18 @@ chore: fork OpsAGI as AIOps kernel; add design docs and incident prompts
 ### 8. 目录里的促销价要有人真的核对一次
 
 `TestCatalog_BundledCatalogs_ShippedDataKeepsItsInvariants` 在"促销文写明的结束日已过"时变红，防的是目录悄悄按低价记成本。2026-11-22 它就红了（`openai/gpt-6-sol` 的促销写到 2026-11-21），4.71 把窗口延到 2026-12-31。真正的解法是有人拿厂商价目表核对一次再改，而不是续日期；下一次到期是 2026-12-31。
+
+### 9. 性能链路的后两步没有在真 flow 上覆盖
+
+4.72 的 flow 16 走完了"定位 → 给 DDL → 操作员实施 → 回放验证"，但 `ops_baseline`（改后基线）与 `ops_diff`（前后差值）没被调用，`optimization_result` 也没出口——报告里是它自己点出来的。要覆盖这两步，需要一个由 agent 自己就能完成写操作的场景（比如索引已经建好、只差复测），或者给靶场开一个"允许一条 DDL"的白名单通道；后者是产品决定，不是代码缺口。
+
+### 10. `runqlat` 没有全局汇总，agent 只能按进程名读分桶
+
+4.72 的 flow 5 用 `ops_trace` 的 `runqlat` 拿到了长尾分桶，但工具输出按进程名分组、没有 p50/p99 汇总行，agent 只能把"排队确实存在"写进结论、拿不到"排了多久"的单一数字。补法是给 `runqlat` 加一个 `-s`（summary）或后处理聚合的固定形状，仍走白名单脚本，不接受自由参数。
+
+### 11. assistant 的单次问答质量不如 flow
+
+4.72 里 assistant 只用 1.3 分钟就答对了"哪些 seal-engraver 容器在跑"，但它把 4 个容器的表格写成了 5 行（多出的那行是自己拼错的），随后在正文里自我更正。flow 有多轮取证与 refiner 复核兜底，assistant 是一次成稿，这一档差距目前靠模型本身，没有结构性补偿。
 
 ### 已经关掉的（不再列在上面）
 
@@ -2160,6 +2280,14 @@ chore: fork OpsAGI as AIOps kernel; add design docs and incident prompts
 25. **sqlc 不是没装，是没 `go run`；而且必须在活库上跑**。`go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0 generate`（在 `backend/sqlc/` 下，先设 `DATABASE_URL`）可以直接用，不需要先 `go install`。顺序仍按第 13 条：**先让新二进制启动把迁移跑掉，再 generate**，否则 sqlc 从活库读到的还是旧 schema，删掉的列在它看来仍然存在，生成结果里会留着 `&i.Functions`。这次生成只动了 `assistants.sql.go`、`flows.sql.go`、`models.go` 三个文件。
 
 26. **手改 swagger 之后，JSON 校验要先处理模板占位**。`pkg/server/docs/docs.go` 的 `docTemplate` 不是纯 JSON：`"schemes": {{ marshal .Schemes }}` 这类占位会让 `json.loads` 在第 2 行就报错，看起来像“手改改坏了”。正确的校验是把占位先替换成一个合法的 JSON 字面量再解析；这也顺带能抓住手删 definition 时留下的尾逗号——这次就是靠它发现的。
+
+27. **靶场的 k3s 必须接进 `opsagi-network`，kubeconfig 用容器名**。把 k3s 的 6443 发布到宿主 16443 后，从产品容器里请求 `https://host.docker.internal:16443/version` 得到的是 `http: server gave HTTP response to HTTPS client`（Docker Desktop 在那个端口上的第一段应答不是 TLS）。`docker network connect opsagi-network opslab-k3s` 之后用 `https://opslab-k3s:6443` 就通了；因为 k3s 的证书 SAN 里没有这个容器名，kubeconfig 要写 `insecure-skip-tls-verify: true`。挂进去的是文件时，Docker Desktop 的 bind mount 在 Windows 上偶发 `cat: read error: No data available`，等一两秒再读即正常。
+
+28. **`docker build … | Select-Object -Last 5` 的退出码不可信**。镜像其实构建成功（`naming to docker.io/local/opsagi:latest done`），管道末尾的 `Select-Object` 仍让整条命令以 1 结束；判断构建成功要看 `docker images` 的时间戳，不是 exit code。
+
+29. **场景定义和结果不能同名**。驱动按 `id` 把结果写到 `D:\Temp\matrix\<id>.json`，定义文件也在同一层时，第一次跑完就把定义覆盖成结果，第二次跑会读到一份没有 `prompt` 的 JSON。定义统一放 `scenarios/` 子目录。
+
+30. **`docker run -e VAR='[{...}]'` 在 PowerShell 里会被吃掉引号**。`OPSAGI_TARGETS` 传进去变成 `[{id:lab,...}]`，不是合法 JSON，结果是"目标存在但工具全不可用"，agent 会报告"ops_containers 在本会话不可调用"。用 `--env-file`，并且事后 `docker exec <c> env | grep OPSAGI_TARGETS` 逐字确认。
 
 ## 9 从零启动的操作手册
 

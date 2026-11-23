@@ -23,7 +23,7 @@ type OpsTargetArgs struct {
 type OpsLogsArgs struct {
 	Target string `json:"target,omitempty" jsonschema:"description=目标主机 ID，留空使用默认主机"`
 	Source string `json:"source,omitempty" jsonschema:"description=容器名或 systemd 单元名；留空读取系统错误日志,example=nginx"`
-	Lines  int    `json:"lines,omitempty" jsonschema:"description=返回最近多少行，默认 100，上限 500,example=100"`
+	Lines  int    `json:"lines,omitempty" jsonschema:"description=返回最近多少行，默认 100，上限 500；单次结果约 8KB，超出时只保留末尾并在开头写明总行数,example=100"`
 }
 
 type opsTools struct {
@@ -683,7 +683,14 @@ func formatLogs(target opsremote.Target, label string, res opsremote.Result) str
 
 	const maxBody = 8000
 	if len(body) > maxBody {
-		body = "…（已截断，仅保留末尾内容）\n" + body[len(body)-maxBody:]
+		// The count matters more than the cut itself: an agent that asked for 500
+		// lines and silently gets 60 concludes the rest of the log is healthy.
+		tail := body[len(body)-maxBody:]
+		if idx := strings.IndexByte(tail, '\n'); idx >= 0 && idx+1 < len(tail) {
+			tail = tail[idx+1:]
+		}
+		body = fmt.Sprintf("…（日志过长：共 %d 行，这里只保留最后 %d 行；要更早的内容就缩小 range 或换个来源再取一次）\n%s",
+			strings.Count(body, "\n")+1, strings.Count(tail, "\n")+1, tail)
 	}
 
 	return b.String() + body
