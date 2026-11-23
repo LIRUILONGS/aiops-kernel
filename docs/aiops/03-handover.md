@@ -2118,6 +2118,47 @@ flow 49 的时序，从库里三张表拼起来：
 
 这一条只让"两条提问"能各自拿到答案。第 7 章第 9 条那个"完整性能闭环跑到 `verdict=improved`"还没有一次成型的记录：flow 49 卡在这条缺陷上，修完之后应当能跑完 before → DDL → after → `ops_diff` → `optimization_result`。下一次用 `bench` 库跑 `p2_baseline_diff` 就能验收。
 
+### 4.76 性能闭环第一次走完：verdict=improved，但差值不是查询自己给的（2026-11-23）
+
+第 7 章第 9 条挂了几轮：基线、DDL、复测、`ops_diff`、`optimization_result` 每一步都单独跑通过，但没有一次串起来。flow 108 在 `bench` 库上串完了，中间那次"操作员建索引"的 `ask` 也是第一次在任务运行中被接住并回答。
+
+#### 一、flow 108 的完整时序
+
+| 步骤 | 工具 | 返回 |
+|---|---|---|
+| 基线 | `ops_baseline` | `before-change-S1`：load1 12.25、CPU 16.3%、内存 8772/31879 MB、`bench` 锁等待 0 |
+| 找语句 | `ops_exec`（`pg_stat_statements`） | 报表查询 `calls=…`、`mean_exec_time` 与 DDL 排在同一张表里 |
+| 计划 | `ops_exec`（`pg_explain`） | 顶层 `Limit → Sort → Seq Scan`，瓶颈是全表扫描 + 排序 |
+| 请操作员 | `ask` | 把索引 DDL 交给操作员（模型自己不改库） |
+| 操作员 | 人工执行 | `create index concurrently … on pgbench_accounts (region, abalance desc)`，随后三次 `EXPLAIN ANALYZE` 复测 |
+| 基线二 | `ops_baseline` | `after-index-S2`：load1 14.76、CPU 19.1%、内存 9102/31879 MB |
+| 差值 | `ops_diff` | 65 项对比，59 项显著 |
+| 收口 | `optimization_result` | `verdict=improved`，`baseline` 引用 S1 原文，`observed_gain` 引用 `ops_diff` 原文 |
+
+查询本身：改前 `mean_exec_time` 815.18 ms，建索引后三次复测 `0.465 / 0.151 / 0.197 ms`；`pgbench_accounts` 上从只有主键变成多了 `pgbench_accounts_region_balance_idx`。
+
+#### 二、`ask` 那一步是这一轮修好之后才成立的
+
+操作员回答发生在 11:55:37，而 flow 是在任务还在跑的时候接住的——这正是 4.74 的转发协程与 4.75 的"按提问先后分发"要保证的路径。DDL 落到库上、`CREATE INDEX` 的回显进了 `msglogs`，模型再据此写 `optimization_result`。
+
+#### 三、诚实的缺口：`ops_diff` 比的是主机，不是那条查询
+
+`ops_diff` 的输出里，显著变化的是 load、CPU、内存、容器重启次数：
+
+| 指标 | 改前 | 改后 | 判定 |
+|---|---|---|---|
+| load1 | 12.2 | 14.8 | 恶化 +20% |
+| cpu | 16.3% | 19.1% | 恶化 +17% |
+| 容器 `docker-sandbox-1` 重启 | 4762 | 4770 | 恶化 +8 |
+
+改后那一次采样正好压在 `CREATE INDEX CONCURRENTLY` 的尾巴上，负载当然更高。于是 `verdict=improved` 的依据只能是操作员复测的 815 ms → 0.15–0.46 ms，而 `observed_gain` 按要求引用 `ops_diff` 的原文，引到的却是"load1 恶化 +20%"这种行。
+
+**这不是模型的错，是工具的边界**：`ops_baseline` 采的是主机指纹，`ops_diff` 只能对比主机指纹，性能场景真正关心的那条语句的 `mean_exec_time` 从来没有进过指纹。要让 `observed_gain` 名副其实，`ops_baseline` 应该能带上"某条语句的 `mean_exec_time`/`calls`"（参数里给 container+database+rank 或语句指纹），`ops_diff` 再把这一项当成普通数值一起比。
+
+#### 四、顺带看到的第二个小缺口
+
+`pg_explain` 的第 4 名恰好是 agent 自己先前那条 `explain (analyze, …)` 语句，模板把 `explain (format text, verbose off, generic_plan)` 又拼了一遍，于是 `psql` 报 `syntax error at or near "explain"`。工具对"目标语句本身已经是 EXPLAIN"这一种没有处理：应当原样执行，或者直接拒绝并说明原因，而不是拼出两条 `explain`。
+
 ## 5 环境
 
 ### 5.1 开发机
@@ -2331,9 +2372,11 @@ chore: fork OpsAGI as AIOps kernel; add design docs and incident prompts
 
 `TestCatalog_BundledCatalogs_ShippedDataKeepsItsInvariants` 在"促销文写明的结束日已过"时变红，防的是目录悄悄按低价记成本。2026-11-22 它就红了（`openai/gpt-6-sol` 的促销写到 2026-11-21），4.71 把窗口延到 2026-12-31。真正的解法是有人拿厂商价目表核对一次再改，而不是续日期；下一次到期是 2026-12-31。
 
-### 9. 性能链路的后两步已经覆盖，但还没跑到 `verdict=improved`（部分完成，见 4.74）
+### 9. 性能链路已闭环到 `verdict=improved`（完成，见 4.76；但差值来源有问题，见第 14 条）
 
-4.72 的 flow 16 走完了"定位 → 给 DDL → 操作员实施 → 回放验证"，但 `ops_baseline`（改后基线）与 `ops_diff`（前后差值）没被调用，`optimization_result` 也没出口。4.74 之后这三步都在真 flow 上跑过了（flow 48/49：`ops_baseline` 两次、`ops_diff` 一次成功、`optimization_result` 一次出口），但还没有一次是"改前 → 改后 → 差值显著 → `improved`"的完整闭环：flow 48 把 after 采样拿了两遍，`ops_diff` 全是 0，agent 诚实地写了 `verdict=unverified`；flow 49 已经按 before/after 采了两次基线，卡在第 13 条那个"两个子任务同时提问"的缺陷上。剩下的是一条能自己走完写操作的场景——比如索引已经建好、只差复测——或者给靶场开一个"允许一条 DDL"的白名单通道。
+4.72 的 flow 16 走完了"定位 → 给 DDL → 操作员实施 → 回放验证"，但 `ops_baseline`（改后基线）与 `ops_diff`（前后差值）没被调用，`optimization_result` 也没出口。4.74 之后这三步都在真 flow 上跑过了（flow 48/49），但还没有一次是"改前 → 改后 → 差值显著 → `improved`"的完整闭环：flow 48 把 after 采样拿了两遍，`ops_diff` 全是 0，agent 诚实地写了 `verdict=unverified`；flow 49 卡在第 13 条那个"两个子任务同时提问"的缺陷上。
+
+4.75 修掉路由之后，flow 108 在 `bench` 库上把整条链走完：`before-change-S1` → `ask` 由操作员执行 DDL → `after-index-S2` → `ops_diff`（65 项、59 项显著）→ `optimization_result`，`verdict=improved`，查询从 815.18 ms 降到 0.15–0.46 ms。第 14 条记录的是同一条链上暴露出来的、还没解决的那个问题。
 
 ### 10. `runqlat` 没有全局汇总，agent 只能按进程名读分桶
 
@@ -2350,6 +2393,17 @@ chore: fork OpsAGI as AIOps kernel; add design docs and incident prompts
 ### 13. 两个子任务同时提问时，答案只喂给第一个（已修，见 4.75）
 
 `taskWorker.PutInput` 在 `ListSubtasks` 里找第一个"未完成且 waiting"的子任务，把输入交给它，然后 `break`。flow 49 里两个子任务（148、149）几乎同时提问，操作员按顺序答了两条，两条都被 flow 接受（`putUserInput` 返回成功），但只有第一条在 `msglogs` 里留下了 `input` 记录（subtask_id=148），第二条被同一个子任务吃掉了；子任务 149 的 `ask` 从此没有答案，整条 flow 停在 `waiting`、不再产生任何工具调用。4.75 让每个等待中的子任务记下"开始等的时刻"、答案给最早那条提问，并把这三条行为写进了测试。
+
+### 14. `ops_diff` 比的是主机指纹，性能场景的"差值"不在里面
+
+flow 108 收口时暴露的：`verdict=improved` 的依据是操作员复测的 815.18 ms → 0.15–0.46 ms，而 `observed_gain` 按要求引用 `ops_diff` 的原文，引到的却是 `load1 12.2 → 14.8 恶化 +20%`、`cpu 16.3% → 19.1% 恶化 +17%`——因为改后那次采样正好压在 `CREATE INDEX CONCURRENTLY` 的尾巴上。根因是 `ops_baseline` 只采主机指纹（负载、CPU、内存、容器、Postgres 会话），那条语句的 `mean_exec_time` 从来没进过指纹，`ops_diff` 也就没有可比的数。
+
+- 落点：`ops_baseline` 增加可选参数（`container` + `database` + `rank` 或语句指纹），把该语句的 `calls`/`mean_exec_time`/`rows` 一起记进指纹；`ops_diff` 把这几项当普通数值比较，`optimization_result.observed_gain` 才有东西可引。
+- 验收：同一场景再跑一次，`ops_diff` 输出里出现"语句 mean_exec_time 815 ms → 0.2 ms 改善"，`observed_gain` 引到的是这一行而不是负载行。
+
+### 15. 目标语句本身就是 EXPLAIN 时，`pg_explain` 会拼出两条
+
+flow 108 里 `pg_explain` 取第 4 名，恰好是 agent 先前那条 `explain (analyze, …)`，模板在前面又加了一遍 `explain (format text, verbose off, generic_plan)`，`psql` 报 `syntax error at or near "explain"`。要么识别出"已经是 EXPLAIN"就原样执行，要么直接拒绝并说明为什么（`pg_stat_statements` 里不该拿 EXPLAIN 当被解释对象）。
 
 ### 已经关掉的（不再列在上面）
 
