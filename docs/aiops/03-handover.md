@@ -2339,9 +2339,9 @@ chore: fork OpsAGI as AIOps kernel; add design docs and incident prompts
 - 落点：靶场起一个带 `pg_stat_statements` 的 Postgres（`--memory=256m`，靶场现在还剩约 900MB），预置一张大表和两条查询路径；`ops_exec` 目录里补 `pg_stat_activity` 与 `pg_stat_statements` 两条只读命令，模板 + 参数校验，不允许拼命令行（3.11 的红线）。
 - 验收：一条 optimization flow 用 `prom_query` 定位拐点、用 `pg_stat_statements` 指出具体语句、给出索引建议，实施后 `ops_diff` 复测出真实差值，`verdict=improved`。
 
-### 2. `k8s_logs`（需要 kubelet）
+### 2. `k8s_logs` 已经可用（完成，见 4.73）
 
-`k8s_get` 走的是 apiserver（4.26，靶场是控制面-only 的 k3s，已经实机验过）。`logs` 不一样：apiserver 的 `pods/log` 会把请求转给 kubelet，控制面-only 的集群没有 kubelet，所以这条**在本靶场永远验不了**。要么给靶场加一个真 worker 节点，要么在没有实机验证的情况下不写。
+当初的判断是"控制面-only 的 k3s 没有 kubelet，`pods/log` 永远验不了"。这个判断在 4.73 被推翻：靶场的 k3s 自带 kubelet，`pods/log` 能正常返回，`k8s_get` 的 `what=logs`（带 `tail_lines`、8 KB 截断）在真 CrashLoopBackOff 的 Pod 上读到了 `FATAL: DATABASE_URL is not set; refusing to start`。这一条留在列表里只为记得它曾经挂在这里。
 
 - 落点：`k8s_get` 加第四种 `what=logs`，`tail` 上限固定（比如 200 行），只读。
 - 验收：一个有 `CrashLoopBackOff` 的 pod，agent 能读到上一次崩溃的 stderr。
