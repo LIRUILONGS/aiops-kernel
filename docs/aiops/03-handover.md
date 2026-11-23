@@ -2181,11 +2181,21 @@ flow 56（`变更验证：压测前后的主机指纹对比`）在 12:04:29 由�
 
 顺带两个界面观察：中英混排（侧栏 `Templates`、`Resources`、`Knowledges`、`Recent Flows`、`Settings` 和输入框 placeholder 是英文，其余中文）；`/settings/providers` 显示"还没有配置提供商"，而这个部署的 provider 来自 `LLM_SERVER_*` 环境变量——界面看不到运行时到底在用哪个模型。
 
-#### 四、这一轮没能验收的一步：新会话停在 `created`
+#### 四、真机复验：同一个动作，31 秒超时变成 0 秒的回答
 
-把含本修复的镜像（`local/opsagi:ask2`）部署上去之后，新建的 flow 58 / 59 / 60 全部停在 `created`，容器日志只有 `flow created in DB`，没有后面那句 `creating container`。数据库连接正常（`pg_stat_activity` 里 3 个 idle），进程没有重启也没有 panic，`deleteFlow` 依旧 3 秒返回。
+修之前的对照点：flow 57（界面上新建、`running`、第一条任务正在跑）投 `putUserInput`，31 秒后返回 `flow 57 input processing timeout: input was not accepted: context deadline exceeded`。
+
+修之后（镜像 `local/opsagi:ask2`，基commit 36bb1197 加本修复）重跑同样的动作：flow 61 的第一条任务运行中，连投三次 `putUserInput`，三次都在 **0 秒**返回 `flow 61: task is not waiting`——这就是转发协程的契约：输入被接住了，接住之后如实告诉调用者任务没有在等答案，而不是让它等满整个 deadline。flow 61 随后正常推进（`subtask_list` 已经在派子任务）。
+
+`flow 61: task is not waiting` 这句“失败”恰恰是修好的证据：它只可能由 `forwardInputWhileRunning` 里的 `task.PutInput` 返回。
+
+#### 五、这一轮没能验收的一步：新会话停在 `created`
+
+把含本修复的镜像部署上去之后，新建的 flow 58 / 59 / 60 全部停在 `created`，容器日志只有 `flow created in DB`，没有后面那句 `creating container`。数据库连接正常（`pg_stat_activity` 里 3 个 idle），进程没有重启也没有 panic，`deleteFlow` 依旧 3 秒返回。
 
 证据在连接上：flow 60 创建于 12:46:42，宿主机 `Get-NetTCPConnection -LocalPort 18000` 里那条 `127.0.0.1:50723 → 127.0.0.1:18000 Established 20:46:42` 就是它发出的准备调用，25 分钟之后仍然挂着；同一时间直接用 `curl` 打网关是 2.2 秒返回。也就是说准备阶段那次模型调用既没有自己的 deadline，也没有心跳/重试，一条死连接就能让这条 flow 永远停在 `created`。同一窗口里链上的调用报的是 `agent model call failed: EOF` 和 `request timeout: API call exceeded deadline`——那个超时只发生在执行期的 agent 链上，准备期没有。
+
+网关恢复之后（ssh 隧道在 20:44:18 重连过）再建 flow 61，两分钟内就离开 `created` 进入 `running`，所以这条不是死锁，是缺超时。写进第 7 章第 16 条。
 
 因此"转发协程的修复在真机上把答案接住"这最后一步，证据只有单测（它复现的是线上原文），真机复验要等网关稳定，写进第 7 章第 16 条。
 
