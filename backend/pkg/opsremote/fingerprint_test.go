@@ -262,7 +262,7 @@ func TestFingerprint_ParseQueryBrief_RefusesAFragmentNoRowCarries(t *testing.T) 
 	}
 }
 
-func TestFingerprint_CompareFingerprints_JudgesAPerformanceChangeByItsStatement(t *testing.T) {
+func TestFingerprint_CompareFingerprints_JudgesAPerformanceChangeByTheCallsMadeBetween(t *testing.T) {
 	statement := "select aid, bid, abalance from pgbench_accounts where region = $1 order by abalance desc limit 10"
 	before := Fingerprint{Host: "lab-host", Load1: 12.2, Postgres: &PostgresBrief{
 		Container: "opslab-db",
@@ -272,7 +272,7 @@ func TestFingerprint_CompareFingerprints_JudgesAPerformanceChangeByItsStatement(
 	after := Fingerprint{Host: "lab-host", Load1: 14.8, Postgres: &PostgresBrief{
 		Container: "opslab-db",
 		Database:  "bench",
-		Query:     &QueryBrief{Statement: statement, Calls: 12, TotalMS: 9.6, MeanMS: 0.465, Rows: 38},
+		Query:     &QueryBrief{Statement: statement, Calls: 15, TotalMS: 9782.7, MeanMS: 652.18, Rows: 95},
 	}}
 
 	rows := map[string]Delta{}
@@ -287,13 +287,40 @@ func TestFingerprint_CompareFingerprints_JudgesAPerformanceChangeByItsStatement(
 	if mean.Verdict != "改善" || !mean.Material {
 		t.Errorf("row = %+v, want a material improvement", mean)
 	}
-	if mean.Before != "815.2ms" || mean.After != "0.5ms" {
-		t.Errorf("before/after = %s/%s, want 815.2ms/0.5ms", mean.Before, mean.After)
+	if mean.Before != "815.18ms（累计）" || mean.After != "0.20ms（本区间）" {
+		t.Errorf("before/after = %s/%s, want 815.18ms（累计）/0.20ms（本区间）", mean.Before, mean.After)
+	}
+	if !strings.Contains(mean.Change, "本区间 3 次") {
+		t.Errorf("change = %q, want it to name the three calls the mean covers", mean.Change)
 	}
 
 	load := rows["load1"]
 	if load.Verdict != "恶化" {
 		t.Errorf("row = %+v, want the load row to stay honest about the build", load)
+	}
+}
+
+func TestFingerprint_CompareFingerprints_RefusesToAverageWithoutNewCalls(t *testing.T) {
+	statement := "select a from t where id = $1"
+	before := Fingerprint{Host: "lab-host", Postgres: &PostgresBrief{Container: "db", Database: "bench",
+		Query: &QueryBrief{Statement: statement, Calls: 7, TotalMS: 28, MeanMS: 4}}}
+	after := Fingerprint{Host: "lab-host", Postgres: &PostgresBrief{Container: "db", Database: "bench",
+		Query: &QueryBrief{Statement: statement, Calls: 7, TotalMS: 28, MeanMS: 4}}}
+
+	rows := map[string]Delta{}
+	for _, delta := range CompareFingerprints(before, after) {
+		rows[delta.Field] = delta
+	}
+
+	mean, ok := rows["语句平均耗时"]
+	if !ok {
+		t.Fatalf("no row for the statement, got %v", rows)
+	}
+	if mean.After != "没有新调用" {
+		t.Errorf("after = %q, want it to say there was nothing to average", mean.After)
+	}
+	if mean.Verdict == "改善" {
+		t.Errorf("row = %+v, want no improvement claimed from zero calls", mean)
 	}
 }
 

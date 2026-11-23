@@ -326,9 +326,11 @@ func CompareFingerprints(before, after Fingerprint) []Delta {
 	return deltas
 }
 
-// compareQueries produces the rows a performance change is judged by. A sample
-// without the statement contributes nothing, so an older fingerprint still
-// compares against a newer one on the host half alone.
+// compareQueries produces the row a performance change is judged by. The mean
+// is taken over the calls made between the two samples, not from the cumulative
+// one: pg_stat_statements keeps a lifetime average, so a fix that turns 800ms
+// runs into sub-millisecond ones still reads as a few percent once the slow
+// history is mixed back in.
 func compareQueries(before, after *QueryBrief) []Delta {
 	if before == nil || after == nil {
 		return nil
@@ -345,10 +347,42 @@ func compareQueries(before, after *QueryBrief) []Delta {
 		}}
 	}
 
-	return []Delta{
-		compareNumeric("语句平均耗时", before.MeanMS, after.MeanMS, 0.1, "ms", true),
-		compareNumeric("语句累计耗时", before.TotalMS, after.TotalMS, 1.0, "ms", true),
+	deltaCalls := after.Calls - before.Calls
+	if deltaCalls <= 0 {
+		return []Delta{{
+			Field:    "语句平均耗时",
+			Before:   fmt.Sprintf("%.2fms（累计）", before.MeanMS),
+			After:    "没有新调用",
+			Change:   "本区间 0 次",
+			Verdict:  "变化",
+			Material: true,
+		}}
 	}
+
+	interval := (after.TotalMS - before.TotalMS) / float64(deltaCalls)
+
+	verdict, material := "持平", false
+	switch {
+	case before.MeanMS <= 0:
+	case interval <= before.MeanMS*0.9:
+		verdict, material = "改善", true
+	case interval >= before.MeanMS*1.1:
+		verdict, material = "恶化", true
+	}
+
+	change := fmt.Sprintf("本区间 %d 次", deltaCalls)
+	if before.MeanMS > 0 {
+		change += fmt.Sprintf(" (%+.0f%%)", (interval/before.MeanMS-1)*100)
+	}
+
+	return []Delta{{
+		Field:    "语句平均耗时",
+		Before:   fmt.Sprintf("%.2fms（累计）", before.MeanMS),
+		After:    fmt.Sprintf("%.2fms（本区间）", interval),
+		Change:   change,
+		Verdict:  verdict,
+		Material: material,
+	}}
 }
 
 // FormatDeltas renders the comparison as a fixed-width table. The material rows
