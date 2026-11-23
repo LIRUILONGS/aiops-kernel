@@ -244,16 +244,18 @@ var (
 		},
 		"pg_explain": {
 			ID:          "pg_explain",
-			Description: "解释 Postgres 里累计耗时第 N 条语句的执行计划，序号与 pg_stat_statements 的输出顺序一致：只取计划、不执行（不加 ANALYZE，带参数的语句走 EXPLAIN GENERIC_PLAN，需要 PostgreSQL 16 及以上）。需要 container 与 database，rank 从 1 起",
+			Description: "解释 Postgres 里累计耗时第 N 条语句的执行计划，序号与 pg_stat_statements 的输出顺序一致（只取能被 EXPLAIN 的语句，跳过 EXPLAIN 本身与 DDL）：只取计划、不执行（不加 ANALYZE，带参数的语句走 EXPLAIN GENERIC_PLAN，需要 PostgreSQL 16 及以上）。需要 container 与 database，rank 从 1 起",
 			Template: `docker exec -i %Container% psql -U postgres -d %Database% -At -v ON_ERROR_STOP=0 -f - 2>&1 <<'SQL'
 select coalesce(
   (select 'explain (format text, verbose off, generic_plan) ' || query
    from pg_stat_statements
    where dbid = (select oid from pg_database where datname = current_database())
+     and ltrim(lower(query)) ~ '^(select|with|insert|update|delete|values|table)\y'
+     and position('pg_stat_statements' in query) = 0
    order by total_exec_time desc
    offset %Rank% - 1
    limit 1),
-  'select ''pg_stat_statements 里没有第 %Rank% 条语句'''
+  'select ''pg_stat_statements 里没有第 %Rank% 条可解释的语句'''
 ) \gexec
 SQL`,
 			Params: []Param{

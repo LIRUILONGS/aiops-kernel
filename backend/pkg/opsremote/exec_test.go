@@ -227,6 +227,12 @@ func TestExec_Render_BuildsTheCommandFromTheTemplateAndTheValidatedValue(t *test
 			args: map[string]string{"Container": "opslab-db", "Database": "shop", "Rank": "2"},
 			want: "order by total_exec_time desc",
 		},
+		{
+			name: "an explanation only picks statements it can explain",
+			id:   "pg_explain",
+			args: map[string]string{"Container": "opslab-db", "Database": "shop", "Rank": "2"},
+			want: "^(select|with|insert|update|delete|values|table)",
+		},
 	}
 
 	for _, tc := range tests {
