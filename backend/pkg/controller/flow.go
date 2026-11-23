@@ -1399,6 +1399,10 @@ func (fw *flowWorker) processInput(flin flowInput) (TaskWorker, error) {
 	}
 
 	flin.reply.deliver(nil)
+
+	stopForwarding := fw.forwardInputWhileRunning(ctx, task)
+	defer stopForwarding()
+
 	spanName := fmt.Sprintf("perform task %d: %s", task.GetTaskID(), task.GetTitle())
 	return task, fw.reportFailure(task, flin.input, fw.execTask(ctx, spanName, flin.input, task))
 }

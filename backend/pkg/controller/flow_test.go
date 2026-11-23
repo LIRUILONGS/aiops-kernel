@@ -25,6 +25,7 @@ import (
 type scriptedTasks struct {
 	TaskController
 
+	created     TaskWorker
 	tasks       []TaskWorker
 	createErr   error
 	createDelay time.Duration
@@ -39,7 +40,11 @@ func (c *scriptedTasks) CreateTask(context.Context, string, FlowUpdater) (TaskWo
 	}
 	time.Sleep(c.createDelay)
 
-	return nil, c.createErr
+	if c.createErr != nil {
+		return nil, c.createErr
+	}
+
+	return c.created, nil
 }
 
 // scriptedTask is task 11: its write-up blocks until cancelled unless answer is set, and Finish reports the flow waiting.
@@ -774,4 +779,35 @@ func TestFlow_PutInput_ReachesATaskThatIsStillRunning(t *testing.T) {
 	if err := controllerReceive(t, done, "the task to finish"); err != nil {
 		t.Fatalf("runTask returned %v, want the answer to end the task quietly", err)
 	}
+}
+
+func TestFlow_PutInput_ReachesTheTaskItJustCreated(t *testing.T) {
+	t.Parallel()
+
+	task := &answerableTask{
+		started: make(chan struct{}),
+		release: make(chan struct{}),
+		inputs:  make(chan string, 1),
+	}
+	fw, _ := startScriptedFlowWorker(t, &scriptedTasks{created: task})
+
+	require.NoError(t, fw.PutInput(t.Context(), "look at the slow query", nil, nil))
+	controllerReceive(t, task.started, "the task to start")
+
+	callCtx, callCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer callCancel()
+
+	task.waiting.Store(true)
+	err := fw.PutInput(callCtx, "the answer", nil, nil)
+	require.NoError(t, err, "the task a flow has just created must accept the answer to its own question")
+	assert.NotErrorIs(t, err, ErrInputNotAccepted)
+
+	select {
+	case got := <-task.inputs:
+		assert.Equal(t, "the answer", got)
+	case <-time.After(5 * time.Second):
+		t.Fatal("the answer never reached the task")
+	}
+
+	close(task.release)
 }

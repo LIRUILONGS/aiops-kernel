@@ -2159,6 +2159,36 @@ flow 49 的时序，从库里三张表拼起来：
 
 `pg_explain` 的第 4 名恰好是 agent 自己先前那条 `explain (analyze, …)` 语句，模板把 `explain (format text, verbose off, generic_plan)` 又拼了一遍，于是 `psql` 报 `syntax error at or near "explain"`。工具对"目标语句本身已经是 EXPLAIN"这一种没有处理：应当原样执行，或者直接拒绝并说明原因，而不是拼出两条 `explain`。
 
+### 4.77 第一条任务收不到答案：转发协程只长在"续跑"那条路上（2026-11-23）
+
+4.74 给 `runTask` 加了 `forwardInputWhileRunning`，4.75 让两条同时挂起的提问各拿各的答案。这一节补上 4.74 漏掉的一半，并把浏览器端的验收跑了一遍。
+
+#### 一、症状与定位
+
+flow 56（`变更验证：压测前后的主机指纹对比`）在 12:04:29 由子任务提出 `ask`，flow 行变成 `waiting`；随后用 `putUserInput` 回答，31 秒后返回 `input: putUserInput flow 56 input processing timeout: input was not accepted: context deadline exceeded`。flow 57（界面上新建的、状态 `running`）上投同样的输入，也是 31 秒后超时。两条 flow 所在的镜像里 `strings /opt/opsagi/bin/opsagi | grep -c forwardInputWhileRunning` 是 5，说明 4.74 的代码确实在跑。
+
+读 `pkg/controller/flow.go` 的两个入口就清楚了：`processInput` 找到"已经 waiting 的任务"时走 `runTask`，那里起了转发协程；而**新建任务**的那条路在 `CreateTask` 返回之后直接调 `fw.execTask`，从头到尾没有读者在 `fw.input` 上。于是 flow 的第一条任务运行期间，任何答案都只能等主循环回到 `select`——也就是等整条任务跑完，而这条任务正在等那个永远不会到的答案。4.74 修好的只是"续跑"这一半，`flow 49`、`flow 108` 之所以能接住答案，是因为它们的任务已经存在、走的是续跑入口。
+
+#### 二、改法与证明
+
+新建任务那条路在 `execTask` 之前也起同一个转发协程（`stopForwarding := fw.forwardInputWhileRunning(ctx, task)` 加 `defer`）。
+
+测试是 `TestFlow_PutInput_ReachesTheTaskItJustCreated`：用 `startScriptedFlowWorker` 起真的 `worker()`，`scriptedTasks{created: …}` 交出任务，任务的 `Run` 阻塞住，然后投递答案。把那两行删掉，测试立刻红，报出的正是线上那句 `flow 42 input processing timeout: input was not accepted: context deadline exceeded`；加回来，`go test ./pkg/controller/ -run TestFlow` 全绿，`go vet ./pkg/controller/` 干净。本机没有 gcc，`-race` 这一层只能在 CI 上跑。
+
+#### 三、浏览器端：真部署上的六步
+
+用 Playwright（`frontend/node_modules/@playwright/test`，chromium）打 `http://127.0.0.1:8443`，一条脚本走完：未登录访问 `/flows` 跳 `/login?returnUrl=%2Fflows`；登录表单是中文（`请输入邮箱`、`请输入密码`、`登录`），登录后落在 `/flows/new`；`/flows` 列表、`/dashboard`（会话活动趋势图）、`/flows/47` 详情（报告 / 自动化 / 助手三个页签）都渲染出来；在 `/flows/new` 填问题、点 `提交`，跳到 `/flows/57?tab=automation`，会话真的建起来了。全程 0 条 console error、0 条 pageerror。
+
+顺带两个界面观察：中英混排（侧栏 `Templates`、`Resources`、`Knowledges`、`Recent Flows`、`Settings` 和输入框 placeholder 是英文，其余中文）；`/settings/providers` 显示"还没有配置提供商"，而这个部署的 provider 来自 `LLM_SERVER_*` 环境变量——界面看不到运行时到底在用哪个模型。
+
+#### 四、这一轮没能验收的一步：新会话停在 `created`
+
+把含本修复的镜像（`local/opsagi:ask2`）部署上去之后，新建的 flow 58 / 59 / 60 全部停在 `created`，容器日志只有 `flow created in DB`，没有后面那句 `creating container`。数据库连接正常（`pg_stat_activity` 里 3 个 idle），进程没有重启也没有 panic，`deleteFlow` 依旧 3 秒返回。
+
+证据在连接上：flow 60 创建于 12:46:42，宿主机 `Get-NetTCPConnection -LocalPort 18000` 里那条 `127.0.0.1:50723 → 127.0.0.1:18000 Established 20:46:42` 就是它发出的准备调用，25 分钟之后仍然挂着；同一时间直接用 `curl` 打网关是 2.2 秒返回。也就是说准备阶段那次模型调用既没有自己的 deadline，也没有心跳/重试，一条死连接就能让这条 flow 永远停在 `created`。同一窗口里链上的调用报的是 `agent model call failed: EOF` 和 `request timeout: API call exceeded deadline`——那个超时只发生在执行期的 agent 链上，准备期没有。
+
+因此"转发协程的修复在真机上把答案接住"这最后一步，证据只有单测（它复现的是线上原文），真机复验要等网关稳定，写进第 7 章第 16 条。
+
 ## 5 环境
 
 ### 5.1 开发机
@@ -2409,9 +2439,16 @@ flow 108 里 `pg_explain` 取第 4 名，恰好是 agent 先前那条 `explain (
 
 还剩一种失败：`EXPLAIN (GENERIC_PLAN)` 推断不出占位符的类型——第 4 名是 `select pid, state, round(extract($1 from …))`，报 `syntax error at or near "$1"`；`$2 - $3` 这种则报 `operator is not unique`。工具应当把这类失败翻译成一句话（"这条语句带占位符，`EXPLAIN` 推断不出类型，请在应用侧复现或换一个 rank"），而不是把 Postgres 的原始报错丢给模型。
 
+### 16. 新会话可能永远停在 `created`
+
+flow 58 / 59 / 60 在 12:26–12:47 之间创建，全部停在 `created`：`reserveFlow` 写完行、`prepareFlow` 起了，但 `CreateFlowWorker` 里的模型调用（`fwc.provs.NewFlowProvider`）没有自己的 deadline。flow 60 的那条连接（宿主机 `127.0.0.1:50723 → 127.0.0.1:18000`，建立于 20:46:42）在 25 分钟后仍然 `Established`，而同时直连网关只要 2.2 秒——一条死连接就足以让 flow 既不前进也不失败，界面上一直显示"创建中"。执行期的 agent 链有 `API call exceeded deadline`，准备期没有。
+
+- 落点：准备阶段对 provider 的调用要带上明确超时（`flowPrepareTimeout` 在 `prepareFlow` 上，但准备内的单次 LLM 调用需要自己的 deadline），超时后把 flow 标 `failed` 并在 `msglogs` 写原因，而不是无限期停在 `created`。
+- 验收：断掉网关后建一条 flow，一分钟内变成 `failed` 并带有原因；网关恢复后建一条 flow，正常进入 `running`。
+
 ### 已经关掉的（不再列在上面）
 
-规划器替换（4.6）、性能链路与出口（4.7 / 4.12）、四角色委派（4.7）、seed/run CLI（4.9）、前端结论卡片与测量面板（4.12 / 4.13 / 4.17）、改名（4.10）、`ops_exec` 18 条命令（4.11）、`prom_query`（4.16）、`k8s_get`（4.26）、验收进 CI（4.25 / 4.27）、子任务并行（4.27）、人机回路（4.29）、交付门禁（4.30）、provider 配置桶改名（4.57）、死工具与死执行器（4.58）、文档正文重写（4.59）、镜像变量改名（4.60）、`functions`/`disabled` 死 API（4.61）、`ops_logs` 截断行数（4.72）、k8s 容器状态与 Pod 日志（4.73）、任务运行中的 `ask` 投递（4.74）、`ops_diff` 手抄指纹（4.74）、两条提问同时挂起时的答案路由（4.75）。
+规划器替换（4.6）、性能链路与出口（4.7 / 4.12）、四角色委派（4.7）、seed/run CLI（4.9）、前端结论卡片与测量面板（4.12 / 4.13 / 4.17）、改名（4.10）、`ops_exec` 18 条命令（4.11）、`prom_query`（4.16）、`k8s_get`（4.26）、验收进 CI（4.25 / 4.27）、子任务并行（4.27）、人机回路（4.29）、交付门禁（4.30）、provider 配置桶改名（4.57）、死工具与死执行器（4.58）、文档正文重写（4.59）、镜像变量改名（4.60）、`functions`/`disabled` 死 API（4.61）、`ops_logs` 截断行数（4.72）、k8s 容器状态与 Pod 日志（4.73）、任务运行中的 `ask` 投递（4.74）、`ops_diff` 手抄指纹（4.74）、两条提问同时挂起时的答案路由（4.75）、第一条任务运行中的 `ask` 投递（4.77）。
 
 ## 8 踩过的坑
 
