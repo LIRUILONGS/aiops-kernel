@@ -1,6 +1,19 @@
-# OpsAGI
+<p align="center">
+  <img src="assets/logo.svg" alt="OpsAGI" width="112">
+</p>
 
-**一个会自己取证、自己下结论的 AIOps 智能体内核：面向真实主机的故障定位与性能优化，交付物是带证据的结论，不是聊天记录。**
+<h1 align="center">OpsAGI</h1>
+
+<p align="center"><b>一个会自己取证、自己下结论的 AIOps 智能体内核：面向真实主机的故障定位与性能优化，交付物是带证据的结论，不是聊天记录。</b></p>
+
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/LIRUILONGS/aiops-kernel" alt="License"></a>
+  <a href="backend/go.mod"><img src="https://img.shields.io/github/go-mod/go-version/LIRUILONGS/aiops-kernel?filename=backend/go.mod" alt="Go"></a>
+  <img src="https://img.shields.io/badge/%E7%95%8C%E9%9D%A2-%E5%85%A8%E4%B8%AD%E6%96%87-f59e0b" alt="界面全中文">
+  <a href="https://github.com/LIRUILONGS/aiops-kernel/commits/main"><img src="https://img.shields.io/github/last-commit/LIRUILONGS/aiops-kernel" alt="Last commit"></a>
+</p>
+
+<p align="center"><b>导航：</b> <a href="#它做什么">它做什么</a> · <a href="#它不做什么">它不做什么</a> · <a href="#截图">截图</a> · <a href="#核心机制">核心机制</a> · <a href="#界面">界面</a> · <a href="#快速开始">快速开始</a> · <a href="#文档">文档</a></p>
 
 OpsAGI 是 [PentAGI](https://github.com/vxcontrol/pentagi)（MIT）的分支。上游是一个自主渗透测试平台；这棵树保留它的运行时——flow / task / subtask 调度、模型提供商层、工具调用执行器、GraphQL API 与 React 界面——把智能体、工具与提示词换成值班工程师的那一套：SSH 上的只读取证、可回溯的诊断结论、带实测判定的性能改动。
 
@@ -19,13 +32,91 @@ OpsAGI 是 [PentAGI](https://github.com/vxcontrol/pentagi)（MIT）的分支。�
 
 产出的结论长这样：根因一句话、至少两三条能复现的查询、置信度、影响面、建议动作与回滚方式、是否需要人工介入。
 
----
-
 ## 它不做什么
 
 - **不改线上状态。** 唯一的例外是经操作员批准的取证动作（一次性采集容器、取证工具安装），且必须写进 `evidence` 与 `recommendation.rollback`。修复永远只写成建议。
 - **不做单点猜测。** 单一信号只能提示原因，下根因结论至少要两个独立来源交叉验证。
 - **不假装查过。** 没调用的工具、没看到的日志行、没发生的对话，都不允许出现在报告里。
+
+---
+
+## 截图
+
+界面截图取自仓库自带的视觉基线（`frontend/e2e/specs/visual/`），数据是测试夹具里的演示会话，不是真实客户环境。图随 GitHub 主题切换。
+
+<table>
+  <tr>
+    <td colspan="2" align="center">
+      <a href="assets/screenshots/dashboard-light.png"><picture>
+        <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/dashboard-dark.png">
+        <source media="(prefers-color-scheme: light)" srcset="assets/screenshots/dashboard-light.png">
+        <img src="assets/screenshots/dashboard-light.png" alt="仪表盘" width="100%">
+      </picture></a>
+      <br>
+      <sub><b>仪表盘。</b> 最近的会话、成功率与未收尾的告警；一眼看出值班当天有没有悬着的东西。</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <a href="assets/screenshots/flows-light.png"><picture>
+        <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/flows-dark.png">
+        <source media="(prefers-color-scheme: light)" srcset="assets/screenshots/flows-light.png">
+        <img src="assets/screenshots/flows-light.png" alt="会话列表" width="100%">
+      </picture></a>
+      <br>
+      <sub><b>会话列表。</b> 每个 flow 的标题就是一条告警；状态、耗时、消耗都在列表上。</sub>
+    </td>
+    <td width="50%" align="center">
+      <a href="assets/screenshots/flow-detail-light.png"><picture>
+        <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/flow-detail-dark.png">
+        <source media="(prefers-color-scheme: light)" srcset="assets/screenshots/flow-detail-light.png">
+        <img src="assets/screenshots/flow-detail-light.png" alt="会话详情" width="100%">
+      </picture></a>
+      <br>
+      <sub><b>会话详情。</b> 右侧是终端、任务、智能体、角色等观察面；诊断结论按证据组织。</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <a href="assets/screenshots/templates-light.png"><picture>
+        <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/templates-dark.png">
+        <source media="(prefers-color-scheme: light)" srcset="assets/screenshots/templates-light.png">
+        <img src="assets/screenshots/templates-light.png" alt="模板" width="100%">
+      </picture></a>
+      <br>
+      <sub><b>模板。</b> 常用问法存成模板，下次只换主机名。</sub>
+    </td>
+    <td width="50%" align="center">
+      <a href="assets/screenshots/knowledges-light.png"><picture>
+        <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/knowledges-dark.png">
+        <source media="(prefers-color-scheme: light)" srcset="assets/screenshots/knowledges-light.png">
+        <img src="assets/screenshots/knowledges-light.png" alt="知识库" width="100%">
+      </picture></a>
+      <br>
+      <sub><b>知识库。</b> 值班手册与历史结论入库，检索时按条目召回。</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <a href="assets/screenshots/resources-light.png"><picture>
+        <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/resources-dark.png">
+        <source media="(prefers-color-scheme: light)" srcset="assets/screenshots/resources-light.png">
+        <img src="assets/screenshots/resources-light.png" alt="资源" width="100%">
+      </picture></a>
+      <br>
+      <sub><b>资源。</b> 取证脚本、日志包、截图挂在会话外，可跨 flow 复用。</sub>
+    </td>
+    <td width="50%" align="center">
+      <a href="assets/screenshots/settings-providers-light.png"><picture>
+        <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/settings-providers-dark.png">
+        <source media="(prefers-color-scheme: light)" srcset="assets/screenshots/settings-providers-light.png">
+        <img src="assets/screenshots/settings-providers-light.png" alt="模型提供商" width="100%">
+      </picture></a>
+      <br>
+      <sub><b>模型提供商。</b> 任意 OpenAI 兼容端点，按角色分配模型。</sub>
+    </td>
+  </tr>
+</table>
 
 ---
 
@@ -80,7 +171,9 @@ OpsAGI 是 [PentAGI](https://github.com/vxcontrol/pentagi)（MIT）的分支。�
 | `ASK_USER` | `false` | 打开 `ask` 工具（人工闸门） |
 | `OPSAGI_SUBTASK_CONCURRENCY` | `1` | 同一任务内子任务并发度 |
 
-### 界面
+---
+
+## 界面
 
 一个 flow 的右侧是可切换的观察面：终端、任务、智能体、**角色**、工具调用、向量库、文件、截图。
 
@@ -149,7 +242,9 @@ scripts/                 命令行工具与批测脚本
 
 ## 文档
 
-- [设计说明](docs/aiops/01-design.md) — 为什么这样分层，约束为什么写在代码里
+- [总览](docs/aiops/00-overview.md) — 这棵树要做什么，与上游的关系，分层为什么这样切
+- [M0 计划](docs/aiops/01-m0-plan.md) — 只读诊断的端到端目标与验收口径
+- [改造清单](docs/aiops/02-changes.md) — 相对上游的删 / 改 / 留 / 增，精确到路径
 - [交接文档](docs/aiops/03-handover.md) — 当前状态、验证到什么程度、哪里还没验证（另有 [.docx](docs/aiops/03-handover.docx)）
 - [平台参考](docs/platform-reference.md) — 从上游继承的部署与提供商配置细节
 
