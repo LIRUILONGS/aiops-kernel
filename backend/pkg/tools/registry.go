@@ -3,6 +3,7 @@ package tools
 import (
 	"maps"
 	"opsagi/pkg/database"
+	"opsagi/pkg/opsremote"
 	"strings"
 
 	"github.com/invopop/jsonschema"
@@ -168,6 +169,23 @@ var toolsTypeMapping = map[string]ToolType{
 var reflector = &jsonschema.Reflector{
 	DoNotReference: true,
 	ExpandedStruct: true,
+}
+
+// The command catalogue is a closed set the handler can only refuse outside of;
+// declaring it as an enum puts that fact in the schema, where a model that skips
+// the prose still reads it. Derived from CommandIDs so the two cannot drift.
+func opsExecParameters() any {
+	schema := reflector.Reflect(&OpsExecArgs{})
+	command, ok := schema.Properties.Get("command")
+	if !ok {
+		return schema
+	}
+	ids := opsremote.CommandIDs()
+	command.Enum = make([]any, 0, len(ids))
+	for _, id := range ids {
+		command.Enum = append(command.Enum, id)
+	}
+	return schema
 }
 
 // A rendered browser page routinely exceeds the result size limit; a tool off this list hands it over whole.
@@ -465,7 +483,7 @@ var registryDefinitions = map[string]llms.FunctionDefinition{
 			"mysql_processlist（MySQL 里此刻的连接清单：来源、用户、库、执行秒数与语句开头，需 container，可传 lines）。" +
 			"参数只允许字母、数字与 . _ - /，含空格或 shell 元字符会被拒绝。" +
 			"返回结果会带上真实执行的命令原文，写证据时直接引用它。",
-		Parameters: reflector.Reflect(&OpsExecArgs{}),
+		Parameters: opsExecParameters(),
 	},
 	OpsApplyToolName: {
 		Name: OpsApplyToolName,

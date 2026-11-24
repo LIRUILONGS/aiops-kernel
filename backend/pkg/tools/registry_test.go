@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"encoding/json"
 	"slices"
 	"strings"
 	"testing"
@@ -266,5 +267,33 @@ func TestRegistry_Definitions_AdvertiseEveryOpsExecCommand(t *testing.T) {
 		if !strings.Contains(description, command.ID) {
 			t.Errorf("ops_exec does not mention %q, so the agent cannot ask for it", command.ID)
 		}
+	}
+}
+
+func TestRegistry_OpsExecSchema_ConstrainsTheCommandToTheCatalogue(t *testing.T) {
+	t.Parallel()
+
+	encoded, err := json.Marshal(registryDefinitions[OpsExecToolName].Parameters)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+
+	var schema struct {
+		Properties struct {
+			Command struct {
+				Enum []string `json:"enum"`
+			} `json:"command"`
+		} `json:"properties"`
+	}
+	if err := json.Unmarshal(encoded, &schema); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+
+	want := opsremote.CommandIDs()
+	if !slices.Equal(schema.Properties.Command.Enum, want) {
+		t.Fatalf("command enum = %v, want %v", schema.Properties.Command.Enum, want)
+	}
+	if slices.Contains(schema.Properties.Command.Enum, "ps aux") {
+		t.Error("a shell command slipped into the enum")
 	}
 }
