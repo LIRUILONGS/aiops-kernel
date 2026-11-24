@@ -407,3 +407,59 @@ func TestContainers_FilterContainers_KeepsEveryContainerWithoutAFilter(t *testin
 		t.Errorf("filtered = %+v, want only b", got)
 	}
 }
+
+func TestOpsTools_HandleApply_RefusesAnUnknownActionBeforeItDials(t *testing.T) {
+	tools := &opsTools{targets: map[string]opsremote.Target{"lab": {ID: "lab", Host: "192.0.2.10"}}}
+
+	_, err := tools.HandleApply(t.Context(), OpsApplyToolName, []byte(`{"action":"rm_rf"}`))
+
+	if err == nil {
+		t.Fatal("an action outside the catalogue was accepted")
+	}
+	for _, id := range opsremote.ActionIDs() {
+		if !strings.Contains(err.Error(), id) {
+			t.Errorf("error = %q, want it to name %s as available", err, id)
+		}
+	}
+}
+
+func TestOpsTools_HandleApply_RefusesAnArgumentCarryingAShellBeforeItDials(t *testing.T) {
+	tools := &opsTools{targets: map[string]opsremote.Target{"lab": {ID: "lab", Host: "192.0.2.10"}}}
+
+	_, err := tools.HandleApply(t.Context(), OpsApplyToolName, []byte(`{"action":"container_restart","container":"api; reboot"}`))
+
+	if err == nil {
+		t.Fatal("a container name carrying a shell was accepted")
+	}
+	if !strings.Contains(err.Error(), "非法") {
+		t.Errorf("error = %q, want the argument refusal", err)
+	}
+}
+
+func TestOpsTools_HandleApply_AnswersAnEmptyActionWithTheCatalogue(t *testing.T) {
+	tools := &opsTools{targets: map[string]opsremote.Target{"lab": {ID: "lab", Host: "192.0.2.10"}}}
+
+	_, err := tools.HandleApply(t.Context(), OpsApplyToolName, []byte(`{}`))
+
+	if err == nil {
+		t.Fatal("a call with no action was accepted")
+	}
+	for _, id := range opsremote.ActionIDs() {
+		if !strings.Contains(err.Error(), id) {
+			t.Errorf("error = %q, want it to name %s", err, id)
+		}
+	}
+}
+
+func TestRegistry_OpsApplyDescriptionNamesEveryCatalogueAction(t *testing.T) {
+	definition, ok := registryDefinitions[OpsApplyToolName]
+	if !ok {
+		t.Fatal("ops_apply has no definition")
+	}
+
+	for _, id := range opsremote.ActionIDs() {
+		if !strings.Contains(definition.Description, id) {
+			t.Errorf("the description does not name %s, so the model cannot choose it", id)
+		}
+	}
+}

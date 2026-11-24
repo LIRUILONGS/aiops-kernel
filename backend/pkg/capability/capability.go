@@ -51,6 +51,11 @@ type Call struct {
 	Command      string
 	Shape        string
 	TraceProgram string
+	// Action is the write being applied, named the way an approval names it:
+	// the catalogue id plus the one object it touches, e.g. "container_restart
+	// api-1". A call that carries one is judged by the lease's actions and not
+	// by its read-only commands, because the two catalogues share no entry.
+	Action string
 }
 
 // Lease is one subtask's scope: what it may use, on which hosts, until when.
@@ -65,6 +70,11 @@ type Lease struct {
 	Commands      []string
 	Shapes        []string
 	TracePrograms []string
+	// Actions is the write catalogue this subtask may apply without asking an
+	// operator. Empty is the default and it means no write at all: a lease
+	// hands out reads, and a repair is approved one instance at a time. A
+	// pattern ending in * widens it to a class, e.g. "container_restart *".
+	Actions []string
 	// Budgets is how many times each tool may run in one execution of this
 	// subtask. It bounds a retry loop, not a leak: the count lives in the guard,
 	// so a restarted subtask starts from zero.
@@ -205,6 +215,17 @@ func (l *Lease) Authorize(call Call, now time.Time, grants ...Grant) Decision {
 		return *decision
 	}
 
+	if decision := judge(call, grants, now, l.Actions, call.Action,
+		"写操作 %s 不在这个子任务的租约里（允许：%s），写操作需要操作员批准"); decision != nil {
+		return *decision
+	}
+
+	// A repair is judged by what it does, not by which read-only command it
+	// resembles: the action dimension above is the whole story of a write.
+	if call.Action != "" {
+		return allow()
+	}
+
 	if decision := judge(call, grants, now, l.Commands, call.Command,
 		"只读命令 %s 不在这个子任务的租约里（允许：%s），换一条命令需要操作员批准"); decision != nil {
 		return *decision
@@ -243,8 +264,20 @@ func judge(
 	return &decision
 }
 
+// permits reports whether one list permits a value. A pattern ending in * widens
+// an entry to everything it prefixes, which is how a lease says "any container,
+// but nothing else" without listing every name a host might carry.
 func permits(allowed []string, value string) bool {
-	return slices.Contains(allowed, "*") || slices.Contains(allowed, value)
+	for _, pattern := range allowed {
+		switch {
+		case pattern == "*" || pattern == value:
+			return true
+		case strings.HasSuffix(pattern, "*") && value != "" && strings.HasPrefix(value, strings.TrimSuffix(pattern, "*")):
+			return true
+		}
+	}
+
+	return false
 }
 
 // HasWildcard reports whether a list permits every value. A caller needs it

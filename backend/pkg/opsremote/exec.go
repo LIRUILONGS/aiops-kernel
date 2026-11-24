@@ -3,6 +3,7 @@ package opsremote
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -21,6 +22,10 @@ const (
 	ParamCount
 	// ParamImage accepts an image reference, which needs : and / to carry a tag
 	ParamImage
+	// ParamOneOf accepts one of Options, for a value whose domain is a short
+	// list rather than a shape: a kubectl resource kind is the case that made it
+	// necessary, and guessing at it produces a command that fails on the host.
+	ParamOneOf
 )
 
 // Param is one placeholder of a catalogue command. Template names it as
@@ -33,6 +38,12 @@ type Param struct {
 	Min      int
 	Max      int
 	Default  int
+	// Prefixes narrows a path parameter to the directories its template is
+	// allowed to touch. A write that names a path needs it: an absolute path is
+	// a valid path anywhere on the host.
+	Prefixes []string
+	// Options is the closed set a ParamOneOf accepts.
+	Options []string
 }
 
 // Command is one read-only command an agent may run by name. The template is a
@@ -391,6 +402,9 @@ func renderParam(param Param, raw string) (string, error) {
 		if !pathPattern.MatchString(raw) {
 			return "", fmt.Errorf("参数 %s 取值 %q 非法：必须是绝对路径，只允许字母、数字与 . _ - /，最长 255 个字符", param.Template, raw)
 		}
+		if err := withinPrefixes(raw, param.Prefixes); err != nil {
+			return "", fmt.Errorf("参数 %s：%w", param.Template, err)
+		}
 		return raw, nil
 
 	case ParamImage:
@@ -414,7 +428,40 @@ func renderParam(param Param, raw string) (string, error) {
 			return "", fmt.Errorf("参数 %s 取值 %d 超出范围：允许 %d 到 %d", param.Template, value, param.Min, param.Max)
 		}
 		return strconv.Itoa(value), nil
+
+	case ParamOneOf:
+		if raw == "" {
+			return "", fmt.Errorf("缺少参数 %s：只能是 %s 之一", param.Template, strings.Join(param.Options, "、"))
+		}
+		if !slices.Contains(param.Options, raw) {
+			return "", fmt.Errorf("参数 %s 取值 %q 非法：只能是 %s 之一", param.Template, raw, strings.Join(param.Options, "、"))
+		}
+		return raw, nil
 	}
 
 	return "", fmt.Errorf("参数 %s 的类型未知", param.Template)
+}
+
+// withinPrefixes keeps a write path inside the directories its template may
+// touch. An empty list allows every value the path pattern already allowed, which
+// is what the read-only commands rely on. The .. check is part of the same
+// guarantee: /etc/../root passes a prefix test and is the wrong file.
+func withinPrefixes(value string, prefixes []string) error {
+	if len(prefixes) == 0 {
+		return nil
+	}
+
+	for _, segment := range strings.Split(value, "/") {
+		if segment == ".." {
+			return fmt.Errorf("取值 %q 非法：路径不能包含 ..", value)
+		}
+	}
+
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(value, prefix) {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("取值 %q 非法：只允许 %s 之下", value, strings.Join(prefixes, " 或 "))
 }

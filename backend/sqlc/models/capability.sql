@@ -3,10 +3,10 @@
 -- deletes the subtask rows, and the foreign key cascades the lease away with
 -- them. Re-issuing keeps the row (and its audit trail) instead of replacing it.
 INSERT INTO capability_leases (
-  flow_id, subtask_id, role, mode, targets, tools, commands, shapes, trace_programs, issued_by, expires_at
+  flow_id, subtask_id, role, mode, targets, tools, commands, shapes, trace_programs, actions, issued_by, expires_at
 )
 VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
 )
 ON CONFLICT (subtask_id) DO UPDATE
 SET role = capability_leases.role

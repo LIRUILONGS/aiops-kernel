@@ -25,6 +25,7 @@ type policyMode struct {
 	Commands      []string       `yaml:"commands"`
 	Shapes        []string       `yaml:"shapes"`
 	TracePrograms []string       `yaml:"trace_programs"`
+	Actions       []string       `yaml:"actions"`
 	Budgets       map[string]int `yaml:"budgets"`
 }
 

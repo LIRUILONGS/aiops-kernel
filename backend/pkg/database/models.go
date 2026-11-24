@@ -951,6 +951,7 @@ type CapabilityLease struct {
 	IssuedBy      string    `json:"issued_by"`
 	ExpiresAt     time.Time `json:"expires_at"`
 	CreatedAt     time.Time `json:"created_at"`
+	Actions       []string  `json:"actions"`
 }
 
 type CapabilityRequest struct {

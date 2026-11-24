@@ -49,6 +49,7 @@ const (
 	OpsWatchToolName           = "ops_watch"
 	OpsSandboxToolName         = "ops_sandbox"
 	OpsTraceToolName           = "ops_trace"
+	OpsApplyToolName           = "ops_apply"
 	PromQueryToolName          = "prom_query"
 	K8sGetToolName             = "k8s_get"
 	RecordFindingToolName      = "record_finding"
@@ -148,6 +149,7 @@ var toolsTypeMapping = map[string]ToolType{
 	OpsWatchToolName:           EnvironmentToolType,
 	OpsSandboxToolName:         EnvironmentToolType,
 	OpsTraceToolName:           EnvironmentToolType,
+	OpsApplyToolName:           EnvironmentToolType,
 	PromQueryToolName:          EnvironmentToolType,
 	K8sGetToolName:             EnvironmentToolType,
 	RecordFindingToolName:      StoreAgentResultToolType,
@@ -464,6 +466,18 @@ var registryDefinitions = map[string]llms.FunctionDefinition{
 			"参数只允许字母、数字与 . _ - /，含空格或 shell 元字符会被拒绝。" +
 			"返回结果会带上真实执行的命令原文，写证据时直接引用它。",
 		Parameters: reflector.Reflect(&OpsExecArgs{}),
+	},
+	OpsApplyToolName: {
+		Name: OpsApplyToolName,
+		Description: "按名称执行一条预置的修复动作，把诊断结论变成一次真实变更。action 只能取下列 ID 之一，命令文本本身来自代码里的目录，不接受自由命令：" +
+			"unit_restart（重启 systemd 单元，需 unit）、container_restart（重启容器，需 container）、" +
+			"config_restore（用 /var/lib/opsagi/backups/ 下的快照覆盖 /etc/ 里的配置文件，需 backup 与 path）、" +
+			"disk_cleanup（删掉日志或临时目录里 days 天没被访问过的文件，需 path，可传 days）、" +
+			"k8s_rollout_restart（重启 Kubernetes 工作负载，需 namespace、kind 与 name）。" +
+			"写操作默认被拒绝：租约里没有这条动作时，调用会被拒绝并提交一条审批，操作员批准后用同样的参数重试即可。" +
+			"动作执行完不会自动证明修好了，要用 ops_baseline 再采一次指纹、再用 ops_diff 与故障前的基线对比。" +
+			"参数只允许字母、数字与 . _ - /，含空格或 shell 元字符会被拒绝；路径参数被限制在模板声明的目录之下。",
+		Parameters: reflector.Reflect(&OpsApplyArgs{}),
 	},
 	OpsWatchToolName: {
 		Name: OpsWatchToolName,

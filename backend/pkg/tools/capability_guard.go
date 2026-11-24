@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -166,7 +167,8 @@ func (g *CapabilityGuard) authorize(ctx context.Context, call capability.Call) c
 func callNeedsTarget(tool string) bool {
 	switch tool {
 	case OpsSystemToolName, OpsContainersToolName, OpsLogsToolName, OpsBaselineToolName,
-		OpsDiffToolName, OpsExecToolName, OpsWatchToolName, OpsSandboxToolName, OpsTraceToolName:
+		OpsDiffToolName, OpsExecToolName, OpsWatchToolName, OpsSandboxToolName, OpsTraceToolName,
+		OpsApplyToolName:
 		return true
 	default:
 		return false
@@ -174,10 +176,19 @@ func callNeedsTarget(tool string) bool {
 }
 
 type probeCallArgs struct {
-	Target  string `json:"target"`
-	Command string `json:"command"`
-	Mode    string `json:"mode"`
-	Script  string `json:"script"`
+	Target    string `json:"target"`
+	Command   string `json:"command"`
+	Mode      string `json:"mode"`
+	Script    string `json:"script"`
+	Action    string `json:"action"`
+	Unit      string `json:"unit"`
+	Container string `json:"container"`
+	Path      string `json:"path"`
+	Backup    string `json:"backup"`
+	Days      int    `json:"days"`
+	Namespace string `json:"namespace"`
+	Kind      string `json:"kind"`
+	Name      string `json:"name"`
 }
 
 // extractCapabilityCall reads the dimensions a lease judges out of the call's
@@ -207,7 +218,29 @@ func extractCapabilityCall(tool string, args json.RawMessage) capability.Call {
 		call.Shape = string(shape)
 	case OpsTraceToolName:
 		call.TraceProgram = parsed.Script
+	case OpsApplyToolName:
+		call.Action = opsremote.ActionCall(parsed.Action, writeArgs(parsed))
+		// The row and the approval quote the same string, so an operator
+		// approves one object and the grant that follows covers only it.
+		call.Command = call.Action
 	}
 
 	return call
+}
+
+func writeArgs(parsed probeCallArgs) map[string]string {
+	out := map[string]string{
+		"Unit":      parsed.Unit,
+		"Container": parsed.Container,
+		"Path":      parsed.Path,
+		"Backup":    parsed.Backup,
+		"Namespace": parsed.Namespace,
+		"Kind":      parsed.Kind,
+		"Name":      parsed.Name,
+	}
+	if parsed.Days > 0 {
+		out["Days"] = strconv.Itoa(parsed.Days)
+	}
+
+	return out
 }

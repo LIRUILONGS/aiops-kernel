@@ -217,7 +217,7 @@ func (q *Queries) FindPendingCapabilityRequest(ctx context.Context, arg FindPend
 }
 
 const getCapabilityLease = `-- name: GetCapabilityLease :one
-SELECT id, flow_id, subtask_id, role, mode, targets, tools, commands, shapes, trace_programs, issued_by, expires_at, created_at FROM capability_leases WHERE subtask_id = $1
+SELECT id, flow_id, subtask_id, role, mode, targets, tools, commands, shapes, trace_programs, issued_by, expires_at, created_at, actions FROM capability_leases WHERE subtask_id = $1
 `
 
 func (q *Queries) GetCapabilityLease(ctx context.Context, subtaskID int64) (CapabilityLease, error) {
@@ -237,6 +237,7 @@ func (q *Queries) GetCapabilityLease(ctx context.Context, subtaskID int64) (Capa
 		&i.IssuedBy,
 		&i.ExpiresAt,
 		&i.CreatedAt,
+		pq.Array(&i.Actions),
 	)
 	return i, err
 }
@@ -269,14 +270,14 @@ func (q *Queries) GetCapabilityRequest(ctx context.Context, id int64) (Capabilit
 
 const getOrCreateCapabilityLease = `-- name: GetOrCreateCapabilityLease :one
 INSERT INTO capability_leases (
-  flow_id, subtask_id, role, mode, targets, tools, commands, shapes, trace_programs, issued_by, expires_at
+  flow_id, subtask_id, role, mode, targets, tools, commands, shapes, trace_programs, actions, issued_by, expires_at
 )
 VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
 )
 ON CONFLICT (subtask_id) DO UPDATE
 SET role = capability_leases.role
-RETURNING id, flow_id, subtask_id, role, mode, targets, tools, commands, shapes, trace_programs, issued_by, expires_at, created_at
+RETURNING id, flow_id, subtask_id, role, mode, targets, tools, commands, shapes, trace_programs, issued_by, expires_at, created_at, actions
 `
 
 type GetOrCreateCapabilityLeaseParams struct {
@@ -289,6 +290,7 @@ type GetOrCreateCapabilityLeaseParams struct {
 	Commands      []string  `json:"commands"`
 	Shapes        []string  `json:"shapes"`
 	TracePrograms []string  `json:"trace_programs"`
+	Actions       []string  `json:"actions"`
 	IssuedBy      string    `json:"issued_by"`
 	ExpiresAt     time.Time `json:"expires_at"`
 }
@@ -307,6 +309,7 @@ func (q *Queries) GetOrCreateCapabilityLease(ctx context.Context, arg GetOrCreat
 		pq.Array(arg.Commands),
 		pq.Array(arg.Shapes),
 		pq.Array(arg.TracePrograms),
+		pq.Array(arg.Actions),
 		arg.IssuedBy,
 		arg.ExpiresAt,
 	)
@@ -325,6 +328,7 @@ func (q *Queries) GetOrCreateCapabilityLease(ctx context.Context, arg GetOrCreat
 		&i.IssuedBy,
 		&i.ExpiresAt,
 		&i.CreatedAt,
+		pq.Array(&i.Actions),
 	)
 	return i, err
 }

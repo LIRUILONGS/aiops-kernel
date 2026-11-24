@@ -192,6 +192,7 @@ func (fp *flowProvider) ensureLease(
 		Commands:      issued.Commands,
 		Shapes:        issued.Shapes,
 		TracePrograms: issued.TracePrograms,
+		Actions:       issued.Actions,
 		IssuedBy:      issued.IssuedBy,
 		ExpiresAt:     issued.ExpiresAt,
 	})
@@ -214,6 +215,7 @@ func leaseFromRow(row database.CapabilityLease) *capability.Lease {
 		Commands:      row.Commands,
 		Shapes:        row.Shapes,
 		TracePrograms: row.TracePrograms,
+		Actions:       row.Actions,
 		IssuedBy:      row.IssuedBy,
 		ExpiresAt:     row.ExpiresAt,
 	}

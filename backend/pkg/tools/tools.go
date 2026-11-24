@@ -860,6 +860,7 @@ func (fte *flowToolsExecutor) GetAssistantExecutor(cfg AssistantExecutorConfig) 
 			registryDefinitions[OpsBaselineToolName],
 			registryDefinitions[OpsDiffToolName],
 			registryDefinitions[OpsExecToolName],
+			registryDefinitions[OpsApplyToolName],
 		)
 		handlers[OpsSystemToolName] = ops.HandleSystem
 		handlers[OpsContainersToolName] = ops.HandleContainers
@@ -867,6 +868,7 @@ func (fte *flowToolsExecutor) GetAssistantExecutor(cfg AssistantExecutorConfig) 
 		handlers[OpsBaselineToolName] = ops.HandleBaseline
 		handlers[OpsDiffToolName] = ops.HandleDiff
 		handlers[OpsExecToolName] = ops.HandleExec
+		handlers[OpsApplyToolName] = ops.HandleApply
 	}
 
 	if prom := NewPromTools(fte.cfg); prom.IsAvailable() {
@@ -938,6 +940,7 @@ func (fte *flowToolsExecutor) GetCommanderExecutor(cfg CommanderExecutorConfig) 
 			registryDefinitions[OpsExecToolName],
 			registryDefinitions[OpsWatchToolName],
 			registryDefinitions[OpsSandboxToolName],
+			registryDefinitions[OpsApplyToolName],
 		)
 		handlers[OpsContainersToolName] = ops.HandleContainers
 		handlers[OpsLogsToolName] = ops.HandleLogs
@@ -947,6 +950,7 @@ func (fte *flowToolsExecutor) GetCommanderExecutor(cfg CommanderExecutorConfig) 
 		handlers[OpsExecToolName] = ops.HandleExec
 		handlers[OpsWatchToolName] = ops.HandleWatch
 		handlers[OpsSandboxToolName] = ops.HandleSandbox
+		handlers[OpsApplyToolName] = ops.HandleApply
 		if ops.TraceAvailable() {
 			definitions = append(definitions, registryDefinitions[OpsTraceToolName])
 			handlers[OpsTraceToolName] = ops.HandleTrace

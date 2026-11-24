@@ -272,3 +272,101 @@ func TestCapability_ApprovedBy_IgnoresAGrantThatHasExpired(t *testing.T) {
 		t.Error("a grant that expired a minute ago must not lift anything")
 	}
 }
+
+func TestCapability_Authorize_RefusesAWriteTheLeaseNeverNamed(t *testing.T) {
+	// The default lease hands out reads only, and the built-in policy names no
+	// action: a repair in a lease nobody widened is a denial an operator can lift.
+	lease := &Lease{
+		Tools:     []string{"ops_apply"},
+		Targets:   []string{"lab"},
+		Commands:  []string{"*"},
+		ExpiresAt: time.Date(2026, 11, 23, 12, 0, 0, 0, time.UTC),
+	}
+	now := time.Date(2026, 11, 23, 11, 0, 0, 0, time.UTC)
+
+	decision := lease.Authorize(Call{
+		Tool: "ops_apply", Target: "lab", Action: "container_restart api-1", Command: "container_restart api-1",
+	}, now)
+
+	if decision.Allowed() {
+		t.Fatal("a lease with no actions permitted a write")
+	}
+	if !strings.Contains(decision.Reason, "container_restart api-1") {
+		t.Errorf("the reason must name the write so the operator knows what is being asked, got %q", decision.Reason)
+	}
+	if !decision.NeedsApproval {
+		t.Error("a write outside the lease is exactly what an operator can approve")
+	}
+}
+
+func TestCapability_Authorize_JudgesAWriteByItsActionsNotByTheReadCatalogue(t *testing.T) {
+	// A lease that opens the whole read-only catalogue still permits no write.
+	lease := &Lease{
+		Tools:     []string{"*"},
+		Targets:   []string{"*"},
+		Commands:  []string{"*"},
+		ExpiresAt: time.Date(2026, 11, 23, 12, 0, 0, 0, time.UTC),
+	}
+	now := time.Date(2026, 11, 23, 11, 0, 0, 0, time.UTC)
+
+	decision := lease.Authorize(Call{
+		Tool: "ops_apply", Target: "lab", Action: "disk_cleanup /var/log/nginx/", Command: "disk_cleanup /var/log/nginx/",
+	}, now)
+
+	if decision.Allowed() {
+		t.Fatal("the read catalogue permitted a write")
+	}
+}
+
+func TestCapability_Authorize_PermitsAWriteItsActionsListPatternCovers(t *testing.T) {
+	// "container_restart *" is how an operator says "restart containers, nothing
+	// else" without listing every name a host might carry.
+	lease := &Lease{
+		Tools:     []string{"ops_apply"},
+		Targets:   []string{"lab"},
+		Actions:   []string{"container_restart *"},
+		ExpiresAt: time.Date(2026, 11, 23, 12, 0, 0, 0, time.UTC),
+	}
+	now := time.Date(2026, 11, 23, 11, 0, 0, 0, time.UTC)
+
+	permitted := lease.Authorize(Call{Tool: "ops_apply", Target: "lab", Action: "container_restart api-1"}, now)
+	if !permitted.Allowed() {
+		t.Fatalf("the pattern names this write, got refusal %q", permitted.Reason)
+	}
+
+	refused := lease.Authorize(Call{Tool: "ops_apply", Target: "lab", Action: "disk_cleanup /var/log/nginx/"}, now)
+	if refused.Allowed() {
+		t.Fatal("a cleanup was permitted by a list that only names container restarts")
+	}
+}
+
+func TestCapability_Authorize_LiftsAWriteApprovalForThatOneObject(t *testing.T) {
+	lease := &Lease{
+		Tools:     []string{"ops_apply"},
+		Targets:   []string{"lab"},
+		ExpiresAt: time.Date(2026, 11, 23, 12, 0, 0, 0, time.UTC),
+	}
+	now := time.Date(2026, 11, 23, 11, 0, 0, 0, time.UTC)
+	grant := Grant{
+		Tool:      "ops_apply",
+		Target:    "lab",
+		Command:   "container_restart api-1",
+		ExpiresAt: time.Date(2026, 11, 23, 11, 30, 0, 0, time.UTC),
+	}
+
+	// The guard sets both: the row the operator reads quotes Command, and the
+	// lease judges Action. They are the same string by construction.
+	approved := lease.Authorize(Call{
+		Tool: "ops_apply", Target: "lab", Action: "container_restart api-1", Command: "container_restart api-1",
+	}, now, grant)
+	if !approved.Allowed() {
+		t.Fatalf("the approval covers this write, got refusal %q", approved.Reason)
+	}
+
+	other := lease.Authorize(Call{
+		Tool: "ops_apply", Target: "lab", Action: "container_restart api-2", Command: "container_restart api-2",
+	}, now, grant)
+	if other.Allowed() {
+		t.Fatal("one container restart lifted the refusal for a different container")
+	}
+}

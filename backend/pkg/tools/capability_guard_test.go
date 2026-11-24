@@ -422,3 +422,20 @@ func TestCapabilityGuard_Apply_DoesNotAskForAToolTheRoleNeverHeld(t *testing.T) 
 		t.Errorf("refusal %q promises an approval that cannot be granted", err.Error())
 	}
 }
+
+func TestCapabilityGuard_ExtractCapabilityCall_NamesAWriteTheWayAnApprovalDoes(t *testing.T) {
+	call := extractCapabilityCall(OpsApplyToolName, json.RawMessage(`{"target":"lab","action":"container_restart","container":"api-1"}`))
+
+	if call.Target != "lab" {
+		t.Errorf("Target = %q, want lab", call.Target)
+	}
+	if call.Action != "container_restart api-1" {
+		t.Errorf("Action = %q, want the id and the object it touches", call.Action)
+	}
+	if call.Command != call.Action {
+		t.Errorf("Command = %q, want it to quote the same write an operator approves", call.Command)
+	}
+	if call.Shape != "" || call.TraceProgram != "" {
+		t.Errorf("a write has no shape or trace program, got %q and %q", call.Shape, call.TraceProgram)
+	}
+}

@@ -331,6 +331,78 @@ func (o *opsTools) HandleExec(ctx context.Context, name string, args json.RawMes
 	return rendered, nil
 }
 
+// OpsApplyArgs applies one repair from the write catalogue. There is no field
+// for a command: the model names what to fix, and the text that runs on the host
+// comes from opsremote's fixed templates.
+type OpsApplyArgs struct {
+	Target    string `json:"target,omitempty" jsonschema:"description=目标主机 ID，留空使用默认主机,example=lab"`
+	Action    string `json:"action" jsonschema:"description=写操作 ID，只能是 unit_restart、container_restart、config_restore、disk_cleanup、k8s_rollout_restart 之一,example=container_restart"`
+	Unit      string `json:"unit,omitempty" jsonschema:"description=systemd 单元名，unit_restart 必填,example=nginx.service"`
+	Container string `json:"container,omitempty" jsonschema:"description=容器名，container_restart 必填,example=opslab-broken"`
+	Path      string `json:"path,omitempty" jsonschema:"description=绝对路径，config_restore 的目标文件与 disk_cleanup 的清理目录,example=/etc/nginx/nginx.conf"`
+	Backup    string `json:"backup,omitempty" jsonschema:"description=备份快照的绝对路径，必须在 /var/lib/opsagi/backups/ 下，config_restore 必填,example=/var/lib/opsagi/backups/nginx.conf.bak"`
+	Days      int    `json:"days,omitempty" jsonschema:"description=disk_cleanup 的过期天数：只删这么久没被访问过的文件，1 到 90，默认 7,example=7"`
+	Namespace string `json:"namespace,omitempty" jsonschema:"description=k8s_rollout_restart 的命名空间,example=default"`
+	Kind      string `json:"kind,omitempty" jsonschema:"description=k8s_rollout_restart 的工作负载类型：deployment、statefulset 或 daemonset,example=deployment"`
+	Name      string `json:"name,omitempty" jsonschema:"description=k8s_rollout_restart 的工作负载名,example=api"`
+}
+
+func (o *opsTools) HandleApply(ctx context.Context, name string, args json.RawMessage) (string, error) {
+	var parsed OpsApplyArgs
+	if err := json.Unmarshal(args, &parsed); err != nil {
+		return "", fmt.Errorf("解析参数失败：%w", err)
+	}
+	if strings.TrimSpace(parsed.Action) == "" {
+		return "", fmt.Errorf("缺少 action：必须是写操作 ID 之一（%s）", strings.Join(opsremote.ActionIDs(), ", "))
+	}
+
+	action, ok := opsremote.LookupAction(parsed.Action)
+	if !ok {
+		return "", fmt.Errorf("未知的写操作 %q，可用操作：%s", parsed.Action, strings.Join(opsremote.ActionIDs(), ", "))
+	}
+
+	command, instance, err := opsremote.RenderAction(parsed.Action, applyArgs(parsed))
+	if err != nil {
+		return "", err
+	}
+
+	client, target, err := o.dial(ctx, args)
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = client.Close() }()
+
+	ctx, cancel := context.WithTimeout(ctx, o.timeout)
+	defer cancel()
+
+	res, err := client.RunCtx(ctx, command)
+	if err != nil {
+		return "", fmt.Errorf("执行 %s 失败：%w", instance, err)
+	}
+
+	rendered := formatExec(target, action.Description+"："+instance, res)
+	rendered += "\n\n这次改动已经落到主机上。要证明它修好了，用 ops_baseline 再采一次同样的指纹，再用 ops_diff 与故障前的基线比。"
+
+	return rendered, nil
+}
+
+func applyArgs(args OpsApplyArgs) map[string]string {
+	out := map[string]string{
+		"Unit":      args.Unit,
+		"Container": args.Container,
+		"Path":      args.Path,
+		"Backup":    args.Backup,
+		"Namespace": args.Namespace,
+		"Kind":      args.Kind,
+		"Name":      args.Name,
+	}
+	if args.Days > 0 {
+		out["Days"] = fmt.Sprintf("%d", args.Days)
+	}
+
+	return out
+}
+
 // OpsSandboxArgs runs a shell script inside the probe box on the target. The
 // script is free text: the guarantee is the container it runs in, not a list of
 // permitted commands.

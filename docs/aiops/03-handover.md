@@ -2554,10 +2554,65 @@ the host presented SHA256:2SyNEy1+1XbxTGKl7OhCXURO5k1YN3xzGLRRm5YsXZ4
 - 前端还没有凭据页面：接口齐了，运维现在还只能用 curl 或自己的脚本调 REST。
 - 权限从 `settings.admin` 换成专门的 `credentials.*`，需要一条把新权限授予管理员角色的数据迁移。
 - `ValidateOpsTargets` 仍然要求每个 target 带 `host`，只写 `credential_id` 的一行会被拒绝；要不要放宽到"host 或 credential_id 有一个就行"。
-- 第二步：`ops_apply` 的固定模板写目录（`unit_restart`、`container_restart`、`config_restore`、`disk_cleanup`、`k8s_rollout_restart`）、租约的 `actions` 维度、以及"写默认拒绝 + 运维审批"。
+- 第二步（`ops_apply` 的固定模板写目录、租约的 `actions` 维度、写默认拒绝 + 运维审批）已经在 §4.88 落地。
 - 第三步：基线 → 变更 → 差分 → 结论，证据缺失时结论必须是 `unverified` 而不是乐观收尾。
 
 三个提交：`652102b6`（sealer 与单测）、`3b572735`（迁移、查询、store）、`e023fd04`（目标接线与钉住接线）。
+
+### 4.88 写路径：一份固定的修复目录，租约先说不，操作员再说可以（2026-11-24）
+
+§4.87 让"连得上"变得可审计，这一条做的是"改得动"。远程修复的风险不在命令执行，而在命令从哪来：只要模型能拼出一条 shell，凭据库和指纹钉定就都白做了——它可以用那双钥匙做任何事。所以写路径的第一条约束不是"批准"，而是**目录**。
+
+#### 一、`ops_apply`：五个模板，没有自由文本
+
+`pkg/opsremote/apply.go` 里的 `Action` 和只读目录的 `Command` 是同一套写法：模板是包内常量，参数先过校验再拼进命令行，模型只能选 ID。
+
+| ID | 做什么 | 参数 | 模板 |
+|---|---|---|---|
+| `unit_restart` | 重启 systemd 单元 | `unit` | `systemctl restart` → `is-active` → `ActiveEnterTimestamp` |
+| `container_restart` | 重启容器 | `container` | `docker restart` → `docker inspect` 状态、启动时刻、重启次数 |
+| `config_restore` | 用快照覆盖配置文件 | `backup`、`path` | `install -m 0644` → `stat` |
+| `disk_cleanup` | 删过期日志与临时文件 | `path`、`days` | `find … -atime +N -print -delete \| wc -l` |
+| `k8s_rollout_restart` | 重启工作负载并等滚动完成 | `namespace`、`kind`、`name` | `kubectl rollout restart` → `rollout status` |
+
+每个模板都自带"事后的状态"：重启后报 `is-active` 与启动时刻，覆盖后报文件属性，清理后报删掉几个文件。写操作的结果因此是证据，而不是一个退出码。
+
+参数校验比只读目录更严，因为写操作把路径变成了目标而不只是读取对象：
+
+- `Param.Prefixes`：路径参数必须在模板声明的目录之下。`config_restore` 只认 `/var/lib/opsagi/backups/` 里的快照、只覆盖 `/etc/` 里的文件；`disk_cleanup` 只认 `/var/log/`、`/var/cache/`、`/var/tmp/`、`/tmp/`。
+- `..` 单独拦一条：`/etc/../root/.ssh/authorized_keys` 的前缀检查是过的，而它是另一个文件。
+- `ParamOneOf`：`kind` 只能是 `deployment`、`statefulset`、`daemonset`；猜一个 `pod` 上去只会在目标机上失败。
+- 值里有空格、`;`、`$`、`&&` 一律拒绝，和只读目录同一个理由。
+
+#### 二、租约的 `actions` 维度：缺省是一个写都不许
+
+`capability_leases` 加了 `actions TEXT[]`（迁移 `20261124150000`）。语义与 `commands` 平行但独立：
+
+- 内置策略的 `Rule.Actions` 是空的。空的不是"通配"，而是**没有**：诊断租约发的是只读权限，写操作一条也没有。升级不会把只读实例变成可写实例。
+- 判断顺序是工具 → 主机 → **动作** → （写操作到此为止）→ 只读命令 → 形状 → eBPF 程序。带 `Action` 的调用不再过只读命令那一维：两个目录没有交集，用一个维度去判另一个维度只会错。
+- 列表支持前缀通配：`container_restart *` 是"任何容器的重启，别的一概不行"，比逐个列名字更实用，也仍然是一条可以写进策略文件的窄口子。
+- 动作的"实例"是承重字段：`Action` 是 `container_restart api-1` 这个字符串，不是 `container_restart`。审批与授权都按它比对，所以批准一次重启只覆盖那一个容器，换 `api-2` 要重新问。
+
+#### 三、拒绝是可批准的：复用已有审批链路
+
+写操作在租约之外时，guard 提交一条 `capability_request`（`tool=ops_apply`，`command` 一列放的就是那个实例字符串，操作员在审批面板里看到的是"container_restart api-1"），拒绝语里带上请求号。操作员 `decideCapabilityRequest` 批准后生成一条 `capability_grant`，guard 每次调用都重读授权，所以**同一个子任务的下一次尝试**就能通过，不用等下一轮。
+
+`ops_apply` 只发给指挥官（`GetCommanderExecutor`）：助手对话和四个分析师都不该有写权限，分析师的价值恰恰是"只读但看全"。`ops_apply` 也不在 `optionalEvidenceTool` 里——它不是取证。
+
+#### 四、真机验证
+
+在靶场宿主上起了一个一次性的 `opslab-apply-probe`（alpine，`sleep 3600`），然后走真实工具链重启它：
+
+- `OPSAGI_LIVE_APPLY_CONTAINER=opslab-apply-probe go test -tags live ./pkg/tools -run TestOpsApply_HandleApply_Live` → `ok 11.5s`。这条测试拒绝在没有点名容器时运行：真机修复只能由操作员指定对象。
+- 重启前后用只读目录的 `docker_inspect` 取启动时刻：`2026-11-24T07:08:26.203188336Z` → `2026-11-24T07:08:55.993587339Z`。`RestartCount` 仍是 0——`docker restart` 不动那个计数器，证明"容器真的重启过"只能看 `StartedAt`，这也是模板把启动时刻写进输出的原因。
+- 目录与策略的六个变异全部见红：删掉动作维度的判断、删掉前缀通配、把 `kind` 换成自由名字、删掉 `..` 检查、让 guard 不写 `Command`、跳过 `RenderAction` 直接执行 ID。每一次都只有这一条测试转红，恢复后全绿。
+
+#### 五、还没做的
+
+- `k8s_rollout_restart` 走的是目标机上的 `kubectl`：靶场里 k3s 在容器里，宿主没有 kubectl，所以这条模板只有单测，没有真机。要么在目标机装 kubectl，要么另开一条走 API 的写通道。
+- 审批面板目前显示的是 `command` 字段，对写操作它就是 `container_restart api-1`；等前端做凭据页时把它单独渲染成一列更清楚。
+- flow 级 `enforce` 的完整闭环（模型被拒 → 操作员在界面上批准 → 模型重试成功）还要在重建镜像后跑一次；本轮真机验证覆盖的是"写操作确实落到主机"与"目录与租约按代码拒绝"。
+- 第三步的 baseline → apply → diff → verdict 还没接：`ops_apply` 的返回语已经要求模型复采一次基线再比，但"修没修好"目前仍是模型自己的判断，不是代码算出来的结论。
 
 ## 5 环境
 
