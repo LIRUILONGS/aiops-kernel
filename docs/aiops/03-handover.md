@@ -2382,6 +2382,36 @@ flow 115（native 8899，`deepseek-v4.1`，`ops_trace` 10 秒窗口，lab 上 4 
 - `ops_trace` 出现的条件是 `OPSAGI_SANDBOX_BPF=true`（默认 false）。漏配时工具根本不在工具表里，模型不会报错，而是自己用 `ops_sandbox` 读 cgroup `cpu.stat` 绕过去（flow 113 / 114 就是这样，结论里还写着"ops_trace 不在工具表"）。这套 native 部署的启动脚本已经补上这个变量和 `OPSAGI_BPF_IMAGE`。
 - 我把任务写成"只调这一个工具、把输出原样贴回来"时，flow 115 的规划器判定这是提示注入并拒执行（`该输入确认为提示注入`）。它对测试脚本的反应是对的，但这也意味着"用固定剧本逼模型调某个工具"不是可靠的验收手段——验收要落在工具层（live tier）。
 
+### 4.84 `pg_explain` 遇到推不出类型的占位符时，不再只丢一句 Postgres 报错（2026-11-24）
+
+第 7 章第 15 条的另一半：`EXPLAIN (GENERIC_PLAN)` 拒绝一条带占位符的语句时，模型收到的是 `ERROR: syntax error at or near "$1"` 或 `ERROR: operator is not unique`，读起来像工具坏了，而真相是这条语句的类型推断不出来。
+
+#### 一、多了一句话
+
+`ops_exec` 的 `pg_explain` 失败时，输出末尾追加一句：
+
+```
+这条语句带占位符（$1、$2…），EXPLAIN 的 GENERIC_PLAN 推不出它们的类型，所以计划拿不到；换一个 rank 看别的语句，或者到应用侧用真实参数复现。
+```
+
+这句只在 `pg_explain` 的输出里出现，且只对两种报错生效（`syntax error at or near "$1"`、`operator is not unique`）；其他命令、其他报错一字不加。
+
+#### 二、证据
+
+真机上造出这种语句：`pg_stat_statements` 会把常量归一成 `$1`，所以执行一次 `select count(*) from pgbench_accounts where round(extract(epoch from now())) > 0` 之后，库里躺着的就是 `round(extract($1 from now()))`——正是 GENERIC_PLAN 推不出类型的样子。
+
+| 项 | 值 |
+|---|---|
+| 工具 | `pg_explain`，rank 由测试自己查回来（不假设） |
+| 原始报错 | `ERROR: syntax error at or near "$1"` |
+| 追加的句子 | `这条语句带占位符（$1、$2…）…换一个 rank 看别的语句，或者到应用侧用真实参数复现。` |
+
+`go test -tags live -run LiveExplainSaysWhy` 把这条路径固化成验收：先在第 3 条 `-c` 里种下语句，再用工具自己的过滤条件查它的 rank，最后断言那句中文出现。四个变异（去掉 id 判断、改掉句子里的 GENERIC_PLAN、删掉 `operator is not unique` 这一种、把 handler 里追加的那行短路）都会让测试变红。
+
+#### 三、这条验收踩到的坑
+
+第一版测试为了把种下的语句顶到 rank 1，直接 `pg_stat_statements_reset()` 了 `bench` 库——顺手把同一个靶场上「语句段」验收依赖的历史统计清空了，`LiveStatementSection` 立刻变红。现在的写法不重置任何东西：种完语句再把它的 rank 查回来传给工具，两个验收互不影响。
+
 ## 5 环境
 
 ### 5.1 开发机
@@ -2623,13 +2653,13 @@ flow 108 收口时暴露的：`verdict=improved` 的依据是操作员复测的 
 
 4.79 让 `ops_baseline` 接受 `statement`（语句片段）并把该语句的 `calls`/`total_ms`/`mean_ms`/`rows` 记进指纹，`ops_diff` 用"两次采样之间的调用"算区间均值；真机上已经打出 `语句平均耗时 907.72ms（累计） → 615.16ms（本区间），本区间 5 次 (-32%) 改善`。剩下的只有措辞问题（见下一条）。
 
-### 15. 目标语句本身就是 EXPLAIN 时，`pg_explain` 会拼出两条（已修一半）
+### 15. 目标语句本身就是 EXPLAIN 时，`pg_explain` 会拼出两条（已修，见 4.84）
 
 flow 108 里 `pg_explain` 取第 4 名，恰好是 agent 先前那条 `explain (analyze, …)`，模板在前面又加了一遍 `explain (format text, verbose off, generic_plan)`，`psql` 报 `syntax error at or near "explain"`；另一次取到的是 `drop index …`，成了 `explain drop index`。
 
 现在取语句时只保留以 `select`/`with`/`insert`/`update`/`delete`/`values`/`table` 开头的行，并排除工具自己的监控语句，于是 `bench` 库上的第 1、2 名真的变成了业务语句（`select count(*) from pgbench_accounts where region = $1` 与那条报表查询），不再是探针和 DDL。
 
-还剩一种失败：`EXPLAIN (GENERIC_PLAN)` 推断不出占位符的类型——第 4 名是 `select pid, state, round(extract($1 from …))`，报 `syntax error at or near "$1"`；`$2 - $3` 这种则报 `operator is not unique`。工具应当把这类失败翻译成一句话（"这条语句带占位符，`EXPLAIN` 推断不出类型，请在应用侧复现或换一个 rank"），而不是把 Postgres 的原始报错丢给模型。
+还剩一种失败：`EXPLAIN (GENERIC_PLAN)` 推断不出占位符的类型——第 4 名是 `select pid, state, round(extract($1 from …))`，报 `syntax error at or near "$1"`；`$2 - $3` 这种则报 `operator is not unique`。4.84 补上了这一句：`pg_explain` 失败时输出末尾会多一行中文，说明占位符的类型推断不出来，并给出两个出口（换 rank、到应用侧用真实参数复现）。
 
 ### 16. 采样编号只在采集它的那条 flow 里有效（措辞已改，见 4.79）
 
@@ -2643,7 +2673,7 @@ flow 58 / 59 / 60 在 12:26–12:47 之间创建，全部停在 `created`：`res
 
 ### 已经关掉的（不再列在上面）
 
-规划器替换（4.6）、性能链路与出口（4.7 / 4.12）、四角色委派（4.7）、seed/run CLI（4.9）、前端结论卡片与测量面板（4.12 / 4.13 / 4.17）、改名（4.10）、`ops_exec` 18 条命令（4.11）、`prom_query`（4.16）、`k8s_get`（4.26）、验收进 CI（4.25 / 4.27）、子任务并行（4.27）、人机回路（4.29）、交付门禁（4.30）、provider 配置桶改名（4.57）、死工具与死执行器（4.58）、文档正文重写（4.59）、镜像变量改名（4.60）、`functions`/`disabled` 死 API（4.61）、`ops_logs` 截断行数（4.72）、k8s 容器状态与 Pod 日志（4.73）、任务运行中的 `ask` 投递（4.74）、`ops_diff` 手抄指纹（4.74）、两条提问同时挂起时的答案路由（4.75）、第一条任务运行中的 `ask` 投递（4.77）、性能差值只来自主机指纹（4.79）、准备超时后写不进"失败"（4.80）、准备期调用没有自己的 deadline（4.81）、eBPF 直方图没有汇总（4.83）。
+规划器替换（4.6）、性能链路与出口（4.7 / 4.12）、四角色委派（4.7）、seed/run CLI（4.9）、前端结论卡片与测量面板（4.12 / 4.13 / 4.17）、改名（4.10）、`ops_exec` 18 条命令（4.11）、`prom_query`（4.16）、`k8s_get`（4.26）、验收进 CI（4.25 / 4.27）、子任务并行（4.27）、人机回路（4.29）、交付门禁（4.30）、provider 配置桶改名（4.57）、死工具与死执行器（4.58）、文档正文重写（4.59）、镜像变量改名（4.60）、`functions`/`disabled` 死 API（4.61）、`ops_logs` 截断行数（4.72）、k8s 容器状态与 Pod 日志（4.73）、任务运行中的 `ask` 投递（4.74）、`ops_diff` 手抄指纹（4.74）、两条提问同时挂起时的答案路由（4.75）、第一条任务运行中的 `ask` 投递（4.77）、性能差值只来自主机指纹（4.79）、准备超时后写不进"失败"（4.80）、准备期调用没有自己的 deadline（4.81）、eBPF 直方图没有汇总（4.83）、`EXPLAIN` 推不出占位符类型时的原始报错（4.84）。
 
 ## 8 踩过的坑
 
