@@ -2621,7 +2621,69 @@ the host presented SHA256:2SyNEy1+1XbxTGKl7OhCXURO5k1YN3xzGLRRm5YsXZ4
 - 前端没有"这个 flow 能不能写"的提示：开关在创建 flow 时选，界面上还没有一个"写操作已启用"的标记。
 - 审批面板目前显示的是 `command` 字段，对写操作它就是 `container_restart api-1`；等前端做凭据页时把它单独渲染成一列更清楚。
 - flow 级 `enforce` 的完整闭环（模型被拒 → 操作员在界面上批准 → 模型重试成功）还要在重建镜像后跑一次；本轮真机验证覆盖的是"写操作确实落到主机"与"目录与租约按代码拒绝"。
-- 第三步的 baseline → apply → diff → verdict 还没接：`ops_apply` 的返回语已经要求模型复采一次基线再比，但"修没修好"目前仍是模型自己的判断，不是代码算出来的结论。
+- 第三步（baseline → apply → diff → verdict）已经接上，见 4.89；剩下的缺口在那里的"还没做的"。
+
+### 4.89 闭环：同一次调用自己量前后，结论由代码算（2026-11-24）
+
+4.88 结束时，"修好了没有"仍然是模型说了算：`ops_apply` 的返回语请它再采一次基线、再和故障前比，采不采、比不比、怎么解读全凭它。这一节把那一环收回代码：`ops_apply` 在同一个调用里先采基线、再动手、再采一次，然后由 `opsremote.JudgeChange` 比较两份指纹给出结论。
+
+#### 一、为什么让动作自己量
+
+把"先采基线"写进提示词，是把正确性寄托在模型记得上。模型完全可能先动手，或者拿一份半小时前的基线来比——那不是同一台主机在同一个状态窗口里的对照。所以采集放进 handler：`before-<action>` 在命令执行前采，`after-<action>` 在 `settle_seconds`（默认 2 秒，上限 30）后采，用的是同一段代码、同一个连接、同一台主机。模型想跳过，只能显式传 `verify: false`，而那样它拿到的结论是 `unverified`——它没有可引用的证据。
+
+采集成本是 4 次 SSH 往返（前后各一次 System + Containers）。`client.System` 是一次批量 shell，`Containers` 是一次 `docker ps`；在靶场上整条链路 3 到 11 秒。
+
+#### 二、五种结论
+
+| 状态 | 含义 | 谁会看到 |
+| --- | --- | --- |
+| `improved` | 所有显著变化都在变好 | 少数干净的场景 |
+| `worsened` | 至少一项显著变化在变差 | 变差是真的要报 |
+| `changed` | 对象变了，但方向谈不上好坏：容器从 exited 变 running | 最常见 |
+| `unchanged` | 没有任何指标越过显著性门槛 | 「执行成功」不等于「修好了」 |
+| `unverified` | 没有可比的数据 | 缺证据时的唯一正确回答 |
+
+判据就是 4.88 之前已经存在的那张 `Delta` 表（`CompareFingerprints`），显著性门槛也用它原有的（load 0.1、CPU 2%、内存 32MB、磁盘 1%、锁等待 1 个会话）。`changed` 单独存在是有意的：容器从停机到运行，代码无法断言"这算改善"——那要靠症状，不靠指纹。所以语气上它只说"变了"，把判断留给结论，而不是替操作员拍板。
+
+`unverified` 有三条入口：`verify: false`、变更前采集失败（`before == nil`，错误被故意吞掉——采不到基线不该阻止修复）、变更后采集失败。三者在输出里都带一句"这次变更不能作为「已修复」的证据"。
+
+#### 三、只算这个动作能碰到的东西
+
+第一版把整台主机的指标都算进结论，真机上立刻出了丑：重启一个 probe 容器，同时宿主 CPU 从 29.8% 涨到 82.8%（产品容器自己在忙），结论就成了"有恶化"。那不是这次变更的因果，是同时发生在旁边的噪声。把噪声算成证据，和让模型自己猜一样不可信。
+
+所以 `Scope` 给每个动作划出它能移动的指纹面：
+
+| 动作 | 计入结论的行 | 不算的理由 |
+| --- | --- | --- |
+| `container_restart` | `容器 <instance>` | 只动这一个容器 |
+| `disk_cleanup` | `磁盘 *` | 释放的是某一块文件系统的空间 |
+| `unit_restart` / `config_restore` / `k8s_rollout_restart` | 无 | systemd 单元、文件属性、工作负载副本数都不在主机指纹里 |
+
+前两类之外的显著变化不再被丢掉：它们进"同期其它指标的变化（不计入结论）"，仍然呈现，仍然不算数。真机上第二次重启证明了这个区分的必要——容器状态没变（`unchanged`），而宿主 load1 从 11.2 降到 9.7、swap 从 30MB 涨到 31MB；整机版的结论会把它读成"改善"，而它跟这次重启没有关系。
+
+对 `unit_restart` 一类，`unverified` 的 `reason` 直接点名该看什么：`unit_status` 看是否 active，`file_stat` 看文件属性，`kubectl` 看副本。承认指纹没有这张脸，比编一个结论好。
+
+#### 四、真机验证
+
+靶场：`opslab-apply-probe`（alpine，`docker stop` 后处于 exited），走真实工具链。
+
+| 场景 | 结论 | 依据 |
+| --- | --- | --- |
+| `docker stop` 后重启 | 有变化（`changed`） | `容器 opslab-apply-probe 重启：0 → 0（+0，状态 exited→running，变化）` |
+| 已在运行时再重启 | 无变化（`unchanged`） | 「这个对象在指纹里没有任何变化，这次改动没有可测量的效果」 |
+| `verify: false` | 无法判定（`unverified`） | 「这次调用关掉了前后基线采集」 |
+
+同一轮里被排除的旁路：`load1 14.2 → 12.7`、`cpu 25.8% → 20.4%`、`内存 8397 → 8358MB`——它们都被列在"不计入结论"里。第二轮的 `swap 30 → 31MB（恶化）` 同样不进结论。
+
+`-tags live` 的测试现在不只比对 `docker inspect` 的前后启动时刻，还断言返回里有 `== 变更结论：`，且不是 `unverified`——否则闭环等于没跑。
+
+单测覆盖 `JudgeChange` 的七种情形（缺基线、缺第二次采集、跨主机、全部变好、一项变差、无显著变化、只换了状态）与 `Scope` 的三类动作；三处变异各自见红：删掉旁路分流（`IgnoresWhatTheChangeCannotHaveTouched` 红）、把恶化当改善（`ReadsTheDirectionFromTheMaterialRows` 红）、让 `unit_restart` 冒领容器行（`Scope_NamesTheRowsAnActionCanMove` 红）。
+
+#### 五、还没做的
+
+- 指纹里的容器行只有 `State` / `Restarts` / `ExitCode`：`docker restart` 不动 `Restarts`，running 的容器重启后 `State` 也不变，所以"重启成功"在指纹里是 `unchanged`。要证明重启有效，还得让症状数据进来（告警是否复现、错误率、`ops_watch` 的时间序列），这是闭环真正的下一步。
+- `diagnosis` 的结论 schema 里还没有一个字段强制引用 verdict：模型仍然可以在报告里写"已修复"而不引任何证据。要么在结论工具里加一个必需的 `verdict` 字段，要么在 conclusion handler 里拒收没有 `verified` 变更的"已修复"声明。
+- `config_restore` 与 `k8s_rollout_restart` 的 scope 是空的，所以它们永远 `unverified`；给它们各自的观察面（文件属性、`kubectl get`）是把它们纳入闭环的前提。
 
 ## 5 环境
 

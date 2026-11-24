@@ -81,6 +81,31 @@ var (
 	}
 )
 
+// Scope names the fingerprint faces an action can move. The verdict is computed
+// from those rows only: a container restart does not touch the host's load, and
+// counting host noise would credit the change with whatever else happened to run
+// during the same two seconds.
+func Scope(id string, args map[string]string) (prefixes []string, unverifiable string) {
+	switch id {
+	case "container_restart":
+		name := strings.TrimSpace(args["Container"])
+		if name == "" {
+			return nil, "这次调用没有写容器名，指纹里没有可以对照的对象"
+		}
+
+		return []string{"容器 " + name}, ""
+	case "disk_cleanup":
+		// Any mount row: the cleanup frees space on whichever filesystem the
+		// directory sits on, and the action does not resolve that itself.
+		return []string{"磁盘 "}, ""
+	case "unit_restart", "config_restore", "k8s_rollout_restart":
+		return nil, "systemd 单元、配置文件与工作负载的状态都不在主机指纹里：重启后用 unit_status 看它是否 active，" +
+			"覆盖后用 file_stat 看文件属性，滚动后用 kubectl 看副本；指纹给不出这个动作的结论"
+	default:
+		return nil, "未知的动作没有可比的对象"
+	}
+}
+
 // Actions lists the write catalogue in a stable order.
 func Actions() []Action {
 	out := make([]Action, 0, len(applyOrder))

@@ -690,6 +690,8 @@ func (fp *flowProvider) PrepareAgentChain(ctx context.Context, taskID, subtaskID
 		"ChangeAnalystToolName":  tools.ChangeAnalystToolName,
 		"OptimizationToolName":   tools.OptimizationResultToolName,
 		"OptimizationMode":       optimizationMode,
+		"ApplyToolName":          tools.OpsApplyToolName,
+		"WritesEnabled":          fp.capabilityEnforcing(ctx),
 		"ExecutionContext":       executionContext,
 		"Lang":                   fp.language,
 	})

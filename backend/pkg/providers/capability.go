@@ -18,6 +18,19 @@ import (
 // timeout of its own.
 const capabilityRecordTimeout = 5 * time.Second
 
+// capabilityEnforcing reports whether the flow opted into a lease that refuses.
+// A write tool is offered only then: without a lease there is no dimension to
+// judge a write by, and offering one would read as "unbounded" rather than
+// "unwatched".
+func (fp *flowProvider) capabilityEnforcing(ctx context.Context) bool {
+	flow, err := fp.db.GetFlow(ctx, fp.flowID)
+	if err != nil {
+		return false
+	}
+
+	return capability.ParseMode(flow.CapabilityMode).Enforcing()
+}
+
 // capabilityGuard builds the lease check for one subtask. It returns nil when
 // the flow was created with the switch off, which is the whole point of the
 // switch: an instance that never opted in runs the code path it always ran.

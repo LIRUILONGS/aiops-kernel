@@ -343,6 +343,8 @@ type OpsApplyArgs struct {
 	Path      string `json:"path,omitempty" jsonschema:"description=绝对路径，config_restore 的目标文件与 disk_cleanup 的清理目录,example=/etc/nginx/nginx.conf"`
 	Backup    string `json:"backup,omitempty" jsonschema:"description=备份快照的绝对路径，必须在 /var/lib/opsagi/backups/ 下，config_restore 必填,example=/var/lib/opsagi/backups/nginx.conf.bak"`
 	Days      int    `json:"days,omitempty" jsonschema:"description=disk_cleanup 的过期天数：只删这么久没被访问过的文件，1 到 90，默认 7,example=7"`
+	Verify    *bool  `json:"verify,omitempty" jsonschema:"description=是否在变更前后各采一次基线并由代码判定效果，默认 true。关掉它这次变更就没有结论，结论只能是无法判定"`
+	Settle    int    `json:"settle_seconds,omitempty" jsonschema:"description=变更后等几秒再采第二次基线，默认 2，上限 30。重启类的动作需要一点时间才稳定,example=2"`
 	Namespace string `json:"namespace,omitempty" jsonschema:"description=k8s_rollout_restart 的命名空间,example=default"`
 	Kind      string `json:"kind,omitempty" jsonschema:"description=k8s_rollout_restart 的工作负载类型：deployment、statefulset 或 daemonset,example=deployment"`
 	Name      string `json:"name,omitempty" jsonschema:"description=k8s_rollout_restart 的工作负载名,example=api"`
@@ -386,6 +388,14 @@ func (o *opsTools) HandleApply(ctx context.Context, name string, args json.RawMe
 	}
 	defer func() { _ = client.Close() }()
 
+	// Measured before the change, with the same code that measures after it: a
+	// baseline the model collected earlier may describe another host, and this
+	// one has to describe the host the change lands on.
+	var before *opsremote.Fingerprint
+	if parsed.verifyEnabled() {
+		before, _ = o.captureFingerprint(ctx, client, "before-"+action.ID)
+	}
+
 	ctx, cancel := context.WithTimeout(ctx, o.timeout)
 	defer cancel()
 
@@ -395,9 +405,133 @@ func (o *opsTools) HandleApply(ctx context.Context, name string, args json.RawMe
 	}
 
 	rendered := formatExec(target, action.Description+"："+instance, res)
-	rendered += "\n\n这次改动已经落到主机上。要证明它修好了，用 ops_baseline 再采一次同样的指纹，再用 ops_diff 与故障前的基线比。"
 
-	return rendered, nil
+	if before != nil {
+		time.Sleep(parsed.settle())
+	}
+
+	return rendered + o.judgeChange(ctx, client, target, parsed, action, before), nil
+}
+
+// judgeChange closes the loop the walkthrough leaves open: the same call that
+// changed the host also measured it before and after, and the verdict is the
+// arithmetic of those two fingerprints rather than the model's opinion of them.
+// A change nobody could measure is unverified, and unverified is not a repair.
+func (o *opsTools) judgeChange(
+	ctx context.Context, client *opsremote.Client, target opsremote.Target,
+	parsed OpsApplyArgs, action opsremote.Action, before *opsremote.Fingerprint,
+) string {
+	if !parsed.verifyEnabled() {
+		return "\n\n== 变更结论：无法判定（unverified）\n这次调用关掉了前后基线采集，所以没有任何可比的数据。不要把这次变更说成已修复。"
+	}
+	if before == nil {
+		return "\n\n== 变更结论：无法判定（unverified）\n变更前没能采到基线，这次变更没有可比的对象。用 ops_baseline 采一次再比，或者把它当作未验证的改动。"
+	}
+
+	after, err := o.captureFingerprint(ctx, client, "after-"+action.ID)
+	if err != nil {
+		return "\n\n== 变更结论：无法判定（unverified）\n变更后采集失败：" + err.Error() + "。这次改动已经执行，但它修好了什么没有证据。"
+	}
+
+	prefixes, unverifiable := opsremote.Scope(action.ID, applyArgs(parsed))
+	change := opsremote.JudgeChange(before, after, prefixes)
+	if change.State == opsremote.VerdictUnverified && unverifiable != "" {
+		change.Reason = unverifiable
+	}
+
+	return formatChange(target, change)
+}
+
+// captureFingerprint reads the host-level fingerprint. The Postgres segment is
+// not part of it: those numbers belong to one container and one database, and the
+// apply arguments do not name them.
+func (o *opsTools) captureFingerprint(ctx context.Context, client *opsremote.Client, label string) (*opsremote.Fingerprint, error) {
+	ctx, cancel := context.WithTimeout(ctx, o.timeout)
+	defer cancel()
+
+	snap, err := client.System(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	containers, err := client.Containers(ctx)
+	if err != nil {
+		containers = nil
+	}
+
+	fp := opsremote.SnapshotFingerprint(label, snap, containers)
+
+	return &fp, nil
+}
+
+func formatChange(target opsremote.Target, change opsremote.Change) string {
+	var b strings.Builder
+
+	fmt.Fprintf(&b, "\n\n== 变更结论：%s（%s，由代码比较两次指纹得出）\n", changeTitle(change.State), change.State)
+	fmt.Fprintf(&b, "主机：%s (%s:%d)\n", target.ID, target.Host, target.Port)
+	if change.BeforeLabel != "" || change.AfterLabel != "" {
+		fmt.Fprintf(&b, "基线：%s → %s\n", change.BeforeLabel, change.AfterLabel)
+	}
+	fmt.Fprintf(&b, "依据：%s\n", change.Reason)
+
+	if len(change.Deltas) > 0 {
+		b.WriteString("\n相关指标的变化：\n")
+		for _, delta := range change.Deltas {
+			fmt.Fprintf(&b, "- %s：%s → %s（%s，%s）\n", delta.Field, delta.Before, delta.After, delta.Change, delta.Verdict)
+		}
+	}
+	if len(change.Bystanders) > 0 {
+		b.WriteString("\n同期其它指标的变化（不计入结论）：\n")
+		for _, delta := range change.Bystanders {
+			fmt.Fprintf(&b, "- %s：%s → %s（%s，%s）\n", delta.Field, delta.Before, delta.After, delta.Change, delta.Verdict)
+		}
+	}
+
+	switch change.State {
+	case opsremote.VerdictUnverified:
+		b.WriteString("\n没有可比的数据。这次变更不能作为「已修复」的证据。")
+	case opsremote.VerdictUnchanged:
+		b.WriteString("\n没有任何指标越过显著性门槛。这次变更没有可测量的效果，别把「执行成功」当成「修好了」。")
+	default:
+		b.WriteString("\n结论只覆盖这些指标：它们变好不等于故障已经消失，还要看原始症状是否复现。")
+	}
+
+	return b.String()
+}
+
+func changeTitle(state string) string {
+	switch state {
+	case opsremote.VerdictImproved:
+		return "有改善"
+	case opsremote.VerdictWorsened:
+		return "有恶化"
+	case opsremote.VerdictChanged:
+		return "有变化"
+	case opsremote.VerdictUnchanged:
+		return "无变化"
+	default:
+		return "无法判定"
+	}
+}
+
+func (a OpsApplyArgs) verifyEnabled() bool {
+	if a.Verify == nil {
+		return true
+	}
+
+	return *a.Verify
+}
+
+func (a OpsApplyArgs) settle() time.Duration {
+	seconds := a.Settle
+	if seconds <= 0 {
+		seconds = 2
+	}
+	if seconds > 30 {
+		seconds = 30
+	}
+
+	return time.Duration(seconds) * time.Second
 }
 
 func applyArgs(args OpsApplyArgs) map[string]string {

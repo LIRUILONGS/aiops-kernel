@@ -37,8 +37,11 @@ func TestOpsApply_HandleApply_LiveARestartReachesTheHostAndChangesTheStartTime(t
 	if err != nil {
 		t.Fatalf("HandleApply: %v", err)
 	}
-	if !strings.Contains(result, "这次改动已经落到主机上") {
-		t.Errorf("the answer does not tell the model to verify the repair, got %q", result)
+	if !strings.Contains(result, "== 变更结论：") {
+		t.Errorf("the answer carries no verdict, got %q", result)
+	}
+	if strings.Contains(result, "（unverified") {
+		t.Errorf("the restart could not be measured, so the loop proved nothing: %q", result)
 	}
 
 	after := liveContainerState(t, tools, container)

@@ -161,6 +161,8 @@ var PromptVariables = map[PromptType][]string{
 		"TraceEnabled",
 		"OptimizationToolName",
 		"OptimizationMode",
+		"ApplyToolName",
+		"WritesEnabled",
 		"ExecutionContext",
 		"Lang",
 	},
