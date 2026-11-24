@@ -220,11 +220,11 @@ type ReporterExecutorConfig struct {
 // ask-user disabled, and a commander that offers a tool its prompt has no rule
 // for would only invite an invalid call.
 type CommanderExecutorConfig struct {
-	TaskID         int64
-	SubtaskID      int64
-	Diagnosis      ExecutorHandler
-	Optimization   ExecutorHandler
-	AskUser        ExecutorHandler
+	TaskID       int64
+	SubtaskID    int64
+	Diagnosis    ExecutorHandler
+	Optimization ExecutorHandler
+	AskUser      ExecutorHandler
 
 	// AskUserUnattended makes ask an ordinary tool: nobody can answer, so the
 	// handler replies and the chain continues. A barrier would stop the chain
@@ -353,7 +353,7 @@ func NewFlowToolsExecutor(
 }
 
 func (fte *flowToolsExecutor) OpsTargets() []string {
-	return NewOpsTools(fte.cfg).TargetIDs()
+	return NewOpsTools(fte.cfg).WithCredentialStore(credentialStore(fte.db)).TargetIDs()
 }
 
 func (fte *flowToolsExecutor) ProbeAvailability() ProbeAvailability {
@@ -851,7 +851,7 @@ func (fte *flowToolsExecutor) GetAssistantExecutor(cfg AssistantExecutorConfig) 
 		handlers[WaitFlowCompletionToolName] = waitFlowCompletion.Handle
 	}
 
-	ops := NewOpsTools(fte.cfg)
+	ops := NewOpsTools(fte.cfg).WithCredentialStore(credentialStore(fte.db))
 	if ops.IsAvailable() {
 		definitions = append(definitions,
 			registryDefinitions[OpsSystemToolName],
@@ -928,7 +928,7 @@ func (fte *flowToolsExecutor) GetCommanderExecutor(cfg CommanderExecutorConfig) 
 	// A host is optional. Without one the commander still has a conclusion to
 	// reach -- the evidence it was given is in the conversation -- so it builds
 	// with the tools that do not need a shell instead of refusing to start.
-	if ops := NewOpsTools(fte.cfg); ops.IsAvailable() {
+	if ops := NewOpsTools(fte.cfg).WithCredentialStore(credentialStore(fte.db)); ops.IsAvailable() {
 		definitions = append(definitions,
 			registryDefinitions[OpsContainersToolName],
 			registryDefinitions[OpsLogsToolName],
@@ -1035,7 +1035,7 @@ func (fte *flowToolsExecutor) GetAnalystExecutor(cfg AnalystExecutorConfig) (Con
 	}
 
 	opsHandlers := map[string]ExecutorHandler{}
-	if ops := NewOpsTools(fte.cfg); ops.IsAvailable() {
+	if ops := NewOpsTools(fte.cfg).WithCredentialStore(credentialStore(fte.db)); ops.IsAvailable() {
 		opsHandlers[OpsContainersToolName] = ops.HandleContainers
 		opsHandlers[OpsLogsToolName] = ops.HandleLogs
 		opsHandlers[OpsSystemToolName] = ops.HandleSystem

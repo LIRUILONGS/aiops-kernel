@@ -34,6 +34,8 @@ type opsTools struct {
 	order   []string
 	timeout time.Duration
 
+	credentials credentialSource
+
 	samples baselineSamples
 
 	sandboxPull    bool
@@ -153,6 +155,10 @@ func (o *opsTools) dial(ctx context.Context, args json.RawMessage) (*opsremote.C
 	if err != nil {
 		return nil, target, err
 	}
+	target, err = o.materialize(ctx, target)
+	if err != nil {
+		return nil, target, err
+	}
 
 	dialCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
@@ -161,6 +167,14 @@ func (o *opsTools) dial(ctx context.Context, args json.RawMessage) (*opsremote.C
 	if err != nil {
 		return nil, target, fmt.Errorf("连接目标主机 %s 失败：%w", target.ID, err)
 	}
+	if target.CredentialID != 0 {
+		// A dial that used a stored secret records it: "which key opened this
+		// host, and when" is the question an audit asks first.
+		if err := o.credentials.MarkUsed(ctx, target.CredentialID); err != nil {
+			logrus.WithError(err).Warnf("凭据 %d 已用于连接 %s，但 last_used_at 没能写入", target.CredentialID, target.ID)
+		}
+	}
+
 	return client, target, nil
 }
 
@@ -683,7 +697,6 @@ func (o *opsTools) captureStatement(ctx context.Context, client *opsremote.Clien
 
 	return opsremote.ParseQueryBrief(fragment, res.Stdout)
 }
-
 
 func (o *opsTools) HandleDiff(ctx context.Context, name string, args json.RawMessage) (string, error) {
 	var parsed OpsDiffArgs

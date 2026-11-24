@@ -42,6 +42,15 @@ type Target struct {
 	// key is accepted as it comes, which is only ever right for a host reached
 	// over a channel that already authenticates it.
 	HostKeyFingerprint string `json:"host_key_fingerprint,omitempty"`
+
+	// CredentialID names a stored credential whose secret replaces Password and
+	// KeyFile. The tool layer fills Secret before dialling; the value here is a
+	// reference an operator writes in OPSAGI_TARGETS, never the secret.
+	CredentialID int64 `json:"credential_id,omitempty"`
+
+	// Secret carries an already-opened private key, so the material never has to
+	// exist as a file on the host running the product. It is never serialised.
+	Secret []byte `json:"-"`
 }
 
 // Result is the outcome of one remote command.
@@ -83,19 +92,24 @@ func Dial(ctx context.Context, target Target) (*Client, error) {
 	if target.Password != "" {
 		auths = append(auths, ssh.Password(target.Password))
 	}
-	if target.KeyFile != "" {
+
+	keyMaterial := target.Secret
+	if len(keyMaterial) == 0 && target.KeyFile != "" {
 		key, err := os.ReadFile(target.KeyFile)
 		if err != nil {
 			return nil, fmt.Errorf("read key file: %w", err)
 		}
-		signer, err := ssh.ParsePrivateKey(key)
+		keyMaterial = key
+	}
+	if len(keyMaterial) > 0 {
+		signer, err := ssh.ParsePrivateKey(keyMaterial)
 		if err != nil {
-			return nil, fmt.Errorf("parse key file: %w", err)
+			return nil, fmt.Errorf("parse private key: %w", err)
 		}
 		auths = append(auths, ssh.PublicKeys(signer))
 	}
 	if len(auths) == 0 {
-		return nil, errors.New("no authentication method: set password or key_file")
+		return nil, errors.New("no authentication method: set password, key_file or credential_id")
 	}
 
 	cfg := &ssh.ClientConfig{
