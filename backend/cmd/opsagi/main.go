@@ -230,6 +230,19 @@ func main() {
 	subscriptions := subscriptions.NewSubscriptionsController()
 	controller := controller.NewFlowController(queries, cfg, client, providers, subscriptions)
 
+	// Before anything is restored, settle what the previous run left behind: a
+	// container the database still calls running is either a sandbox LoadFlows can
+	// hand back to a worker, or an orphan whose flow has to be marked failed and
+	// whose container, volume included, has to go. Skipping this leaves the flow
+	// list describing sandboxes that a restart never brought back, and the host
+	// accumulating one work volume per flow it ever ran.
+	if err := client.Cleanup(ctx); err != nil {
+		// Not fatal: a sweep that cannot read the flow list is a database problem
+		// the restore below will report in its own terms, and refusing to boot
+		// would turn a stale container into an outage.
+		logrus.WithError(err).Warn("Failed to settle the containers of the previous run")
+	}
+
 	if err := controller.LoadFlows(ctx); err != nil {
 		logrus.WithError(err).Fatal("Active flows restoration failed")
 	}
