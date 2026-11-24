@@ -183,3 +183,10 @@ var ErrTokenNotFound = NewHttpError(404, "Token.NotFound", "token not found")
 var ErrTokenUnauthorized = NewHttpError(403, "Token.Unauthorized", "not authorized to manage this token")
 var ErrTokenInvalidRequest = NewHttpError(400, "Token.InvalidRequest", "invalid token request data")
 var ErrTokenInvalidData = NewHttpError(500, "Token.InvalidData", "invalid token data")
+
+// credentials
+
+var ErrCredentialsInvalidRequest = NewHttpError(400, "Credentials.InvalidRequest", "invalid credential request data")
+var ErrCredentialsNotFound = NewHttpError(404, "Credentials.NotFound", "credential not found")
+var ErrCredentialsUnavailable = NewHttpError(503, "Credentials.Unavailable", "no credential master key is configured")
+var ErrCredentialsInvalidData = NewHttpError(500, "Credentials.InvalidData", "invalid credential data")

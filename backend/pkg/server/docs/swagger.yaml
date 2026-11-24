@@ -563,6 +563,57 @@ definitions:
     - doc_type
     - question
     type: object
+  models.CredentialCreate:
+    properties:
+      host:
+        type: string
+      host_key_fingerprint:
+        type: string
+      kind:
+        type: string
+      name:
+        type: string
+      port:
+        type: integer
+      secret:
+        type: string
+      username:
+        type: string
+    required:
+    - kind
+    - name
+    - secret
+    type: object
+  models.CredentialInfo:
+    properties:
+      created_at:
+        type: string
+      host:
+        type: string
+      host_key_fingerprint:
+        type: string
+      id:
+        type: integer
+      kind:
+        type: string
+      last_used_at:
+        type: string
+      name:
+        type: string
+      port:
+        type: integer
+      rotated_at:
+        type: string
+      username:
+        type: string
+    type: object
+  models.CredentialRotate:
+    properties:
+      secret:
+        type: string
+    required:
+    - secret
+    type: object
   models.DailyFlowsStats:
     properties:
       date:
@@ -2466,6 +2517,138 @@ paths:
       summary: Retrieve containers list
       tags:
       - Containers
+  /credentials/:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: credential list received successful
+          schema:
+            allOf:
+            - $ref: '#/definitions/SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.CredentialInfo'
+                  type: array
+              type: object
+        "403":
+          description: getting credentials not permitted
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "503":
+          description: no master key configured
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Retrieve stored credentials
+      tags:
+      - Credentials
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: credential data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.CredentialCreate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: credential stored successful
+          schema:
+            allOf:
+            - $ref: '#/definitions/SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.CredentialInfo'
+              type: object
+        "400":
+          description: invalid credential data
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "403":
+          description: storing credentials not permitted
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "503":
+          description: no master key configured
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Store a credential
+      tags:
+      - Credentials
+  /credentials/{id}:
+    delete:
+      parameters:
+      - description: credential id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: credential deleted successful
+          schema:
+            $ref: '#/definitions/SuccessResponse'
+        "403":
+          description: deleting credentials not permitted
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a credential
+      tags:
+      - Credentials
+  /credentials/{id}/secret:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: credential id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: replacement secret
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.CredentialRotate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: credential rotated successful
+          schema:
+            $ref: '#/definitions/SuccessResponse'
+        "403":
+          description: rotating credentials not permitted
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: credential not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "503":
+          description: no master key configured
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Replace a credential's secret
+      tags:
+      - Credentials
   /flows/:
     get:
       parameters:

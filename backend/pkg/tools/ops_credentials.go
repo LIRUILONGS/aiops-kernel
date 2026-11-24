@@ -2,9 +2,8 @@ package tools
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"os"
-	"strings"
 
 	"opsagi/pkg/credentials"
 	"opsagi/pkg/database"
@@ -30,13 +29,11 @@ type credentialSource interface {
 // with "no authentication method", which reads as a configuration mistake two
 // layers away from the real one.
 func credentialStore(queries database.Querier) *credentials.Store {
-	raw := strings.TrimSpace(os.Getenv(credentials.VarKey))
-	if raw == "" {
-		return nil
-	}
-
-	sealer, err := credentials.NewSealer(raw)
+	sealer, err := credentials.NewSealerFromEnv()
 	if err != nil {
+		if errors.Is(err, credentials.ErrNoKey) {
+			return nil
+		}
 		logrus.WithError(err).Error(credentials.VarKey + " is set but is not a usable master key; stored credentials are not reachable")
 
 		return nil

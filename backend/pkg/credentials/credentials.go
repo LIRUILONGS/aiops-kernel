@@ -15,6 +15,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 )
 
@@ -43,6 +44,7 @@ type Sealer struct {
 // 64 hex characters or the base64 form of the same 32 bytes; both are accepted
 // because operators generate it with whichever tool they already have.
 func NewSealer(key string) (*Sealer, error) {
+
 	raw, err := ParseKey(key)
 	if err != nil {
 		return nil, err
@@ -59,6 +61,13 @@ func NewSealer(key string) (*Sealer, error) {
 	}
 
 	return &Sealer{aead: aead}, nil
+}
+
+// NewSealerFromEnv builds the sealer from VarKey. A variable that is not set
+// returns ErrNoKey, which lets a caller distinguish "this deployment keeps no
+// secrets" from "it was given a key nobody can use".
+func NewSealerFromEnv() (*Sealer, error) {
+	return NewSealer(os.Getenv(VarKey))
 }
 
 // ParseKey decodes a master key written as hex or base64.

@@ -3,6 +3,7 @@ package router
 import (
 	"context"
 	"encoding/gob"
+	"errors"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -16,6 +17,7 @@ import (
 
 	"opsagi/pkg/config"
 	"opsagi/pkg/controller"
+	"opsagi/pkg/credentials"
 	"opsagi/pkg/database"
 	"opsagi/pkg/database/knowledge"
 	"opsagi/pkg/database/knowledge/vectorstore"
@@ -206,6 +208,11 @@ func NewRouter(
 	roleService := services.NewRoleService(orm)
 	providerService := services.NewProviderService(providers)
 	settingsService := services.NewSettingsService(cfg)
+	credentialSealer, credentialSealerErr := credentials.NewSealerFromEnv()
+	if credentialSealerErr != nil && !errors.Is(credentialSealerErr, credentials.ErrNoKey) {
+		logrus.WithError(credentialSealerErr).Error("OPSAGI_SECRET_KEY is set but is not a usable master key; the credential API will answer 503")
+	}
+	credentialService := services.NewCredentialService(credentials.NewStore(db, credentialSealer))
 	flowService := services.NewFlowService(orm, db, providers, controller, subscriptions)
 	flowFileService := services.NewFlowFileService(orm, cfg.DataDir, cfg.TenantPrefix(), dockerClient, subscriptions)
 	resourceService := services.NewResourceService(orm, cfg.DataDir, subscriptions)
@@ -318,6 +325,7 @@ func NewRouter(
 		assistant:    assistantService,
 		assistantlog: assistantlogService,
 		container:    containerService,
+		credential:   credentialService,
 		flow:         flowService,
 		flowFile:     flowFileService,
 		graphql:      graphqlService,
@@ -431,6 +439,16 @@ func setKnowledgeGroup(parent *gin.RouterGroup, svc *services.KnowledgeService) 
 	}
 }
 
+func setCredentialsGroup(parent *gin.RouterGroup, svc *services.CredentialService) {
+	credentialsGroup := parent.Group("/credentials")
+	{
+		credentialsGroup.GET("/", svc.GetCredentials)
+		credentialsGroup.POST("/", svc.CreateCredential)
+		credentialsGroup.PUT("/:id/secret", svc.RotateCredential)
+		credentialsGroup.DELETE("/:id", svc.DeleteCredential)
+	}
+}
+
 func setProvidersGroup(parent *gin.RouterGroup, svc *services.ProviderService) {
 	providersGroup := parent.Group("/providers")
 	{
@@ -452,6 +470,7 @@ type privateServices struct {
 	assistant    *services.AssistantService
 	assistantlog *services.AssistantlogService
 	container    *services.ContainerService
+	credential   *services.CredentialService
 	flow         *services.FlowService
 	flowFile     *services.FlowFileService
 	graphql      *services.GraphqlService
@@ -490,6 +509,7 @@ func registerPrivateRoutes(tokenTier, userTier *gin.RouterGroup, svc privateServ
 	setKnowledgeGroup(tokenTier, svc.knowledge)
 	setProvidersGroup(tokenTier, svc.provider)
 	setSettingsGroup(tokenTier, svc.settings)
+	setCredentialsGroup(userTier, svc.credential)
 	setFlowsGroup(tokenTier, svc.flow)
 	setFlowFilesGroup(tokenTier, svc.flowFile)
 	setResourcesGroup(tokenTier, svc.resource)
