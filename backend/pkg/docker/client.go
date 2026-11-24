@@ -71,6 +71,10 @@ const (
 	// A worker's PID 1 is `tail -f /dev/null` (see flowToolsExecutor.Prepare),
 	// which never acts on SIGTERM, so whatever grace is given is waited out in full.
 	containerStopGrace = 2
+	// containerStatusWriteTimeout bounds a status write that has to land after the
+	// operation it describes already failed, so recording the failure cannot hang
+	// the caller that is trying to report it.
+	containerStatusWriteTimeout = 5 * time.Second
 )
 
 type dockerClient struct {
@@ -717,6 +721,45 @@ func (dc *dockerClient) removeContainerByName(ctx context.Context, containerName
 	return nil
 }
 
+// workVolumesOf reports the named volumes a container mounts, read before the
+// container is removed because the mounts go with it.
+//
+// ContainerRemove's RemoveVolumes reclaims only anonymous volumes; the work
+// volume of a flow is created with VolumeCreate and mounted by name, so it
+// outlives every container that ever used it. Left alone it is unreachable --
+// nothing records its name once the container row is deleted -- and a long-lived
+// host accumulates one per flow.
+func (dc *dockerClient) workVolumesOf(ctx context.Context, containerID string, logger *logrus.Entry) []string {
+	inspect, err := dc.client.ContainerInspect(ctx, containerID, client.ContainerInspectOptions{})
+	if err != nil {
+		if !cerrdefs.IsNotFound(err) {
+			logger.WithError(err).Warn("failed to read the volumes of a container being removed")
+		}
+
+		return nil
+	}
+
+	names := make([]string, 0, len(inspect.Mounts))
+	for _, mp := range inspect.Mounts {
+		if mp.Type == mount.TypeVolume && mp.Name != "" {
+			names = append(names, mp.Name)
+		}
+	}
+
+	return names
+}
+
+// removeWorkVolumes deletes the volumes workVolumesOf reported. Failure to remove
+// one is logged rather than returned: the container is already gone, and a volume
+// that cannot be deleted now is no reason to fail the removal that preceded it.
+func (dc *dockerClient) removeWorkVolumes(ctx context.Context, volumes []string, logger *logrus.Entry) {
+	for _, name := range volumes {
+		if err := dc.client.VolumeRemove(ctx, name, client.VolumeRemoveOptions{Force: true}); err != nil && !cerrdefs.IsNotFound(err) {
+			logger.WithError(err).Warnf("failed to remove the work volume '%s'", name)
+		}
+	}
+}
+
 // discardContainer removes a container that never became usable, so the failure
 // leaves nothing behind: no dead container accumulating on the host and no name
 // blocking the retry. Removal is detached from the caller's context because a
@@ -726,6 +769,8 @@ func (dc *dockerClient) discardContainer(ctx context.Context, containerID string
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), containerDiscardTimeout)
 	defer cancel()
 
+	volumes := dc.workVolumesOf(ctx, containerID, logger)
+
 	_, err := dc.client.ContainerRemove(ctx, containerID, client.ContainerRemoveOptions{
 		RemoveVolumes: true,
 		Force:         true,
@@ -733,6 +778,8 @@ func (dc *dockerClient) discardContainer(ctx context.Context, containerID string
 	if err != nil && !cerrdefs.IsNotFound(err) {
 		logger.WithError(err).Error("failed to remove the container that did not start")
 	}
+
+	dc.removeWorkVolumes(ctx, volumes, logger)
 }
 
 func (dc *dockerClient) StopContainer(ctx context.Context, containerID string, dbID int64) error {
@@ -747,6 +794,20 @@ func (dc *dockerClient) StopContainer(ctx context.Context, containerID string, d
 		if cerrdefs.IsNotFound(stopErr) {
 			logger.Warn("target container already removed or never existed")
 		} else {
+			// The row has to stop claiming the sandbox is alive. Returning with it
+			// still reading "running" leaves the UI showing a working container for
+			// a flow whose commands can no longer reach one, and every later sweep
+			// treats it as healthy and skips it.
+			writeCtx, cancelWrite := context.WithTimeout(context.WithoutCancel(ctx), containerStatusWriteTimeout)
+			defer cancelWrite()
+
+			if _, err := dc.db.UpdateContainerStatus(writeCtx, database.UpdateContainerStatusParams{
+				Status: database.ContainerStatusFailed,
+				ID:     dbID,
+			}); err != nil {
+				logger.WithError(err).Error("failed to record a container whose shutdown failed")
+			}
+
 			return fmt.Errorf("container shutdown failed: %w", stopErr)
 		}
 	}
@@ -848,6 +909,8 @@ func (dc *dockerClient) RemoveContainer(ctx context.Context, containerID string,
 		return fmt.Errorf("failed to stop container: %w", err)
 	}
 
+	volumes := dc.workVolumesOf(ctx, containerID, logger)
+
 	options := client.ContainerRemoveOptions{
 		RemoveVolumes: true,
 		Force:         true,
@@ -860,6 +923,8 @@ func (dc *dockerClient) RemoveContainer(ctx context.Context, containerID string,
 		// still mark it deleted below so the database row does not go stale.
 		logger.WithError(err).Warn("container not found")
 	}
+
+	dc.removeWorkVolumes(ctx, volumes, logger)
 
 	_, err := dc.db.UpdateContainerStatus(ctx, database.UpdateContainerStatusParams{
 		Status: database.ContainerStatusDeleted,
@@ -914,17 +979,23 @@ func (dc *dockerClient) Cleanup(ctx context.Context) error {
 			logger.WithError(err).Errorf("failed to update container status to deleted")
 		}
 	}
-	isAllContainersRunning := func(flowID int64) bool {
+	// allContainersRunning is what decides whether a flow that the database still
+	// calls running can be resumed. Its containers have to be up: LoadFlows will
+	// hand such a flow back to a worker, and a worker without its sandbox fails
+	// every tool call it makes. A flow with a container that is gone or stopped
+	// cannot be resumed, so it is marked failed and its containers are reclaimed.
+	allContainersRunning := func(flowID int64) bool {
 		containers, ok := flowContainersMap[flowID]
 		if !ok || len(containers) == 0 {
 			return false
 		}
+
 		for _, container := range containers {
-			switch container.Status {
-			case database.ContainerStatusStarting, database.ContainerStatusRunning:
+			if container.Status != database.ContainerStatusStarting && container.Status != database.ContainerStatusRunning {
 				return false
 			}
 		}
+
 		return true
 	}
 	markFlowAsFailed := func(flowID int64) {
@@ -941,7 +1012,7 @@ func (dc *dockerClient) Cleanup(ctx context.Context) error {
 	for _, flow := range flows {
 		switch flowsStatusMap[flow.ID] {
 		case database.FlowStatusRunning, database.FlowStatusWaiting:
-			if isAllContainersRunning(flow.ID) {
+			if allContainersRunning(flow.ID) {
 				continue
 			}
 			fallthrough
