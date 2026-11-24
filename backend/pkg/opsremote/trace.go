@@ -45,28 +45,28 @@ type TraceScript struct {
 	ID          string
 	Description string
 	Program     string
-	Scratch     string
+	Scratch     []string
 }
 
 // traceCatalogue is ordered because the tool description lists it in this order.
 var traceCatalogue = []TraceScript{
 	{
 		ID:          "runqlat",
-		Scratch:     "@start",
+		Scratch:     []string{"@start", "@comm"},
 		Description: "调度延迟直方图：每个进程从可运行到真正拿到 CPU 等了多久，用来区分「CPU 真的忙」和「进程在排队」",
-		Program: `tracepoint:sched:sched_wakeup { @start[args->pid] = nsecs; }
-tracepoint:sched:sched_switch /@start[args->prev_pid]/ { @us[args->prev_comm] = hist((nsecs - @start[args->prev_pid]) / 1000); delete(@start[args->prev_pid]); }`,
+		Program: `tracepoint:sched:sched_wakeup { @start[args->pid] = nsecs; @comm[args->pid] = args->comm; }
+tracepoint:sched:sched_switch /@start[args->prev_pid]/ { @us[@comm[args->prev_pid]] = hist((nsecs - @start[args->prev_pid]) / 1000); delete(@start[args->prev_pid]); delete(@comm[args->prev_pid]); }`,
 	},
 	{
 		ID:          "offcputime",
-		Scratch:     "@start",
+		Scratch:     []string{"@start"},
 		Description: "off-CPU 时间：进程没在跑的时间按进程累计，用来找阻塞在 IO、锁或 futex 上的东西",
 		Program: `tracepoint:sched:sched_switch { @start[args->prev_pid] = nsecs; }
 tracepoint:sched:sched_switch /@start[args->next_pid]/ { @us[args->next_comm] = sum((nsecs - @start[args->next_pid]) / 1000); delete(@start[args->next_pid]); }`,
 	},
 	{
 		ID:          "biolatency",
-		Scratch:     "@start",
+		Scratch:     []string{"@start"},
 		Description: "块设备 IO 延迟直方图：按设备看一次读写从下达到完成花了多久，用来判断慢在磁盘还是慢在上层",
 		Program: `tracepoint:block:block_rq_issue { @start[args->dev, args->sector] = nsecs; }
 tracepoint:block:block_rq_complete /@start[args->dev, args->sector]/ { @us[args->dev] = hist((nsecs - @start[args->dev, args->sector]) / 1000); delete(@start[args->dev, args->sector]); }`,
@@ -78,7 +78,7 @@ tracepoint:block:block_rq_complete /@start[args->dev, args->sector]/ { @us[args-
 	},
 	{
 		ID:          "tcpconnlat",
-		Scratch:     "@start",
+		Scratch:     []string{"@start"},
 		Description: "TCP 建连延迟直方图：连出去花了多久，用来区分对端慢、DNS 慢和本机网络栈的问题",
 		Program: `kprobe:tcp_v4_connect { @start[tid] = nsecs; }
 kretprobe:tcp_v4_connect /@start[tid]/ { @us[comm] = hist((nsecs - @start[tid]) / 1000); delete(@start[tid]); }`,
@@ -211,8 +211,10 @@ func (c *Client) runTrace(ctx context.Context, image string, script TraceScript,
 // then installing on every run would double the cost of a ten-second sample.
 func TraceProgram(script TraceScript, seconds int) string {
 	scratch := ""
-	if script.Scratch != "" {
-		scratch = "clear(" + script.Scratch + "); "
+	for _, mapName := range script.Scratch {
+		if mapName != "" {
+			scratch += "clear(" + mapName + "); "
+		}
 	}
 
 	return fmt.Sprintf(`if ! command -v bpftrace >/dev/null 2>&1; then

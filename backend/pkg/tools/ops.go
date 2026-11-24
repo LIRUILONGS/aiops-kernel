@@ -437,7 +437,12 @@ func (o *opsTools) HandleTrace(ctx context.Context, name string, args json.RawMe
 	}
 
 	label := fmt.Sprintf("eBPF %s（%s，采样 %d 秒）", script.ID, script.Description, seconds)
-	return formatExec(target, label, res), nil
+	rendered := formatExec(target, label, res)
+	if summary := opsremote.SummarizeTrace(res.Stdout); summary != "" {
+		rendered += "\n" + summary
+	}
+
+	return rendered, nil
 }
 
 // traceOverhead is the room a container start and bpftrace's own startup need on

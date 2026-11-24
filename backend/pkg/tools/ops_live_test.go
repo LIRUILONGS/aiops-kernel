@@ -25,12 +25,26 @@ func liveOpsTools(t *testing.T) *opsTools {
 		t.Skip("OPSAGI_LIVE_TARGETS is unset; the live ops tier needs a host to probe")
 	}
 
-	tools := NewOpsTools(&config.Config{OpsTargets: targets})
+	tools := NewOpsTools(&config.Config{
+		OpsTargets:  targets,
+		OpsBPFImage: liveBPFImage(),
+	})
 	if !tools.IsAvailable() {
 		t.Fatalf("OPSAGI_LIVE_TARGETS = %q, which names no usable host", targets)
 	}
 
 	return tools
+}
+
+// liveBPFImage mirrors the envDefault the binary boots with: a hand-built config
+// leaves the field empty, and an empty image falls back to a plain base image
+// that carries no bpftrace.
+func liveBPFImage() string {
+	if image := strings.TrimSpace(os.Getenv("OPSAGI_BPF_IMAGE")); image != "" {
+		return image
+	}
+
+	return "quay.io/iovisor/bpftrace:latest"
 }
 
 var sampleIDPattern = regexp.MustCompile(`采样编号 (base-\d+)`)
@@ -96,4 +110,27 @@ func TestOpsTools_HandleBaseline_LiveStatementSectionReachesTheDiff(t *testing.T
 	}
 
 	t.Logf("diff:\n%s", diff)
+}
+
+func TestOpsTools_HandleTrace_LiveRunqlatPrintsTheSummary(t *testing.T) {
+	tools := liveOpsTools(t)
+
+	payload, err := json.Marshal(map[string]any{"target": "lab", "script": "runqlat", "seconds": 5})
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Minute)
+	defer cancel()
+
+	answer, err := tools.HandleTrace(ctx, "ops_trace", payload)
+	if err != nil {
+		t.Fatalf("trace: %v", err)
+	}
+
+	if !strings.Contains(answer, "延迟汇总") {
+		t.Errorf("answer = %q, want the summary line the report quotes", answer)
+	}
+
+	t.Logf("trace:\n%s", answer[max(0, len(answer)-700):])
 }
