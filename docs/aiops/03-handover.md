@@ -2518,7 +2518,15 @@ flow 69 却在消息日志里写下「未在 pg_stat_activity 中发现长事务
 
 部署没有主密钥时，这一步在**拨号之前**就拒绝，报 `OPSAGI_SECRET_KEY` 这个变量名；否则失败会以"SSH 认证失败"的形式出现在离原因两层的地方。
 
-#### 六、真机验证
+#### 六、管理面：四个 REST 端点
+
+`GET /api/v1/credentials/`、`POST /api/v1/credentials/`、`PUT /api/v1/credentials/:id/secret`、`DELETE /api/v1/credentials/:id`，挂在 `userTier` 上：只认会话 cookie，不认 bearer token —— 能管凭据的接口不该被一个 API token 够到。
+
+返回结构体 `models.CredentialInfo` 没有能装密文的字段，列表查询也不 select `secret`，"不返回密钥"因此在类型和 SQL 两层都做不到，而不是靠 handler 自觉。
+
+权限先用 `settings.admin`：凭据表是部署级的、不是每个用户一份，新增 `credentials.*` 权限要连带一次角色迁移，那是多租户那一步的事。没有主密钥时四个端点都答 `503 Credentials.Unavailable`，而不是回一个空列表让人以为库是空的。
+
+#### 七、真机验证
 
 库里 1 行凭据，部署带 `OPSAGI_SECRET_KEY`，目标是只写 `credential_id` 的那一行。第一次拨号就被拒：
 
@@ -2530,15 +2538,21 @@ the host presented SHA256:2SyNEy1+1XbxTGKl7OhCXURO5k1YN3xzGLRRm5YsXZ4
 
 原因是我把 pin 抄成了宿主的 ED25519 指纹，而 Go 客户端协商的是 ECDSA。这条错误本身就是证据：pin 真的在用，而且用的是凭据记录里的那个。把 pin 改成 ECDSA 之后，flow 70 的 `ops_exec` / `ops_watch` 全部成功 —— `pg_stat_activity` 206ms、`pg_lock_wait_summary` 6 次采样 27.4s、`pg_locks` 355ms，`last_used_at` 推进到 `05:54:28`。整轮没有任何 key 文件参与：目标没有 `key_file`，私钥是从内存里的那 447 字节解出来的。
 
-#### 七、顺手撞出来的一个部署坑
+- 用 `cmd/opsagi-seed` 建了两个临时账号（`credtest@opsagi.local` 管理员、`viewer@opsagi.local` 普通用户）：仓库里没有记录靶场管理员密码，而真机验证要一个能登录的会话。
+- 管理员这边：list 返回 `lab-root` 的元数据（含上次拨号写下的 `last_used_at`），响应里没有任何密文；create 一个 `ssh_password` 凭据返回 id 2、`created_by = 3`，库里是 40 字节密文且 `secret like '%dummy-pass%' = f`；rotate 之后 `rotated_at` 从 `06:18:41` 推进到 `06:18:45`；delete 之后表里只剩 `lab-root`。
+- 普通用户这边：list 与 create 都是 `403 NotPermitted`；未知 kind 是 `400 Credentials.InvalidRequest`，报错里列出允许的四种 kind。
+- 删一个不存在的 id 返回 200：DELETE 是幂等的，删掉本来就没有的东西和删掉刚删掉的东西，对调用方是同一件事。
+
+#### 八、顺手撞出来的一个部署坑
 
 `sqlc generate` 要活的 `DATABASE_URL`，而且库里必须已经有最新 schema。靶场库在这两点上都不整齐：`capability_grants` / `capability_requests` 缺 `trace_program` 列，而 `goose_db_version` 记着 `20261123130000` 已应用 —— 迁移文件在应用之后被原地改过，再重启也不会补这一列。
 
 给靶场库手工补上两列之后 `sqlc generate` 才跑通。**已经落地的迁移不要改文件内容，新加一条 `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`**，否则只在"从零建的库"上正确，在"已经跑过的库"上永远缺。
 
-#### 八、还没做的
+#### 九、还没做的
 
-- 凭据的管理面（GraphQL / REST 的 list、create、rotate、delete）。现在只有存储层和配置接线，真机验证那一行是一次性脚本写进去的 —— 运维还不能自己加一条。
+- 前端还没有凭据页面：接口齐了，运维现在还只能用 curl 或自己的脚本调 REST。
+- 权限从 `settings.admin` 换成专门的 `credentials.*`，需要一条把新权限授予管理员角色的数据迁移。
 - `ValidateOpsTargets` 仍然要求每个 target 带 `host`，只写 `credential_id` 的一行会被拒绝；要不要放宽到"host 或 credential_id 有一个就行"。
 - 第二步：`ops_apply` 的固定模板写目录（`unit_restart`、`container_restart`、`config_restore`、`disk_cleanup`、`k8s_rollout_restart`）、租约的 `actions` 维度、以及"写默认拒绝 + 运维审批"。
 - 第三步：基线 → 变更 → 差分 → 结论，证据缺失时结论必须是 `unverified` 而不是乐观收尾。
