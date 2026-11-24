@@ -29,6 +29,7 @@ type Querier interface {
 	CreateCapabilityGrant(ctx context.Context, arg CreateCapabilityGrantParams) (CapabilityGrant, error)
 	CreateCapabilityRequest(ctx context.Context, arg CreateCapabilityRequestParams) (CapabilityRequest, error)
 	CreateContainer(ctx context.Context, arg CreateContainerParams) (Container, error)
+	CreateCredential(ctx context.Context, arg CreateCredentialParams) (Credential, error)
 	CreateFlow(ctx context.Context, arg CreateFlowParams) (Flow, error)
 	CreateFlowTemplate(ctx context.Context, arg CreateFlowTemplateParams) (FlowTemplate, error)
 	CreateMsgChain(ctx context.Context, arg CreateMsgChainParams) (Msgchain, error)
@@ -49,6 +50,7 @@ type Querier interface {
 	DecideCapabilityRequest(ctx context.Context, arg DecideCapabilityRequestParams) (CapabilityRequest, error)
 	DeleteAPIToken(ctx context.Context, id int64) (ApiToken, error)
 	DeleteAssistant(ctx context.Context, id int64) (Assistant, error)
+	DeleteCredential(ctx context.Context, id int64) error
 	DeleteFavoriteFlow(ctx context.Context, arg DeleteFavoriteFlowParams) (UserPreference, error)
 	DeleteFlow(ctx context.Context, id int64) (Flow, error)
 	DeleteFlowAssistantLog(ctx context.Context, id int64) error
@@ -97,6 +99,8 @@ type Querier interface {
 	GetCapabilityRequest(ctx context.Context, id int64) (CapabilityRequest, error)
 	GetContainerTermLogs(ctx context.Context, containerID int64) ([]Termlog, error)
 	GetContainers(ctx context.Context) ([]Container, error)
+	GetCredential(ctx context.Context, id int64) (Credential, error)
+	GetCredentialByName(ctx context.Context, name string) (Credential, error)
 	GetFlow(ctx context.Context, id int64) (Flow, error)
 	GetFlowAgentLog(ctx context.Context, arg GetFlowAgentLogParams) (Agentlog, error)
 	GetFlowAgentLogs(ctx context.Context, flowID int64) ([]Agentlog, error)
@@ -266,11 +270,15 @@ type Querier interface {
 	ListAllKnowledgeDocuments(ctx context.Context) ([]ListAllKnowledgeDocumentsRow, error)
 	ListCapabilityDecisions(ctx context.Context, arg ListCapabilityDecisionsParams) ([]CapabilityDecision, error)
 	ListCapabilityRequests(ctx context.Context, arg ListCapabilityRequestsParams) ([]CapabilityRequest, error)
+	// Never selects the secret: this row feeds the API, and a struct that cannot
+	// carry the ciphertext cannot leak it.
+	ListCredentials(ctx context.Context) ([]ListCredentialsRow, error)
 	// List non-memory knowledge documents belonging to a specific flow (admin scoped).
 	ListFlowKnowledgeDocuments(ctx context.Context, flowID sql.NullString) ([]ListFlowKnowledgeDocumentsRow, error)
 	// List all non-memory knowledge documents owned by a specific user (user-scoped view).
 	ListUserKnowledgeDocuments(ctx context.Context, userID sql.NullString) ([]ListUserKnowledgeDocumentsRow, error)
 	RecordCapabilityDecision(ctx context.Context, arg RecordCapabilityDecisionParams) error
+	RotateCredential(ctx context.Context, arg RotateCredentialParams) (RotateCredentialRow, error)
 	SaveAssistantLog(ctx context.Context, arg SaveAssistantLogParams) error
 	SaveAssistantLogContent(ctx context.Context, arg SaveAssistantLogContentParams) error
 	// Vector similarity search over all knowledge documents (admin view, no user filter).
@@ -287,6 +295,7 @@ type Querier interface {
 	// lim          maximum number of rows to return
 	// user_id      owner filter as a decimal text string (e.g. "42")
 	SearchUserKnowledgeDocuments(ctx context.Context, arg SearchUserKnowledgeDocumentsParams) ([]SearchUserKnowledgeDocumentsRow, error)
+	TouchCredential(ctx context.Context, id int64) error
 	UpdateAPIToken(ctx context.Context, arg UpdateAPITokenParams) (ApiToken, error)
 	UpdateAssistant(ctx context.Context, arg UpdateAssistantParams) (Assistant, error)
 	UpdateAssistantLanguage(ctx context.Context, arg UpdateAssistantLanguageParams) (Assistant, error)

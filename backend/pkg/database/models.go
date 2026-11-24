@@ -984,6 +984,22 @@ type Container struct {
 	RequestedImage sql.NullString  `json:"requested_image"`
 }
 
+type Credential struct {
+	ID                 int64         `json:"id"`
+	Name               string        `json:"name"`
+	Kind               string        `json:"kind"`
+	Secret             []byte        `json:"secret"`
+	Host               string        `json:"host"`
+	Port               int32         `json:"port"`
+	Username           string        `json:"username"`
+	HostKeyFingerprint string        `json:"host_key_fingerprint"`
+	RotatedAt          time.Time     `json:"rotated_at"`
+	LastUsedAt         sql.NullTime  `json:"last_used_at"`
+	CreatedBy          sql.NullInt64 `json:"created_by"`
+	CreatedAt          time.Time     `json:"created_at"`
+	UpdatedAt          time.Time     `json:"updated_at"`
+}
+
 type Flow struct {
 	ID                 int64          `json:"id"`
 	Status             FlowStatus     `json:"status"`
