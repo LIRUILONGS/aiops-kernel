@@ -36,6 +36,12 @@ type Target struct {
 	User     string `json:"user"`
 	Password string `json:"password,omitempty"`
 	KeyFile  string `json:"key_file,omitempty"`
+
+	// HostKeyFingerprint pins the key the host presents, as ssh-keygen -lf
+	// prints it (SHA256:... or the MD5: form of an older key). Empty means the
+	// key is accepted as it comes, which is only ever right for a host reached
+	// over a channel that already authenticates it.
+	HostKeyFingerprint string `json:"host_key_fingerprint,omitempty"`
 }
 
 // Result is the outcome of one remote command.
@@ -95,7 +101,7 @@ func Dial(ctx context.Context, target Target) (*Client, error) {
 	cfg := &ssh.ClientConfig{
 		User:            target.User,
 		Auth:            auths,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		HostKeyCallback: hostKeyCallback(target),
 		Timeout:         DefaultTimeout,
 	}
 
@@ -127,6 +133,45 @@ func Dial(ctx context.Context, target Target) (*Client, error) {
 		client:  ssh.NewClient(sshConn, chans, reqs),
 		timeout: DefaultTimeout,
 	}, nil
+}
+
+// hostKeyCallback enforces the pin on a target that carries one. A target
+// without a pin keeps the behaviour it had before pinning existed: the key is
+// taken as presented. Operators get the pinned form from `ssh-keygen -lf` on
+// the host, and the credential record carries it once the store is in use.
+func hostKeyCallback(target Target) ssh.HostKeyCallback {
+	pinned := strings.TrimSpace(target.HostKeyFingerprint)
+	if pinned == "" {
+		return ssh.InsecureIgnoreHostKey()
+	}
+
+	return func(hostname string, _ net.Addr, key ssh.PublicKey) error {
+		if fingerprintMatches(pinned, key) {
+			return nil
+		}
+
+		return fmt.Errorf("host key mismatch for %s: the pin says %s, the host presented %s", hostname, pinned, ssh.FingerprintSHA256(key))
+	}
+}
+
+// fingerprintMatches accepts the forms ssh-keygen prints, with or without the
+// algorithm prefix and the base64 padding. An MD5 fingerprint carries no prefix
+// in the current form, so its sixteen colon-separated bytes identify it.
+func fingerprintMatches(pinned string, key ssh.PublicKey) bool {
+	pin := strings.TrimSpace(pinned)
+	if strings.HasPrefix(strings.ToUpper(pin), "MD5:") || strings.Count(pin, ":") == 15 {
+		return strings.EqualFold(trimFingerprint(pin, "MD5:"), trimFingerprint(ssh.FingerprintLegacyMD5(key), "MD5:"))
+	}
+
+	return trimFingerprint(pin, "SHA256:") == trimFingerprint(ssh.FingerprintSHA256(key), "SHA256:")
+}
+
+func trimFingerprint(value, prefix string) string {
+	if len(value) >= len(prefix) && strings.EqualFold(value[:len(prefix)], prefix) {
+		value = value[len(prefix):]
+	}
+
+	return strings.TrimRight(value, "=")
 }
 
 // Close releases the connection.
