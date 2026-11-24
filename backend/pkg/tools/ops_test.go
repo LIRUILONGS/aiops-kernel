@@ -349,3 +349,61 @@ func TestOpsDiff_HandleDiff_StillTakesTheFingerprintItself(t *testing.T) {
 		t.Errorf("diff %q does not carry the pasted numbers", rendered)
 	}
 }
+
+func TestContainers_FormatContainers_StatesTheMatchCountSoNobodyCountsRows(t *testing.T) {
+	t.Parallel()
+
+	all := []opsremote.Container{
+		{Name: "seal-engraver-backend", State: "running", Image: "img/backend"},
+		{Name: "seal-engraver-postgres", State: "exited", Image: "postgres:16"},
+		{Name: "opslab-db", State: "running", Image: "postgres:16"},
+	}
+	target := opsremote.Target{ID: "lab", Host: "127.0.0.1", Port: 2222}
+
+	filtered := formatContainers(target, all, filterContainers(all, "seal-engraver-"), nil, "seal-engraver-")
+	if !strings.Contains(filtered, `名字里包含 "seal-engraver-" 的容器 2 个（这台主机上共 3 个）`) {
+		t.Errorf("filtered listing = %q, want the count stated in the header", filtered)
+	}
+	if strings.Contains(filtered, "opslab-db") {
+		t.Errorf("filtered listing = %q, want the container the filter excludes left out", filtered)
+	}
+
+	everything := formatContainers(target, all, all, nil, "")
+	if !strings.Contains(everything, "容器 3 个") {
+		t.Errorf("unfiltered listing = %q, want the total stated", everything)
+	}
+}
+
+func TestContainers_FormatContainers_TellsAnEmptyMatchFromAHostWithoutDocker(t *testing.T) {
+	t.Parallel()
+
+	target := opsremote.Target{ID: "lab", Host: "127.0.0.1", Port: 2222}
+	all := []opsremote.Container{{Name: "opslab-db", State: "running"}}
+
+	empty := formatContainers(target, all, filterContainers(all, "nginx"), nil, "nginx")
+	for _, want := range []string{`名字里包含 "nginx" 的容器 0 个`, "共 1 个", "不带 filter"} {
+		if !strings.Contains(empty, want) {
+			t.Errorf("empty match = %q, want it to carry %q", empty, want)
+		}
+	}
+	if strings.Contains(empty, "未安装 Docker") {
+		t.Errorf("empty match = %q, want no claim that Docker is missing", empty)
+	}
+
+	bare := formatContainers(target, nil, nil, nil, "nginx")
+	if !strings.Contains(bare, "没有检测到容器") {
+		t.Errorf("host without containers = %q, want the Docker hint", bare)
+	}
+}
+
+func TestContainers_FilterContainers_KeepsEveryContainerWithoutAFilter(t *testing.T) {
+	t.Parallel()
+
+	all := []opsremote.Container{{Name: "a"}, {Name: "b"}}
+	if got := filterContainers(all, ""); len(got) != 2 {
+		t.Errorf("filtered = %+v, want the whole listing back for an empty filter", got)
+	}
+	if got := filterContainers(all, "b"); len(got) != 1 || got[0].Name != "b" {
+		t.Errorf("filtered = %+v, want only b", got)
+	}
+}

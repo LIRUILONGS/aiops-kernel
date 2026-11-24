@@ -181,7 +181,20 @@ func (o *opsTools) HandleSystem(ctx context.Context, name string, args json.RawM
 	return formatSystem(target, snap), nil
 }
 
+// OpsContainersArgs lists containers, optionally narrowed by a substring. The
+// filter exists so a count comes from the tool: a model that counts rows by eye
+// gets the number wrong on a list of fifty.
+type OpsContainersArgs struct {
+	Target string `json:"target,omitempty" jsonschema:"description=目标主机 ID，留空使用默认主机,example=lab"`
+	Filter string `json:"filter,omitempty" jsonschema:"description=只看名字里包含这段文字的容器（子串匹配，不是正则）,example=seal-engraver-"`
+}
+
 func (o *opsTools) HandleContainers(ctx context.Context, name string, args json.RawMessage) (string, error) {
+	var parsed OpsContainersArgs
+	if err := json.Unmarshal(args, &parsed); err != nil {
+		return "", fmt.Errorf("解析参数失败：%w", err)
+	}
+
 	client, target, err := o.dial(ctx, args)
 	if err != nil {
 		return "", err
@@ -199,7 +212,8 @@ func (o *opsTools) HandleContainers(ctx context.Context, name string, args json.
 	if err != nil {
 		units = nil
 	}
-	return formatContainers(target, containers, units), nil
+	filter := strings.TrimSpace(parsed.Filter)
+	return formatContainers(target, containers, filterContainers(containers, filter), units, filter), nil
 }
 
 func (o *opsTools) HandleLogs(ctx context.Context, name string, args json.RawMessage) (string, error) {
@@ -765,14 +779,40 @@ func formatSystem(target opsremote.Target, snap opsremote.SystemSnapshot) string
 	return b.String()
 }
 
-func formatContainers(target opsremote.Target, containers []opsremote.Container, failedUnits []string) string {
+// filterContainers narrows a listing to the names carrying the substring. An
+// empty filter returns every container.
+func filterContainers(containers []opsremote.Container, filter string) []opsremote.Container {
+	if filter == "" {
+		return containers
+	}
+
+	shown := make([]opsremote.Container, 0, len(containers))
+	for _, c := range containers {
+		if strings.Contains(c.Name, filter) {
+			shown = append(shown, c)
+		}
+	}
+
+	return shown
+}
+
+func formatContainers(target opsremote.Target, all, shown []opsremote.Container, failedUnits []string, filter string) string {
 	var b strings.Builder
 
 	fmt.Fprintf(&b, "目标主机：%s (%s:%d)\n", target.ID, target.Host, target.Port)
-	if len(containers) == 0 {
+
+	switch {
+	case len(all) == 0:
 		b.WriteString("没有检测到容器（可能未安装 Docker）\n")
+	case filter != "" && len(shown) == 0:
+		fmt.Fprintf(&b, "名字里包含 %q 的容器 0 个（这台主机上共 %d 个）；换一个子串，或者不带 filter 看全部。\n", filter, len(all))
+	case filter != "":
+		fmt.Fprintf(&b, "名字里包含 %q 的容器 %d 个（这台主机上共 %d 个）\n", filter, len(shown), len(all))
+	default:
+		fmt.Fprintf(&b, "容器 %d 个\n", len(all))
 	}
-	for _, c := range containers {
+
+	for _, c := range shown {
 		anomaly := containerAnomaly(c)
 		fmt.Fprintf(&b, "  容器 %s：状态=%s 重启=%d 次 退出码=%d 镜像=%s%s\n",
 			c.Name, c.State, c.RestartCount, c.ExitCode, c.Image, anomaly)

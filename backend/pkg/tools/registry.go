@@ -420,9 +420,10 @@ var registryDefinitions = map[string]llms.FunctionDefinition{
 	OpsContainersToolName: {
 		Name: OpsContainersToolName,
 		Description: "列出目标主机上的全部容器及其状态、重启次数、退出码与镜像，并附带处于 failed 状态的 systemd 单元。" +
+			"filter 填一段子串就只看名字里包含它的容器，输出首行给出命中数量——要报「有几个」时用 filter，别自己数行。" +
 			"重启次数持续增长说明容器在崩溃重启；退出码 137 通常表示被 OOM 杀死，退出码 1 通常表示启动配置错误。" +
 			"该工具只读取数据，不会重启或停止任何容器。",
-		Parameters: reflector.Reflect(&OpsTargetArgs{}),
+		Parameters: reflector.Reflect(&OpsContainersArgs{}),
 	},
 	OpsLogsToolName: {
 		Name: OpsLogsToolName,

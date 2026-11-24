@@ -114,6 +114,39 @@ func TestOpsTools_HandleBaseline_LiveStatementSectionReachesTheDiff(t *testing.T
 	t.Logf("diff:\n%s", diff)
 }
 
+func TestOpsTools_HandleContainers_LiveFilterStatesTheCountItMatched(t *testing.T) {
+	tools := liveOpsTools(t)
+
+	payload, err := json.Marshal(map[string]string{"target": "lab", "filter": "opslab-"})
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	answer, err := tools.HandleContainers(ctx, "ops_containers", payload)
+	if err != nil {
+		t.Fatalf("containers: %v", err)
+	}
+
+	header := regexp.MustCompile(`名字里包含 "opslab-" 的容器 (\d+) 个（这台主机上共 (\d+) 个）`).FindStringSubmatch(answer)
+	if len(header) != 3 {
+		t.Fatalf("answer = %q, want the match count in the header", answer)
+	}
+
+	matched, total := header[1], header[2]
+	rows := strings.Count(answer, "\n  容器 ")
+	if strconv.Itoa(rows) != matched {
+		t.Errorf("header says %s matches but the listing carries %d rows:\n%s", matched, rows, answer)
+	}
+	if matched == total {
+		t.Errorf("filter matched every one of the %s containers, so it proves nothing", total)
+	}
+
+	t.Logf("containers (%s of %s):\n%s", matched, total, answer)
+}
+
 func TestOpsTools_HandleTrace_LiveRunqlatPrintsTheSummary(t *testing.T) {
 	tools := liveOpsTools(t)
 
