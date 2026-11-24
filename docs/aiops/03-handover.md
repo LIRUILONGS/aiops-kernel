@@ -2859,6 +2859,33 @@ mutation { decideCapabilityRequest(requestId: 1, approve: true) { id status } }
 - 模型在拿到"已提交审批 #1"之后没有重试：那条子任务的下一步就是收尾（`diagnosis|finished`），flow 转 `waiting`。所以"批准 → 模型自己重试 → 写操作落地"这一整条链，真机上只跑到"批准 → 同一个调用被放行"。中间那一步要靠提示词或流程结构去保证，比如在拒绝的返回里明确要求"等 10 秒重试同一个调用"，或者让拒绝本身不结束子任务。
 - 审批的界面入口仍是 GraphQL；前端没有列表，操作员看不到待批队列。这一条和 3 号的凭据页是同一次前端改动。
 
+### 4.95 收口发生在哪张表上：四次 `diagnosis`，零次 `*_finding`（2026-11-24）
+
+#### 一、本来想验的是 specialist 收口
+
+4.91 把闸门装到了 `log_finding` / `metric_finding` / `change_finding` / `triage` 四张表上，缺的实机证据是"一个 specialist 在闸门下正常收口"。为此写了 s15/s16/s17 三个场景：让 flow 用 `ops_logs` 读一个崩溃容器的日志，再由 `log_analyst` 用 `log_finding` 收口，第三版甚至在题面里直接点名"必须用 `log_finding`，不要用 `diagnosis`"。
+
+#### 二、四次跑下来，收口全落在 `diagnosis`
+
+| flow | 结果 |
+|---|---|
+| 85 | `opslab-broken` 这个容器早就不在了（上一轮清理时删掉的），它如实报"对象不存在"，另外锁定了 `dify-sandbox` 缺 `/conf/config.yaml` 与 `opslab/api` 缺 `DATABASE_URL` 两个真实崩溃；零次 `*_finding` |
+| 87 | 重建容器后跑，主链在重试三次后失败（`failed to perform commander chain: max retries reached, 3`） |
+| 88 | `ops_logs source=opslab-broken lines=50` 读到了 `[emerg] unknown directive "upstream_timeout"`，再由 commander 用 `diagnosis` 收口，`evidence[0].query` 写的就是那句 `ops_logs source=opslab-broken lines=50`；零次 `*_finding` |
+| 89 | 题面直接要求用 `log_finding`，它仍然走 `diagnosis` + `subtask_patch`；零次 `*_finding` |
+
+flow 88 的计划里 `assigned_to` 确实是 `log_analyst`，通道没问题——是模型在收口这一步选了 `diagnosis`。也就是说：这套 flow 现在的实际收口点是 commander 的 `diagnosis`，四张 specialist 表基本不吃流量，闸门装在了没人走的路口上。
+
+#### 三、于是闸门挪到真正在用的那张表
+
+`Diagnosis.Validate` 现在也要求每条 `evidence[].query` 点到一个工具 id，否则拒绝并给出写法示例（`ops_logs source=<容器名>`）。这里是较弱的半边：commander 可以合法引用任何角色的读数，逐条核对归属需要一个 `Validate` 不知道的角色参数，所以能核对的只有"这是调用还是叙述"。flow 88 那条 `ops_logs source=…` 是合法写法；4.86 记录的那种「未在 pg_stat_activity 中发现长事务」在这个出口上会被拒，因为它点的是表名不是工具。
+
+单测在同一张表里加了一行：诊断把证据写成「查了 opslab-broken 的容器日志」→ 拒绝；把 `validateCitedToolNames` 的入参换成 `nil`，这一行立刻红。
+
+#### 四、还没关的那一格
+
+"一个 specialist 用 `*_finding` 收口"仍然没有实机样本，而且现在看不是闸门的问题：`deepseek-v4-flash` 在这套提示下不选那张表。要关它得先让 planner 或 analyst 的提示把"窄结论用 finding 收口"说成硬要求，否则这四张表会一直是单测覆盖、实机零流量。
+
 ## 5 环境
 
 ### 5.1 开发机
