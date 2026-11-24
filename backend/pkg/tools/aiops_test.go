@@ -141,6 +141,16 @@ func TestAIOps_Diagnosis_ValidateRefusesAnIncompleteConclusion(t *testing.T) {
 			wantErr: "recommendation.rollback 为空",
 		},
 		{
+			name: "evidence described instead of cited",
+			mutate: func(d *Diagnosis) {
+				d.Evidence = []EvidenceItem{
+					{Source: "logs", Query: "查了 opslab-broken 的容器日志", Timestamp: "13:40", Excerpt: "PANIC"},
+					{Source: "containers", Query: "ops_containers", Timestamp: "13:40", Excerpt: "restarts 4908"},
+				}
+			},
+			wantErr: "没有点名工具",
+		},
+		{
 			name:    "needs human omitted",
 			mutate:  func(d *Diagnosis) { d.NeedsHuman = nil },
 			wantErr: "needs_human 缺失",

@@ -119,6 +119,9 @@ func (d Diagnosis) Validate() error {
 	if err := validateEvidence(d.Evidence, 2); err != nil {
 		return err
 	}
+	if err := validateCitedToolNames(d.Evidence); err != nil {
+		return err
+	}
 	if d.Confidence == nil {
 		return fmt.Errorf("confidence 缺失：填 0 到 1 之间的数值；不确定就写低分并说明还缺什么证据")
 	}
@@ -221,6 +224,23 @@ func validateCitedTools(role string, allowed []string, evidence []EvidenceItem) 
 					i, tool, role, strings.Join(allowed, " / "),
 				)
 			}
+		}
+	}
+
+	return nil
+}
+
+// validateCitedToolNames is the weaker half of the same check, for the exit a
+// commander closes on: it may legitimately quote any role's reading, so the only
+// thing worth enforcing is that the query names a tool at all rather than a
+// paragraph about one.
+func validateCitedToolNames(evidence []EvidenceItem) error {
+	for i, item := range evidence {
+		if len(citedTools(item.Query)) == 0 {
+			return fmt.Errorf(
+				"evidence[%d].query 没有点名工具：写成“工具 id 加参数”，例如 ops_logs source=<容器名>；现在只有一句叙述，没法核对它是谁取的",
+				i,
+			)
 		}
 	}
 
