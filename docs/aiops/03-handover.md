@@ -2620,7 +2620,7 @@ the host presented SHA256:2SyNEy1+1XbxTGKl7OhCXURO5k1YN3xzGLRRm5YsXZ4
 - `k8s_rollout_restart` 走的是目标机上的 `kubectl`：靶场里 k3s 在容器里，宿主没有 kubectl，所以这条模板只有单测，没有真机。要么在目标机装 kubectl，要么另开一条走 API 的写通道。
 - 前端没有"这个 flow 能不能写"的提示：开关在创建 flow 时选，界面上还没有一个"写操作已启用"的标记。
 - 审批面板目前显示的是 `command` 字段，对写操作它就是 `container_restart api-1`；等前端做凭据页时把它单独渲染成一列更清楚。
-- flow 级 `enforce` 的完整闭环（模型被拒 → 操作员在界面上批准 → 模型重试成功）还要在重建镜像后跑一次；本轮真机验证覆盖的是"写操作确实落到主机"与"目录与租约按代码拒绝"。
+- flow 级 `enforce` 的审批闭环已经在 4.93 里真机跑通（拒绝 → 批准 → 放行）。
 - 第三步（baseline → apply → diff → verdict）已经接上，见 4.89；剩下的缺口在那里的"还没做的"。
 
 ### 4.89 闭环：同一次调用自己量前后，结论由代码算（2026-11-24）
@@ -2764,6 +2764,100 @@ JIT:
 #### 四、模型这一环
 
 这段读数是在部署换成 `deepseek-v4-flash`（昇腾 910B，vLLM TP8，`ASCEND_KEY`）之后拿到的。它的响应在短提示上是 1 秒级，2600 token 的提示约 34 秒，products 那条规划提示（约 1.9 万 token）要按分钟算——flow 82 从提交到 `done` 用了 8 分半，其中 30 多次工具调用是并行的，模型不是瓶颈，提示长度才是。`deepseek-v4.1` 的后端已经停了（网关对它返回 500），这条换了模型之后才验到。
+
+### 4.93 结论不许跟代码量出来的结果对着干（2026-11-24）
+
+4.89 让代码算出了结论，但模型仍然可以在 `optimization_result` 里写 `verdict: improved`——那个字段一直是它自己填的，`observed_gain` 也只是"有内容就行"。于是同一次变更可以有两个结论：代码算出的 `unchanged` 摆在工具返回里，报告的 `verdict` 却写 `improved`。这一节把两者钉在一起。
+
+#### 一、账本：写工具记，收口工具查
+
+`ops_apply` 每次判定完把 `Change` 记进一个 per-executor 的账本（`applyLedger`，最后一条生效）。`GetCommanderExecutor` 把同一个账本交给两处：写工具往里记，`optimization_result` 的 handler 从里读。
+
+收口 handler 会被包一层 `requireMeasuredVerdict`：它只解析 `verdict` 一个字段，和账本里最后一条测量对一下，对不上就拒绝，并告诉模型该怎么改：
+
+> 代码测到的结果是没有任何可测量的变化。这次的 container_restart 由代码量过（unchanged）：这个对象在指纹里没有任何变化，这次改动没有可测量的效果。把 verdict 改成 no_measurable_effect，并把 ops_apply 返回的变更结论原文写进 observed_gain
+
+#### 二、允许与不允许
+
+| 代码测到 | 允许的 verdict | 拒绝的理由 |
+| --- | --- | --- |
+| `improved` | `improved` | `degraded` / `no_measurable_effect` 与"全部改善"矛盾 |
+| `worsened` | `degraded` | `improved` 与"至少一项恶化"矛盾 |
+| `unchanged` | `no_measurable_effect` | `improved` 与"没有可测量变化"矛盾 |
+| `changed` | 两种方向都可以 | 状态变了但方向不明，由结论判断 |
+| `unverified` | `unverified` | 任何"测过"的判定都没有依据 |
+
+`changed` 故意留了口子：容器从 exited 到 running，代码只能说"变了"，算不算改善要靠症状——这是模型该判断的部分，不是它该编造的部分。
+
+没有账本记录时（这条子任务没做任何写操作）不拦：那时 verdict 说的是它自己用 `ops_diff` 量到的东西，代码没有资格替它判定。这条边界是有意的：`requireMeasuredVerdict` 只否决"与代码的测量相矛盾"的声明，不否决"没有测量"的声明——后者由 `validateObservedGain` 管，它要求非 `unverified` 的判定必须带实测值。
+
+#### 三、覆盖
+
+单测十种组合（每种测量状态 × 允许/拒绝的判定），加上"没记过账不拦"与"以最后一条测量为准"两条；一处变异见红：把 `verdictAgrees` 的拒收去掉，`PinsTheVerdictToTheMeasurement` 立刻红。
+
+#### 四、一个只有真机才暴露的洞：nil 切片进 SQL 就是 NULL
+
+`enforce` 的 flow 第一次真跑就露了馅：日志里每一行都是
+
+> capability: cannot issue the lease, this subtask runs without a lease, error="pq: null value in column \"actions\" violates not-null constraint"
+
+`Policy.Issue` 把策略里没设的维度原样拷过去，缺省是 nil；`sqlc` 生成的插入把 nil 切片交给 pq，pq 发的是 NULL，而列是 `NOT NULL`。插入失败 → guard 关闭 → **这条子任务在没有租约的情况下运行**。这正是"失败要 fail closed"该管的地方：租约发不出来时不该退化成没有租约。
+
+修法是在 `Issue` 里把所有维度过一遍 `notNil`（nil → 空切片），一处修好六个维度；`TestCapability_Policy_Issue_NeverLeavesADimensionNil` 逐个检查，把 `actions` 还原成 `rule.Actions` 立刻红。
+
+这个洞本可以更早发现：单元测试用的是假 DB，真 DB 的 NOT NULL 只有真机才说话。教训写在 4.90 里同一句：约束在数据库里，就别指望内存里的假象替你检查。
+
+#### 五、还没做的
+
+- **故障侧的收口没有对应字段。** `diagnosis` 给的是 `root_cause` / `evidence` / `recommendation`，它不声称"已修复"，所以这一层拦不到它。要不要给事故收口也加一个字面上的"这次改了什么、代码怎么判的"字段，取决于产品要不要让事故报告承担修复声明——现在它只承担诊断。
+- 账本是 per-executor 的：一条子任务里先后做了两次写操作，只有最后一次参与校验。如果一次修复由多个动作组成，应该记成一个集合，按动作名逐个对照。
+- 这条闸门只在 `enforce` 下有意义（没有租约就没有写工具），但代码没有把"账本为空但 flow 是 enforce"当作异常：一个 enforce 的 flow 完全可能一次写都没做。
+
+### 4.94 审批闭环真机：拒绝、批准、放行（2026-11-24）
+
+4.88 把写操作接进了审批链路，但那条链路此前只有单元测试：`capability_requests` 写得进去、批准后 `capability_grants` 建得出来、guard 读得到——三件事各自被测过，串起来没有跑过。这一节是串起来的那一次。
+
+#### 一、拒绝（模型真的去写了）
+
+靶场上 `opslab-apply-probe` 先 `docker stop`。用 `createFlow(..., capabilityMode: "enforce")` 起了一条 flow，输入直接要求"调用 ops_apply，action=container_restart，container=opslab-apply-probe"。模型的工具表里有 `ops_apply`（enforce 才给），它调用了，然后拿到：
+
+```
+写操作 container_restart opslab-apply-probe 不在这个子任务的租约里（允许：无），写操作需要操作员批准。已提交审批 #1，操作员批准后重试即可
+```
+
+库里的三行同时出现：`toolcalls` 里一条 `ops_apply|failed`，`capability_requests` 里 `#1 ops_apply pending container_restart opslab-apply-probe`，租约是 `tools={*} actions={}`——工具被放开了，写操作没被放开，这正是缺省策略的意图。
+
+#### 二、批准
+
+用操作员会话走 GraphQL：
+
+```
+mutation { decideCapabilityRequest(requestId: 1, approve: true) { id status } }
+→ {"id":1,"status":"approved"}
+```
+
+`capability_grants` 立刻多出一行：`id=1 flow_id=84 tool=ops_apply command=container_restart opslab-apply-probe issued_by=3`。
+
+#### 三、放行
+
+"批准之后同一个调用会过"这句话，不能靠"流程看起来走通了"来说。所以把这次判定从流程里单独拿出来，用**真实的库行**喂给同一段判据（`lease.Authorize` + `ListActiveCapabilityGrants`），带不带 grant 各跑一次：
+
+| 条件 | 判定 |
+| --- | --- |
+| 不带 grant | `deny`，`needsApproval=true`，「写操作 container_restart opslab-apply-probe 不在这个子任务的租约里（允许：无）」 |
+| 带 grant（库里那一行） | `allow`，`needsApproval=false`，无理由 |
+
+第一次跑这条检查时两次都是 deny，因为校验程序只填了 `Action` 没填 `Command`，而 grant 是按 `Command` 匹配的——guard 在生成调用时两个字段都写（4.88 的变异记录里也有这一条）。补上 `Command` 后放行，说明放行与否取决于库里那一行，而不取决于流程"看起来"有没有继续。
+
+#### 四、这次真跑换来的两个 bug
+
+- **nil 切片进 SQL 就是 NULL**（4.93 第四节）：`enforce` 第一次真跑时租约根本没发出来，每条子任务都在无租约的情况下运行。假 DB 不会说 `NOT NULL`，只有真库会。
+- **批准不等于放行要两个字段都对**：审批面板存的是 `command`，guard 判定的是 `Action` 与 `Command` 两个字段；只对上一个就会被拒。这条已经在 4.88 的单元测试里钉过，但直到这次真机才又在"人写 SQL 造数据"的场景下复现一次——任何绕过 guard 直接造调用的地方（脚本、运维手搓、测试）都要记得两个字段。
+
+#### 五、还没做的
+
+- 模型在拿到"已提交审批 #1"之后没有重试：那条子任务的下一步就是收尾（`diagnosis|finished`），flow 转 `waiting`。所以"批准 → 模型自己重试 → 写操作落地"这一整条链，真机上只跑到"批准 → 同一个调用被放行"。中间那一步要靠提示词或流程结构去保证，比如在拒绝的返回里明确要求"等 10 秒重试同一个调用"，或者让拒绝本身不结束子任务。
+- 审批的界面入口仍是 GraphQL；前端没有列表，操作员看不到待批队列。这一条和 3 号的凭据页是同一次前端改动。
 
 ## 5 环境
 
