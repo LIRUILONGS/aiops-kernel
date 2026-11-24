@@ -453,7 +453,7 @@ func withinPrefixes(value string, prefixes []string) error {
 
 	for _, segment := range strings.Split(value, "/") {
 		if segment == ".." {
-			return fmt.Errorf("取值 %q 非法：路径不能包含 ..", value)
+			return fmt.Errorf("取值 %q 非法：不允许 .. 这样的上级引用", value)
 		}
 	}
 
