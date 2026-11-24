@@ -149,6 +149,10 @@ type providerController struct {
 
 	startCallNumber *atomic.Int64
 
+	// setupCallBudget is how long the setup calls of one new flow may take
+	// together; zero falls back to defaultSetupCallBudget.
+	setupCallBudget time.Duration
+
 	summarizerAgent     csum.Summarizer
 	summarizerAssistant csum.Summarizer
 
@@ -275,6 +279,8 @@ func NewProviderController(
 		defaultConfigs:      defaultConfigs,
 		defaultConfigErrors: defaultConfigErrors,
 
+		setupCallBudget: defaultSetupCallBudget,
+
 		Providers: providers,
 	}
 
@@ -326,7 +332,7 @@ func (pc *providerController) NewFlowProvider(
 			return nil, fmt.Errorf("failed to get primary docker image template: %w", err)
 		}
 
-		answer, err := callWithSetupRetries(ctx, prv, pconfig.OptionsTypeSimple, imageTmpl)
+		answer, err := pc.callWithSetupRetries(ctx, prv, pconfig.OptionsTypeSimple, imageTmpl)
 		if err != nil {
 			return nil, fmt.Errorf("failed to select primary docker image via llm call: %w", err)
 		}
@@ -348,7 +354,7 @@ func (pc *providerController) NewFlowProvider(
 		return nil, fmt.Errorf("failed to get language template: %w", err)
 	}
 
-	language, err := callWithSetupRetries(ctx, prv, pconfig.OptionsTypeSimple, languageTmpl)
+	language, err := pc.callWithSetupRetries(ctx, prv, pconfig.OptionsTypeSimple, languageTmpl)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get language: %w", err)
 	}
@@ -364,7 +370,7 @@ func (pc *providerController) NewFlowProvider(
 		return nil, fmt.Errorf("failed to get flow title template: %w", err)
 	}
 
-	title, err := callWithSetupRetries(ctx, prv, pconfig.OptionsTypeSimple, titleTmpl)
+	title, err := pc.callWithSetupRetries(ctx, prv, pconfig.OptionsTypeSimple, titleTmpl)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get flow title: %w", err)
 	}
@@ -474,7 +480,7 @@ func (pc *providerController) NewAssistantProvider(
 		return nil, fmt.Errorf("failed to get language template: %w", err)
 	}
 
-	language, err := callWithSetupRetries(ctx, prv, pconfig.OptionsTypeSimple, languageTmpl)
+	language, err := pc.callWithSetupRetries(ctx, prv, pconfig.OptionsTypeSimple, languageTmpl)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get language: %w", err)
 	}
@@ -490,7 +496,7 @@ func (pc *providerController) NewAssistantProvider(
 		return nil, fmt.Errorf("failed to get flow title template: %w", err)
 	}
 
-	title, err := callWithSetupRetries(ctx, prv, pconfig.OptionsTypeSimple, titleTmpl)
+	title, err := pc.callWithSetupRetries(ctx, prv, pconfig.OptionsTypeSimple, titleTmpl)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get flow title: %w", err)
 	}
@@ -682,7 +688,7 @@ func (pc *providerController) GetProviders(
 		p, err := pc.NewProvider(prv)
 		if err != nil {
 			// Any unbuildable saved provider (its type is disabled, or its stored
-			// config is stale/invalid) is skipped, not propagated — one bad row must
+			// config is stale/invalid) is skipped, not propagated 鈥?one bad row must
 			// not take down the whole list. Logged at Warn (not Error) since this is
 			// an expected, recoverable condition (e.g. a type disabled via env vars),
 			// but it must stay visible in production logs rather than silently
@@ -1147,12 +1153,26 @@ func newAtomicInt64(seed int64) *atomic.Int64 {
 	return &number
 }
 
-func callWithSetupRetries(
+// defaultSetupCallBudget bounds one setup call of a new flow (image, language or
+// title): a gateway that accepts the connection and then never answers would
+// otherwise hold the flow in "creating" until the caller's thirty-minute
+// preparation deadline, with nothing in the UI to say what it is waiting for.
+const defaultSetupCallBudget = 90 * time.Second
+
+func (pc *providerController) callWithSetupRetries(
 	ctx context.Context,
 	prv provider.Provider,
 	opt pconfig.ProviderOptionsType,
 	prompt string,
 ) (string, error) {
+	budget := pc.setupCallBudget
+	if budget <= 0 {
+		budget = defaultSetupCallBudget
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, budget)
+	defer cancel()
+
 	return retryTransient(ctx, delayBetweenRetries, func() (string, error) {
 		return prv.Call(ctx, opt, prompt)
 	})

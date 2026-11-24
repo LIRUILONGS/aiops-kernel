@@ -102,6 +102,8 @@ func TestProviders_CallWithSetupRetries_AsksAgainOnlyWhileTheCallMayStillPass(t 
 		want      string
 		wantErr   error
 		wantCalls int
+		// budget overrides setupCallBudget when non-zero.
+		budget time.Duration
 		// within bounds how long the call may take; zero leaves it unchecked.
 		within time.Duration
 		why    string
@@ -147,13 +149,26 @@ func TestProviders_CallWithSetupRetries_AsksAgainOnlyWhileTheCallMayStillPass(t 
 			wantErr: context.Canceled, wantCalls: 1,
 			why: "a context.Canceled error from Call must stop retrying immediately",
 		},
+		{
+			name: "a gateway that accepts and never answers is cut at the setup budget",
+			prv:  fakeCallProvider{blocksUntilDone: true},
+			ctx: func(*testing.T) context.Context {
+				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+				t.Cleanup(cancel)
+				return ctx
+			},
+			budget: 100 * time.Millisecond,
+			wantErr: context.DeadlineExceeded, wantCalls: 1, within: 2 * time.Second,
+			why: "the flow's preparation deadline must not be what ends a dead call",
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			prv := tc.prv
 			ctx := tc.ctx(t)
+			pc := &providerController{setupCallBudget: tc.budget}
 
 			start := time.Now()
-			got, err := callWithSetupRetries(ctx, &prv, pconfig.OptionsTypeSimple, "prompt")
+			got, err := pc.callWithSetupRetries(ctx, &prv, pconfig.OptionsTypeSimple, "prompt")
 			elapsed := time.Since(start)
 
 			if tc.wantErr != nil {

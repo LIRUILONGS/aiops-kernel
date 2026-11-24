@@ -234,7 +234,8 @@ func TestRetry_RetryTransient_SetupCallIsNotAskedAgainAfterALocalRefusal(t *test
 		err:       &llms.ErrStructuredOutputUnsupported{Model: "claude-fable-5-1"},
 	}
 
-	_, err := callWithSetupRetries(context.Background(), prv, pconfig.OptionsTypeSimple, "prompt")
+	pc := &providerController{}
+	_, err := pc.callWithSetupRetries(context.Background(), prv, pconfig.OptionsTypeSimple, "prompt")
 
 	require.Error(t, err)
 	assert.ErrorAs(t, err, new(*llms.ErrStructuredOutputUnsupported))

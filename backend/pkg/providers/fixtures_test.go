@@ -40,10 +40,17 @@ type fakeCallProvider struct {
 	failTimes int
 	err       error
 	result    string
+	// blocksUntilDone is a provider that takes the connection and then says
+	// nothing, the shape a dead gateway presents.
+	blocksUntilDone bool
 }
 
 func (f *fakeCallProvider) Call(ctx context.Context, opt pconfig.ProviderOptionsType, prompt string) (string, error) {
 	f.callCount++
+	if f.blocksUntilDone {
+		<-ctx.Done()
+		return "", ctx.Err()
+	}
 	if f.callCount <= f.failTimes {
 		return "", f.err
 	}
