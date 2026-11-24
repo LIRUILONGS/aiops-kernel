@@ -370,3 +370,24 @@ func TestCapability_Authorize_LiftsAWriteApprovalForThatOneObject(t *testing.T) 
 		t.Fatal("one container restart lifted the refusal for a different container")
 	}
 }
+
+func TestCapability_Policy_Issue_NeverLeavesADimensionNil(t *testing.T) {
+	t.Parallel()
+
+	lease := DefaultPolicy().Issue("diagnosis", 1, 2, "commander", time.Now())
+
+	// The lease columns are NOT NULL and a nil slice is inserted as NULL, so an
+	// unset dimension has to be an empty list or the guard never comes up.
+	for name, values := range map[string][]string{
+		"targets":  lease.Targets,
+		"tools":    lease.Tools,
+		"commands": lease.Commands,
+		"shapes":   lease.Shapes,
+		"traces":   lease.TracePrograms,
+		"actions":  lease.Actions,
+	} {
+		if values == nil {
+			t.Errorf("%s is nil, want an empty list", name)
+		}
+	}
+}

@@ -2764,7 +2764,19 @@ flow 74 的第一次 `subtask_list` 把两条数据库假设都写成 `assigned_
 
 单测十种组合（每种测量状态 × 允许/拒绝的判定），加上"没记过账不拦"与"以最后一条测量为准"两条；一处变异见红：把 `verdictAgrees` 的拒收去掉，`PinsTheVerdictToTheMeasurement` 立刻红。
 
-#### 四、还没做的
+#### 四、一个只有真机才暴露的洞：nil 切片进 SQL 就是 NULL
+
+`enforce` 的 flow 第一次真跑就露了馅：日志里每一行都是
+
+> capability: cannot issue the lease, this subtask runs without a lease, error="pq: null value in column \"actions\" violates not-null constraint"
+
+`Policy.Issue` 把策略里没设的维度原样拷过去，缺省是 nil；`sqlc` 生成的插入把 nil 切片交给 pq，pq 发的是 NULL，而列是 `NOT NULL`。插入失败 → guard 关闭 → **这条子任务在没有租约的情况下运行**。这正是"失败要 fail closed"该管的地方：租约发不出来时不该退化成没有租约。
+
+修法是在 `Issue` 里把所有维度过一遍 `notNil`（nil → 空切片），一处修好六个维度；`TestCapability_Policy_Issue_NeverLeavesADimensionNil` 逐个检查，把 `actions` 还原成 `rule.Actions` 立刻红。
+
+这个洞本可以更早发现：单元测试用的是假 DB，真 DB 的 NOT NULL 只有真机才说话。教训写在 4.90 里同一句：约束在数据库里，就别指望内存里的假象替你检查。
+
+#### 五、还没做的
 
 - **故障侧的收口没有对应字段。** `diagnosis` 给的是 `root_cause` / `evidence` / `recommendation`，它不声称"已修复"，所以这一层拦不到它。要不要给事故收口也加一个字面上的"这次改了什么、代码怎么判的"字段，取决于产品要不要让事故报告承担修复声明——现在它只承担诊断。
 - 账本是 per-executor 的：一条子任务里先后做了两次写操作，只有最后一次参与校验。如果一次修复由多个动作组成，应该记成一个集合，按动作名逐个对照。

@@ -80,14 +80,25 @@ func (p Policy) Issue(mode string, flowID, subtaskID int64, role string, now tim
 		SubtaskID:     subtaskID,
 		Role:          role,
 		Mode:          ModeEnforce,
-		Targets:       rule.Targets,
-		Tools:         rule.Tools,
-		Commands:      rule.Commands,
-		Shapes:        rule.Shapes,
-		TracePrograms: rule.TracePrograms,
-		Actions:       rule.Actions,
+		Targets:       notNil(rule.Targets),
+		Tools:         notNil(rule.Tools),
+		Commands:      notNil(rule.Commands),
+		Shapes:        notNil(rule.Shapes),
+		TracePrograms: notNil(rule.TracePrograms),
+		Actions:       notNil(rule.Actions),
 		Budgets:       rule.Budgets,
 		IssuedBy:      "policy",
 		ExpiresAt:     now.Add(ttl),
 	}
+}
+
+// notNil keeps an unset dimension an empty list rather than a nil one: the lease
+// columns are NOT NULL, and a nil slice reaches PostgreSQL as NULL, which fails
+// the insert and silently disables the guard for that subtask.
+func notNil(values []string) []string {
+	if values == nil {
+		return []string{}
+	}
+
+	return values
 }
