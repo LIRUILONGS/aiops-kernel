@@ -2685,6 +2685,31 @@ the host presented SHA256:2SyNEy1+1XbxTGKl7OhCXURO5k1YN3xzGLRRm5YsXZ4
 - `diagnosis` 的结论 schema 里还没有一个字段强制引用 verdict：模型仍然可以在报告里写"已修复"而不引任何证据。要么在结论工具里加一个必需的 `verdict` 字段，要么在 conclusion handler 里拒收没有 `verified` 变更的"已修复"声明。
 - `config_restore` 与 `k8s_rollout_restart` 的 scope 是空的，所以它们永远 `unverified`；给它们各自的观察面（文件属性、`kubectl get`）是把它们纳入闭环的前提。
 
+### 4.90 命令目录改成 enum，顺手量出这套 flow 对模型的要求（2026-11-24）
+
+`ops_exec` 的命令目录是封闭的：三十来个 id，别的都能拒。这件事此前只写在工具描述的一段散文里，于是换一个不看散文的模型就会直接送 `ps aux` 过来，连试三次同样的调用，整条 chain 只好放弃。
+
+#### 一、把封闭集合写进 schema
+
+`command` 现在是真正的 `enum`，取值直接来自 `CommandIDs()`，不抄第二份清单；handler 认的集合与模型看见的集合因此不可能对不上。
+
+| 层 | 结果 |
+|---|---|
+| 单测 | 把 `Parameters` 序列化后读 `properties.command.enum`，与 `CommandIDs()` 逐项相等，且不含 `ps aux` 这种自由文本 |
+| 变异 | 删掉 enum 赋值、把 registry 改回直接反射，两个变异都红 |
+
+#### 二、顺手量到的模型下限
+
+今天 `deepseek-v4.1` 的后端（36.137.90.82 上 `orinfer-v41.service`）在 14:34 被停掉，换上网关里另一个可用的 `flashnext-abli`（昇腾 910B，vLLM TP8，131k 上下文）跑同一批场景。结果是这套 flow 对模型的要求被量出来了。
+
+| 位置 | 现象 |
+|---|---|
+| 规划（generator） | flow 119 三次提交 `subtask_list` 都只有 `{"message": "..."}`，没有必填的 `subtasks` 数组；`fixToolCallArgs` 三次修正仍是同一份参数，报 `subtasks array is missing`，flow 直接 `waiting` |
+| 取证（commander） | flow 118 把 `ps aux` 当 `ops_exec` 的命令 id，把 `ops_watch` / `ops_baseline` / `ops_containers` 的所有字段填成 `"1"`、`"100"`，重试三次后 chain 失败，任务以"stopped on an error"收尾 |
+| 对照实验 | 同一个模型、同一份 `subtask_list` schema（从 `GetRegistryDefinitions()` 原样导出）、只给三行题面，一次就给出了三条合格子任务 |
+
+对照实验说明这不是 schema 的形状问题，而是它在长系统提示 + 二十来个工具 + 多轮重试的上下文里失去指令跟随。结论写在这里，免得下次再花一轮：**flow 层要求的是能稳定输出结构化工具调用的模型**；`flashnext-abli` 能聊天、能做两三个工具的小任务，但规划与取证两个环节都过不了，不适合当默认模型。
+
 ## 5 环境
 
 ### 5.1 开发机
