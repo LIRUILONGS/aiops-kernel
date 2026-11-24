@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"opsagi/pkg/capability"
 	"opsagi/pkg/config"
 	"opsagi/pkg/database"
 	"opsagi/pkg/database/knowledge/limits"
@@ -50,6 +51,20 @@ func toolsSharedPool(t *testing.T) *pgxpool.Pool {
 
 func toolsSandboxRow(status database.ContainerStatus, localID string) *database.Container {
 	return &database.Container{ID: 7, Status: status, LocalID: sql.NullString{String: localID, Valid: localID != ""}}
+}
+
+func TestTools_AnalystToolset_EveryRoleItServesIsOneAPolicyCouldNarrow(t *testing.T) {
+	roles := append([]string{}, capability.KnownRoles()...)
+
+	for role := range analystToolset {
+		if !slices.Contains(roles, role) {
+			t.Errorf("role %q holds a toolset but is not in capability.KnownRoles, so a policy file naming it is refused", role)
+		}
+	}
+
+	if !slices.Contains(roles, "commander") {
+		t.Error("the commander holds a lease in pkg/providers and must be nameable in a policy")
+	}
 }
 
 func TestTools_Prepare_KeepsOrReplacesTheSandbox(t *testing.T) {

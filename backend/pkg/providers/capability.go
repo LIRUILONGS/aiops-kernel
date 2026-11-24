@@ -71,7 +71,7 @@ func (fp *flowProvider) capabilityGuard(ctx context.Context, subtaskID int64, ro
 	// Budgets are not part of the stored row: a resumed subtask reads them from
 	// the policy in force now, so tightening a limit takes effect on restart
 	// instead of waiting for a subtask that happens to be issued again.
-	lease.Budgets = fp.capabilityPolicy().RuleFor(planMode).Budgets
+	lease.Budgets = fp.capabilityPolicy().EffectiveRule(planMode, lease.Role).Budgets
 
 	return tools.NewCapabilityGuard(tools.CapabilityGuardOptions{
 		Lease:   lease,

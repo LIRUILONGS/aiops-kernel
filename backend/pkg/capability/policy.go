@@ -31,6 +31,10 @@ type Rule struct {
 // does not silently narrow a flow that works today.
 type Policy struct {
 	Rules map[string]Rule
+	// Roles narrows a mode for one role, keyed by plan mode and then by role. A
+	// role rule can only take away what its mode allows: an entry that names a
+	// tool the mode never granted still grants nothing.
+	Roles map[string]map[string]Rule
 	TTL   time.Duration
 }
 
@@ -65,10 +69,30 @@ func (p Policy) RuleFor(mode string) Rule {
 	return p.Rules["diagnosis"]
 }
 
+// EffectiveRule is what one role gets in one plan mode: the mode's rule, cut
+// down by the role's rule when the policy has one. Narrowing rather than
+// overriding is what keeps a per-role entry from widening a mode, so a typo in
+// a role list can only cost access, never grant it.
+func (p Policy) EffectiveRule(mode, role string) Rule {
+	base := p.RuleFor(mode)
+
+	roles, ok := p.Roles[mode]
+	if !ok {
+		return base
+	}
+
+	narrowing, ok := roles[role]
+	if !ok {
+		return base
+	}
+
+	return narrow(base, narrowing)
+}
+
 // Issue builds the lease one subtask runs under. The caller persists it; this
 // function only decides what the scope is.
 func (p Policy) Issue(mode string, flowID, subtaskID int64, role string, now time.Time) *Lease {
-	rule := p.RuleFor(mode)
+	rule := p.EffectiveRule(mode, role)
 
 	ttl := p.TTL
 	if ttl <= 0 {
@@ -101,4 +125,83 @@ func notNil(values []string) []string {
 	}
 
 	return values
+}
+
+func narrow(allowed, asked Rule) Rule {
+	return Rule{
+		Targets:       onlyWithin(allowed.Targets, asked.Targets),
+		Tools:         onlyWithin(allowed.Tools, asked.Tools),
+		Commands:      onlyWithin(allowed.Commands, asked.Commands),
+		Shapes:        onlyWithin(allowed.Shapes, asked.Shapes),
+		TracePrograms: onlyWithin(allowed.TracePrograms, asked.TracePrograms),
+		Actions:       onlyWithin(allowed.Actions, asked.Actions),
+		Budgets:       tighterBudgets(allowed.Budgets, asked.Budgets),
+	}
+}
+
+// onlyWithin keeps the values of asked that allowed already permits. An empty
+// asked says nothing about the dimension and keeps the mode's list.
+func onlyWithin(allowed, asked []string) []string {
+	if len(asked) == 0 {
+		return allowed
+	}
+
+	if hasWildcard(allowed) {
+		return asked
+	}
+
+	kept := make([]string, 0, len(asked))
+	for _, value := range asked {
+		if contains(allowed, value) {
+			kept = append(kept, value)
+		}
+	}
+
+	return kept
+}
+
+// tighterBudgets never raises a limit: a role that names a tool its mode already
+// bounds gets the smaller of the two, and a role-wide ceiling also caps the
+// tools the mode named one by one.
+func tighterBudgets(allowed, asked map[string]int) map[string]int {
+	if len(asked) == 0 {
+		return allowed
+	}
+
+	merged := make(map[string]int, len(allowed)+len(asked))
+	for tool, limit := range allowed {
+		merged[tool] = limit
+	}
+
+	for tool, limit := range asked {
+		if current, ok := merged[tool]; ok && current < limit {
+			continue
+		}
+
+		merged[tool] = limit
+	}
+
+	if ceiling, ok := asked["*"]; ok {
+		for tool, limit := range merged {
+			if tool != "*" && limit > ceiling {
+				merged[tool] = ceiling
+			}
+		}
+	}
+
+	return merged
+}
+
+func hasWildcard(values []string) bool {
+	return contains(values, "*")
+}
+
+func contains(values []string, want string) bool {
+	for _, value := range values {
+		if value == want {
+			return true
+		}
+	}
+
+	return false
 }

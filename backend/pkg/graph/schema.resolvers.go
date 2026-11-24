@@ -1752,7 +1752,7 @@ func (r *queryResolver) CapabilityLeases(ctx context.Context, flowID int64, limi
 
 	converted := converter.ConvertCapabilityLeases(leases)
 	for i, lease := range converted {
-		lease.Budgets = capabilityBudgets(r.Config, leases[i].Mode)
+		lease.Budgets = capabilityBudgets(r.Config, leases[i].Mode, leases[i].Role)
 
 		used, err := r.DB.CountCapabilityUsesByTool(ctx, sql.NullInt64{Int64: lease.SubtaskID, Valid: true})
 		if err != nil {

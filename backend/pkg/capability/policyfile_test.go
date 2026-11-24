@@ -3,6 +3,7 @@ package capability
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -72,6 +73,45 @@ func TestCapability_LoadPolicyFile_TheShippedExampleIsOneItAccepts(t *testing.T)
 	if got := policy.RuleFor("diagnosis").Budgets["ops_exec"]; got != 60 {
 		t.Errorf("diagnosis ops_exec budget = %d, want the 60 the example states", got)
 	}
+
+	logAnalyst := policy.EffectiveRule("diagnosis", "log_analyst")
+	if !slices.Contains(logAnalyst.Tools, "ops_logs") || slices.Contains(logAnalyst.Tools, "ops_exec") {
+		t.Errorf("log_analyst tools = %v, want logs and no shell", logAnalyst.Tools)
+	}
+	if got := logAnalyst.Budgets["ops_exec"]; got != 10 {
+		t.Errorf("log_analyst ops_exec budget = %d, want the 10 the example states", got)
+	}
+}
+
+func TestCapability_LoadPolicyFile_ReadsARoleNarrowingUnderItsMode(t *testing.T) {
+	path := writePolicy(t, `
+modes:
+  diagnosis:
+    tools: [ops_exec, ops_logs, prom_query]
+    budgets:
+      ops_exec: 60
+    roles:
+      log_analyst:
+        tools: [ops_logs]
+        budgets:
+          ops_exec: 5
+`)
+
+	policy, err := LoadPolicyFile(path)
+	if err != nil {
+		t.Fatalf("LoadPolicyFile: %v", err)
+	}
+
+	rule := policy.EffectiveRule("diagnosis", "log_analyst")
+	if len(rule.Tools) != 1 || rule.Tools[0] != "ops_logs" {
+		t.Errorf("tools = %v, want the role's narrowed list", rule.Tools)
+	}
+	if got := rule.Budgets["ops_exec"]; got != 5 {
+		t.Errorf("ops_exec budget = %d, want 5", got)
+	}
+	if got := policy.EffectiveRule("diagnosis", "triage").Tools; len(got) != 3 {
+		t.Errorf("triage tools = %v, want the mode's three", got)
+	}
 }
 
 func TestCapability_LoadPolicyFile_RefusesWhatWouldSilentlyFallBack(t *testing.T) {
@@ -109,6 +149,16 @@ func TestCapability_LoadPolicyFile_RefusesWhatWouldSilentlyFallBack(t *testing.T
 			name:  "yaml that does not parse",
 			body:  "modes: [\n",
 			wants: "not valid YAML",
+		},
+		{
+			name:  "a role the runtime never issues",
+			body:  "modes:\n  diagnosis:\n    tools: [ops_exec]\n    roles:\n      analyst:\n        tools: [ops_exec]\n",
+			wants: `names role "analyst"`,
+		},
+		{
+			name:  "a role budget that refuses every call",
+			body:  "modes:\n  diagnosis:\n    tools: [ops_exec]\n    roles:\n      log_analyst:\n        budgets:\n          ops_exec: 0\n",
+			wants: "budgets ops_exec to 0",
 		},
 	}
 

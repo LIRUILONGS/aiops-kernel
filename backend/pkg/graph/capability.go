@@ -55,13 +55,13 @@ func clampCapabilityLeaseLimit(limit *int) int {
 // capabilityBudgets builds the call limits a lease was issued under. They come
 // from the policy in force rather than from the lease row, which is why the
 // panel shows what the runtime would apply now, not what it applied at issue.
-func capabilityBudgets(cfg *config.Config, mode string) []*model.CapabilityBudget {
+func capabilityBudgets(cfg *config.Config, mode, role string) []*model.CapabilityBudget {
 	policy := capability.DefaultPolicy()
 	if cfg != nil && cfg.CapabilityPolicy != nil {
 		policy = *cfg.CapabilityPolicy
 	}
 
-	budgets := policy.RuleFor(mode).Budgets
+	budgets := policy.EffectiveRule(mode, role).Budgets
 	tools := make([]string, 0, len(budgets))
 	for tool := range budgets {
 		tools = append(tools, tool)

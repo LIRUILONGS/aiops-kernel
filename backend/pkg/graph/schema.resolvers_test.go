@@ -700,12 +700,16 @@ func TestSchemaResolvers_CapabilityLeases_ShowsTheBudgetOfThePolicyInForce(t *te
 			ID:        2,
 			FlowID:    5,
 			SubtaskID: 3,
+			Role:      "log_analyst",
 			Mode:      "diagnosis",
 		}},
 	}
 	policy := capability.Policy{
 		Rules: map[string]capability.Rule{
 			"diagnosis": {Tools: []string{"*"}, Budgets: map[string]int{"ops_exec": 40, "ops_logs": 15}},
+		},
+		Roles: map[string]map[string]capability.Rule{
+			"diagnosis": {"log_analyst": {Tools: []string{"*"}, Budgets: map[string]int{"ops_exec": 6}}},
 		},
 		TTL: time.Hour,
 	}
@@ -718,7 +722,7 @@ func TestSchemaResolvers_CapabilityLeases_ShowsTheBudgetOfThePolicyInForce(t *te
 	require.Len(t, got, 1)
 	require.Len(t, got[0].Budgets, 2)
 	assert.Equal(t, "ops_exec", got[0].Budgets[0].Tool)
-	assert.Equal(t, 40, got[0].Budgets[0].Limit)
+	assert.Equal(t, 6, got[0].Budgets[0].Limit)
 	assert.Equal(t, "ops_logs", got[0].Budgets[1].Tool)
 }
 

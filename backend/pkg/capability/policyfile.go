@@ -20,6 +20,17 @@ type policyFile struct {
 }
 
 type policyMode struct {
+	Targets       []string              `yaml:"targets"`
+	Tools         []string              `yaml:"tools"`
+	Commands      []string              `yaml:"commands"`
+	Shapes        []string              `yaml:"shapes"`
+	TracePrograms []string              `yaml:"trace_programs"`
+	Actions       []string              `yaml:"actions"`
+	Budgets       map[string]int        `yaml:"budgets"`
+	Roles         map[string]policyRole `yaml:"roles"`
+}
+
+type policyRole struct {
 	Targets       []string       `yaml:"targets"`
 	Tools         []string       `yaml:"tools"`
 	Commands      []string       `yaml:"commands"`
@@ -52,17 +63,45 @@ func LoadPolicyFile(path string) (Policy, error) {
 	}
 
 	rules := make(map[string]Rule, len(document.Modes))
+	roles := make(map[string]map[string]Rule, len(document.Modes))
+
 	for name, mode := range document.Modes {
 		if !knownMode(name) {
 			return Policy{}, fmt.Errorf("OPSAGI_POLICY names mode %q, which the runtime never issues (known: %s)",
 				name, strings.Join(knownModes(), ", "))
 		}
 
-		if err := validateBudgets(name, mode.Budgets); err != nil {
+		if err := validateBudgets("mode "+name, mode.Budgets); err != nil {
 			return Policy{}, err
 		}
 
-		rules[name] = Rule(mode)
+		rules[name] = Rule{
+			Targets:       mode.Targets,
+			Tools:         mode.Tools,
+			Commands:      mode.Commands,
+			Shapes:        mode.Shapes,
+			TracePrograms: mode.TracePrograms,
+			Actions:       mode.Actions,
+			Budgets:       mode.Budgets,
+		}
+
+		if len(mode.Roles) == 0 {
+			continue
+		}
+
+		roles[name] = make(map[string]Rule, len(mode.Roles))
+		for role, narrowing := range mode.Roles {
+			if !knownRole(role) {
+				return Policy{}, fmt.Errorf("OPSAGI_POLICY mode %q names role %q, which the runtime never issues (known: %s)",
+					name, role, strings.Join(KnownRoles(), ", "))
+			}
+
+			if err := validateBudgets(fmt.Sprintf("mode %q role %q", name, role), narrowing.Budgets); err != nil {
+				return Policy{}, err
+			}
+
+			roles[name][role] = Rule(narrowing)
+		}
 	}
 
 	if _, ok := rules["diagnosis"]; !ok {
@@ -81,16 +120,16 @@ func LoadPolicyFile(path string) (Policy, error) {
 		ttl = parsed
 	}
 
-	return Policy{Rules: rules, TTL: ttl}, nil
+	return Policy{Rules: rules, Roles: roles, TTL: ttl}, nil
 }
 
-func validateBudgets(mode string, budgets map[string]int) error {
+func validateBudgets(where string, budgets map[string]int) error {
 	for tool, limit := range budgets {
 		if strings.TrimSpace(tool) == "" {
-			return fmt.Errorf("OPSAGI_POLICY mode %q has a budget with an empty tool name", mode)
+			return fmt.Errorf("OPSAGI_POLICY %s has a budget with an empty tool name", where)
 		}
 		if limit <= 0 {
-			return fmt.Errorf("OPSAGI_POLICY mode %q budgets %s to %d, which refuses every call of it", mode, tool, limit)
+			return fmt.Errorf("OPSAGI_POLICY %s budgets %s to %d, which refuses every call of it", where, tool, limit)
 		}
 	}
 
@@ -106,4 +145,21 @@ func knownModes() []string {
 	sort.Strings(modes)
 
 	return modes
+}
+
+// KnownRoles is the closed set of roles a lease is issued for. The tool table in
+// pkg/tools decides what each of them can reach; this list decides whose name a
+// policy file may narrow.
+func KnownRoles() []string {
+	return []string{"change_analyst", "commander", "log_analyst", "metrics_analyst", "triage"}
+}
+
+func knownRole(name string) bool {
+	for _, role := range KnownRoles() {
+		if role == name {
+			return true
+		}
+	}
+
+	return false
 }

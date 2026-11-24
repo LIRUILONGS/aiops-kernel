@@ -29,6 +29,18 @@ A rule answers "may this subtask do this, here, now". Every list is exact: `"*"`
 | `shapes` | `probe` or `workshop` for `ops_sandbox` |
 | `trace_programs` | program keys the tracer accepts |
 | `budgets` | how many times one tool may run in a single execution of a subtask; `"*"` sets the limit for tools the map does not name |
+| `roles` | a narrowing for one role inside that mode, with the same fields minus `roles` |
+
+## Per-role narrowing
+
+A `roles` entry is a subtraction, not an override. It may name hosts, tools, commands, shapes, trace programs, actions and budgets, and each dimension is intersected with what the mode already allows:
+
+- a tool the mode never granted stays refused, so a role entry cannot widen a mode even if the mode's list is a wildcard typo;
+- a dimension the role does not mention keeps the mode's list;
+- `budgets` take the tighter of the two, and a role-wide `"*"` ceiling also caps the tools the mode named one by one;
+- the role names come from `capability.KnownRoles()`: `commander`, `triage`, `log_analyst`, `metrics_analyst`, `change_analyst`. Any other name fails the boot rather than narrowing nobody.
+
+The narrowing is applied when the lease is issued, so it is what `pkg/tools` enforces and what the `能力租约` panel shows.
 
 `ttl` at the top level is how long a lease stays valid. Keep it longer than a run: a lease that expires mid-diagnosis refuses the rest of a subtask that is working correctly, and the refusal looks like a policy decision rather than a clock running out.
 

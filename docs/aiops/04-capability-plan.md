@@ -84,6 +84,30 @@
 
 两个刻意的取舍：`budgets` 不从库里读，因为库里没有这一列（预算只属于“这一次执行”，进库会诱导人把它当成配额）；`used` 不从内存读，因为内存计数器随执行结束消失，而操作员要看的恰恰是“跑到这里为止用掉多少”。两者相加才是运维能拿来做判断的那张图。
 
+## 0.10 这一轮的第六批：按角色收窄
+
+策略原来只有 plan mode 两个维度，角色维度由工具表决定——`log_analyst` 能碰什么，写死在 `pkg/tools` 的 `analystToolset` 里。这没错，但运维没法说“日志分析师别开 shell”。这一批补上：
+
+```yaml
+modes:
+  diagnosis:
+    tools: [ops_exec, ops_logs, ops_containers, k8s_get]
+    budgets:
+      ops_exec: 60
+    roles:
+      log_analyst:
+        tools: [ops_logs, ops_containers, k8s_get]
+        budgets:
+          ops_exec: 10
+```
+
+语义是**减法不是覆盖**：角色规则的每个维度与 mode 的取交集，`budgets` 取两者更小的那个，角色没提的维度沿用 mode。所以角色永远只能收窄，写错了也只会少给、不会多给——这条是刻意的，因为它决定了最坏情况下出错的方向。另有一处细节：角色写 `budgets: {"*": 8}` 时会连 mode 里逐个点名的工具一起压到 8；否则“全局封顶”会被上面那条具体值悄悄绕过。
+
+角色名是闭集（`capability.KnownRoles()`：`commander` / `triage` / `log_analyst` / `metrics_analyst` / `change_analyst`），写了别的名字启动就失败——和 mode 名一样，拼错不该静默地什么都不收窄。`pkg/tools` 有一条测试盯着 `analystToolset` 的键必须都在这个集合里，两边不会各自漂移。
+
+收窄发生在**签发租约**的时候（`Policy.EffectiveRule`），所以拦人的地方、面板上显示的额度，用的都是收窄后的那一份，不存在“面板说 60、实际按 10 执行”的分叉。
+
+
 
 
 

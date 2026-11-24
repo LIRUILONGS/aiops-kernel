@@ -4,6 +4,10 @@
 # capability_decisions. Every list below is exact: "*" is the only way to say
 # "everything", and an empty list permits nothing.
 #
+# A mode rule is the ceiling for that plan mode; a rule under "roles" can only
+# take away from it. Naming a tool the mode never granted grants nothing, so a
+# per-role entry is never a way to widen a mode.
+#
 # Set the same path in docker-compose.yml next to OPSAGI_TARGETS, then restart:
 # the file is read once at start-up and a policy that cannot be understood fails
 # the boot.
@@ -26,6 +30,17 @@ modes:
       ops_watch: 20
       ops_sandbox: 20
       ops_trace: 15
+    roles:
+      # The log analyst reads logs and container state; a shell costs it the most
+      # and is the easiest way to drift from the question into exploration.
+      log_analyst:
+        tools: [ops_logs, ops_containers, k8s_get]
+        budgets:
+          ops_exec: 10
+      # Reproducing a change means running the same probe several times.
+      change_analyst:
+        budgets:
+          ops_exec: 40
 
   # A performance subtask measures and proposes: the commands that answer "what
   # is slow", and nothing that changes the host.

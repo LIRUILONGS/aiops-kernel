@@ -6,6 +6,131 @@ import (
 	"time"
 )
 
+func TestCapability_Policy_EffectiveRule_CutsTheModeDownToTheRole(t *testing.T) {
+	policy := Policy{
+		Rules: map[string]Rule{
+			"diagnosis": {
+				Targets:       []string{"*"},
+				Tools:         []string{"ops_exec", "ops_logs", "prom_query"},
+				Commands:      []string{"listen_ports", "unit_logs"},
+				Shapes:        []string{"probe"},
+				TracePrograms: []string{"runqlat"},
+			},
+		},
+		Roles: map[string]map[string]Rule{
+			"diagnosis": {
+				"log_analyst": {
+					Tools:    []string{"ops_logs", "ops_sandbox"},
+					Commands: []string{"unit_logs", "dmesg"},
+				},
+			},
+		},
+		TTL: time.Hour,
+	}
+
+	rule := policy.EffectiveRule("diagnosis", "log_analyst")
+
+	if got := rule.Tools; !slices.Equal(got, []string{"ops_logs"}) {
+		t.Errorf("tools = %v, want only the ones the mode also grants", got)
+	}
+	if got := rule.Commands; !slices.Equal(got, []string{"unit_logs"}) {
+		t.Errorf("commands = %v, want only unit_logs", got)
+	}
+	if got := rule.Targets; !slices.Equal(got, []string{"*"}) {
+		t.Errorf("targets = %v, want the mode's wildcard: the role said nothing about hosts", got)
+	}
+	if got := rule.TracePrograms; !slices.Equal(got, []string{"runqlat"}) {
+		t.Errorf("trace programs = %v, want the mode's", got)
+	}
+}
+
+func TestCapability_Policy_EffectiveRule_GivesARoleItNeverHadNothing(t *testing.T) {
+	policy := Policy{
+		Rules: map[string]Rule{"diagnosis": {Tools: []string{"ops_logs"}}},
+		Roles: map[string]map[string]Rule{
+			"diagnosis": {"log_analyst": {Tools: []string{"ops_apply"}}},
+		},
+		TTL: time.Hour,
+	}
+
+	if got := policy.EffectiveRule("diagnosis", "log_analyst").Tools; len(got) != 0 {
+		t.Errorf("tools = %v, want empty: a role rule cannot widen the mode", got)
+	}
+}
+
+func TestCapability_Policy_EffectiveRule_LeavesAnUnnamedRoleOnTheModeRule(t *testing.T) {
+	policy := Policy{
+		Rules: map[string]Rule{"diagnosis": {Tools: []string{"ops_logs", "ops_exec"}}},
+		Roles: map[string]map[string]Rule{
+			"diagnosis": {"log_analyst": {Tools: []string{"ops_logs"}}},
+		},
+		TTL: time.Hour,
+	}
+
+	if got := policy.EffectiveRule("diagnosis", "triage").Tools; !slices.Equal(got, []string{"ops_logs", "ops_exec"}) {
+		t.Errorf("tools = %v, want the mode rule for a role the policy does not narrow", got)
+	}
+}
+
+func TestCapability_Policy_EffectiveRule_NeverRaisesABudget(t *testing.T) {
+	policy := Policy{
+		Rules: map[string]Rule{
+			"diagnosis": {Tools: []string{"*"}, Budgets: map[string]int{"ops_exec": 60, "ops_logs": 30}},
+		},
+		Roles: map[string]map[string]Rule{
+			"diagnosis": {
+				"log_analyst": {Budgets: map[string]int{"ops_exec": 10, "ops_logs": 90, "prom_query": 5}},
+			},
+		},
+		TTL: time.Hour,
+	}
+
+	budgets := policy.EffectiveRule("diagnosis", "log_analyst").Budgets
+
+	if got := budgets["ops_exec"]; got != 10 {
+		t.Errorf("ops_exec = %d, want the role's tighter 10", got)
+	}
+	if got := budgets["ops_logs"]; got != 30 {
+		t.Errorf("ops_logs = %d, want the mode's 30 rather than the role's 90", got)
+	}
+	if got := budgets["prom_query"]; got != 5 {
+		t.Errorf("prom_query = %d, want the role's 5", got)
+	}
+}
+
+func TestCapability_Policy_EffectiveRule_LetsARoleWideCeilingCapTheModesNamedTool(t *testing.T) {
+	policy := Policy{
+		Rules: map[string]Rule{
+			"diagnosis": {Tools: []string{"*"}, Budgets: map[string]int{"ops_exec": 60}},
+		},
+		Roles: map[string]map[string]Rule{
+			"diagnosis": {"log_analyst": {Budgets: map[string]int{"*": 8}}},
+		},
+		TTL: time.Hour,
+	}
+
+	if got := policy.EffectiveRule("diagnosis", "log_analyst").Budgets["ops_exec"]; got != 8 {
+		t.Errorf("ops_exec = %d, want the role's ceiling of 8", got)
+	}
+}
+
+func TestCapability_Policy_Issue_LeasesTheRuleTheRoleActuallyGets(t *testing.T) {
+	policy := Policy{
+		Rules: map[string]Rule{"diagnosis": {Tools: []string{"ops_exec", "ops_logs"}}},
+		Roles: map[string]map[string]Rule{
+			"diagnosis": {"log_analyst": {Tools: []string{"ops_logs"}}},
+		},
+		TTL: time.Hour,
+	}
+	now := time.Date(2026, 11, 24, 12, 0, 0, 0, time.UTC)
+
+	lease := policy.Issue("diagnosis", 1, 2, "log_analyst", now)
+
+	if got := lease.Tools; !slices.Equal(got, []string{"ops_logs"}) {
+		t.Errorf("tools = %v, want the role's narrowed list", got)
+	}
+}
+
 func TestCapability_Policy_IssueKeepsTheScopeTheRuntimeHadBeforeTheSwitch(t *testing.T) {
 	now := time.Date(2026, 11, 23, 11, 0, 0, 0, time.UTC)
 
