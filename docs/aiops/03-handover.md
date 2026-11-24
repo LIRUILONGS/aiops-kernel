@@ -2617,6 +2617,8 @@ flow 58 / 59 / 60 在 12:26–12:47 之间创建，全部停在 `created`：`res
 
 31. **后台任务"结束"不等于它的 python 子进程结束**。一轮并发验收跑完后，`run_all.py` 的一条子进程仍在，`docker compose --force-recreate` 之后它以为自己的 flow 没了，于是照着同一份场景定义又建了一批新 flow（18～25），把矩阵搅成两套。判断办法：`Get-CimInstance Win32_Process -Filter "Name='python.exe'"` 看有没有 `matrix` 的残留，重建部署前先确认干净；驱动脚本本身不做重试，残留只可能来自没退出的进程。
 
+32. **本机的 `prettier --check` 不是 CI 的判据**。Windows 工作副本是 CRLF、`.prettierrc` 要 `lf`，整目录跑会把四百多个文件判成不合规；只查单个文件又因为 `prettier-plugin-tailwindcss` 在本机解析到的 tailwind 版本不同，排出来的类名顺序和 CI 不一样。按本机顺序改了 toolbar 的 `[scrollbar-width:none]` 之后，`Frontend - Prettier` 立刻红，换回原顺序才绿。类名顺序只能以 CI 为准，本机最多用来确认“除类名顺序之外没有别的格式问题”。
+
 ## 9 从零启动的操作手册
 
 ```powershell
