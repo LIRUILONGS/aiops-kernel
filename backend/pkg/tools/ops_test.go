@@ -329,6 +329,28 @@ func TestOpsDiff_HandleDiff_NamesTheSideWhoseSampleIsGone(t *testing.T) {
 	}
 }
 
+func TestOpsDiff_HandleDiff_RefusesToCompareASampleWithItself(t *testing.T) {
+	t.Parallel()
+
+	tools := &opsTools{}
+	id := tools.samples.put(opsremote.Fingerprint{Label: "after", Host: "lab", Load1: 1.4})
+
+	args, err := json.Marshal(OpsDiffArgs{Before: id, After: id})
+	if err != nil {
+		t.Fatalf("marshal args: %v", err)
+	}
+
+	_, err = tools.HandleDiff(t.Context(), OpsDiffToolName, args)
+	if err == nil {
+		t.Fatal("a sample compared with itself was rendered as a real before/after")
+	}
+	for _, want := range []string{id, "同一条采样", "噪声"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error %q does not tell the model %q", err, want)
+		}
+	}
+}
+
 func TestOpsDiff_HandleDiff_StillTakesTheFingerprintItself(t *testing.T) {
 	t.Parallel()
 

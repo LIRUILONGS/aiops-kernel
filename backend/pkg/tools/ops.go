@@ -31,7 +31,6 @@ type OpsLogsArgs struct {
 
 type opsTools struct {
 	writes  bool
-	ledger  *applyLedger
 	targets map[string]opsremote.Target
 	order   []string
 	timeout time.Duration
@@ -351,14 +350,6 @@ type OpsApplyArgs struct {
 	Name      string `json:"name,omitempty" jsonschema:"description=k8s_rollout_restart 的工作负载名,example=api"`
 }
 
-// WithLedger gives the tool the place where a measurement is kept for the
-// conclusion handler to check.
-func (o *opsTools) WithLedger(ledger *applyLedger) *opsTools {
-	o.ledger = ledger
-
-	return o
-}
-
 // WithWrites decides whether a repair may run at all. It is false until the
 // flow's lease is in enforce mode: a flow that never opted into a lease has no
 // dimension to judge a write by, and "no guard" must not read as "no limit".
@@ -446,9 +437,6 @@ func (o *opsTools) judgeChange(
 	change := opsremote.JudgeChange(before, after, prefixes)
 	if change.State == opsremote.VerdictUnverified && unverifiable != "" {
 		change.Reason = unverifiable
-	}
-	if o.ledger != nil {
-		o.ledger.record(action.ID, change)
 	}
 
 	return formatChange(target, change)
@@ -937,6 +925,9 @@ func (o *opsTools) HandleDiff(ctx context.Context, name string, args json.RawMes
 	}
 	if strings.TrimSpace(parsed.Before) == "" || strings.TrimSpace(parsed.After) == "" {
 		return "", fmt.Errorf("before 与 after 都是必填：请分别填入两次 ops_baseline 返回的采样编号（形如 base-3）")
+	}
+	if strings.TrimSpace(parsed.Before) == strings.TrimSpace(parsed.After) {
+		return "", fmt.Errorf("before 与 after 是同一条采样（%s）：自己跟自己比出来的差值全是噪声，却和真对比长得一模一样；改完再用 ops_baseline 采一次 after，传两个不同的编号", clip(parsed.Before, 40))
 	}
 
 	before, err := o.fingerprintOf("before", parsed.Before)
