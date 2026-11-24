@@ -2297,7 +2297,42 @@ flow 60 的那条连接（`127.0.0.1:50723 → 127.0.0.1:18000`，20:46:42 建�
 
 `TestFlows_FailFlow_MarksTheFlowEvenAfterThePreparationDeadlineHasPassed`：拿一个已取消的 ctx 调 `failFlow`，断言状态里出现 `failed`、消息日志里有一条带原因的 report。`createFakeQuerier` 本来就在 ctx 结束后拒绝写入（注释写着"the way pgx does"），所以这个断言真的能失败——把补上那两行删掉，测试报 `[]database.FlowStatus(nil) does not contain "failed"` 和 `"[]" should have 1 item(s), but has 0`。
 
-缺的那一层没有一起补：准备阶段那次模型调用仍然可以占满 30 分钟（第 7 章第 16 条的前半部分仍在），这一节只保证到期之后用户能看见"失败了、为什么"。
+缺的那一层没有在这一节一起补（准备阶段那次模型调用仍然可以占满 30 分钟），下一次修在 4.81。
+
+### 4.81 一条不吭声的连接，别想再占住新建 flow 的 30 分钟（2026-11-24）
+
+4.80 收尾的是"到期之后"，这一节收尾"到期之前"：准备阶段的三次模型调用（挑镜像、判语言、起标题）共用 `prepareFlow` 的 30 分钟预算，没有一次带自己的 deadline。网关把连接接住却不回话时（flow 60 那条 `Established` 了 25 分钟的连接），这条 flow 在界面上一直是"创建中"，而且没有任何一处日志说它在等模型。
+
+#### 一、改法
+
+`callWithSetupRetries` 从自由函数改成 `providerController` 的方法，进 `retryTransient` 之前给这次调用套 `defaultSetupCallBudget`（90 秒）。重试仍然只对可能恢复的错误发生；预算用完之后 `retryTransient` 在 `ctx.Done()` 上直接返回 `context.DeadlineExceeded`，不会再去睡那 5 秒退避。三次调用各有 90 秒，最坏 4.5 分钟，比原来的 30 分钟短一个量级。
+
+#### 二、证明
+
+那张 `callWithSetupRetries` 的表里加了一行"网关接了连接却不回话"：`fakeCallProvider` 加了 `blocksUntilDone`（读到 ctx 结束才返回），控制器预算设 100 毫秒、调用方 ctx 给 30 秒。带修复时 0.10 秒返回 `context.DeadlineExceeded`、只调用一次；把 `context.WithTimeout(ctx, budget)` 换成 `context.WithCancel(ctx)`，这一行立刻红，报的正是"让调用方的 deadline 收场"——`"30.0009129s" is not less than "2s"`。
+
+#### 三、真机：一个接住连接却不回话的网关
+
+Docker Hub 这时连不上（`TLS handshake timeout`），所以镜像不是 `docker build` 出来的：本地交叉编译（`GOOS=linux GOARCH=amd64 go build ./cmd/opsagi`）出二进制，`docker cp` 进原镜像、`docker commit` 成 `local/opsagi:budget`——镜像里的前端与配置没变，只有这个二进制是新的。然后起一个"只接连接不回话"的 TCP 网关（18099，accept 之后一个字节都不写），把 `LLM_SERVER_URL` 指过去重启。
+
+flow 67 的结果（原文）：
+
+```text
+02:29:39  flow created in DB  flow_id=67
+02:31:09  failed to prepare a flow  error="failed to get flow provider: failed to select primary docker image via llm call: context deadline exceeded"
+```
+
+消息日志里写的是 `This flow could not be started: failed to get flow provider: … context deadline exceeded`，状态在 **93 秒**变成 `failed`。改之前这里会静坐 30 分钟，然后再因为过期的 ctx 连"失败"都写不进去（4.80）。
+
+换回真网关后建 flow 68，**135 秒**进入 `running`——正常路径没有被这 90 秒预算影响。
+
+### 4.82 Windows 检出把 CRLF 带进了提示词和文档（2026-11-24）
+
+现象：本机 `go test ./pkg/providers/` 长期红两条，CI 全绿。一条说 `the platform reference has no heading "Google AI (Gemini) Provider Configuration"`，可那个标题明明在 `docs/platform-reference.md` 里；另一条 `TestPerformer_PerformAgentChain_WritesAMissingScopeToGraphitiAsADash` 期望 `\n`、拿到 `\r\n`。
+
+根因是检出的行尾：这个工作区的 `platform-reference.md` 有 4211 个 CRLF 对，而 `go:embed` 把工作区里的字节原样嵌进二进制——于是 Windows 上构建的提示词与 Graphiti episode 都带 `\r`，Linux 和 CI 没有。这不是"测试挑环境"，是同一个仓库在两台机器上产出不同的提示词。
+
+改法：都在读的地方归一化，四处——`templates.normalizeLineEndings` 供 `GetTemplate`、`GetDefaultPrompts`、`ReadGraphitiTemplate` 三处使用；`catalog_test.go` 的 `readmeSection` 在读 `platform-reference.md` 时把 CRLF 折成 LF；`version_test.go` 读 `testdata/version_strings.tsv` 时同样处理（否则期望列会变成 `"ce\r"`）。每处都在注释里写明为什么。改完 `go test ./pkg/templates/ ./pkg/providers/ ./pkg/version/` 全绿——这两个包在本机第一次没有红灯。
 
 ## 5 环境
 
@@ -2552,18 +2587,15 @@ flow 108 里 `pg_explain` 取第 4 名，恰好是 agent 先前那条 `explain (
 
 flow 111 只调 `ops_diff`、把 flow 110 采到的 `base-2` 传进去，得到的是"可能已经过期（`ops_baseline` 只保留最近 16 次采样）"。真正的原因不是 16 条上限，而是采样表长在 flow 自己的工具实例上：换一条 flow 就换了一张表。现在的措辞是"它既不是指纹 JSON，也不是这条任务采集过的采样编号——编号只在采集它的那条 flow 里有效（本 flow 还留着最近 16 次），请先用 ops_baseline 采一次再比对"；测试断言的是"只在采集它的那条 flow 里有效"这句，改词就会红。
 
-### 17. 新会话可能长时间停在 `created`
+### 17. 新会话可能长时间停在 `created`（已修，见 4.80 / 4.81）
 
 flow 58 / 59 / 60 在 12:26–12:47 之间创建，全部停在 `created`：`reserveFlow` 写完行、`prepareFlow` 起了，但 `CreateFlowWorker` 里的模型调用（`fwc.provs.NewFlowProvider`）没有自己的 deadline。flow 60 的那条连接（宿主机 `127.0.0.1:50723 → 127.0.0.1:18000`，建立于 20:46:42）在 25 分钟后仍然 `Established`，而同时直连网关只要 2.2 秒——一条死连接就足以让 flow 在 `flowPrepareTimeout`（30 分钟）之内既不前进也不失败。执行期的 agent 链有 `API call exceeded deadline`，准备期没有。
 
-到期之后"连失败都写不进去"的那一半已经在 4.80 修掉：`failFlow` 不再沿用过期的 ctx，超时的 flow 现在会真的变成 `failed` 并在消息日志里带上原因。
-
-- 落点：准备阶段对 provider 的调用要带上明确超时（`flowPrepareTimeout` 在 `prepareFlow` 上，但准备内的单次 LLM 调用需要自己的 deadline），让一条死连接在几十秒内就把这条 flow 判掉，而不是占满 30 分钟。
-- 验收：断掉网关后建一条 flow，一分钟内变成 `failed` 并带有原因；网关恢复后建一条 flow，正常进入 `running`。
+两半都已修：准备期的单次调用现在有 90 秒预算（4.81），到期之后 `failFlow` 用不继承取消的新 ctx 写状态和原因（4.80）。
 
 ### 已经关掉的（不再列在上面）
 
-规划器替换（4.6）、性能链路与出口（4.7 / 4.12）、四角色委派（4.7）、seed/run CLI（4.9）、前端结论卡片与测量面板（4.12 / 4.13 / 4.17）、改名（4.10）、`ops_exec` 18 条命令（4.11）、`prom_query`（4.16）、`k8s_get`（4.26）、验收进 CI（4.25 / 4.27）、子任务并行（4.27）、人机回路（4.29）、交付门禁（4.30）、provider 配置桶改名（4.57）、死工具与死执行器（4.58）、文档正文重写（4.59）、镜像变量改名（4.60）、`functions`/`disabled` 死 API（4.61）、`ops_logs` 截断行数（4.72）、k8s 容器状态与 Pod 日志（4.73）、任务运行中的 `ask` 投递（4.74）、`ops_diff` 手抄指纹（4.74）、两条提问同时挂起时的答案路由（4.75）、第一条任务运行中的 `ask` 投递（4.77）、性能差值只来自主机指纹（4.79）、准备超时后写不进"失败"（4.80）。
+规划器替换（4.6）、性能链路与出口（4.7 / 4.12）、四角色委派（4.7）、seed/run CLI（4.9）、前端结论卡片与测量面板（4.12 / 4.13 / 4.17）、改名（4.10）、`ops_exec` 18 条命令（4.11）、`prom_query`（4.16）、`k8s_get`（4.26）、验收进 CI（4.25 / 4.27）、子任务并行（4.27）、人机回路（4.29）、交付门禁（4.30）、provider 配置桶改名（4.57）、死工具与死执行器（4.58）、文档正文重写（4.59）、镜像变量改名（4.60）、`functions`/`disabled` 死 API（4.61）、`ops_logs` 截断行数（4.72）、k8s 容器状态与 Pod 日志（4.73）、任务运行中的 `ask` 投递（4.74）、`ops_diff` 手抄指纹（4.74）、两条提问同时挂起时的答案路由（4.75）、第一条任务运行中的 `ask` 投递（4.77）、性能差值只来自主机指纹（4.79）、准备超时后写不进"失败"（4.80）、准备期调用没有自己的 deadline（4.81）。
 
 ## 8 踩过的坑
 
