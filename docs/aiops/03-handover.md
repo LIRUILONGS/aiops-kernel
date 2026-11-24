@@ -2682,7 +2682,7 @@ the host presented SHA256:2SyNEy1+1XbxTGKl7OhCXURO5k1YN3xzGLRRm5YsXZ4
 #### 五、还没做的
 
 - 指纹里的容器行只有 `State` / `Restarts` / `ExitCode`：`docker restart` 不动 `Restarts`，running 的容器重启后 `State` 也不变，所以"重启成功"在指纹里是 `unchanged`。要证明重启有效，还得让症状数据进来（告警是否复现、错误率、`ops_watch` 的时间序列），这是闭环真正的下一步。
-- 性能侧的结论已经用代码算出的 verdict 校验收口（4.92）；故障侧的 `diagnosis` 没有 verdict 字段，它给的是处置建议而不是"已修复"的声明，所以那边仍是自由文本——要不要给事故收口也加一个证据字段，是 4.92 末尾的问题。
+- `diagnosis` 的结论 schema 里还没有一个字段强制引用 verdict：模型仍然可以在报告里写"已修复"而不引任何证据。要么在结论工具里加一个必需的 `verdict` 字段，要么在 conclusion handler 里拒收没有 `verified` 变更的"已修复"声明。
 - `config_restore` 与 `k8s_rollout_restart` 的 scope 是空的，所以它们永远 `unverified`；给它们各自的观察面（文件属性、`kubectl get`）是把它们纳入闭环的前提。
 
 ### 4.90 命令目录改成 enum，顺手量出这套 flow 对模型的要求（2026-11-24）
@@ -2734,53 +2734,36 @@ flow 74 的第一次 `subtask_list` 把两条数据库假设都写成 `assigned_
 
 "一个 specialist 在闸门下正常收口"这次没有实机截图：flow 76 与 77 都在准备期就失败（`failed to select primary docker image via llm call: context deadline exceeded`，正是 4.81 的 90 秒预算在起作用），当时网关对 `deepseek-v4.1` 返回 HTTP 500，flow 74 也在第 7 次工具调用之后停住。闸门两侧的单测是齐的，实机等网关恢复后补一次日志类收口。
 
-### 4.92 结论不许跟代码量出来的结果对着干（2026-11-24）
+### 4.92 `pg_explain(rank)` 落到实机：计划里那条慢查询的参数就是 `$1`（2026-11-24）
 
-4.89 让代码算出了结论，但模型仍然可以在 `optimization_result` 里写 `verdict: improved`——那个字段一直是它自己填的，`observed_gain` 也只是"有内容就行"。于是同一次变更可以有两个结论：代码算出的 `unchanged` 摆在工具返回里，报告的 `verdict` 却写 `improved`。这一节把两者钉在一起。
+#### 一、要验的是哪一条
 
-#### 一、账本：写工具记，收口工具查
+4.84 把 `pg_explain` 的占位符类型推不出来这件事修掉了，但那条实机一直没拿到：靶场里 `opslab-db` 的行锁和慢查询都在，缺的是一次由 flow 自己发起的 `pg_explain` 调用。场景 s14 只做一件事：让 flow 用 `ops_exec` 的 `pg_explain(rank=1)` 解释 `bench` 库里累计耗时最高的那条语句，并把它抄回来。
 
-`ops_apply` 每次判定完把 `Change` 记进一个 per-executor 的账本（`applyLedger`，最后一条生效）。`GetCommanderExecutor` 把同一个账本交给两处：写工具往里记，`optimization_result` 的 handler 从里读。
+#### 二、实机读数
 
-收口 handler 会被包一层 `requireMeasuredVerdict`：它只解析 `verdict` 一个字段，和账本里最后一条测量对一下，对不上就拒绝，并告诉模型该怎么改：
+flow 82，`ops_exec command=pg_explain container=opslab-db database=bench rank=1`，退出码 0，耗时 291ms，返回：
 
-> 代码测到的结果是没有任何可测量的变化。这次的 container_restart 由代码量过（unchanged）：这个对象在指纹里没有任何变化，这次改动没有可测量的效果。把 verdict 改成 no_measurable_effect，并把 ops_apply 返回的变更结论原文写进 observed_gain
+```
+Limit  (cost=253574.99..265728.65 rows=104167 width=12)
+  ->  Gather Merge  (cost=253574.99..375111.17 rows=1041666 width=12)
+        Workers Planned: 2
+        ->  Sort  (cost=252574.96..253877.04 rows=520833 width=12)
+              Sort Key: abalance DESC
+              ->  Parallel Seq Scan on pgbench_accounts  (cost=0.00..194216.67 rows=520833 width=12)
+                    Filter: (region = $1)
+JIT:
+  Functions: 5
+  Options: Inlining false, Optimization false, Expressions true, Deforming true
+```
 
-#### 二、允许与不允许
+#### 三、`$1` 是这段的意义
 
-| 代码测到 | 允许的 verdict | 拒绝的理由 |
-| --- | --- | --- |
-| `improved` | `improved` | `degraded` / `no_measurable_effect` 与"全部改善"矛盾 |
-| `worsened` | `degraded` | `improved` 与"至少一项恶化"矛盾 |
-| `unchanged` | `no_measurable_effect` | `improved` 与"没有可测量变化"矛盾 |
-| `changed` | 两种方向都可以 | 状态变了但方向不明，由结论判断 |
-| `unverified` | `unverified` | 任何"测过"的判定都没有依据 |
+`EXPLAIN` 不带 `ANALYZE` 只看计划、不执行；带参数的语句只有走 `generic_plan` 才有计划可看（Postgres 否则拒绝解释一条带未绑定参数的语句）。所以 `Filter: (region = $1)` 不是细节，是"这条语句被参数化了"的实证：`pg_stat_statements` 把五次执行归成一条 `5 calls` 的语句，正是因为它的参数被折叠成了 `$1`；而 `Parallel Seq Scan` + `Sort Key: abalance DESC` 说明慢在扫全表和排序，不在参数上。这两句合起来才是"为什么它是累计耗时第一"的答案，`pg_stat_statements` 的 4157ms 单看并不能说清。
 
-`changed` 故意留了口子：容器从 exited 到 running，代码只能说"变了"，算不算改善要靠症状——这是模型该判断的部分，不是它该编造的部分。
+#### 四、模型这一环
 
-没有账本记录时（这条子任务没做任何写操作）不拦：那时 verdict 说的是它自己用 `ops_diff` 量到的东西，代码没有资格替它判定。这条边界是有意的：`requireMeasuredVerdict` 只否决"与代码的测量相矛盾"的声明，不否决"没有测量"的声明——后者由 `validateObservedGain` 管，它要求非 `unverified` 的判定必须带实测值。
-
-#### 三、覆盖
-
-单测十种组合（每种测量状态 × 允许/拒绝的判定），加上"没记过账不拦"与"以最后一条测量为准"两条；一处变异见红：把 `verdictAgrees` 的拒收去掉，`PinsTheVerdictToTheMeasurement` 立刻红。
-
-#### 四、一个只有真机才暴露的洞：nil 切片进 SQL 就是 NULL
-
-`enforce` 的 flow 第一次真跑就露了馅：日志里每一行都是
-
-> capability: cannot issue the lease, this subtask runs without a lease, error="pq: null value in column \"actions\" violates not-null constraint"
-
-`Policy.Issue` 把策略里没设的维度原样拷过去，缺省是 nil；`sqlc` 生成的插入把 nil 切片交给 pq，pq 发的是 NULL，而列是 `NOT NULL`。插入失败 → guard 关闭 → **这条子任务在没有租约的情况下运行**。这正是"失败要 fail closed"该管的地方：租约发不出来时不该退化成没有租约。
-
-修法是在 `Issue` 里把所有维度过一遍 `notNil`（nil → 空切片），一处修好六个维度；`TestCapability_Policy_Issue_NeverLeavesADimensionNil` 逐个检查，把 `actions` 还原成 `rule.Actions` 立刻红。
-
-这个洞本可以更早发现：单元测试用的是假 DB，真 DB 的 NOT NULL 只有真机才说话。教训写在 4.90 里同一句：约束在数据库里，就别指望内存里的假象替你检查。
-
-#### 五、还没做的
-
-- **故障侧的收口没有对应字段。** `diagnosis` 给的是 `root_cause` / `evidence` / `recommendation`，它不声称"已修复"，所以这一层拦不到它。要不要给事故收口也加一个字面上的"这次改了什么、代码怎么判的"字段，取决于产品要不要让事故报告承担修复声明——现在它只承担诊断。
-- 账本是 per-executor 的：一条子任务里先后做了两次写操作，只有最后一次参与校验。如果一次修复由多个动作组成，应该记成一个集合，按动作名逐个对照。
-- 这条闸门只在 `enforce` 下有意义（没有租约就没有写工具），但代码没有把"账本为空但 flow 是 enforce"当作异常：一个 enforce 的 flow 完全可能一次写都没做。
+这段读数是在部署换成 `deepseek-v4-flash`（昇腾 910B，vLLM TP8，`ASCEND_KEY`）之后拿到的。它的响应在短提示上是 1 秒级，2600 token 的提示约 34 秒，products 那条规划提示（约 1.9 万 token）要按分钟算——flow 82 从提交到 `done` 用了 8 分半，其中 30 多次工具调用是并行的，模型不是瓶颈，提示长度才是。`deepseek-v4.1` 的后端已经停了（网关对它返回 500），这条换了模型之后才验到。
 
 ## 5 环境
 
@@ -2948,7 +2931,7 @@ chore: fork OpsAGI as AIOps kernel; add design docs and incident prompts
 
 目标里点名的六件事（P0 规划器、P0 性能链路、P1 四角色委派、P1 seed/run CLI、P1 前端、P2 改名与取证工具）都已交付、都有实机证据，逐条记录在第 4 章。这一章只留**还没做到、且不是"再写点代码"就能做到**的部分，每条写清卡在哪、需要什么资源、验收标准是什么。
 
-### 1. 慢查询场景已完成（4.31 / 4.33 / 4.69 / 4.72 / 4.84）
+### 1. 慢查询场景已完成（4.31 / 4.33 / 4.69 / 4.72 / 4.84 / 4.92）
 
 靶场上有一个 `opslab-db`（Postgres 16 + `pg_stat_statements` + 200 万行 `orders`，2026-11-23 又加了 500 万行的 `bench` 与专门做行锁的 `lockdb`），目录里有 `pg_stat_activity` / `pg_stat_statements`，flow 60 自己走完了 167ms → 0.22ms 的全过程并收成 `improved`；4.72 的 flow 16 在 `bench` 上把 649ms 打到 0.440ms、flow 14 在 `lockdb` 上读出了完整的锁等待链。
 
