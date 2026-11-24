@@ -57,6 +57,8 @@ func CreateDummyTemplateData() map[string]any {
 		"TraceEnabled":               true,
 		"OptimizationToolName":       tools.OptimizationResultToolName,
 		"OptimizationMode":           false,
+		"ApplyToolName":              tools.OpsApplyToolName,
+		"WritesEnabled":              false,
 		"AskToolName":                tools.AskUserToolName,
 		"GetFlowStatusToolName":      tools.GetFlowStatusToolName,
 		"StopFlowToolName":           tools.StopFlowToolName,
