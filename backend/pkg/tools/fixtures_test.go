@@ -335,6 +335,18 @@ type fakeContainerDB struct {
 	lookupErr error
 	updateErr error
 	updates   []database.UpdateContainerStatusParams
+	// flowMode is what GetFlow reports: a flow the caller describes as enforcing
+	// is the one that may repair anything.
+	flowMode string
+	flowErr  error
+}
+
+func (q *fakeContainerDB) GetFlow(context.Context, int64) (database.Flow, error) {
+	if q.flowErr != nil {
+		return database.Flow{}, q.flowErr
+	}
+
+	return database.Flow{CapabilityMode: q.flowMode}, nil
 }
 
 func (q *fakeContainerDB) GetFlowPrimaryContainer(context.Context, int64) (database.Container, error) {

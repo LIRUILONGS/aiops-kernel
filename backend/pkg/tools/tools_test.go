@@ -1326,3 +1326,34 @@ func TestTools_GetCommanderExecutor_KeepsTheConclusionWhenThereIsNoHostToRead(t 
 		require.False(t, advertised[name], "%s cannot work without a host and must not be advertised", name)
 	}
 }
+
+func TestTools_GetCommanderExecutor_OffersTheWriteToolOnlyUnderAnEnforcingLease(t *testing.T) {
+	handler := func(context.Context, string, json.RawMessage) (string, error) { return "", nil }
+
+	build := func(mode string) []string {
+		fte := &flowToolsExecutor{
+			flowID: 42,
+			cfg: &config.Config{
+				OpsTargets: `[{"id":"lab","host":"127.0.0.1","port":22,"user":"root","password":"x"}]`,
+			},
+			db:     &fakeContainerDB{row: toolsSandboxRow(database.ContainerStatusRunning, "primary"), flowMode: mode},
+			docker: &fakeDockerClient{},
+		}
+
+		executor, err := fte.GetCommanderExecutor(CommanderExecutorConfig{Diagnosis: handler})
+		require.NoError(t, err)
+
+		var advertised []string
+		for _, def := range executor.(*customExecutor).definitions {
+			advertised = append(advertised, def.Name)
+		}
+
+		return advertised
+	}
+
+	for _, mode := range []string{"", "off", "shadow"} {
+		assert.NotContains(t, build(mode), OpsApplyToolName, "mode %q must not offer a repair", mode)
+	}
+
+	assert.Contains(t, build("enforce"), OpsApplyToolName)
+}
