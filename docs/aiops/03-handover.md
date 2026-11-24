@@ -2886,6 +2886,36 @@ flow 88 的计划里 `assigned_to` 确实是 `log_analyst`，通道没问题—�
 
 "一个 specialist 用 `*_finding` 收口"仍然没有实机样本，而且现在看不是闸门的问题：`deepseek-v4-flash` 在这套提示下不选那张表。要关它得先让 planner 或 analyst 的提示把"窄结论用 finding 收口"说成硬要求，否则这四张表会一直是单测覆盖、实机零流量。
 
+### 4.96 换回 deepseek 之后，容器场景在 main 上跑通了（2026-11-24）
+
+4.90 记的是 `flashnext-abli` 的下限；它跑不动的那些场景，换回 `deepseek-v4.1` 后在同一天的 main（`82dfa276`）上跑通了。
+
+#### 一、环境先修好
+
+`orinfer-v41.service` 14:34 被停之后，`deepseek-v4.1` 一整天都在 500。18:21 服务被重新拉起（`NRestarts=0`，8000 端口连续五次 200），但真正让 flow 跑起来还要过三关：
+
+| 现象 | 原因 |
+|---|---|
+| 前半程正常，后半程 `agent model call failed: EOF` / `network error: failed to reach API server` | 网关（litellm 容器）与 SSH 隧道在 19:32–20:07 之间各重启过一次，重启期间的流被掐断 |
+| `Invalid tool_choice` | 别人在同一个网关上试 `strix-v4`，那个模型不接受 `tool_choice`，与我们无关 |
+| 沙箱镜像拉不下来 | `vxcontrol/kali-linux` 被清掉了，改 `OPSAGI_DEFAULT_SANDBOX_IMAGE=opsagi-labbox:local` |
+
+稳定后实测：连续 20 次调用 0 失败，3 路并发流式调用全部正常——所以上面那些 EOF 是重启窗口，不是链路质量问题。
+
+#### 二、flow 125 的证据
+
+场景是同一份"seal-engraver persistence 500、health 200"（`s1b_container.json`，靶场里 `seal-engraver-postgres` 每次启动约 8 秒后被外部 SIGTERM）。flow 跑了 130 次工具调用、13 种工具，结论是：
+
+> `seal-engraver-postgres` 容器在每次启动约 8–9 秒后被外部主体发送 SIGTERM（Postgres 记录 `received fast shutdown request` 后干净退出，exit_code=0、OOMKilled=false），退出后 `restart_policy=unless-stopped` 未将其拉起（RestartCount 恒为 0），全机无进程监听 5432，backend persistence 路径失去数据库对端返回 500；因 `/api/health` 只探 `127.0.0.1:8000` 不触库，探针保持 200，故障被掩盖。
+
+三条证据都带出处：`docker_inspect` 的原始 JSON（`exit_code:0`、`oom_killed:false`、`restart_count:0`、`restart_policy:unless-stopped`）、容器日志里 `ready to accept connections → received fast shutdown request → database system is shut down` 的 8 秒序列（并给出 11-23T04:17、11-24T06:41、12:10、12:14 四次同样序列）、以及宿主侧 `5432` 无监听者的扫描结果。这正是靶场埋的那个故障，不是猜的。
+
+工具分布：`ops_exec` 39、`ops_logs` 29、`ops_sandbox` 27、`ops_containers` 14、`ops_system` 5，另有 `log_analyst` / `change_analyst` 各一次委派与两次 `subtask_patch`。39 次 `ops_exec` 用的全是目录里的合法 id（`docker_inspect`、`listen_ports`、`container_image`、`package_history`、`image_history`、`file_stat`、`kernel_log`）——4.90 把命令目录写成 enum 之后，一个真实 flow 里没有再出现 4.90 记录的那种 `ps aux`。
+
+#### 三、代价
+
+这一次 flow 用掉了 100 次工具预算（`tool budget spent, asking the agent to conclude`），总时长 36 分钟。诊断本身在 20 分钟时就已经收敛，剩下的时间花在"谁发的 SIGTERM"上——那个主体在容器里确实看不见（只读挂载下 `docker.sock` 被拒、PID 1 不是 systemd、journal 没有条目），模型自己也把这条判成"分辨率不够"并如实交人工。这条经验值得记住：**取证分辨率有上限时，模型会在同一假设上反复换姿势**，`tool budget` 是唯一的刹车。
+
 ## 5 环境
 
 ### 5.1 开发机
