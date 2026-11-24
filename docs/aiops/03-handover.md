@@ -2947,6 +2947,39 @@ flow 126 本身的表现是对的：
 
 顺带两条 4.90 / 4.85 的实测回执：`ops_containers` 被调用时带了 `filter: "opslab-db"`（工具描述里那句"要报几个就用 filter"确实被读到并使用）；`ops_exec` 的 9 次调用全部是目录里的合法 id（`pg_stat_statements`、`pg_explain`、`pg_stat_activity`、`pg_lock_wait_summary`、`docker_inspect`），没有再出现 4.90 里那种把 `ps aux` 当命令 id 的情况。
 
+### 4.98 一次 `git add` 把别人的半成品带进了 main（2026-11-24）
+
+记一笔流程事故，因为它在 git 历史里留下了两个红提交（`f816462f`、以及修它的 `e5b8cf63`），后来人看 `git log` 会想问为什么。
+
+#### 一、怎么发生的
+
+这个工作区是两个人（两个会话）共用的。`backend/pkg/tools/ops.go` 里同时有：我加的 `ops_diff` 自比对护栏，和另一个会话正在做的 `applyLedger` 整体移除——那个重构要删 `apply_ledger.go`、改 `executor.go`/`labels.go`/`tools.go`，`ops.go` 只是其中一半。
+
+我 `git add backend/pkg/tools/ops.go` 时，把那一半也带上了。结果是 main 上：`ops.go` 里 `WithLedger` 没了，而 `cmd/ftester/mocks/logs.go` 与 `pkg/tools/tools.go` 还在调它——类型检查不过，`Backend - Lint` 和 `Acceptance - Run the flow end to end` 同时红。
+
+#### 二、定位
+
+本地 `go build ./...` 是绿的，因为**工作区**里 `tools.go` 的那处调用也被那个会话删掉了；红的是**提交出去的那份内容**。所以本地怎么构建都复现不出来——把 main 的树在 Linux 容器里用同一版 golangci-lint（`v2.12.2`）跑一遍才看见：
+
+```
+cmd/ftester/mocks/logs.go:11:2: could not import opsagi/pkg/tools
+pkg/tools/tools.go:934:78: ...WithLedger undefined (type *opsTools has no field or method WithLedger)
+```
+
+这也顺带解释了这个仓库一条已知的噪声：Windows 上的 `golangci-lint` 会报 `pkg/system/utils_windows.go` 的 errcheck/ST1005，那不是 CI 的口径（CI 在 Linux 上不编这个文件），别照着它改。
+
+#### 三、怎么修的
+
+不动工作区，只改索引：把 `ops.go` 取回 main 上的版本，在它上面重新只加那三行护栏，`git update-index --cacheinfo` 提交。这样 main 与工作区各自自洽——main 是"旧 `ops.go` + 护栏"，工作区是"那个会话的新 `ops.go` + 护栏"，等他们提交时护栏跟着一起进去，不会被覆盖掉。
+
+修完 `e5b8cf63` 的 CI 两个 job 都是 success。
+
+#### 四、代价与规矩
+
+- 代价：一次红 main，加一小时排查。
+- 规矩：**提交单个文件前，先 `git diff` 那个文件**，确认改动只有自己那几行。共用工作区里，"我只改了这一处"是错觉——文件里还躺着别人的改动。
+- 附带一条：本地 Windows 的 lint 结果不能当 CI 的口径用（OS 条件编译的文件不同），要复现 CI 必须在 Linux 容器里跑同一版 `golangci-lint`，用宿主机的模块缓存（`-v C:\Users\Administrator\go\pkg\mod:/go/pkg/mod -e GOPROXY=off`）省掉下载。
+
 ## 5 环境
 
 ### 5.1 开发机
