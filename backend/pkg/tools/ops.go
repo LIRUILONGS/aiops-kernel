@@ -294,7 +294,13 @@ func (o *opsTools) HandleExec(ctx context.Context, name string, args json.RawMes
 	if entry, ok := opsremote.Lookup(parsed.Command); ok {
 		label = entry.Description
 	}
-	return formatExec(target, label, res), nil
+
+	rendered := formatExec(target, label, res)
+	if advice := opsremote.Advice(parsed.Command, res.Stdout); advice != "" {
+		rendered += "\n" + advice
+	}
+
+	return rendered, nil
 }
 
 // OpsSandboxArgs runs a shell script inside the probe box on the target. The

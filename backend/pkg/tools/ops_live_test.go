@@ -7,11 +7,13 @@ import (
 	"encoding/json"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"opsagi/pkg/config"
+	"opsagi/pkg/opsremote"
 )
 
 // These run against a real host named by OPSAGI_LIVE_TARGETS, which carries the
@@ -133,4 +135,87 @@ func TestOpsTools_HandleTrace_LiveRunqlatPrintsTheSummary(t *testing.T) {
 	}
 
 	t.Logf("trace:\n%s", answer[max(0, len(answer)-700):])
+}
+
+// liveClient dials the first target the env names, for the few tests that have to
+// change what the lab looks like before the tool can be exercised.
+func liveClient(t *testing.T) *opsremote.Client {
+	t.Helper()
+
+	var targets []opsremote.Target
+	if err := json.Unmarshal([]byte(os.Getenv("OPSAGI_LIVE_TARGETS")), &targets); err != nil {
+		t.Fatalf("parse OPSAGI_LIVE_TARGETS: %v", err)
+	}
+	if len(targets) == 0 {
+		t.Fatal("OPSAGI_LIVE_TARGETS names no target")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	client, err := opsremote.Dial(ctx, targets[0])
+	if err != nil {
+		t.Fatalf("dial %s: %v", targets[0].ID, err)
+	}
+	t.Cleanup(func() { _ = client.Close() })
+
+	return client
+}
+
+// The statement is written with a constant because psql has to be able to parse
+// it; pg_stat_statements then normalises that constant into $1, which is the
+// shape EXPLAIN (GENERIC_PLAN) cannot type.
+const plantUntypablePlaceholder = `docker exec opslab-db psql -U postgres -d bench -q ` +
+	`-c "select count(*) from pgbench_accounts where round(extract(epoch from now())) > 0" ` +
+	`-c "select count(*) from pgbench_accounts where round(extract(epoch from now())) > 0" ` +
+	`-c "select count(*) from pgbench_accounts where round(extract(epoch from now())) > 0"`
+
+// The rank is read back rather than assumed: the same filter the tool applies,
+// so a busy lab cannot shift the row out from under the assertion.
+const plantedRankQuery = `docker exec opslab-db psql -U postgres -d bench -tAc "` +
+	`select rank from (select row_number() over (order by total_exec_time desc) rank, query from pg_stat_statements ` +
+	`where dbid = (select oid from pg_database where datname = current_database()) ` +
+	`and ltrim(lower(query)) ~ '^(select|with|insert|update|delete|values|table)\y' ` +
+	`and position('pg_stat_statements' in query) = 0) t where query like '%round(extract(%' limit 1"`
+
+func TestOpsTools_HandleExec_LiveExplainSaysWhyAPlaceholderHasNoPlan(t *testing.T) {
+	tools := liveOpsTools(t)
+	client := liveClient(t)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
+	if _, err := client.Run(ctx, plantUntypablePlaceholder); err != nil {
+		t.Fatalf("plant: %v", err)
+	}
+
+	res, err := client.Run(ctx, plantedRankQuery)
+	if err != nil {
+		t.Fatalf("rank: %v", err)
+	}
+
+	rank, err := strconv.Atoi(strings.TrimSpace(res.Stdout))
+	if err != nil {
+		t.Fatalf("rank = %q, want the planted statement to have one (stdout %q)", res.Stdout, res.Stderr)
+	}
+
+	payload, err := json.Marshal(map[string]any{
+		"target": "lab", "command": "pg_explain", "container": "opslab-db", "database": "bench", "rank": rank,
+	})
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+
+	answer, err := tools.HandleExec(ctx, "ops_exec", payload)
+	if err != nil {
+		t.Fatalf("explain: %v", err)
+	}
+
+	// The label already says GENERIC_PLAN, so the assertion names the sentence
+	// itself; otherwise a missing advice line would pass on the label alone.
+	if !strings.Contains(answer, "推不出它们的类型") {
+		t.Fatalf("answer = %q, want the sentence that explains the placeholder", answer)
+	}
+
+	t.Logf("explain (rank %d):\n%s", rank, answer[max(0, len(answer)-600):])
 }
