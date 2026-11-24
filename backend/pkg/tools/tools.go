@@ -929,7 +929,9 @@ func (fte *flowToolsExecutor) GetCommanderExecutor(cfg CommanderExecutorConfig) 
 	// A host is optional. Without one the commander still has a conclusion to
 	// reach -- the evidence it was given is in the conversation -- so it builds
 	// with the tools that do not need a shell instead of refusing to start.
-	if ops := NewOpsTools(fte.cfg).WithCredentialStore(credentialStore(fte.db)); ops.IsAvailable() {
+	ledger := &applyLedger{}
+
+	if ops := NewOpsTools(fte.cfg).WithCredentialStore(credentialStore(fte.db)).WithLedger(ledger); ops.IsAvailable() {
 		definitions = append(definitions,
 			registryDefinitions[OpsContainersToolName],
 			registryDefinitions[OpsLogsToolName],
@@ -955,6 +957,13 @@ func (fte *flowToolsExecutor) GetCommanderExecutor(cfg CommanderExecutorConfig) 
 		if ops.TraceAvailable() {
 			definitions = append(definitions, registryDefinitions[OpsTraceToolName])
 			handlers[OpsTraceToolName] = ops.HandleTrace
+		}
+
+		// The conclusion is where a claim of repair is made, so it is where the
+		// measurement has to be quoted: the same ledger the write tool recorded
+		// into judges the verdict here.
+		if cfg.Optimization != nil {
+			handlers[OptimizationResultToolName] = requireMeasuredVerdict(cfg.Optimization, ledger)
 		}
 	}
 	if prom := NewPromTools(fte.cfg); prom.IsAvailable() {

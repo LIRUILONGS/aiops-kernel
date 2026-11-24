@@ -2682,7 +2682,7 @@ the host presented SHA256:2SyNEy1+1XbxTGKl7OhCXURO5k1YN3xzGLRRm5YsXZ4
 #### 五、还没做的
 
 - 指纹里的容器行只有 `State` / `Restarts` / `ExitCode`：`docker restart` 不动 `Restarts`，running 的容器重启后 `State` 也不变，所以"重启成功"在指纹里是 `unchanged`。要证明重启有效，还得让症状数据进来（告警是否复现、错误率、`ops_watch` 的时间序列），这是闭环真正的下一步。
-- `diagnosis` 的结论 schema 里还没有一个字段强制引用 verdict：模型仍然可以在报告里写"已修复"而不引任何证据。要么在结论工具里加一个必需的 `verdict` 字段，要么在 conclusion handler 里拒收没有 `verified` 变更的"已修复"声明。
+- 性能侧的结论已经用代码算出的 verdict 校验收口（4.92）；故障侧的 `diagnosis` 没有 verdict 字段，它给的是处置建议而不是"已修复"的声明，所以那边仍是自由文本——要不要给事故收口也加一个证据字段，是 4.92 末尾的问题。
 - `config_restore` 与 `k8s_rollout_restart` 的 scope 是空的，所以它们永远 `unverified`；给它们各自的观察面（文件属性、`kubectl get`）是把它们纳入闭环的前提。
 
 ### 4.90 命令目录改成 enum，顺手量出这套 flow 对模型的要求（2026-11-24）
@@ -2733,6 +2733,42 @@ flow 74 的第一次 `subtask_list` 把两条数据库假设都写成 `assigned_
 #### 四、还没验到的那一格
 
 "一个 specialist 在闸门下正常收口"这次没有实机截图：flow 76 与 77 都在准备期就失败（`failed to select primary docker image via llm call: context deadline exceeded`，正是 4.81 的 90 秒预算在起作用），当时网关对 `deepseek-v4.1` 返回 HTTP 500，flow 74 也在第 7 次工具调用之后停住。闸门两侧的单测是齐的，实机等网关恢复后补一次日志类收口。
+
+### 4.92 结论不许跟代码量出来的结果对着干（2026-11-24）
+
+4.89 让代码算出了结论，但模型仍然可以在 `optimization_result` 里写 `verdict: improved`——那个字段一直是它自己填的，`observed_gain` 也只是"有内容就行"。于是同一次变更可以有两个结论：代码算出的 `unchanged` 摆在工具返回里，报告的 `verdict` 却写 `improved`。这一节把两者钉在一起。
+
+#### 一、账本：写工具记，收口工具查
+
+`ops_apply` 每次判定完把 `Change` 记进一个 per-executor 的账本（`applyLedger`，最后一条生效）。`GetCommanderExecutor` 把同一个账本交给两处：写工具往里记，`optimization_result` 的 handler 从里读。
+
+收口 handler 会被包一层 `requireMeasuredVerdict`：它只解析 `verdict` 一个字段，和账本里最后一条测量对一下，对不上就拒绝，并告诉模型该怎么改：
+
+> 代码测到的结果是没有任何可测量的变化。这次的 container_restart 由代码量过（unchanged）：这个对象在指纹里没有任何变化，这次改动没有可测量的效果。把 verdict 改成 no_measurable_effect，并把 ops_apply 返回的变更结论原文写进 observed_gain
+
+#### 二、允许与不允许
+
+| 代码测到 | 允许的 verdict | 拒绝的理由 |
+| --- | --- | --- |
+| `improved` | `improved` | `degraded` / `no_measurable_effect` 与"全部改善"矛盾 |
+| `worsened` | `degraded` | `improved` 与"至少一项恶化"矛盾 |
+| `unchanged` | `no_measurable_effect` | `improved` 与"没有可测量变化"矛盾 |
+| `changed` | 两种方向都可以 | 状态变了但方向不明，由结论判断 |
+| `unverified` | `unverified` | 任何"测过"的判定都没有依据 |
+
+`changed` 故意留了口子：容器从 exited 到 running，代码只能说"变了"，算不算改善要靠症状——这是模型该判断的部分，不是它该编造的部分。
+
+没有账本记录时（这条子任务没做任何写操作）不拦：那时 verdict 说的是它自己用 `ops_diff` 量到的东西，代码没有资格替它判定。这条边界是有意的：`requireMeasuredVerdict` 只否决"与代码的测量相矛盾"的声明，不否决"没有测量"的声明——后者由 `validateObservedGain` 管，它要求非 `unverified` 的判定必须带实测值。
+
+#### 三、覆盖
+
+单测十种组合（每种测量状态 × 允许/拒绝的判定），加上"没记过账不拦"与"以最后一条测量为准"两条；一处变异见红：把 `verdictAgrees` 的拒收去掉，`PinsTheVerdictToTheMeasurement` 立刻红。
+
+#### 四、还没做的
+
+- **故障侧的收口没有对应字段。** `diagnosis` 给的是 `root_cause` / `evidence` / `recommendation`，它不声称"已修复"，所以这一层拦不到它。要不要给事故收口也加一个字面上的"这次改了什么、代码怎么判的"字段，取决于产品要不要让事故报告承担修复声明——现在它只承担诊断。
+- 账本是 per-executor 的：一条子任务里先后做了两次写操作，只有最后一次参与校验。如果一次修复由多个动作组成，应该记成一个集合，按动作名逐个对照。
+- 这条闸门只在 `enforce` 下有意义（没有租约就没有写工具），但代码没有把"账本为空但 flow 是 enforce"当作异常：一个 enforce 的 flow 完全可能一次写都没做。
 
 ## 5 环境
 
