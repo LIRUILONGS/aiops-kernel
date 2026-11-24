@@ -2593,13 +2593,21 @@ the host presented SHA256:2SyNEy1+1XbxTGKl7OhCXURO5k1YN3xzGLRRm5YsXZ4
 - 列表支持前缀通配：`container_restart *` 是"任何容器的重启，别的一概不行"，比逐个列名字更实用，也仍然是一条可以写进策略文件的窄口子。
 - 动作的"实例"是承重字段：`Action` 是 `container_restart api-1` 这个字符串，不是 `container_restart`。审批与授权都按它比对，所以批准一次重启只覆盖那一个容器，换 `api-2` 要重新问。
 
-#### 三、拒绝是可批准的：复用已有审批链路
+#### 三、没有 enforce 就没有写工具
+
+能力开关的缺省是 `off`（`convertCapabilityMode` 对 `nil` 返回 off），而 off 意味着连 guard 都不装。如果 `ops_apply` 在这种情况下仍然在工具列表里，一次普通的、没开租约的 flow 就能随意改主机——"没有 guard"会被读成"没有限制"。
+
+所以写工具的出现条件是 flow 的 `capability_mode = enforce`：`GetCommanderExecutor` 建工具列表时读一次 flow，只有 enforcing 才把 `ops_apply` 加进去；handler 自己也带一个开关（`WithWrites`），没开时拒绝并说明原因。两层都在：模型看不到这个工具，即便看到也执行不了。`shadow` 同样不给：影子模式让调用通过、只记录，那不是写操作该有的语义。
+
+助手对话不给写工具：那里没有租约、没有子任务、也没有可审批的范围。
+
+#### 四、拒绝是可批准的：复用已有审批链路
 
 写操作在租约之外时，guard 提交一条 `capability_request`（`tool=ops_apply`，`command` 一列放的就是那个实例字符串，操作员在审批面板里看到的是"container_restart api-1"），拒绝语里带上请求号。操作员 `decideCapabilityRequest` 批准后生成一条 `capability_grant`，guard 每次调用都重读授权，所以**同一个子任务的下一次尝试**就能通过，不用等下一轮。
 
 `ops_apply` 只发给指挥官（`GetCommanderExecutor`）：助手对话和四个分析师都不该有写权限，分析师的价值恰恰是"只读但看全"。`ops_apply` 也不在 `optionalEvidenceTool` 里——它不是取证。
 
-#### 四、真机验证
+#### 五、真机验证
 
 在靶场宿主上起了一个一次性的 `opslab-apply-probe`（alpine，`sleep 3600`），然后走真实工具链重启它：
 
@@ -2607,9 +2615,10 @@ the host presented SHA256:2SyNEy1+1XbxTGKl7OhCXURO5k1YN3xzGLRRm5YsXZ4
 - 重启前后用只读目录的 `docker_inspect` 取启动时刻：`2026-11-24T07:08:26.203188336Z` → `2026-11-24T07:08:55.993587339Z`。`RestartCount` 仍是 0——`docker restart` 不动那个计数器，证明"容器真的重启过"只能看 `StartedAt`，这也是模板把启动时刻写进输出的原因。
 - 目录与策略的六个变异全部见红：删掉动作维度的判断、删掉前缀通配、把 `kind` 换成自由名字、删掉 `..` 检查、让 guard 不写 `Command`、跳过 `RenderAction` 直接执行 ID。每一次都只有这一条测试转红，恢复后全绿。
 
-#### 五、还没做的
+#### 六、还没做的
 
 - `k8s_rollout_restart` 走的是目标机上的 `kubectl`：靶场里 k3s 在容器里，宿主没有 kubectl，所以这条模板只有单测，没有真机。要么在目标机装 kubectl，要么另开一条走 API 的写通道。
+- 前端没有"这个 flow 能不能写"的提示：开关在创建 flow 时选，界面上还没有一个"写操作已启用"的标记。
 - 审批面板目前显示的是 `command` 字段，对写操作它就是 `container_restart api-1`；等前端做凭据页时把它单独渲染成一列更清楚。
 - flow 级 `enforce` 的完整闭环（模型被拒 → 操作员在界面上批准 → 模型重试成功）还要在重建镜像后跑一次；本轮真机验证覆盖的是"写操作确实落到主机"与"目录与租约按代码拒绝"。
 - 第三步的 baseline → apply → diff → verdict 还没接：`ops_apply` 的返回语已经要求模型复采一次基线再比，但"修没修好"目前仍是模型自己的判断，不是代码算出来的结论。

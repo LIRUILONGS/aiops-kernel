@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"opsagi/pkg/capability"
 	"opsagi/pkg/config"
 	"opsagi/pkg/database"
 	"opsagi/pkg/database/knowledge/limits"
@@ -860,7 +861,6 @@ func (fte *flowToolsExecutor) GetAssistantExecutor(cfg AssistantExecutorConfig) 
 			registryDefinitions[OpsBaselineToolName],
 			registryDefinitions[OpsDiffToolName],
 			registryDefinitions[OpsExecToolName],
-			registryDefinitions[OpsApplyToolName],
 		)
 		handlers[OpsSystemToolName] = ops.HandleSystem
 		handlers[OpsContainersToolName] = ops.HandleContainers
@@ -868,7 +868,6 @@ func (fte *flowToolsExecutor) GetAssistantExecutor(cfg AssistantExecutorConfig) 
 		handlers[OpsBaselineToolName] = ops.HandleBaseline
 		handlers[OpsDiffToolName] = ops.HandleDiff
 		handlers[OpsExecToolName] = ops.HandleExec
-		handlers[OpsApplyToolName] = ops.HandleApply
 	}
 
 	if prom := NewPromTools(fte.cfg); prom.IsAvailable() {
@@ -940,7 +939,6 @@ func (fte *flowToolsExecutor) GetCommanderExecutor(cfg CommanderExecutorConfig) 
 			registryDefinitions[OpsExecToolName],
 			registryDefinitions[OpsWatchToolName],
 			registryDefinitions[OpsSandboxToolName],
-			registryDefinitions[OpsApplyToolName],
 		)
 		handlers[OpsContainersToolName] = ops.HandleContainers
 		handlers[OpsLogsToolName] = ops.HandleLogs
@@ -950,7 +948,10 @@ func (fte *flowToolsExecutor) GetCommanderExecutor(cfg CommanderExecutorConfig) 
 		handlers[OpsExecToolName] = ops.HandleExec
 		handlers[OpsWatchToolName] = ops.HandleWatch
 		handlers[OpsSandboxToolName] = ops.HandleSandbox
-		handlers[OpsApplyToolName] = ops.HandleApply
+		if fte.capabilityEnforcing() {
+			definitions = append(definitions, registryDefinitions[OpsApplyToolName])
+			handlers[OpsApplyToolName] = ops.WithWrites(true).HandleApply
+		}
 		if ops.TraceAvailable() {
 			definitions = append(definitions, registryDefinitions[OpsTraceToolName])
 			handlers[OpsTraceToolName] = ops.HandleTrace
@@ -1234,4 +1235,16 @@ func enrichLogrusFields(flowID int64, taskID, subtaskID *int64, fields logrus.Fi
 
 func boundedContent(replacer anonymizer.Replacer, raw string) string {
 	return limits.TruncateToLimit(replacer.ReplaceString(raw), limits.MaxContentLen)
+}
+
+// capabilityEnforcing reports whether this flow opted into a lease that refuses.
+// It is read when the toolset is built because that is the moment a write would
+// become visible to the model, and a write nobody audits must not be offered.
+func (fte *flowToolsExecutor) capabilityEnforcing() bool {
+	flow, err := fte.db.GetFlow(context.Background(), fte.flowID)
+	if err != nil {
+		return false
+	}
+
+	return capability.ParseMode(flow.CapabilityMode).Enforcing()
 }

@@ -411,7 +411,7 @@ func TestContainers_FilterContainers_KeepsEveryContainerWithoutAFilter(t *testin
 func TestOpsTools_HandleApply_RefusesAnUnknownActionBeforeItDials(t *testing.T) {
 	tools := &opsTools{targets: map[string]opsremote.Target{"lab": {ID: "lab", Host: "192.0.2.10"}}}
 
-	_, err := tools.HandleApply(t.Context(), OpsApplyToolName, []byte(`{"action":"rm_rf"}`))
+	_, err := tools.WithWrites(true).HandleApply(t.Context(), OpsApplyToolName, []byte(`{"action":"rm_rf"}`))
 
 	if err == nil {
 		t.Fatal("an action outside the catalogue was accepted")
@@ -426,7 +426,7 @@ func TestOpsTools_HandleApply_RefusesAnUnknownActionBeforeItDials(t *testing.T) 
 func TestOpsTools_HandleApply_RefusesAnArgumentCarryingAShellBeforeItDials(t *testing.T) {
 	tools := &opsTools{targets: map[string]opsremote.Target{"lab": {ID: "lab", Host: "192.0.2.10"}}}
 
-	_, err := tools.HandleApply(t.Context(), OpsApplyToolName, []byte(`{"action":"container_restart","container":"api; reboot"}`))
+	_, err := tools.WithWrites(true).HandleApply(t.Context(), OpsApplyToolName, []byte(`{"action":"container_restart","container":"api; reboot"}`))
 
 	if err == nil {
 		t.Fatal("a container name carrying a shell was accepted")
@@ -439,7 +439,7 @@ func TestOpsTools_HandleApply_RefusesAnArgumentCarryingAShellBeforeItDials(t *te
 func TestOpsTools_HandleApply_AnswersAnEmptyActionWithTheCatalogue(t *testing.T) {
 	tools := &opsTools{targets: map[string]opsremote.Target{"lab": {ID: "lab", Host: "192.0.2.10"}}}
 
-	_, err := tools.HandleApply(t.Context(), OpsApplyToolName, []byte(`{}`))
+	_, err := tools.WithWrites(true).HandleApply(t.Context(), OpsApplyToolName, []byte(`{}`))
 
 	if err == nil {
 		t.Fatal("a call with no action was accepted")
@@ -461,5 +461,36 @@ func TestRegistry_OpsApplyDescriptionNamesEveryCatalogueAction(t *testing.T) {
 		if !strings.Contains(definition.Description, id) {
 			t.Errorf("the description does not name %s, so the model cannot choose it", id)
 		}
+	}
+}
+
+func TestOpsTools_HandleApply_RefusesWhenTheFlowHasNoEnforcingLease(t *testing.T) {
+	tools := &opsTools{targets: map[string]opsremote.Target{"lab": {ID: "lab", Host: "192.0.2.10"}}}
+
+	_, err := tools.HandleApply(t.Context(), OpsApplyToolName, []byte(`{"action":"container_restart","container":"api-1"}`))
+
+	if err == nil {
+		t.Fatal("a repair was accepted without a lease to judge it")
+	}
+	if !strings.Contains(err.Error(), "enforce") {
+		t.Errorf("error = %q, want it to name the mode a write needs", err)
+	}
+}
+
+func TestOpsTools_WithWrites_IsTheSwitchTheHandlerObeys(t *testing.T) {
+	tools := (&opsTools{targets: map[string]opsremote.Target{"lab": {ID: "lab", Host: "192.0.2.10"}}}).WithWrites(true)
+
+	// An unknown action is refused by the catalogue, which is what proves the
+	// call got past the mode check without needing a host to dial.
+	_, err := tools.HandleApply(t.Context(), OpsApplyToolName, []byte(`{"target":"lab","action":"rm_rf"}`))
+
+	if err == nil {
+		t.Fatal("an action outside the catalogue was accepted")
+	}
+	if strings.Contains(err.Error(), "enforce") {
+		t.Errorf("error = %q, want the mode check to have passed", err)
+	}
+	if !strings.Contains(err.Error(), "rm_rf") {
+		t.Errorf("error = %q, want the catalogue refusal", err)
 	}
 }

@@ -26,7 +26,7 @@ func TestOpsApply_HandleApply_LiveARestartReachesTheHostAndChangesTheStartTime(t
 		t.Skip("OPSAGI_LIVE_APPLY_CONTAINER is unset; a live repair restarts whatever it names")
 	}
 
-	tools := NewOpsTools(&config.Config{OpsTargets: targets})
+	tools := NewOpsTools(&config.Config{OpsTargets: targets}).WithWrites(true)
 	if !tools.IsAvailable() {
 		t.Fatalf("OPSAGI_LIVE_TARGETS = %q, which names no usable host", targets)
 	}

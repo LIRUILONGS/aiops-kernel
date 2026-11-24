@@ -30,6 +30,7 @@ type OpsLogsArgs struct {
 }
 
 type opsTools struct {
+	writes  bool
 	targets map[string]opsremote.Target
 	order   []string
 	timeout time.Duration
@@ -347,7 +348,20 @@ type OpsApplyArgs struct {
 	Name      string `json:"name,omitempty" jsonschema:"description=k8s_rollout_restart 的工作负载名,example=api"`
 }
 
+// WithWrites decides whether a repair may run at all. It is false until the
+// flow's lease is in enforce mode: a flow that never opted into a lease has no
+// dimension to judge a write by, and "no guard" must not read as "no limit".
+func (o *opsTools) WithWrites(allowed bool) *opsTools {
+	o.writes = allowed
+
+	return o
+}
+
 func (o *opsTools) HandleApply(ctx context.Context, name string, args json.RawMessage) (string, error) {
+	if !o.writes {
+		return "", Refuse("写操作只在能力租约处于 enforce 模式时可用：这个 flow 没有开启租约，任何修复都不会被审计，所以不会被执行")
+	}
+
 	var parsed OpsApplyArgs
 	if err := json.Unmarshal(args, &parsed); err != nil {
 		return "", fmt.Errorf("解析参数失败：%w", err)
