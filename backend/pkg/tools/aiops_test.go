@@ -215,7 +215,7 @@ func TestAIOps_Renderer_FollowsTheFlowLanguage(t *testing.T) {
 	knownPattern := Bool(true)
 
 	tests := []struct {
-		name  string
+		name   string
 		render func(lang string) (string, error)
 		wantEN []string
 		wantZH []string
@@ -358,6 +358,59 @@ func TestAIOps_Findings_ValidateRefusesAnEmptyReport(t *testing.T) {
 		{
 			name:    "log finding that is complete",
 			finding: LogFinding{Pattern: "unknown directive", Onset: "13:40", Result: "报告", Evidence: evidence},
+		},
+		{
+			name: "a log finding whose evidence comes from the database, which the log analyst cannot open",
+			finding: LogFinding{
+				Pattern: "unknown directive", Onset: "13:40", Result: "报告",
+				Evidence: []EvidenceItem{{
+					Source: "containers", Query: "ops_exec command=pg_locks container=opslab-db database=lockdb",
+					Timestamp: "13:40", Excerpt: "1 个会话在等锁",
+				}},
+			},
+			wantErr: "工具表里没有它",
+		},
+		{
+			name: "a log finding whose evidence names no tool at all",
+			finding: LogFinding{
+				Pattern: "unknown directive", Onset: "13:40", Result: "报告",
+				Evidence: []EvidenceItem{{
+					Source: "logs", Query: "查了 opslab-broken 的容器日志",
+					Timestamp: "13:40", Excerpt: "[emerg] unknown directive",
+				}},
+			},
+			wantErr: "没有点名工具",
+		},
+		{
+			name: "a metric finding whose evidence comes from a database the metrics analyst cannot open",
+			finding: MetricFinding{
+				Metric: "container_memory_working_set_bytes", Onset: "13:40", Result: "报告",
+				Evidence: []EvidenceItem{{
+					Source: "metrics", Query: "ops_exec command=pg_stat_activity container=opslab-db database=bench",
+					Timestamp: "13:40", Excerpt: "0 个长事务",
+				}},
+			},
+			wantErr: "工具表里没有它",
+		},
+		{
+			name: "a change finding whose evidence comes from ops_exec, which the change analyst does hold",
+			finding: ChangeFinding{
+				Change: "16:02 改了 max_connections", Onset: "16:02", Result: "报告",
+				Evidence: []EvidenceItem{{
+					Source: "host", Query: "ops_exec command=pg_lock_wait_summary container=opslab-db database=lockdb",
+					Timestamp: "16:02", Excerpt: "0|0|0",
+				}},
+			},
+		},
+		{
+			name: "a triage whose evidence names two tools, both of them its own",
+			finding: TriageResult{
+				Severity: "high", BlastRadius: "单机", KnownPattern: &knownPattern, Result: "报告",
+				Evidence: []EvidenceItem{
+					{Source: "containers", Query: "ops_containers filter=opslab-broken", Timestamp: "13:40", Excerpt: "restarts 4908"},
+					{Source: "logs", Query: "ops_logs source=opslab-broken", Timestamp: "13:40", Excerpt: "PANIC"},
+				},
+			},
 		},
 	}
 

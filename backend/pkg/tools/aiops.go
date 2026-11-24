@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -23,9 +24,20 @@ import (
 // could reproduce the excerpt.
 var evidenceSources = []string{"host", "containers", "logs", "metrics", "changes", "k8s"}
 
+// evidenceToolIDs is every tool id a specialist can name in an evidence query.
+var evidenceToolIDs = func() map[string]struct{} {
+	ids := make(map[string]struct{})
+	for _, toolset := range analystToolset {
+		for _, tool := range toolset {
+			ids[tool] = struct{}{}
+		}
+	}
+	return ids
+}()
+
 type EvidenceItem struct {
 	Source    string `json:"source" jsonschema:"required,type=string" jsonschema_description:"证据来自哪一路：host=主机快照，containers=容器状态与重启次数，logs=容器或系统日志，metrics=指标，changes=发布与配置变更，k8s=集群对象"`
-	Query     string `json:"query" jsonschema:"required" jsonschema_description:"你实际调用的工具及其参数（例如 ops_logs source=opslab-broken lines=200），别人靠它复现这条证据"`
+	Query     string `json:"query" jsonschema:"required" jsonschema_description:"你实际调用的工具及其参数，必须以工具 id 开头（例如 ops_logs source=opslab-broken lines=200 或 ops_exec command=pg_locks container=opslab-db database=lockdb），别人靠它复现这条证据"`
 	Timestamp string `json:"timestamp" jsonschema:"required" jsonschema_description:"证据对应的时刻（RFC3339，或与告警同一时区的 HH:MM:SS），必须与告警时间对齐"`
 	Excerpt   string `json:"excerpt" jsonschema:"required" jsonschema_description:"工具返回的原文片段，可截断到 500 字以内；不要转述、不要改写、不要补全"`
 }
@@ -142,7 +154,7 @@ func (r TriageResult) Validate() error {
 	if r.KnownPattern == nil {
 		return fmt.Errorf("known_pattern 缺失：命中已知故障模式填 true 并写出模式名，否则填 false")
 	}
-	if err := validateFindingBody("triage", r.Result, r.Evidence); err != nil {
+	if err := validateFindingBody("triage", analystToolset[TriageToolName], r.Result, r.Evidence); err != nil {
 		return err
 	}
 
@@ -156,7 +168,7 @@ func (f LogFinding) Validate() error {
 	if strings.TrimSpace(f.Onset) == "" {
 		return fmt.Errorf("onset 为空：写这个错误模式首次出现的时刻")
 	}
-	return validateFindingBody("log", f.Result, f.Evidence)
+	return validateFindingBody("log", analystToolset[LogAnalystToolName], f.Result, f.Evidence)
 }
 
 func (f MetricFinding) Validate() error {
@@ -166,7 +178,7 @@ func (f MetricFinding) Validate() error {
 	if strings.TrimSpace(f.Onset) == "" {
 		return fmt.Errorf("onset 为空：写数值开始异常的那一刻，而不是你发现它的时刻")
 	}
-	return validateFindingBody("metric", f.Result, f.Evidence)
+	return validateFindingBody("metric", analystToolset[MetricsAnalystToolName], f.Result, f.Evidence)
 }
 
 func (f ChangeFinding) Validate() error {
@@ -176,14 +188,58 @@ func (f ChangeFinding) Validate() error {
 	if strings.TrimSpace(f.Onset) == "" {
 		return fmt.Errorf("onset 为空：写变更生效的时刻")
 	}
-	return validateFindingBody("change", f.Result, f.Evidence)
+	return validateFindingBody("change", analystToolset[ChangeAnalystToolName], f.Result, f.Evidence)
 }
 
-func validateFindingBody(role, result string, evidence []EvidenceItem) error {
+func validateFindingBody(role string, allowed []string, result string, evidence []EvidenceItem) error {
 	if strings.TrimSpace(result) == "" {
 		return fmt.Errorf("%s 的 result 为空：写出完整技术报告（查了什么、看到什么、结论是什么），这是事故指挥唯一能看到的输入", role)
 	}
-	return validateEvidence(evidence, 1)
+	if err := validateEvidence(evidence, 1); err != nil {
+		return err
+	}
+	return validateCitedTools(role, allowed, evidence)
+}
+
+// validateCitedTools holds a specialist to the tools its role has: a finding
+// whose evidence names a tool the caller cannot run was gathered by someone else
+// or by nobody, and either way the analyst is closing a hypothesis it could not
+// have tested.
+func validateCitedTools(role string, allowed []string, evidence []EvidenceItem) error {
+	for i, item := range evidence {
+		cited := citedTools(item.Query)
+		if len(cited) == 0 {
+			return fmt.Errorf(
+				"evidence[%d].query 没有点名工具：以工具 id 开头写清你实际调用了什么（%s 能用：%s），excerpt 才是工具返回的原文",
+				i, role, strings.Join(allowed, " / "),
+			)
+		}
+		for _, tool := range cited {
+			if !slices.Contains(allowed, tool) {
+				return fmt.Errorf(
+					"evidence[%d].query 引用了 %s，而 %s 的工具表里没有它（只有 %s）：这条证据要么是别的角色取的，要么没有取过；换一条你自己能看到读数的证据",
+					i, tool, role, strings.Join(allowed, " / "),
+				)
+			}
+		}
+	}
+
+	return nil
+}
+
+// citedTools lists the tool ids a query names, in the order they appear.
+func citedTools(query string) []string {
+	fields := strings.FieldsFunc(strings.ToLower(query), func(r rune) bool {
+		return !(r == '_' || r >= 'a' && r <= 'z' || r >= '0' && r <= '9')
+	})
+
+	var cited []string
+	for _, field := range fields {
+		if _, ok := evidenceToolIDs[field]; ok && !slices.Contains(cited, field) {
+			cited = append(cited, field)
+		}
+	}
+	return cited
 }
 
 func validateEvidence(evidence []EvidenceItem, want int) error {
