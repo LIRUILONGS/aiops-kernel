@@ -71,6 +71,20 @@
 
 内置默认仍然是“今天的语义”：`DefaultPolicy` 不带预算、放开全部主机与目录。换句话说，不配置 `OPSAGI_POLICY` 时这套东西一行代码都不多跑；一旦配了，策略和预算同时生效，`enforce` 才开始按文件咬人。
 
+## 0.9 这一轮的第五批：把租约本身也摆出来
+
+判定日志回答“刚才拦了什么”，但操作员更常问的是另一句：“这个子任务现在到底被允许做什么、还剩多少额度”。这一批补上只读的租约面板。
+
+| 环节 | 位置 | 行为 |
+|---|---|---|
+| 读租约 | `capabilityLeases(flowId, limit)` | 按 flow 取最近 20 张（最多 100），带 `targets` / `tools` / `commands` / `shapes` / `tracePrograms` / `actions` / `planMode` / `expiresAt` |
+| 额度 | 同一查询的 `budgets` | 来自**当前**策略文件，与该子任务恢复执行时取预算的路径一致；没有策略文件时为空数组，面板不会凭空画出上限 |
+| 已用 | 同一查询的 `used` | 按 `subtask_id` 从 `capability_decisions` 统计 `allow` + `would_deny`（shadow 下越界的调用确实执行了），所以是“审计日志里的真实次数”，不是内存里的计数器 |
+| 面板 | `能力租约` 抽屉新增“租约”标签页 | 每张租约一行：子任务、角色、plan mode、到期倒计时；展开后是主机/形状/写操作范围、命令清单，以及 `ops_exec 12 / 60` 这种用量；超过上限标红 |
+
+两个刻意的取舍：`budgets` 不从库里读，因为库里没有这一列（预算只属于“这一次执行”，进库会诱导人把它当成配额）；`used` 不从内存读，因为内存计数器随执行结束消失，而操作员要看的恰恰是“跑到这里为止用掉多少”。两者相加才是运维能拿来做判断的那张图。
+
+
 
 
 ## 1. 今天实际生效的四道闸门
@@ -280,6 +294,8 @@ limits:
 | `backend/pkg/capability/policyfile.go` | `OPSAGI_POLICY` 的解析与启动校验 |
 | `backend/docs/ops-policy.md` | 策略文件的字段说明、示例与失败方式 |
 | `docs/aiops/policy.example.yml` | 可直接拷贝的示例策略（含预算） |
+| `backend/sqlc/models/capability.sql` 的 `ListCapabilityLeases` / `CountCapabilityUsesByTool` | 租约与用量的两条只读查询 |
+| `frontend/src/features/flows/capability/flow-capability-sheet.tsx` | 抽屉里的“租约”标签页 |
 | `backend/pkg/providers/provider.go:740` | 每次执行重读 subtask 行 |
 | `backend/pkg/providers/provider.go:892` | 解析 mode、装配出口 |
 | `backend/pkg/providers/aiops_handlers.go:129` | 分析师链路独立执行器 |

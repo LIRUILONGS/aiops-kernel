@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"opsagi/pkg/capability"
 	"opsagi/pkg/config"
 	"opsagi/pkg/controller"
 	"opsagi/pkg/database"
@@ -645,6 +646,115 @@ func TestSchemaResolvers_CapabilityDecisions_KeepsAnotherUsersLogOutOfReach(t *t
 
 	require.ErrorIs(t, err, ErrForbidden)
 	assert.Empty(t, db.decisionQueries)
+}
+
+func TestSchemaResolvers_CapabilityLeases_HandsTheClampedLimitAndTheScopeToThePanel(t *testing.T) {
+	db := &graphDB{
+		flowOwner: 1,
+		leases: []database.CapabilityLease{{
+			ID:            2,
+			FlowID:        5,
+			SubtaskID:     3,
+			Role:          "log_analyst",
+			Mode:          "diagnosis",
+			Targets:       []string{"staging"},
+			Tools:         []string{"ops_exec"},
+			Commands:      []string{"listen_ports"},
+			Shapes:        []string{"probe"},
+			TracePrograms: []string{"runqlat"},
+			Actions:       []string{},
+			IssuedBy:      "policy",
+			ExpiresAt:     time.Date(2026, 1, 15, 19, 0, 0, 0, time.UTC),
+			CreatedAt:     time.Date(2026, 1, 15, 11, 0, 0, 0, time.UTC),
+		}},
+	}
+	tooMany := 5000
+
+	got, err := graphResolver(db).Query().CapabilityLeases(graphSessionContext("flows.view"), 5, &tooMany)
+	require.NoError(t, err)
+
+	require.Len(t, db.leaseQueries, 1)
+	assert.Equal(t, database.ListCapabilityLeasesParams{FlowID: 5, RowLimit: 100}, db.leaseQueries[0])
+
+	require.Len(t, got, 1)
+	assert.Equal(t, "diagnosis", got[0].PlanMode)
+	assert.Equal(t, []string{"staging"}, got[0].Targets)
+	assert.Equal(t, []string{"runqlat"}, got[0].TracePrograms)
+	assert.Equal(t, "policy", got[0].IssuedBy)
+}
+
+func TestSchemaResolvers_CapabilityLeases_ReadsTheLastTwentyWhenNoLimitIsGiven(t *testing.T) {
+	db := &graphDB{flowOwner: 1}
+
+	_, err := graphResolver(db).Query().CapabilityLeases(graphSessionContext("flows.view"), 5, nil)
+	require.NoError(t, err)
+
+	require.Len(t, db.leaseQueries, 1)
+	assert.Equal(t, database.ListCapabilityLeasesParams{FlowID: 5, RowLimit: 20}, db.leaseQueries[0])
+}
+
+func TestSchemaResolvers_CapabilityLeases_ShowsTheBudgetOfThePolicyInForce(t *testing.T) {
+	db := &graphDB{
+		flowOwner: 1,
+		leases: []database.CapabilityLease{{
+			ID:        2,
+			FlowID:    5,
+			SubtaskID: 3,
+			Mode:      "diagnosis",
+		}},
+	}
+	policy := capability.Policy{
+		Rules: map[string]capability.Rule{
+			"diagnosis": {Tools: []string{"*"}, Budgets: map[string]int{"ops_exec": 40, "ops_logs": 15}},
+		},
+		TTL: time.Hour,
+	}
+	resolver := graphResolver(db)
+	resolver.Config.CapabilityPolicy = &policy
+
+	got, err := resolver.Query().CapabilityLeases(graphSessionContext("flows.view"), 5, nil)
+	require.NoError(t, err)
+
+	require.Len(t, got, 1)
+	require.Len(t, got[0].Budgets, 2)
+	assert.Equal(t, "ops_exec", got[0].Budgets[0].Tool)
+	assert.Equal(t, 40, got[0].Budgets[0].Limit)
+	assert.Equal(t, "ops_logs", got[0].Budgets[1].Tool)
+}
+
+func TestSchemaResolvers_CapabilityLeases_CountsWhatTheSubtaskAlreadyUsed(t *testing.T) {
+	db := &graphDB{
+		flowOwner: 1,
+		leases: []database.CapabilityLease{
+			{ID: 2, FlowID: 5, SubtaskID: 3, Mode: "diagnosis"},
+			{ID: 3, FlowID: 5, SubtaskID: 4, Mode: "diagnosis"},
+		},
+		toolUses: map[int64][]database.CountCapabilityUsesByToolRow{
+			3: {{Tool: "ops_exec", Used: 12}},
+			4: {{Tool: "ops_logs", Used: 2}, {Tool: "ops_exec", Used: 1}},
+		},
+	}
+
+	got, err := graphResolver(db).Query().CapabilityLeases(graphSessionContext("flows.view"), 5, nil)
+	require.NoError(t, err)
+
+	assert.Equal(t, []int64{3, 4}, db.useQueries)
+
+	require.Len(t, got, 2)
+	require.Len(t, got[0].Used, 1)
+	assert.Equal(t, "ops_exec", got[0].Used[0].Tool)
+	assert.Equal(t, 12, got[0].Used[0].Used)
+	require.Len(t, got[1].Used, 2)
+	assert.Equal(t, "ops_logs", got[1].Used[0].Tool)
+}
+
+func TestSchemaResolvers_CapabilityLeases_KeepsAnotherOperatorsLeasesOutOfReach(t *testing.T) {
+	db := &graphDB{flowOwner: 2}
+
+	_, err := graphResolver(db).Query().CapabilityLeases(graphSessionContext("flows.view"), 5, nil)
+
+	require.ErrorIs(t, err, ErrForbidden)
+	assert.Empty(t, db.leaseQueries)
 }
 
 func TestSchemaResolvers_CapabilityRequests_HandsTheStatusFilterAndTheClampedLimitToTheQuery(t *testing.T) {

@@ -49,6 +49,10 @@ type graphDB struct {
 	decided        []database.DecideCapabilityRequestParams
 	grants         []database.CapabilityGrant
 	createdGrants  []database.CreateCapabilityGrantParams
+	leases         []database.CapabilityLease
+	leaseQueries   []database.ListCapabilityLeasesParams
+	toolUses       map[int64][]database.CountCapabilityUsesByToolRow
+	useQueries     []int64
 }
 
 func (db *graphDB) GetFlow(_ context.Context, id int64) (database.Flow, error) {
@@ -73,6 +77,22 @@ func (db *graphDB) ListCapabilityRequests(
 
 func (db *graphDB) ListActiveCapabilityGrants(context.Context, int64) ([]database.CapabilityGrant, error) {
 	return db.grants, nil
+}
+
+func (db *graphDB) ListCapabilityLeases(
+	_ context.Context, arg database.ListCapabilityLeasesParams,
+) ([]database.CapabilityLease, error) {
+	db.leaseQueries = append(db.leaseQueries, arg)
+
+	return db.leases, nil
+}
+
+func (db *graphDB) CountCapabilityUsesByTool(
+	_ context.Context, subtaskID sql.NullInt64,
+) ([]database.CountCapabilityUsesByToolRow, error) {
+	db.useQueries = append(db.useQueries, subtaskID.Int64)
+
+	return db.toolUses[subtaskID.Int64], nil
 }
 
 func (db *graphDB) GetCapabilityRequest(context.Context, int64) (database.CapabilityRequest, error) {

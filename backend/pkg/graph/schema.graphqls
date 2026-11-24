@@ -309,6 +309,35 @@ enum CapabilityRequestStatus {
   denied
 }
 
+type CapabilityBudget {
+  tool: String!
+  limit: Int!
+}
+
+type CapabilityToolUse {
+  tool: String!
+  used: Int!
+}
+
+type CapabilityLease {
+  id: ID!
+  flowId: ID!
+  subtaskId: ID!
+  role: String!
+  planMode: String!
+  targets: [String!]!
+  tools: [String!]!
+  commands: [String!]!
+  shapes: [String!]!
+  tracePrograms: [String!]!
+  actions: [String!]!
+  budgets: [CapabilityBudget!]!
+  used: [CapabilityToolUse!]!
+  issuedBy: String!
+  expiresAt: Time!
+  createdAt: Time!
+}
+
 type CapabilityRequest {
   id: ID!
   flowId: ID!
@@ -1081,6 +1110,7 @@ type Query {
   capabilityDecisions(flowId: ID!, verdict: CapabilityVerdict, limit: Int): [CapabilityDecision!]!
   capabilityRequests(flowId: ID!, status: CapabilityRequestStatus, limit: Int): [CapabilityRequest!]!
   capabilityGrants(flowId: ID!): [CapabilityGrant!]!
+  capabilityLeases(flowId: ID!, limit: Int): [CapabilityLease!]!
   searchLogs(flowId: ID!): [SearchLog!]
   vectorStoreLogs(flowId: ID!): [VectorStoreLog!]
   toolCallLogs(flowId: ID!): [ToolCallLog!]

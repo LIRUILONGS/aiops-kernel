@@ -49,6 +49,50 @@ func TestConverter_ConvertCapabilityMode_FallsBackToOffForAValueTheSchemaCannotR
 	assert.Equal(t, model.CapabilityModeOff, ConvertCapabilityMode(""))
 }
 
+func TestConverter_ConvertCapabilityLease_CarriesTheScopeAndLeavesTheCountsToTheCaller(t *testing.T) {
+	expiresAt := time.Date(2026, 11, 24, 19, 0, 0, 0, time.UTC)
+	createdAt := time.Date(2026, 11, 24, 11, 0, 0, 0, time.UTC)
+
+	converted := ConvertCapabilityLease(database.CapabilityLease{
+		ID:            2,
+		FlowID:        5,
+		SubtaskID:     3,
+		Role:          "log_analyst",
+		Mode:          "diagnosis",
+		Targets:       []string{"staging"},
+		Tools:         []string{"ops_exec"},
+		Commands:      []string{"listen_ports"},
+		Shapes:        []string{"probe"},
+		TracePrograms: []string{"runqlat"},
+		Actions:       []string{"container_restart api"},
+		IssuedBy:      "policy",
+		ExpiresAt:     expiresAt,
+		CreatedAt:     createdAt,
+	})
+
+	assert.Equal(t, int64(2), converted.ID)
+	assert.Equal(t, int64(3), converted.SubtaskID)
+	assert.Equal(t, "diagnosis", converted.PlanMode)
+	assert.Equal(t, []string{"staging"}, converted.Targets)
+	assert.Equal(t, []string{"container_restart api"}, converted.Actions)
+	assert.Equal(t, expiresAt, converted.ExpiresAt)
+	assert.Equal(t, createdAt, converted.CreatedAt)
+	assert.Empty(t, converted.Budgets)
+	assert.Empty(t, converted.Used)
+}
+
+func TestConverter_ConvertCapabilityToolUses_CountsEachTool(t *testing.T) {
+	converted := ConvertCapabilityToolUses([]database.CountCapabilityUsesByToolRow{
+		{Tool: "ops_exec", Used: 12},
+		{Tool: "ops_logs", Used: 2},
+	})
+
+	require.Len(t, converted, 2)
+	assert.Equal(t, "ops_exec", converted[0].Tool)
+	assert.Equal(t, 12, converted[0].Used)
+	assert.Equal(t, 2, converted[1].Used)
+}
+
 func TestConverter_ConvertCapabilityRequestStatus_ReadsAnythingUnrecognisedAsPending(t *testing.T) {
 	assert.Equal(t, model.CapabilityRequestStatusApproved, ConvertCapabilityRequestStatus("approved"))
 	assert.Equal(t, model.CapabilityRequestStatusDenied, ConvertCapabilityRequestStatus("denied"))

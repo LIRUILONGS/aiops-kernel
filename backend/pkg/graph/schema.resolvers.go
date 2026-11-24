@@ -1730,6 +1730,41 @@ func (r *queryResolver) CapabilityGrants(ctx context.Context, flowID int64) ([]*
 	return converter.ConvertCapabilityGrants(grants), nil
 }
 
+// CapabilityLeases is the resolver for the capabilityLeases field.
+func (r *queryResolver) CapabilityLeases(ctx context.Context, flowID int64, limit *int) ([]*model.CapabilityLease, error) {
+	uid, err := validatePermissionWithFlowID(ctx, "flows.view", flowID, r.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	r.Logger.WithFields(logrus.Fields{
+		"uid":  uid,
+		"flow": flowID,
+	}).Debug("get capability leases")
+
+	leases, err := r.DB.ListCapabilityLeases(ctx, database.ListCapabilityLeasesParams{
+		FlowID:   flowID,
+		RowLimit: int64(clampCapabilityLeaseLimit(limit)),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	converted := converter.ConvertCapabilityLeases(leases)
+	for i, lease := range converted {
+		lease.Budgets = capabilityBudgets(r.Config, leases[i].Mode)
+
+		used, err := r.DB.CountCapabilityUsesByTool(ctx, sql.NullInt64{Int64: lease.SubtaskID, Valid: true})
+		if err != nil {
+			return nil, err
+		}
+
+		lease.Used = converter.ConvertCapabilityToolUses(used)
+	}
+
+	return converted, nil
+}
+
 // SearchLogs is the resolver for the searchLogs field.
 func (r *queryResolver) SearchLogs(ctx context.Context, flowID int64) ([]*model.SearchLog, error) {
 	uid, err := validatePermissionWithFlowID(ctx, "searchlogs.view", flowID, r.DB)

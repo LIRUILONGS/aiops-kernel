@@ -84,3 +84,17 @@ ORDER BY created_at DESC;
 
 -- name: GetCapabilityRequest :one
 SELECT * FROM capability_requests WHERE id = $1;
+
+-- name: ListCapabilityLeases :many
+SELECT * FROM capability_leases
+WHERE flow_id = sqlc.arg(flow_id)
+ORDER BY created_at DESC, id DESC
+LIMIT sqlc.arg(row_limit);
+
+-- name: CountCapabilityUsesByTool :many
+SELECT tool, count(*) AS used
+FROM capability_decisions
+WHERE subtask_id = $1
+  AND verdict IN ('allow', 'would_deny')
+GROUP BY tool
+ORDER BY used DESC, tool;

@@ -13,6 +13,43 @@ import (
 	"github.com/lib/pq"
 )
 
+const countCapabilityUsesByTool = `-- name: CountCapabilityUsesByTool :many
+SELECT tool, count(*) AS used
+FROM capability_decisions
+WHERE subtask_id = $1
+  AND verdict IN ('allow', 'would_deny')
+GROUP BY tool
+ORDER BY used DESC, tool
+`
+
+type CountCapabilityUsesByToolRow struct {
+	Tool string `json:"tool"`
+	Used int64  `json:"used"`
+}
+
+func (q *Queries) CountCapabilityUsesByTool(ctx context.Context, subtaskID sql.NullInt64) ([]CountCapabilityUsesByToolRow, error) {
+	rows, err := q.db.QueryContext(ctx, countCapabilityUsesByTool, subtaskID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CountCapabilityUsesByToolRow
+	for rows.Next() {
+		var i CountCapabilityUsesByToolRow
+		if err := rows.Scan(&i.Tool, &i.Used); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const createCapabilityGrant = `-- name: CreateCapabilityGrant :one
 INSERT INTO capability_grants (
   flow_id, subtask_id, request_id, role, tool, target, command, shape, trace_program, reason, issued_by, expires_at
@@ -413,6 +450,56 @@ func (q *Queries) ListCapabilityDecisions(ctx context.Context, arg ListCapabilit
 			&i.Verdict,
 			&i.Reason,
 			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listCapabilityLeases = `-- name: ListCapabilityLeases :many
+SELECT id, flow_id, subtask_id, role, mode, targets, tools, commands, shapes, trace_programs, issued_by, expires_at, created_at, actions FROM capability_leases
+WHERE flow_id = $1
+ORDER BY created_at DESC, id DESC
+LIMIT $2
+`
+
+type ListCapabilityLeasesParams struct {
+	FlowID   int64 `json:"flow_id"`
+	RowLimit int64 `json:"row_limit"`
+}
+
+func (q *Queries) ListCapabilityLeases(ctx context.Context, arg ListCapabilityLeasesParams) ([]CapabilityLease, error) {
+	rows, err := q.db.QueryContext(ctx, listCapabilityLeases, arg.FlowID, arg.RowLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CapabilityLease
+	for rows.Next() {
+		var i CapabilityLease
+		if err := rows.Scan(
+			&i.ID,
+			&i.FlowID,
+			&i.SubtaskID,
+			&i.Role,
+			&i.Mode,
+			pq.Array(&i.Targets),
+			pq.Array(&i.Tools),
+			pq.Array(&i.Commands),
+			pq.Array(&i.Shapes),
+			pq.Array(&i.TracePrograms),
+			&i.IssuedBy,
+			&i.ExpiresAt,
+			&i.CreatedAt,
+			pq.Array(&i.Actions),
 		); err != nil {
 			return nil, err
 		}

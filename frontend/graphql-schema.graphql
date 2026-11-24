@@ -54,6 +54,37 @@ query flowCapabilityDecisions($flowId: ID!, $verdict: CapabilityVerdict, $limit:
     }
 }
 
+fragment capabilityLeaseFragment on CapabilityLease {
+    id
+    flowId
+    subtaskId
+    role
+    planMode
+    targets
+    tools
+    commands
+    shapes
+    tracePrograms
+    actions
+    budgets {
+        tool
+        limit
+    }
+    used {
+        tool
+        used
+    }
+    issuedBy
+    expiresAt
+    createdAt
+}
+
+query flowCapabilityLeases($flowId: ID!, $limit: Int) {
+    capabilityLeases(flowId: $flowId, limit: $limit) {
+        ...capabilityLeaseFragment
+    }
+}
+
 fragment capabilityRequestFragment on CapabilityRequest {
     id
     flowId

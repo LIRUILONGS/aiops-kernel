@@ -133,6 +133,11 @@ type AssistantLog struct {
 	CreatedAt    time.Time      `json:"createdAt"`
 }
 
+type CapabilityBudget struct {
+	Tool  string `json:"tool"`
+	Limit int    `json:"limit"`
+}
+
 type CapabilityDecision struct {
 	ID        int64             `json:"id"`
 	FlowID    int64             `json:"flowId"`
@@ -162,6 +167,25 @@ type CapabilityGrant struct {
 	CreatedAt    time.Time `json:"createdAt"`
 }
 
+type CapabilityLease struct {
+	ID            int64                `json:"id"`
+	FlowID        int64                `json:"flowId"`
+	SubtaskID     int64                `json:"subtaskId"`
+	Role          string               `json:"role"`
+	PlanMode      string               `json:"planMode"`
+	Targets       []string             `json:"targets"`
+	Tools         []string             `json:"tools"`
+	Commands      []string             `json:"commands"`
+	Shapes        []string             `json:"shapes"`
+	TracePrograms []string             `json:"tracePrograms"`
+	Actions       []string             `json:"actions"`
+	Budgets       []*CapabilityBudget  `json:"budgets"`
+	Used          []*CapabilityToolUse `json:"used"`
+	IssuedBy      string               `json:"issuedBy"`
+	ExpiresAt     time.Time            `json:"expiresAt"`
+	CreatedAt     time.Time            `json:"createdAt"`
+}
+
 type CapabilityRequest struct {
 	ID           int64                   `json:"id"`
 	FlowID       int64                   `json:"flowId"`
@@ -177,6 +201,11 @@ type CapabilityRequest struct {
 	DecidedBy    string                  `json:"decidedBy"`
 	DecidedAt    *time.Time              `json:"decidedAt,omitempty"`
 	CreatedAt    time.Time               `json:"createdAt"`
+}
+
+type CapabilityToolUse struct {
+	Tool string `json:"tool"`
+	Used int    `json:"used"`
 }
 
 type CreateAPITokenInput struct {

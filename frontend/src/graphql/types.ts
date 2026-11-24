@@ -366,6 +366,32 @@ export type FlowCapabilityDecisionsQueryVariables = Exact<{
 
 export type FlowCapabilityDecisionsQuery = { capabilityDecisions: Array<CapabilityDecisionFragmentFragment> };
 
+export type CapabilityLeaseFragmentFragment = {
+    id: string;
+    flowId: string;
+    subtaskId: string;
+    role: string;
+    planMode: string;
+    targets: Array<string>;
+    tools: Array<string>;
+    commands: Array<string>;
+    shapes: Array<string>;
+    tracePrograms: Array<string>;
+    actions: Array<string>;
+    issuedBy: string;
+    expiresAt: string;
+    createdAt: string;
+    budgets: Array<{ tool: string; limit: number }>;
+    used: Array<{ tool: string; used: number }>;
+};
+
+export type FlowCapabilityLeasesQueryVariables = Exact<{
+    flowId: string | number;
+    limit?: number | null | undefined;
+}>;
+
+export type FlowCapabilityLeasesQuery = { capabilityLeases: Array<CapabilityLeaseFragmentFragment> };
+
 export type CapabilityRequestFragmentFragment = {
     id: string;
     flowId: string;
@@ -1672,6 +1698,57 @@ export const CapabilityDecisionFragmentFragmentDoc = {
         },
     ],
 } as unknown as DocumentNode<CapabilityDecisionFragmentFragment, unknown>;
+export const CapabilityLeaseFragmentFragmentDoc = {
+    kind: 'Document',
+    definitions: [
+        {
+            kind: 'FragmentDefinition',
+            name: { kind: 'Name', value: 'capabilityLeaseFragment' },
+            typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'CapabilityLease' } },
+            selectionSet: {
+                kind: 'SelectionSet',
+                selections: [
+                    { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'flowId' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'subtaskId' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'planMode' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'targets' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'tools' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'commands' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'shapes' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'tracePrograms' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'actions' } },
+                    {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'budgets' },
+                        selectionSet: {
+                            kind: 'SelectionSet',
+                            selections: [
+                                { kind: 'Field', name: { kind: 'Name', value: 'tool' } },
+                                { kind: 'Field', name: { kind: 'Name', value: 'limit' } },
+                            ],
+                        },
+                    },
+                    {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'used' },
+                        selectionSet: {
+                            kind: 'SelectionSet',
+                            selections: [
+                                { kind: 'Field', name: { kind: 'Name', value: 'tool' } },
+                                { kind: 'Field', name: { kind: 'Name', value: 'used' } },
+                            ],
+                        },
+                    },
+                    { kind: 'Field', name: { kind: 'Name', value: 'issuedBy' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'expiresAt' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                ],
+            },
+        },
+    ],
+} as unknown as DocumentNode<CapabilityLeaseFragmentFragment, unknown>;
 export const CapabilityRequestFragmentFragmentDoc = {
     kind: 'Document',
     definitions: [
@@ -3468,6 +3545,101 @@ export const FlowCapabilityDecisionsDocument = {
         },
     ],
 } as unknown as DocumentNode<FlowCapabilityDecisionsQuery, FlowCapabilityDecisionsQueryVariables>;
+export const FlowCapabilityLeasesDocument = {
+    kind: 'Document',
+    definitions: [
+        {
+            kind: 'OperationDefinition',
+            operation: 'query',
+            name: { kind: 'Name', value: 'flowCapabilityLeases' },
+            variableDefinitions: [
+                {
+                    kind: 'VariableDefinition',
+                    variable: { kind: 'Variable', name: { kind: 'Name', value: 'flowId' } },
+                    type: { kind: 'NonNullType', type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } } },
+                },
+                {
+                    kind: 'VariableDefinition',
+                    variable: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
+                    type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+                },
+            ],
+            selectionSet: {
+                kind: 'SelectionSet',
+                selections: [
+                    {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'capabilityLeases' },
+                        arguments: [
+                            {
+                                kind: 'Argument',
+                                name: { kind: 'Name', value: 'flowId' },
+                                value: { kind: 'Variable', name: { kind: 'Name', value: 'flowId' } },
+                            },
+                            {
+                                kind: 'Argument',
+                                name: { kind: 'Name', value: 'limit' },
+                                value: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
+                            },
+                        ],
+                        selectionSet: {
+                            kind: 'SelectionSet',
+                            selections: [
+                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'capabilityLeaseFragment' } },
+                            ],
+                        },
+                    },
+                ],
+            },
+        },
+        {
+            kind: 'FragmentDefinition',
+            name: { kind: 'Name', value: 'capabilityLeaseFragment' },
+            typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'CapabilityLease' } },
+            selectionSet: {
+                kind: 'SelectionSet',
+                selections: [
+                    { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'flowId' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'subtaskId' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'planMode' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'targets' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'tools' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'commands' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'shapes' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'tracePrograms' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'actions' } },
+                    {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'budgets' },
+                        selectionSet: {
+                            kind: 'SelectionSet',
+                            selections: [
+                                { kind: 'Field', name: { kind: 'Name', value: 'tool' } },
+                                { kind: 'Field', name: { kind: 'Name', value: 'limit' } },
+                            ],
+                        },
+                    },
+                    {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'used' },
+                        selectionSet: {
+                            kind: 'SelectionSet',
+                            selections: [
+                                { kind: 'Field', name: { kind: 'Name', value: 'tool' } },
+                                { kind: 'Field', name: { kind: 'Name', value: 'used' } },
+                            ],
+                        },
+                    },
+                    { kind: 'Field', name: { kind: 'Name', value: 'issuedBy' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'expiresAt' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                ],
+            },
+        },
+    ],
+} as unknown as DocumentNode<FlowCapabilityLeasesQuery, FlowCapabilityLeasesQueryVariables>;
 export const FlowCapabilityRequestsDocument = {
     kind: 'Document',
     definitions: [

@@ -14,6 +14,7 @@ type Querier interface {
 	CountAPITokens(ctx context.Context) (int64, error)
 	CountActiveFlows(ctx context.Context) (int64, error)
 	CountAssistants(ctx context.Context) (int64, error)
+	CountCapabilityUsesByTool(ctx context.Context, subtaskID sql.NullInt64) ([]CountCapabilityUsesByToolRow, error)
 	CountContainers(ctx context.Context) (int64, error)
 	CountFlowTemplates(ctx context.Context) (int64, error)
 	CountFlows(ctx context.Context) (int64, error)
@@ -269,6 +270,7 @@ type Querier interface {
 	// List all knowledge documents excluding the noisy memory type (admin view).
 	ListAllKnowledgeDocuments(ctx context.Context) ([]ListAllKnowledgeDocumentsRow, error)
 	ListCapabilityDecisions(ctx context.Context, arg ListCapabilityDecisionsParams) ([]CapabilityDecision, error)
+	ListCapabilityLeases(ctx context.Context, arg ListCapabilityLeasesParams) ([]CapabilityLease, error)
 	ListCapabilityRequests(ctx context.Context, arg ListCapabilityRequestsParams) ([]CapabilityRequest, error)
 	// Never selects the secret: this row feeds the API, and a struct that cannot
 	// carry the ciphertext cannot leak it.

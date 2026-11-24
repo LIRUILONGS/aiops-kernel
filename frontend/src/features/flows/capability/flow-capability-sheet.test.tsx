@@ -1,9 +1,10 @@
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 const apollo = vi.hoisted(() => ({
     decide: vi.fn(),
-    state: { decisions: [] as unknown[], loading: false, pending: [] as unknown[] },
+    state: { decisions: [] as unknown[], leases: [] as unknown[], loading: false, pending: [] as unknown[] },
 }));
 
 vi.mock('@apollo/client/react', () => ({
@@ -11,6 +12,10 @@ vi.mock('@apollo/client/react', () => ({
     useQuery: (document: { definitions?: { name?: { value?: string } }[] }) => {
         if (document.definitions?.[0]?.name?.value === 'flowCapabilityRequests') {
             return { data: { capabilityRequests: apollo.state.pending }, loading: false };
+        }
+
+        if (document.definitions?.[0]?.name?.value === 'flowCapabilityLeases') {
+            return { data: { capabilityLeases: apollo.state.leases }, loading: false };
         }
 
         return { data: { capabilityDecisions: apollo.state.decisions }, loading: apollo.state.loading };
@@ -51,6 +56,7 @@ describe('FlowCapabilitySheet', () => {
                     verdict: CapabilityVerdict.WouldDeny,
                 },
             ],
+            leases: [],
             loading: false,
             pending: [],
         };
@@ -64,7 +70,7 @@ describe('FlowCapabilitySheet', () => {
     });
 
     it('says an empty log is expected rather than broken when the lease is off', () => {
-        apollo.state = { decisions: [], loading: false, pending: [] };
+        apollo.state = { decisions: [], leases: [], loading: false, pending: [] };
 
         renderSheet(CapabilityMode.Off);
 
@@ -75,6 +81,7 @@ describe('FlowCapabilitySheet', () => {
         apollo.decide.mockResolvedValue({ data: { decideCapabilityRequest: { id: '4' } } });
         apollo.state = {
             decisions: [],
+            leases: [],
             loading: false,
             pending: [
                 {
@@ -106,10 +113,65 @@ describe('FlowCapabilitySheet', () => {
         });
     });
 
+    it('shows what a subtask was issued and how much of its budget it spent', async () => {
+        const expiresAt = new Date(Date.now() + 90 * 60_000).toISOString();
+
+        apollo.state = {
+            decisions: [],
+            leases: [
+                {
+                    actions: [],
+                    budgets: [{ limit: 60, tool: 'ops_exec' }],
+                    commands: ['listen_ports', 'unit_logs'],
+                    createdAt: '2026-01-15T11:00:00Z',
+                    expiresAt,
+                    flowId: '7',
+                    id: '2',
+                    issuedBy: 'policy',
+                    planMode: 'diagnosis',
+                    role: 'log_analyst',
+                    shapes: ['probe'],
+                    subtaskId: '12',
+                    targets: ['staging'],
+                    tools: ['ops_exec', 'ops_logs'],
+                    tracePrograms: [],
+                    used: [{ tool: 'ops_exec', used: 12 }],
+                },
+            ],
+            loading: false,
+            pending: [],
+        };
+
+        renderSheet(CapabilityMode.Enforce);
+
+        await userEvent.click(screen.getByRole('tab', { name: '租约（1）' }));
+
+        expect(screen.getByText(/子任务 #12/)).toBeInTheDocument();
+        expect(screen.getByText('diagnosis')).toBeInTheDocument();
+        expect(screen.getByText('2 小时后到期')).toBeInTheDocument();
+
+        await userEvent.click(screen.getByRole('button', { name: /子任务 #12/ }));
+
+        expect(screen.getByText('主机 staging · 工具 2 个 · 形状 probe')).toBeInTheDocument();
+        expect(screen.getByText('listen_ports、unit_logs')).toBeInTheDocument();
+        expect(screen.getByText('12 / 60')).toBeInTheDocument();
+    });
+
+    it('says a flow with the switch off issued no lease rather than that it lost them', async () => {
+        apollo.state = { decisions: [], leases: [], loading: false, pending: [] };
+
+        renderSheet(CapabilityMode.Off);
+
+        await userEvent.click(screen.getByRole('tab', { name: '租约（0）' }));
+
+        expect(screen.getByText('还没有签发租约')).toBeInTheDocument();
+    });
+
     it('sends a refusal when the operator denies the request', () => {
         apollo.decide.mockResolvedValue({ data: { decideCapabilityRequest: { id: '4' } } });
         apollo.state = {
             decisions: [],
+            leases: [],
             loading: false,
             pending: [
                 {

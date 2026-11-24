@@ -141,6 +141,49 @@ func ConvertCapabilityGrants(grants []database.CapabilityGrant) []*model.Capabil
 	return converted
 }
 
+func ConvertCapabilityToolUses(uses []database.CountCapabilityUsesByToolRow) []*model.CapabilityToolUse {
+	converted := make([]*model.CapabilityToolUse, 0, len(uses))
+	for _, use := range uses {
+		converted = append(converted, &model.CapabilityToolUse{Tool: use.Tool, Used: int(use.Used)})
+	}
+
+	return converted
+}
+
+func ConvertCapabilityLeases(leases []database.CapabilityLease) []*model.CapabilityLease {
+	converted := make([]*model.CapabilityLease, len(leases))
+	for i, lease := range leases {
+		converted[i] = ConvertCapabilityLease(lease)
+	}
+
+	return converted
+}
+
+// ConvertCapabilityLease leaves Budgets and Used empty: the limit comes from the
+// policy in force, the count from the decision log, and neither is a column.
+// The row's mode is the plan mode the lease was issued for, not the flow's
+// off/shadow/enforce switch, which is why it is not a CapabilityMode here.
+func ConvertCapabilityLease(lease database.CapabilityLease) *model.CapabilityLease {
+	return &model.CapabilityLease{
+		ID:            lease.ID,
+		FlowID:        lease.FlowID,
+		SubtaskID:     lease.SubtaskID,
+		Role:          lease.Role,
+		PlanMode:      lease.Mode,
+		Targets:       lease.Targets,
+		Tools:         lease.Tools,
+		Commands:      lease.Commands,
+		Shapes:        lease.Shapes,
+		TracePrograms: lease.TracePrograms,
+		Actions:       lease.Actions,
+		Budgets:       []*model.CapabilityBudget{},
+		Used:          []*model.CapabilityToolUse{},
+		IssuedBy:      lease.IssuedBy,
+		ExpiresAt:     lease.ExpiresAt,
+		CreatedAt:     lease.CreatedAt,
+	}
+}
+
 func ConvertCapabilityGrant(grant database.CapabilityGrant) *model.CapabilityGrant {
 	return &model.CapabilityGrant{
 		ID:           grant.ID,

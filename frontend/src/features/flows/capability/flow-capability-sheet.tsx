@@ -1,8 +1,12 @@
 import { useMutation, useQuery } from '@apollo/client/react';
-import { ShieldCheck } from 'lucide-react';
+import { ChevronDown, ChevronRight, ShieldCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-import type { CapabilityDecisionFragmentFragment, CapabilityRequestFragmentFragment } from '@/graphql/types';
+import type {
+    CapabilityDecisionFragmentFragment,
+    CapabilityLeaseFragmentFragment,
+    CapabilityRequestFragmentFragment,
+} from '@/graphql/types';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,12 +14,14 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
     CapabilityMode,
     CapabilityRequestStatus,
     CapabilityVerdict,
     DecideCapabilityRequestDocument,
     FlowCapabilityDecisionsDocument,
+    FlowCapabilityLeasesDocument,
     FlowCapabilityRequestsDocument,
     StatusType,
 } from '@/graphql/types';
@@ -66,6 +72,40 @@ const decisionTitle = (decision: CapabilityDecisionFragmentFragment): string =>
 const requestTitle = (request: CapabilityRequestFragmentFragment): string =>
     request.command ? `${request.tool} · ${request.command}` : request.tool;
 
+const scopeSummary = (lease: CapabilityLeaseFragmentFragment): string => {
+    const parts = [`主机 ${lease.targets.join('、') || '无'}`, `工具 ${lease.tools.length} 个`];
+
+    if (lease.actions.length > 0) {
+        parts.push(`写操作 ${lease.actions.join('、')}`);
+    }
+
+    if (lease.shapes.length > 0) {
+        parts.push(`形状 ${lease.shapes.join('、')}`);
+    }
+
+    return parts.join(' · ');
+};
+
+const expiresIn = (value: string): string => {
+    const parsed = new Date(value).getTime();
+
+    if (Number.isNaN(parsed)) {
+        return value;
+    }
+
+    const minutes = Math.round((parsed - Date.now()) / 60_000);
+
+    if (minutes <= 0) {
+        return '已过期';
+    }
+
+    if (minutes < 60) {
+        return `${minutes} 分钟后到期`;
+    }
+
+    return `${Math.round(minutes / 60)} 小时后到期`;
+};
+
 function FlowCapabilitySheet({ mode, onOpenChange, open }: FlowCapabilitySheetProps) {
     const { flowId, flowStatus } = useFlow();
     const [verdict, setVerdict] = useState<CapabilityVerdict | undefined>();
@@ -88,6 +128,12 @@ function FlowCapabilitySheet({ mode, onOpenChange, open }: FlowCapabilitySheetPr
         variables: { flowId: flowId ?? '', status: CapabilityRequestStatus.Pending },
     });
 
+    const { data: leaseData } = useQuery(FlowCapabilityLeasesDocument, {
+        pollInterval,
+        skip: !open || !flowId,
+        variables: { flowId: flowId ?? '', limit: 20 },
+    });
+
     const [decide] = useMutation(DecideCapabilityRequestDocument);
 
     const decisions = useMemo(
@@ -98,6 +144,11 @@ function FlowCapabilitySheet({ mode, onOpenChange, open }: FlowCapabilitySheetPr
     const pending = useMemo(
         () => (requestData?.capabilityRequests ?? []) as CapabilityRequestFragmentFragment[],
         [requestData?.capabilityRequests],
+    );
+
+    const leases = useMemo(
+        () => (leaseData?.capabilityLeases ?? []) as CapabilityLeaseFragmentFragment[],
+        [leaseData?.capabilityLeases],
     );
 
     const decideRequest = async (request: CapabilityRequestFragmentFragment, approve: boolean): Promise<void> => {
@@ -181,82 +232,199 @@ function FlowCapabilitySheet({ mode, onOpenChange, open }: FlowCapabilitySheetPr
                     </section>
                 )}
 
-                <div className="flex flex-wrap items-center gap-1.5">
-                    {filters.map((filter) => (
-                        <button
-                            className={cn(
-                                'rounded-full border px-2.5 py-1 text-xs transition-colors',
-                                verdict === filter.value
-                                    ? 'border-primary bg-primary/10 text-primary'
-                                    : 'text-muted-foreground hover:bg-muted',
-                            )}
-                            key={filter.label}
-                            onClick={() => setVerdict(filter.value)}
-                            type="button"
-                        >
-                            {filter.label}
-                        </button>
-                    ))}
-                </div>
+                <Tabs
+                    className="flex min-h-0 flex-1 flex-col"
+                    defaultValue="decisions"
+                >
+                    <TabsList className="self-start">
+                        <TabsTrigger value="decisions">判定（{decisions.length}）</TabsTrigger>
+                        <TabsTrigger value="leases">租约（{leases.length}）</TabsTrigger>
+                    </TabsList>
 
-                {loading && !data ? (
-                    <div className="flex flex-1 items-center justify-center">
-                        <Spinner />
-                    </div>
-                ) : decisions.length === 0 ? (
-                    <Empty className="flex-1">
-                        <EmptyHeader>
-                            <EmptyMedia variant="icon">
-                                <ShieldCheck />
-                            </EmptyMedia>
-                            <EmptyTitle>这个会话还没有判定记录</EmptyTitle>
-                            <EmptyDescription>
-                                {mode === CapabilityMode.Off
-                                    ? '租约关闭时不写任何记录。'
-                                    : '待下一次子任务调用取证工具后出现。'}
-                            </EmptyDescription>
-                        </EmptyHeader>
-                    </Empty>
-                ) : (
-                    <ScrollArea className="min-h-0 flex-1 pr-3">
-                        <ul className="flex flex-col gap-2">
-                            {decisions.map((decision) => (
-                                <li
-                                    className="rounded-md border p-2.5 text-xs"
-                                    key={decision.id}
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <Badge
-                                            className={cn(
-                                                'shrink-0 border text-[10px]',
-                                                verdictStyles[decision.verdict],
-                                            )}
-                                            variant="outline"
-                                        >
-                                            {verdictLabels[decision.verdict]}
-                                        </Badge>
-                                        <span className="min-w-0 flex-1 truncate font-mono">
-                                            {decisionTitle(decision)}
-                                        </span>
-                                        <span className="text-muted-foreground shrink-0">
-                                            {formatTime(decision.createdAt)}
-                                        </span>
-                                    </div>
-                                    <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                                        <span>{formatName(decision.role)}</span>
-                                        {decision.target && <span className="font-mono">{decision.target}</span>}
-                                        {decision.subtaskId && <span>子任务 #{decision.subtaskId}</span>}
-                                    </div>
-                                    {decision.reason && (
-                                        <p className="mt-1 leading-relaxed break-words">{decision.reason}</p>
+                    <TabsContent
+                        className="mt-2 flex min-h-0 flex-1 flex-col gap-2"
+                        value="decisions"
+                    >
+                        <div className="flex flex-wrap items-center gap-1.5">
+                            {filters.map((filter) => (
+                                <button
+                                    className={cn(
+                                        'rounded-full border px-2.5 py-1 text-xs transition-colors',
+                                        verdict === filter.value
+                                            ? 'border-primary bg-primary/10 text-primary'
+                                            : 'text-muted-foreground hover:bg-muted',
                                     )}
-                                </li>
+                                    key={filter.label}
+                                    onClick={() => setVerdict(filter.value)}
+                                    type="button"
+                                >
+                                    {filter.label}
+                                </button>
                             ))}
-                        </ul>
-                    </ScrollArea>
-                )}
+                        </div>
+
+                        {loading && !data ? (
+                            <div className="flex flex-1 items-center justify-center">
+                                <Spinner />
+                            </div>
+                        ) : decisions.length === 0 ? (
+                            <Empty className="flex-1">
+                                <EmptyHeader>
+                                    <EmptyMedia variant="icon">
+                                        <ShieldCheck />
+                                    </EmptyMedia>
+                                    <EmptyTitle>这个会话还没有判定记录</EmptyTitle>
+                                    <EmptyDescription>
+                                        {mode === CapabilityMode.Off
+                                            ? '租约关闭时不写任何记录。'
+                                            : '待下一次子任务调用取证工具后出现。'}
+                                    </EmptyDescription>
+                                </EmptyHeader>
+                            </Empty>
+                        ) : (
+                            <ScrollArea className="min-h-0 flex-1 pr-3">
+                                <ul className="flex flex-col gap-2">
+                                    {decisions.map((decision) => (
+                                        <li
+                                            className="rounded-md border p-2.5 text-xs"
+                                            key={decision.id}
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <Badge
+                                                    className={cn(
+                                                        'shrink-0 border text-[10px]',
+                                                        verdictStyles[decision.verdict],
+                                                    )}
+                                                    variant="outline"
+                                                >
+                                                    {verdictLabels[decision.verdict]}
+                                                </Badge>
+                                                <span className="min-w-0 flex-1 truncate font-mono">
+                                                    {decisionTitle(decision)}
+                                                </span>
+                                                <span className="text-muted-foreground shrink-0">
+                                                    {formatTime(decision.createdAt)}
+                                                </span>
+                                            </div>
+                                            <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                                                <span>{formatName(decision.role)}</span>
+                                                {decision.target && (
+                                                    <span className="font-mono">{decision.target}</span>
+                                                )}
+                                                {decision.subtaskId && <span>子任务 #{decision.subtaskId}</span>}
+                                            </div>
+                                            {decision.reason && (
+                                                <p className="mt-1 leading-relaxed break-words">{decision.reason}</p>
+                                            )}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </ScrollArea>
+                        )}
+                    </TabsContent>
+
+                    <TabsContent
+                        className="mt-2 flex min-h-0 flex-1 flex-col"
+                        value="leases"
+                    >
+                        {leases.length === 0 ? (
+                            <Empty className="flex-1">
+                                <EmptyHeader>
+                                    <EmptyMedia variant="icon">
+                                        <ShieldCheck />
+                                    </EmptyMedia>
+                                    <EmptyTitle>还没有签发租约</EmptyTitle>
+                                    <EmptyDescription>子任务开始时签发一张，关闭租约的会话不会签发。</EmptyDescription>
+                                </EmptyHeader>
+                            </Empty>
+                        ) : (
+                            <ScrollArea className="min-h-0 flex-1 pr-3">
+                                <ul className="flex flex-col gap-2">
+                                    {leases.map((lease) => (
+                                        <LeaseRow
+                                            key={lease.id}
+                                            lease={lease}
+                                        />
+                                    ))}
+                                </ul>
+                            </ScrollArea>
+                        )}
+                    </TabsContent>
+                </Tabs>
             </SheetContent>
         </Sheet>
+    );
+}
+
+function LeaseRow({ lease }: { lease: CapabilityLeaseFragmentFragment }) {
+    const [expanded, setExpanded] = useState(false);
+
+    const limits = useMemo(() => new Map(lease.budgets.map((budget) => [budget.tool, budget.limit])), [lease.budgets]);
+
+    const remaining = expiresIn(lease.expiresAt);
+    const used = lease.used.filter((use) => use.used > 0);
+    const lines = used.length > 0 ? used : lease.budgets.map((budget) => ({ tool: budget.tool, used: 0 }));
+
+    return (
+        <li className="rounded-md border p-2.5 text-xs">
+            <button
+                className="flex w-full items-center gap-2 text-left"
+                onClick={() => setExpanded((value) => !value)}
+                type="button"
+            >
+                {expanded ? (
+                    <ChevronDown className="size-3.5 shrink-0" />
+                ) : (
+                    <ChevronRight className="size-3.5 shrink-0" />
+                )}
+                <span className="min-w-0 flex-1 truncate">
+                    <span className="font-mono">子任务 #{lease.subtaskId}</span>
+                    <span className="text-muted-foreground"> · {formatName(lease.role)}</span>
+                </span>
+                <span className="text-muted-foreground shrink-0">{formatTime(lease.createdAt)}</span>
+            </button>
+            <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                <Badge
+                    className="shrink-0 border text-[10px]"
+                    variant="outline"
+                >
+                    {lease.planMode}
+                </Badge>
+                <span>{remaining}</span>
+            </div>
+            {expanded && (
+                <div className="mt-2 flex flex-col gap-1.5">
+                    <p className="leading-relaxed break-words">{scopeSummary(lease)}</p>
+                    <p className="font-mono leading-relaxed break-words">{lease.commands.join('、') || '无命令'}</p>
+                    {lines.length > 0 && (
+                        <div className="flex flex-col gap-0.5">
+                            {lines.map((line) => {
+                                const limit = limits.get(line.tool);
+
+                                return (
+                                    <div
+                                        className="flex items-center gap-2"
+                                        key={line.tool}
+                                    >
+                                        <span className="font-mono">{line.tool}</span>
+                                        <span
+                                            className={cn(
+                                                limit !== undefined &&
+                                                    line.used >= limit &&
+                                                    'text-rose-600 dark:text-rose-400',
+                                            )}
+                                        >
+                                            {line.used}
+                                            {limit !== undefined ? ` / ${limit}` : ''}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            )}
+        </li>
     );
 }
 
