@@ -1,0 +1,26 @@
+# One line ending in the repository and in every checkout. Without this a clone
+# on a machine whose core.autocrlf=true gets a working copy written in CRLF over
+# a tree stored in LF, and git reports every one of those files as modified even
+# though no byte of content changed -- which buries the handful that really are.
+* text=auto eol=lf
+
+# The shell scripts are entrypoints inside the Linux images; an editor that saves
+# CRLF breaks them at exec time, far from the edit that caused it.
+*.sh text eol=lf
+
+# Converted bytes corrupt these, and the diff of a converted one is unreadable.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.jar binary
+observability/jaeger/bin/* binary
