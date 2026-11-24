@@ -65,8 +65,27 @@ type Lease struct {
 	Commands      []string
 	Shapes        []string
 	TracePrograms []string
-	IssuedBy      string
-	ExpiresAt     time.Time
+	// Budgets is how many times each tool may run in one execution of this
+	// subtask. It bounds a retry loop, not a leak: the count lives in the guard,
+	// so a restarted subtask starts from zero.
+	Budgets   map[string]int
+	IssuedBy  string
+	ExpiresAt time.Time
+}
+
+// BudgetFor returns the call limit for a tool and whether one applies at all.
+func (l *Lease) BudgetFor(tool string) (int, bool) {
+	if l == nil || len(l.Budgets) == 0 {
+		return 0, false
+	}
+
+	if limit, ok := l.Budgets[tool]; ok {
+		return limit, true
+	}
+
+	limit, ok := l.Budgets["*"]
+
+	return limit, ok
 }
 
 // Verdict is what the caller records, and in enforce mode what it obeys.

@@ -263,15 +263,15 @@ func TestConfig_NewConfig_ReadsTheEnvironment(t *testing.T) {
 
 	t.Run("set values replace the defaults", func(t *testing.T) {
 		for name, value := range map[string]string{
-			"SERVER_PORT":                        "9090",
-			"SERVER_HOST":                        "127.0.0.1",
-			"DEBUG":                              "true",
-			"UNATTENDED":                         "true",
-			"STATIC_URL":                         "https://example.com/static",
-			"HTTP_CLIENT_TIMEOUT":                "300",
-			"TERMINAL_TOOL_TIMEOUT":              "900",
-			"MAX_GENERAL_AGENT_TOOL_CALLS":       "150",
-			"MAX_LIMITED_AGENT_TOOL_CALLS":       "30",
+			"SERVER_PORT":                  "9090",
+			"SERVER_HOST":                  "127.0.0.1",
+			"DEBUG":                        "true",
+			"UNATTENDED":                   "true",
+			"STATIC_URL":                   "https://example.com/static",
+			"HTTP_CLIENT_TIMEOUT":          "300",
+			"TERMINAL_TOOL_TIMEOUT":        "900",
+			"MAX_GENERAL_AGENT_TOOL_CALLS": "150",
+			"MAX_LIMITED_AGENT_TOOL_CALLS": "30",
 		} {
 			t.Setenv(name, value)
 		}
@@ -462,6 +462,47 @@ func TestConfig_EveryVariableReachesTheContainer(t *testing.T) {
 			)
 		}
 	}
+}
+
+func TestConfig_LoadCapabilityPolicy_FailsTheBootWhenTheFileSaysSomethingElse(t *testing.T) {
+	tests := []struct {
+		name  string
+		body  string
+		wants string
+	}{
+		{name: "nothing configured", body: "", wants: ""},
+		{name: "a usable policy", body: "modes:\n  diagnosis:\n    tools: [ops_exec]\n", wants: ""},
+		{name: "a mode nobody issues", body: "modes:\n  triage:\n    tools: [ops_exec]\n", wants: `names mode "triage"`},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := Config{}
+			if tc.body != "" {
+				path := filepath.Join(t.TempDir(), "policy.yml")
+				require.NoError(t, os.WriteFile(path, []byte(tc.body), 0o600))
+				cfg.OpsPolicy = path
+			}
+
+			err := cfg.LoadCapabilityPolicy()
+
+			if tc.wants == "" {
+				require.NoError(t, err)
+
+				return
+			}
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tc.wants)
+			assert.Nil(t, cfg.CapabilityPolicy, "a refused policy must not leave half a document in force")
+		})
+	}
+}
+
+func TestConfig_LoadCapabilityPolicy_LeavesTheDefaultInChargeWhenNoFileIsConfigured(t *testing.T) {
+	cfg := Config{}
+
+	require.NoError(t, cfg.LoadCapabilityPolicy())
+	assert.Nil(t, cfg.CapabilityPolicy)
 }
 
 func TestConfig_ValidateOpsTargets_RejectsWhatTheToolsetWouldSilentlyDrop(t *testing.T) {

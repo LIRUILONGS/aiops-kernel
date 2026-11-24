@@ -16,6 +16,10 @@ type Rule struct {
 	Commands      []string
 	Shapes        []string
 	TracePrograms []string
+	// Budgets bounds how many times one tool may run in a single execution of a
+	// subtask. A tool absent from the map is unlimited, and "*" sets the limit
+	// for every tool the map does not name.
+	Budgets map[string]int
 }
 
 // Policy is what the operator configured. The default is deliberately the
@@ -77,6 +81,7 @@ func (p Policy) Issue(mode string, flowID, subtaskID int64, role string, now tim
 		Commands:      rule.Commands,
 		Shapes:        rule.Shapes,
 		TracePrograms: rule.TracePrograms,
+		Budgets:       rule.Budgets,
 		IssuedBy:      "policy",
 		ExpiresAt:     now.Add(ttl),
 	}

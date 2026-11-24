@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
 	"opsagi/pkg/capability"
@@ -35,6 +36,12 @@ type CapabilityGuard struct {
 	record  func(ctx context.Context, call capability.Call, decision capability.Decision)
 	request func(ctx context.Context, call capability.Call, reason string) (int64, error)
 	now     func() time.Time
+
+	// spend counts calls per tool for this execution. The lease carries the
+	// limit, the guard carries the count, and a restart resumes from zero: a
+	// budget bounds a loop, it is not a quota over the subtask's whole life.
+	mu    sync.Mutex
+	spend map[string]int
 }
 
 // NewCapabilityGuard builds the guard for one subtask. A nil record sink is
@@ -47,6 +54,7 @@ func NewCapabilityGuard(opts CapabilityGuardOptions) *CapabilityGuard {
 		record:  opts.Record,
 		request: opts.Request,
 		now:     time.Now,
+		spend:   make(map[string]int),
 	}
 }
 
@@ -78,6 +86,9 @@ func (g *CapabilityGuard) wrap(name string, handler ExecutorHandler) ExecutorHan
 	return func(ctx context.Context, toolName string, args json.RawMessage) (string, error) {
 		call := extractCapabilityCall(name, args)
 		decision := g.authorize(ctx, call)
+		if decision.Allowed() {
+			decision = g.charge(call)
+		}
 
 		if g.record != nil {
 			g.record(ctx, call, decision.ForRecord(g.mode))
@@ -88,6 +99,31 @@ func (g *CapabilityGuard) wrap(name string, handler ExecutorHandler) ExecutorHan
 		}
 
 		return "", Refuse("%s", g.refusal(ctx, call, decision))
+	}
+}
+
+// charge counts the call against its budget. A budget that is spent is a
+// refusal the operator cannot approve: the answer is to conclude on the evidence
+// already gathered, not to widen the same subtask into another loop.
+func (g *CapabilityGuard) charge(call capability.Call) capability.Decision {
+	limit, budgeted := g.lease.BudgetFor(call.Tool)
+	if !budgeted {
+		return capability.Decision{Verdict: capability.VerdictAllow}
+	}
+
+	g.mu.Lock()
+	g.spend[call.Tool]++
+	spent := g.spend[call.Tool]
+	g.mu.Unlock()
+
+	if spent <= limit {
+		return capability.Decision{Verdict: capability.VerdictAllow}
+	}
+
+	return capability.Decision{
+		Verdict: capability.VerdictDeny,
+		Reason: fmt.Sprintf("工具 %s 在本次执行里已经调用 %d 次（上限 %d），请基于已有证据下结论，或让操作员调整策略",
+			call.Tool, spent-1, limit),
 	}
 }
 

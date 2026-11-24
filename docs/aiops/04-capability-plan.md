@@ -27,7 +27,7 @@
 
 有一处取舍写在这里，因为它是刻意的：读不到 flow、读不到 subtask、签发失败时，切面**不安装**并打一条 `Warn`，而不是让整个子任务失败。租约是加法，数据库回答不了的时候不该把一次正常的诊断变成错误；代价是那一轮跑在无租约状态，所以这条日志必须是 Warn 级别，运维能看见。
 
-还没做：策略文件的加载（今天只有代码里的默认值）、每工具调用预算、`ops_tunnel` 之外的形状阶梯（`workshop` 仍由 `OPSAGI_SANDBOX_NETWORK` 与模型共同决定）。下面几节保留原计划与验收方式，作为后续的路线图。
+还没做：`ops_tunnel` 之外的形状阶梯（`workshop` 仍由 `OPSAGI_SANDBOX_NETWORK` 与模型共同决定）、按角色的策略（今天策略只有 plan mode 两个维度，角色维度仍由工具表决定）。下面几节保留原计划与验收方式，作为后续的路线图。
 
 ## 0.6 这一轮的第二批：看得见，且不再静默
 
@@ -56,6 +56,21 @@
 | 界面 | `frontend/src/features/flows/capability/flow-capability-sheet.tsx` | 面板顶部是“待批准（n）”，每条给出工具·命令、主机、角色、子任务与原因，两个按钮；批准后列表消失、判定列表出现新的 `allow`，flow 在跑时 5 秒轮询 |
 
 刻意没做同步等待：让工具调用挂住等操作员点按钮，会在没人看屏幕的夜里把子任务卡到超时，也把并发名额占住。批准是异步的，模型被拒后拿到的是“已提交审批”，它可以继续查别的，或者稍后重试；没有人批，它就一直是拒绝——这才是安全的方向。
+
+## 0.8 这一轮的第四批：策略文件与预算
+
+前面所有策略都写死在 `capability.DefaultPolicy` 里，改一次要改代码、重新编译。这一批把策略变成运维的输入，并给每个工具加上调用次数上限。
+
+| 环节 | 位置 | 行为 |
+|---|---|---|
+| 策略文件 | `OPSAGI_POLICY`（YAML，示例见 `docs/aiops/policy.example.yml`） | 按 plan mode（`diagnosis` / `optimization`）给 `targets` / `tools` / `commands` / `shapes` / `trace_programs` / `budgets`，外加整体 `ttl` |
+| 加载 | `pkg/capability/policyfile.go`、`pkg/config` 的 `LoadCapabilityPolicy` | 启动时读一次。读不到、YAML 坏、写了运行时不签发的 mode、缺 `diagnosis`（未知 mode 的兜底）、`ttl` 解析失败、预算 ≤ 0，全部启动失败——否则运维以为文件生效、实际跑的是内置默认值 |
+| 预算 | `Lease.Budgets`、`pkg/tools` 的 `charge` | 每次工具调用记一次数，超过上限就拒，理由写明“已调用 N 次（上限 M），请基于已有证据下结论”。计数在切面里、按子任务一次执行算：重启从 0 开始，它是给重试环路设的闸，不是配额 |
+| 不算批准 | 同上 | 预算耗尽**不能**被批准解开：答案是用已有证据下结论或改策略，不是把同一个子任务再放开一轮 |
+| 生效范围 | `pkg/providers/capability.go` | 预算不进库：恢复执行的子任务按**当前**策略取预算，所以改小上限重启即生效，不用等“下一个新子任务” |
+
+内置默认仍然是“今天的语义”：`DefaultPolicy` 不带预算、放开全部主机与目录。换句话说，不配置 `OPSAGI_POLICY` 时这套东西一行代码都不多跑；一旦配了，策略和预算同时生效，`enforce` 才开始按文件咬人。
+
 
 
 ## 1. 今天实际生效的四道闸门
@@ -262,6 +277,9 @@ limits:
 | `backend/pkg/graph/capability.go` | 行数上限与批准有效期常量 |
 | `backend/sqlc/models/capability.sql` | 租约、判定、请求、批准四张表的查询 |
 | `frontend/src/features/flows/capability/flow-capability-sheet.tsx` | 判定列表与“待批准”面板 |
+| `backend/pkg/capability/policyfile.go` | `OPSAGI_POLICY` 的解析与启动校验 |
+| `backend/docs/ops-policy.md` | 策略文件的字段说明、示例与失败方式 |
+| `docs/aiops/policy.example.yml` | 可直接拷贝的示例策略（含预算） |
 | `backend/pkg/providers/provider.go:740` | 每次执行重读 subtask 行 |
 | `backend/pkg/providers/provider.go:892` | 解析 mode、装配出口 |
 | `backend/pkg/providers/aiops_handlers.go:129` | 分析师链路独立执行器 |

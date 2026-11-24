@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"opsagi/pkg/capability"
 	"opsagi/pkg/opsremote"
 
 	"github.com/caarlos0/env/v10"
@@ -64,10 +65,10 @@ type Config struct {
 	// have that arrangement proven rather than assumed.
 	DockerInsidePolicyTests bool `env:"DOCKER_INSIDE_POLICY_TESTS" envDefault:"false"`
 
-	DockerNetwork                string `env:"DOCKER_NETWORK"`
-	DockerPublicIP               string `env:"DOCKER_PUBLIC_IP" envDefault:"0.0.0.0"`
-	DockerWorkDir                string `env:"DOCKER_WORK_DIR"`
-	DockerPortsBase              int    `env:"DOCKER_PORTS_BASE" envDefault:"28000"`
+	DockerNetwork      string `env:"DOCKER_NETWORK"`
+	DockerPublicIP     string `env:"DOCKER_PUBLIC_IP" envDefault:"0.0.0.0"`
+	DockerWorkDir      string `env:"DOCKER_WORK_DIR"`
+	DockerPortsBase    int    `env:"DOCKER_PORTS_BASE" envDefault:"28000"`
 	DockerDefaultImage string `env:"DOCKER_DEFAULT_IMAGE" envDefault:"debian:latest"`
 
 	// OpsagiDefaultSandboxImage is the image a flow runs in when the model makes
@@ -155,6 +156,12 @@ type Config struct {
 
 	// === Ops targets: JSON array of opsremote.Target, read-only SSH probes ===
 	OpsTargets string `env:"OPSAGI_TARGETS"`
+
+	// OpsPolicy is the path to the capability lease policy. Without it every
+	// lease comes from capability.DefaultPolicy, which is the scope the runtime
+	// had before leases existed.
+	OpsPolicy        string             `env:"OPSAGI_POLICY"`
+	CapabilityPolicy *capability.Policy `env:"-"`
 
 	// OpsSandboxImages is the comma-separated list of images the probe container
 	// may run. Pulling an image writes to the target, so an image that is not
@@ -406,6 +413,10 @@ func NewConfig() (*Config, error) {
 		return nil, err
 	}
 
+	if err := config.LoadCapabilityPolicy(); err != nil {
+		return nil, err
+	}
+
 	ensureInstallationID(&config)
 	ensureLicenseKey(&config)
 
@@ -433,6 +444,25 @@ func (c *Config) ValidateOpsTargets() error {
 	}
 
 	return fmt.Errorf("OPSAGI_TARGETS names no target with a host, so every probe tool would be disabled")
+}
+
+// LoadCapabilityPolicy reads OPSAGI_POLICY once, at start-up. A policy that
+// cannot be read or understood fails the boot: the alternative is a run whose
+// leases silently came from the built-in default while the operator believes
+// their file is in force, and that is the one thing a policy must never do.
+func (c *Config) LoadCapabilityPolicy() error {
+	if strings.TrimSpace(c.OpsPolicy) == "" {
+		return nil
+	}
+
+	policy, err := capability.LoadPolicyFile(c.OpsPolicy)
+	if err != nil {
+		return err
+	}
+
+	c.CapabilityPolicy = &policy
+
+	return nil
 }
 
 func ensureInstallationID(config *Config) {

@@ -55,6 +55,11 @@ func (fp *flowProvider) capabilityGuard(ctx context.Context, subtaskID int64, ro
 		return nil
 	}
 
+	// Budgets are not part of the stored row: a resumed subtask reads them from
+	// the policy in force now, so tightening a limit takes effect on restart
+	// instead of waiting for a subtask that happens to be issued again.
+	lease.Budgets = fp.capabilityPolicy().RuleFor(planMode).Budgets
+
 	return tools.NewCapabilityGuard(tools.CapabilityGuardOptions{
 		Lease:   lease,
 		Mode:    mode,
@@ -150,6 +155,16 @@ func (fp *flowProvider) capabilityRequester(
 	}
 }
 
+// capabilityPolicy is the policy in force: the operator's file when there is
+// one, the built-in default otherwise.
+func (fp *flowProvider) capabilityPolicy() capability.Policy {
+	if fp.cfg != nil && fp.cfg.CapabilityPolicy != nil {
+		return *fp.cfg.CapabilityPolicy
+	}
+
+	return capability.DefaultPolicy()
+}
+
 // ensureLease returns the subtask's lease, issuing it once if this is the first
 // execution. The row is reused on restart, so a resumed subtask keeps the scope
 // it was given instead of being widened by a second issue.
@@ -165,7 +180,7 @@ func (fp *flowProvider) ensureLease(
 		return nil, err
 	}
 
-	issued := capability.DefaultPolicy().Issue(planMode, fp.flowID, subtaskID, role, time.Now())
+	issued := fp.capabilityPolicy().Issue(planMode, fp.flowID, subtaskID, role, time.Now())
 
 	row, err := fp.db.GetOrCreateCapabilityLease(ctx, database.GetOrCreateCapabilityLeaseParams{
 		FlowID:        issued.FlowID,

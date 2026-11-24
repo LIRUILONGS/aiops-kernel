@@ -64,3 +64,34 @@ func TestCapability_Policy_IssueFallsBackToTheDefaultTTL(t *testing.T) {
 		t.Errorf("expiry = %s, want %s", got, want)
 	}
 }
+
+func TestCapability_Policy_IssueCarriesTheBudgetOfItsMode(t *testing.T) {
+	policy := Policy{
+		Rules: map[string]Rule{
+			"diagnosis":    {Tools: []string{"*"}, Budgets: map[string]int{"ops_exec": 40}},
+			"optimization": {Tools: []string{"*"}, Budgets: map[string]int{"ops_exec": 10}},
+		},
+		TTL: time.Hour,
+	}
+	now := time.Date(2026, 11, 23, 11, 0, 0, 0, time.UTC)
+
+	lease := policy.Issue("optimization", 1, 2, "triage", now)
+
+	if got := lease.Budgets["ops_exec"]; got != 10 {
+		t.Errorf("budget = %d, want the optimization rule's 10", got)
+	}
+}
+
+func TestCapability_Lease_BudgetFor_FallsBackFromTheToolToTheWildcard(t *testing.T) {
+	lease := &Lease{Budgets: map[string]int{"ops_exec": 5, "*": 50}}
+
+	if limit, ok := lease.BudgetFor("ops_exec"); !ok || limit != 5 {
+		t.Errorf("ops_exec = %d (%v), want 5", limit, ok)
+	}
+	if limit, ok := lease.BudgetFor("ops_logs"); !ok || limit != 50 {
+		t.Errorf("an unnamed tool must take the wildcard, got %d (%v)", limit, ok)
+	}
+	if _, ok := (&Lease{}).BudgetFor("ops_exec"); ok {
+		t.Error("a lease with no budgets must not report a limit")
+	}
+}

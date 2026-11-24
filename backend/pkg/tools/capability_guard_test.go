@@ -226,6 +226,102 @@ func TestCapabilityGuard_ExtractCapabilityCall_ReadsTheDimensionTheLeaseJudges(t
 	}
 }
 
+func TestCapabilityGuard_Apply_RefusesTheCallAfterTheToolsBudgetIsSpent(t *testing.T) {
+	calls := 0
+	var seen json.RawMessage
+	lease := guardLease(time.Hour)
+	lease.Budgets = map[string]int{OpsExecToolName: 2}
+
+	guard := guardFor(lease, capability.ModeEnforce, nil)
+	handlers := guard.Apply(map[string]ExecutorHandler{OpsExecToolName: recordingHandler(&calls, &seen)}, nil)
+	args := json.RawMessage(`{"target":"lab","command":"unit_logs"}`)
+
+	for i := 1; i <= 2; i++ {
+		if _, err := handlers[OpsExecToolName](context.Background(), OpsExecToolName, args); err != nil {
+			t.Fatalf("call %d must fit the budget of 2, got %v", i, err)
+		}
+	}
+
+	_, err := handlers[OpsExecToolName](context.Background(), OpsExecToolName, args)
+	if err == nil {
+		t.Fatal("the third call must be refused: the budget is 2")
+	}
+	if !strings.Contains(err.Error(), "上限 2") {
+		t.Errorf("refusal = %q, want it to name the limit the model hit", err.Error())
+	}
+	if calls != 2 {
+		t.Errorf("handler calls = %d, want 2: the third must not reach the tool", calls)
+	}
+}
+
+func TestCapabilityGuard_Apply_CountsEachToolAgainstItsOwnBudget(t *testing.T) {
+	opsExec, opsLogs := 0, 0
+	var execArgs, logsArgs json.RawMessage
+	lease := guardLease(time.Hour)
+	lease.Tools = []string{OpsExecToolName, OpsLogsToolName}
+	lease.Budgets = map[string]int{OpsExecToolName: 1}
+
+	guard := guardFor(lease, capability.ModeEnforce, nil)
+	handlers := guard.Apply(map[string]ExecutorHandler{
+		OpsExecToolName: recordingHandler(&opsExec, &execArgs),
+		OpsLogsToolName: recordingHandler(&opsLogs, &logsArgs),
+	}, nil)
+
+	execCall := json.RawMessage(`{"target":"lab","command":"unit_logs"}`)
+	if _, err := handlers[OpsExecToolName](context.Background(), OpsExecToolName, execCall); err != nil {
+		t.Fatalf("the first ops_exec call must fit the budget, got %v", err)
+	}
+	if _, err := handlers[OpsExecToolName](context.Background(), OpsExecToolName, execCall); err == nil {
+		t.Fatal("the second ops_exec call must be refused")
+	}
+
+	logsCall := json.RawMessage(`{"target":"lab"}`)
+	for i := 1; i <= 3; i++ {
+		if _, err := handlers[OpsLogsToolName](context.Background(), OpsLogsToolName, logsCall); err != nil {
+			t.Fatalf("ops_logs has no budget, so call %d must run, got %v", i, err)
+		}
+	}
+
+	if opsLogs != 3 {
+		t.Errorf("ops_logs calls = %d, want 3: one tool's budget must not leak into another", opsLogs)
+	}
+}
+
+func TestCapabilityGuard_Apply_DeniesASpentBudgetWithoutOfferingAnApproval(t *testing.T) {
+	calls := 0
+	var seen json.RawMessage
+	asked := 0
+	lease := guardLease(time.Hour)
+	lease.Budgets = map[string]int{OpsExecToolName: 1}
+
+	guard := NewCapabilityGuard(CapabilityGuardOptions{
+		Lease: lease,
+		Mode:  capability.ModeEnforce,
+		Request: func(context.Context, capability.Call, string) (int64, error) {
+			asked++
+
+			return 1, nil
+		},
+	})
+	handlers := guard.Apply(map[string]ExecutorHandler{OpsExecToolName: recordingHandler(&calls, &seen)}, nil)
+	args := json.RawMessage(`{"target":"lab","command":"unit_logs"}`)
+
+	if _, err := handlers[OpsExecToolName](context.Background(), OpsExecToolName, args); err != nil {
+		t.Fatalf("the first call must fit the budget, got %v", err)
+	}
+
+	_, err := handlers[OpsExecToolName](context.Background(), OpsExecToolName, args)
+	if err == nil {
+		t.Fatal("the second call must be refused")
+	}
+	if asked != 0 {
+		t.Error("a spent budget is not something an approval can lift: the model should conclude, not wait")
+	}
+	if strings.Contains(err.Error(), "审批") {
+		t.Errorf("refusal %q promises an approval that would not help", err.Error())
+	}
+}
+
 func TestCapabilityGuard_Apply_FilesTheApprovalItQuotes(t *testing.T) {
 	calls := 0
 	var seen json.RawMessage

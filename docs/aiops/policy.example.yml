@@ -1,0 +1,39 @@
+# Capability lease policy for OPSAGI_POLICY.
+#
+# Issued per subtask, judged on every tool call, recorded in
+# capability_decisions. Every list below is exact: "*" is the only way to say
+# "everything", and an empty list permits nothing.
+#
+# Set the same path in docker-compose.yml next to OPSAGI_TARGETS, then restart:
+# the file is read once at start-up and a policy that cannot be understood fails
+# the boot.
+
+# How long a lease stays valid. A lease that expires mid-diagnosis refuses the
+# rest of a subtask that is working correctly, so keep this longer than a run.
+ttl: 8h
+
+modes:
+  # A diagnosis subtask reads: whole read-only catalogue, probe container only.
+  diagnosis:
+    targets: ["*"]
+    tools: [ops_system, ops_containers, ops_logs, ops_baseline, ops_diff, ops_exec, ops_watch, prom_query, k8s_get]
+    commands: ["*"]
+    shapes: [probe]
+    trace_programs: ["*"]
+    # A subtask that needs more than this is looping, not diagnosing.
+    budgets:
+      ops_exec: 60
+      ops_watch: 20
+      ops_sandbox: 20
+      ops_trace: 15
+
+  # A performance subtask measures and proposes: the commands that answer "what
+  # is slow", and nothing that changes the host.
+  optimization:
+    targets: ["*"]
+    tools: [ops_system, ops_containers, ops_exec, ops_watch, prom_query, k8s_get]
+    commands: ["*"]
+    shapes: [probe]
+    budgets:
+      ops_exec: 40
+      ops_watch: 20
