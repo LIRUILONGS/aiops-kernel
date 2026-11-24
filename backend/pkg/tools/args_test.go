@@ -1447,6 +1447,36 @@ func TestArgs_SubtaskList_ValidateRefusesAPlanWithoutAnExecutableHypothesis(t *t
 			subtasks: []SubtaskInfo{{Mode: PlanModeDiagnosis, Title: "a", Description: "b", AssignedTo: "log-analyzer"}},
 			wantErr:  "不是可用的执行者",
 		},
+		{
+			name: "a lock hypothesis handed to the log analyst, which cannot run ops_exec",
+			subtasks: []SubtaskInfo{{
+				Mode: PlanModeDiagnosis, Title: "锁竞争", AssignedTo: "log_analyst",
+				Description:    "如果 lock competition 是原因，pg_locks / pg_stat_activity 的实时读数应显示有锁等待关系",
+				ExpectedSignal: "pg_locks 里 granted=false 的行",
+			}},
+			wantErr: "工具表里没有 ops_exec",
+		},
+		{
+			name: "the same lock hypothesis handed to a role that does hold ops_exec",
+			subtasks: []SubtaskInfo{{
+				Mode: PlanModeDiagnosis, Title: "锁竞争", AssignedTo: "change_analyst",
+				Description: "pg_locks / pg_stat_activity 的实时读数显示有锁等待关系",
+			}},
+		},
+		{
+			name: "a log hypothesis handed to the log analyst, which is what it is for",
+			subtasks: []SubtaskInfo{{
+				Mode: PlanModeDiagnosis, Title: "启动失败", AssignedTo: "log_analyst",
+				Description: "journalctl -u app 里应有 emerg 退出前的最后一条",
+			}},
+		},
+		{
+			name: "the same hypothesis with no owner, which leaves the choice to the primary agent",
+			subtasks: []SubtaskInfo{{
+				Mode: PlanModeDiagnosis, Title: "锁竞争",
+				Description: "pg_locks / pg_stat_activity 的实时读数显示有锁等待关系",
+			}},
+		},
 	}
 
 	for _, tc := range tests {

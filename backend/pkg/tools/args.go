@@ -3,6 +3,7 @@ package tools
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -416,6 +417,53 @@ var aiopsSpecialists = map[string]struct{}{
 // that column existed.
 const planModePrefix = "【目标类型："
 
+// evidenceTools names the tool that reads each data source a plan can cite. A
+// subtask delegated to a specialist whose table does not hold that tool cannot
+// be carried out: the analyst reads what it does have, finds nothing there, and
+// reports the hypothesis as excluded.
+var evidenceTools = []struct {
+	tool    string
+	markers []string
+}{
+	{OpsExecToolName, []string{"pg_locks", "pg_stat_activity", "pg_stat_statements", "pg_explain", "pg_stat_user_tables"}},
+	{PromQueryToolName, []string{"prom_query"}},
+	{OpsSystemToolName, []string{"runqlat", "biolatency", "vmstat", "iostat"}},
+	{OpsLogsToolName, []string{"journalctl", "docker logs"}},
+	{K8sGetToolName, []string{"kubectl", "k8s_get"}},
+}
+
+// missingEvidenceTool reports the tool a delegated subtask needs and the role
+// cannot use, together with the roles that can.
+func missingEvidenceTool(info SubtaskInfo) (tool string, canDo []string, ok bool) {
+	if info.AssignedTo == "" || info.AssignedTo == "commander" {
+		return "", nil, false
+	}
+
+	text := strings.ToLower(info.Description + "\n" + info.ExpectedSignal)
+	for _, entry := range evidenceTools {
+		named := false
+		for _, marker := range entry.markers {
+			if strings.Contains(text, marker) {
+				named = true
+				break
+			}
+		}
+		if !named || slices.Contains(analystToolset[info.AssignedTo], entry.tool) {
+			continue
+		}
+
+		canDo = []string{"commander"}
+		for _, role := range []string{TriageToolName, LogAnalystToolName, MetricsAnalystToolName, ChangeAnalystToolName} {
+			if slices.Contains(analystToolset[role], entry.tool) {
+				canDo = append(canDo, role)
+			}
+		}
+		return entry.tool, canDo, true
+	}
+
+	return "", nil, false
+}
+
 // PlanModeOf reads the legacy label. An unrecognised description is an incident
 // by default: that exit at worst wastes a probe, while the performance exit
 // would accept a conclusion nobody measured.
@@ -445,6 +493,12 @@ func validateSubtaskInfo(info SubtaskInfo, where string, requireMode bool) error
 			return fmt.Errorf(
 				"%s: assigned_to=%q 不是可用的执行者，只能是 commander / triage / log_analyst / metrics_analyst / change_analyst，或留空",
 				where, info.AssignedTo,
+			)
+		}
+		if tool, canDo, missing := missingEvidenceTool(info); missing {
+			return fmt.Errorf(
+				"%s: assigned_to=%q 的工具表里没有 %s，但这条子任务的证据要靠它取；改派 %s，或留空由主 agent 决定",
+				where, info.AssignedTo, tool, strings.Join(canDo, " / "),
 			)
 		}
 	}
