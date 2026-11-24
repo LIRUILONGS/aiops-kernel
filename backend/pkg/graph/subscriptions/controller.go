@@ -3,17 +3,18 @@ package subscriptions
 import (
 	"context"
 	"sync"
-	"time"
 
 	"opsagi/pkg/database"
 	"opsagi/pkg/graph/model"
 	"opsagi/pkg/providers/pconfig"
 )
 
-const (
-	defChannelLen  = 50
-	defSendTimeout = 5 * time.Second
-)
+// defChannelLen is how far behind a subscriber may fall before the events it has
+// not read yet are dropped. It is a depth, not a delay, because deliver never
+// waits: 256 events is several seconds of a chatty flow at the rate this server
+// produces them, which is enough to ride out a browser tab that is busy painting
+// without letting a dead one hold a slot forever.
+const defChannelLen = 256
 
 type SubscriptionsController interface {
 	NewFlowSubscriber(userID, flowID int64) FlowSubscriber
@@ -430,16 +431,7 @@ func (c *channel[T]) Publish(ctx context.Context, id int64, data T) {
 	defer c.mx.RUnlock()
 
 	for _, ch := range c.subs[id] {
-		timer := time.NewTimer(defSendTimeout)
-		select {
-		case ch <- data:
-			timer.Stop()
-		case <-ctx.Done():
-			timer.Stop()
-			return
-		case <-timer.C:
-			// subscriber is slow or disconnected; drop the event after timeout
-		}
+		deliver(ctx, ch, data)
 	}
 }
 
@@ -449,16 +441,30 @@ func (c *channel[T]) Broadcast(ctx context.Context, data T) {
 
 	for _, subs := range c.subs {
 		for _, ch := range subs {
-			timer := time.NewTimer(defSendTimeout)
-			select {
-			case ch <- data:
-				timer.Stop()
-			case <-ctx.Done():
-				timer.Stop()
-				return
-			case <-timer.C:
-				// subscriber is slow or disconnected; drop the event after timeout
-			}
+			deliver(ctx, ch, data)
 		}
+	}
+}
+
+// deliver hands one event to one subscriber, and never waits for it.
+//
+// The send must not block: the lock the caller holds is the same one Subscribe
+// and Unsubscribe take for writing, and the callers of Publish are the agent's
+// own log writers, which run on the path that executes tools. A browser that
+// stopped reading its socket would otherwise stall the tool that produced the
+// event -- for as long as the send was willing to wait, once per subscriber.
+// The channel is closed under that write lock when the subscriber goes away, so
+// the send also must not happen after the lock is released: that is why this is
+// a non-blocking send instead of a send against a copied slice of channels.
+//
+// A full buffer therefore drops the event. That is the only alternative to
+// waiting: a subscriber defChannelLen events behind is not slow for a moment, it
+// has either stopped reading or lost its socket, and the transport's ping/pong
+// tears it down either way.
+func deliver[T any](ctx context.Context, ch chan T, data T) {
+	select {
+	case <-ctx.Done():
+	case ch <- data:
+	default:
 	}
 }
