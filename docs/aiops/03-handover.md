@@ -2472,7 +2472,15 @@ flow 69 却在消息日志里写下「未在 pg_stat_activity 中发现长事务
 - 规划期：`record_plan` 写入子任务前，按 `analystToolset` 校验 `assigned_to` 是否覆盖子任务点名的工具（描述里出现 `ops_exec`、`prom_query`、`k8s_get` 等 id 时），不覆盖就拒绝并给出能覆盖的角色。
 - 执行期：`log_finding` / `metric_finding` / `change_finding` 的收口 schema 增加"本轮实际调用的工具"，只接受本角色工具表里的名字；写"已排除"必须至少有一条出自这些工具的读数。
 
-#### 五、为什么这一条比"答错"更值得修
+#### 五、规划期这一半已经落地
+
+`validateSubtaskInfo` 现在会在一张"证据 → 工具"的表上查子任务的描述与 `expected_signal`：`pg_locks` / `pg_stat_activity` / `pg_stat_statements` / `pg_explain` 归 `ops_exec`，`prom_query` 归 `prom_query`，`runqlat` / `biolatency` / `vmstat` / `iostat` 归 `ops_system`，`journalctl` / `docker logs` 归 `ops_logs`，`kubectl` / `k8s_get` 归 `k8s_get`。`assigned_to` 的工具表里没有这把工具时，计划被拒绝，拒绝语里写着能取到它的角色（`commander` / `triage` / `change_analyst` 之于 `ops_exec`），并允许把 `assigned_to` 留空交给主 agent。refiner 追补子任务走同一个校验。
+
+单测加了四行：一条把锁假设派给 `log_analyst`（拒绝，且只说"工具表里没有 ops_exec"）、一条同样的假设派给 `change_analyst`（放行）、一条日志假设派给 `log_analyst`（放行）、一条留空 `assigned_to`（放行）。把证据表里 `ops_exec` 的标记清空，第一行立刻红成 "accepted a plan that is not executable"。
+
+执行期那一半没做：三个 `*_finding` 的 schema 还是只要求证据条数与字段非空，所以分析师仍然可以用它读到的日志去"证明"数据库里没有锁 —— 只是现在这种分工在规划期就会被拦下来。
+
+#### 六、为什么这一条比"答错"更值得修
 
 它把假阴性做成了闭环：agent 用错的工具取下结论，再用这个结论把唯一正确的假设排除掉。慢查询、锁等待、连接池耗尽这几类故障，最先被误杀的就是"要看得见数据库"的那个假设 —— 而这一轮里，它连一次数据库都没有连过。
 
@@ -2737,9 +2745,11 @@ flow 58 / 59 / 60 在 12:26–12:47 之间创建，全部停在 `created`：`res
 
 两半都已修：准备期的单次调用现在有 90 秒预算（4.81），到期之后 `failFlow` 用不继承取消的新 ctx 写状态和原因（4.80）。
 
-### 18. 子任务被派给了拿不到取证工具的角色，结论却是"未发现"
+### 18. 子任务被派给了拿不到取证工具的角色，结论却是"未发现"（规划期已修，见 4.86）
 
-flow 69 把"验证是否为锁竞争"派给 `log_analyst`（证据表只有 `ops_logs` / `ops_containers` / `k8s_get`），它一次数据库都没连，就用「未在 pg_stat_activity 中发现长事务」把锁假设排除了 —— 而锁是真的。规划期不校验"角色的工具能不能测这个假设"，执行期不要求"结论自证来源"，两条一起把假阴性做成了闭环。详见 4.86：落点一是 `record_plan` 按 `analystToolset` 校验 `assigned_to` 是否覆盖子任务点名的工具，二是三个 `*_finding` 的 schema 增加"本轮实际调用的工具"。
+flow 69 把"验证是否为锁竞争"派给 `log_analyst`（证据表只有 `ops_logs` / `ops_containers` / `k8s_get`），它一次数据库都没连，就用「未在 pg_stat_activity 中发现长事务」把锁假设排除了 —— 而锁是真的。规划期不校验"角色的工具能不能测这个假设"，执行期不要求"结论自证来源"，两条一起把假阴性做成了闭环。
+
+规划期已经拦住了（4.86 第五节）：`validateSubtaskInfo` 按"证据 → 工具"的表核对 `assigned_to` 的工具表，`pg_locks` 这类描述派给 `log_analyst` 会被拒绝，并把能取到它的角色写进拒绝语；refiner 追补子任务走同一道闸。执行期那一半还在：三个 `*_finding` 仍然不要求分析师交代证据来自哪个工具，所以换一个"对得上但看错了"的分工，它仍然可能用别的证据把结论说圆。
 
 ### 已经关掉的（不再列在上面）
 
