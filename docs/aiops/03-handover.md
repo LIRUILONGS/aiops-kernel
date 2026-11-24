@@ -2484,6 +2484,67 @@ flow 69 却在消息日志里写下「未在 pg_stat_activity 中发现长事务
 
 它把假阴性做成了闭环：agent 用错的工具取下结论，再用这个结论把唯一正确的假设排除掉。慢查询、锁等待、连接池耗尽这几类故障，最先被误杀的就是"要看得见数据库"的那个假设 —— 而这一轮里，它连一次数据库都没有连过。
 
+### 4.87 凭据库：主密钥留在环境里，库里只有密文，目标主机只写一个 id（2026-11-24）
+
+#### 一、为什么要先有它
+
+远程层今天只能读：`OPSAGI_TARGETS` 里放的是明文密码，或者一个挂载进容器的私钥文件。要能"去故障机器上修"，第一件事不是写命令，而是一个能安全放登录凭据的地方，以及"我连上的到底是不是那台机器"的答案。这一轮落的是四件：主密钥与信封加密、凭据表与存储层、目标主机按 `credential_id` 接线、主机密钥钉住。
+
+#### 二、密文与主密钥
+
+`OPSAGI_SECRET_KEY` 留在环境变量里，32 字节，hex / base64 / base64url / 带空白都能解析（`credentials.ParseKey`）。`pkg/credentials.Sealer` 用它做 AES-256-GCM，库里存的是 `nonce||ciphertext`；同一个明文两次加密的字节不同（nonce 每次都换）。
+
+没有主密钥时 store 报 `ErrNoKey` 而不是把明文写进库；解密失败（换钥匙、篡改、截断）一律关闭，不返回半截数据。这一点在库里能直接看到：`SELECT length(secret)` 是 447 字节，`secret like '%OPENSSH%'` 是 `f`。
+
+`ListCredentials` 这条查询本身不 select `secret`，所以 API 层拿到的结构体（`credentials.Credential`）根本没有能装下密文的字段 —— 泄漏不是靠调用方自觉，而是类型上做不到。
+
+#### 三、表与存储层
+
+迁移 `backend/migrations/sql/20261124120000_add_credentials.sql`：`name` 唯一、`kind ∈ {ssh_key, ssh_password, k8s_token, db_password}`、`secret BYTEA`、`host / port / username`、`host_key_fingerprint`、`rotated_at`、`last_used_at`、`created_by`。
+
+`credentials.Store` 只依赖 7 个查询组成的窄接口，测试用假实现，不需要数据库：创建即封、轮换重封并推进 `rotated_at`、`last_used_at` 在拨号成功后写、缺行返回 `ErrNotFound`。三条关键行为都被变异测试证过红：跳过封存（明文入库）、不校验 kind、`Secret` 直接回密文。
+
+#### 四、主机密钥钉住
+
+`opsremote.Target` 多了 `HostKeyFingerprint`，`Dial` 从 `ssh.InsecureIgnoreHostKey()` 换成了按 pin 比较的回调。pin 接受 `ssh-keygen -lf` 会打印的几种形式：`SHA256:...`、去掉前缀、带 `=` 填充、以及旧式十六段冒号的 MD5 形式（MD5 形式当前不带 `MD5:` 前缀，靠冒号数量认出来 —— 这一条是写测试时才发现的，第一版只认前缀）。不匹配时报错同时写出两边的指纹，运维不用去别处查。
+
+没有 pin 的目标保持旧行为（`InsecureIgnoreHostKey`），这对只读探测可以接受，对写路径不行 —— 所以 pin 可以随凭据一起存。
+
+`-tags live` 的真机断言是"宿主发布的三把钥匙里，只有它真正呈现的那一把被接受"，再加上"随手编的 pin 在握手阶段就被拒"。
+
+#### 五、接线
+
+`OPSAGI_TARGETS` 里的目标现在可以写 `{"id":"lab","host":"host.docker.internal","port":2222,"user":"root","credential_id":1}`。`opsTools.materialize` 在拨号前打开密文，放进 `Target.Secret`（`json:"-"`，只存在内存里），不再需要把私钥落成文件；目标没写的 host / port / user / pin 由凭据记录补。
+
+部署没有主密钥时，这一步在**拨号之前**就拒绝，报 `OPSAGI_SECRET_KEY` 这个变量名；否则失败会以"SSH 认证失败"的形式出现在离原因两层的地方。
+
+#### 六、真机验证
+
+库里 1 行凭据，部署带 `OPSAGI_SECRET_KEY`，目标是只写 `credential_id` 的那一行。第一次拨号就被拒：
+
+```
+连接目标主机 lab 失败：ssh handshake failed: host key mismatch for host.docker.internal:2222:
+the pin says SHA256:OuHi5JMk/LmCLdNSXEgu0ZQ2ukoPudkXZu5aiewOkKE,
+the host presented SHA256:2SyNEy1+1XbxTGKl7OhCXURO5k1YN3xzGLRRm5YsXZ4
+```
+
+原因是我把 pin 抄成了宿主的 ED25519 指纹，而 Go 客户端协商的是 ECDSA。这条错误本身就是证据：pin 真的在用，而且用的是凭据记录里的那个。把 pin 改成 ECDSA 之后，flow 70 的 `ops_exec` / `ops_watch` 全部成功 —— `pg_stat_activity` 206ms、`pg_lock_wait_summary` 6 次采样 27.4s、`pg_locks` 355ms，`last_used_at` 推进到 `05:54:28`。整轮没有任何 key 文件参与：目标没有 `key_file`，私钥是从内存里的那 447 字节解出来的。
+
+#### 七、顺手撞出来的一个部署坑
+
+`sqlc generate` 要活的 `DATABASE_URL`，而且库里必须已经有最新 schema。靶场库在这两点上都不整齐：`capability_grants` / `capability_requests` 缺 `trace_program` 列，而 `goose_db_version` 记着 `20261123130000` 已应用 —— 迁移文件在应用之后被原地改过，再重启也不会补这一列。
+
+给靶场库手工补上两列之后 `sqlc generate` 才跑通。**已经落地的迁移不要改文件内容，新加一条 `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`**，否则只在"从零建的库"上正确，在"已经跑过的库"上永远缺。
+
+#### 八、还没做的
+
+- 凭据的管理面（GraphQL / REST 的 list、create、rotate、delete）。现在只有存储层和配置接线，真机验证那一行是一次性脚本写进去的 —— 运维还不能自己加一条。
+- `ValidateOpsTargets` 仍然要求每个 target 带 `host`，只写 `credential_id` 的一行会被拒绝；要不要放宽到"host 或 credential_id 有一个就行"。
+- 第二步：`ops_apply` 的固定模板写目录（`unit_restart`、`container_restart`、`config_restore`、`disk_cleanup`、`k8s_rollout_restart`）、租约的 `actions` 维度、以及"写默认拒绝 + 运维审批"。
+- 第三步：基线 → 变更 → 差分 → 结论，证据缺失时结论必须是 `unverified` 而不是乐观收尾。
+
+三个提交：`652102b6`（sealer 与单测）、`3b572735`（迁移、查询、store）、`e023fd04`（目标接线与钉住接线）。
+
 ## 5 环境
 
 ### 5.1 开发机
