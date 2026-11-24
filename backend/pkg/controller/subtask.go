@@ -355,7 +355,14 @@ func (stw *subtaskWorker) Run(ctx context.Context) error {
 		// after the model endpoint answered 401.
 		status := subtaskStatusAfterChainError(err)
 		if status == database.SubtaskStatusFailed {
-			_ = stw.SetResult(writeCtx, "运行失败："+err.Error())
+			// The result is the only place the operator reads why the chain broke.
+			// Succeeding at the status write while failing this one leaves a failed
+			// subtask whose reason is blank, so the failure of this write is worth
+			// a line even though nothing else can be done about it.
+			if setErr := stw.SetResult(writeCtx, "运行失败："+err.Error()); setErr != nil {
+				logrus.WithError(setErr).WithField("subtask_id", subtaskID).
+					Error("failed to record why the subtask chain failed")
+			}
 		}
 		if errStatus := stw.SetStatus(writeCtx, status); errStatus != nil {
 			stw.handleInterrupting(errStatus)
