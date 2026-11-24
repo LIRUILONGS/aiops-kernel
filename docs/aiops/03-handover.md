@@ -2446,6 +2446,36 @@ flow 115（native 8899，`deepseek-v4.1`，`ops_trace` 10 秒窗口，lab 上 4 
 
 assistant 依然是一次成稿，没有第二次复核；但它现在有工具替它数、替它筛，四问里没再出现 4.72 那种行数错位。第 11 条因此从"结构性无解"降级为"模型质量问题，继续观察"。
 
+### 4.86 计划把"数据库锁"假设派给了看不见数据库的角色，它就用"没看见"把它排除了（2026-11-24）
+
+#### 一、现象
+
+重跑行锁场景（flow 69）。靶场上确实有一次正在发生的行锁等待：持有者 23924 在 `pg_sleep(7200)` 的事务里持有 `lockdb.accounts` 第 1 行的排他锁，等待者 23931 的 `update accounts set balance = balance + 1 where id = 1` 卡在上面，`pg_stat_activity` 里"有阻塞者"的会话数 = 1。
+
+flow 69 却在消息日志里写下「未在 pg_stat_activity 中发现长事务占用锁的 pid 和耗时，排除长事务导致的写入卡住可能性」，并把这条记成了 `log_finding`。
+
+#### 二、证据
+
+- 整条 flow 33 次工具调用里没有一次 `ops_exec`：`k8s_get` 23 次、`log_analyst` 7 次、`log_finding` 2 次、`subtask_list` 1 次。
+- 失败的子任务 193「验证是否为锁竞争导致的写入卡住」= `k8s_get` 9 + `log_analyst` 3；下结论的子任务 194「验证是否为长事务」= `k8s_get` 14 + `log_analyst` 4 + `log_finding` 2。
+- 两个子任务都被规划成 `assigned_to=log_analyst`，而 `analystToolset`（`backend/pkg/tools/tools.go` 的角色证据表）给这个角色的是 `{ops_logs, ops_containers, k8s_get}` —— 没有 `ops_exec`，也就拿不到 `pg_locks` 和 `pg_stat_activity`。
+
+#### 三、根因
+
+两层，都在"角色"这一侧：
+
+1. 规划期只校验 `assigned_to` 的名字在白名单里，不校验这个角色的工具表能不能测这个假设。把"查 pg_locks"派给日志分析师，和把"读日志"派给指标分析师一样，是一个注定取证失败的分工，而子任务失败之后 refiner 也不会因此换人。
+2. 执行期不要求结论自证来源。分析师写下「pg_stat_activity 里没有」时，没有任何东西问它一句"你什么时候查过 pg_stat_activity"。
+
+#### 四、落点
+
+- 规划期：`record_plan` 写入子任务前，按 `analystToolset` 校验 `assigned_to` 是否覆盖子任务点名的工具（描述里出现 `ops_exec`、`prom_query`、`k8s_get` 等 id 时），不覆盖就拒绝并给出能覆盖的角色。
+- 执行期：`log_finding` / `metric_finding` / `change_finding` 的收口 schema 增加"本轮实际调用的工具"，只接受本角色工具表里的名字；写"已排除"必须至少有一条出自这些工具的读数。
+
+#### 五、为什么这一条比"答错"更值得修
+
+它把假阴性做成了闭环：agent 用错的工具取下结论，再用这个结论把唯一正确的假设排除掉。慢查询、锁等待、连接池耗尽这几类故障，最先被误杀的就是"要看得见数据库"的那个假设 —— 而这一轮里，它连一次数据库都没有连过。
+
 ## 5 环境
 
 ### 5.1 开发机
@@ -2612,14 +2642,16 @@ chore: fork OpsAGI as AIOps kernel; add design docs and incident prompts
 
 目标里点名的六件事（P0 规划器、P0 性能链路、P1 四角色委派、P1 seed/run CLI、P1 前端、P2 改名与取证工具）都已交付、都有实机证据，逐条记录在第 4 章。这一章只留**还没做到、且不是"再写点代码"就能做到**的部分，每条写清卡在哪、需要什么资源、验收标准是什么。
 
-### 1. 慢查询场景已完成（4.31 / 4.33 / 4.72），只剩两个可选改进
+### 1. 慢查询场景已完成（4.31 / 4.33 / 4.69 / 4.72 / 4.84）
 
 靶场上有一个 `opslab-db`（Postgres 16 + `pg_stat_statements` + 200 万行 `orders`，2026-11-23 又加了 500 万行的 `bench` 与专门做行锁的 `lockdb`），目录里有 `pg_stat_activity` / `pg_stat_statements`，flow 60 自己走完了 167ms → 0.22ms 的全过程并收成 `improved`；4.72 的 flow 16 在 `bench` 上把 649ms 打到 0.440ms、flow 14 在 `lockdb` 上读出了完整的锁等待链。
 
-可选的下一步：
+两个可选改进都已落地：
 
-1. `EXPLAIN` 目前只能靠操作员代跑（目录不接受自由 SQL，这是有意的）。可以加一条只读命令"解释累计耗时第 N 条语句"，参数只有序号与库名，把这次的人机往返省掉一半。
-2. 锁竞争场景已经搭起来（`lockdb`），但"改完真的好了"这一半还没验：需要一个允许写操作的方式释放阻塞，或者把持有者做成可配置时长的自愈事务。
+1. "按序号解释语句"不再是操作员的活：`ops_exec` 的 `pg_explain` 带 `rank`（1–50，默认 1），只取计划不执行，带参数的语句走 `EXPLAIN (GENERIC_PLAN)`；占位符推不出类型时按 4.84 把原因和出路直接写给模型，不再只丢一句 Postgres 报错。
+2. 锁场景"改完真的好了"这一半在 4.69 验过：`ask` 请操作员 `pg_terminate_backend`，随后 `ops_diff` 读到锁等待会话 1→0、最长锁等待 418.9s→0s，`improved`。
+
+2026-11-24 重跑这一档时，慢查询本身没有问题，暴露的是分工问题（锁假设被派给了拿不到 `ops_exec` 的角色，见 4.86），与数据库能力无关。
 
 已经压过的是 CPU 饱和（4.28 / 4.29：`yes` 打满 2 核，基线 1.98 → 复测 0.41，`improved`）。真实运维里更常见的是慢查询、连接池耗尽、行锁等待——它们要求靶场上有一个真数据库，并且能人为制造"同一个查询，改前 800ms、改后 40ms"。
 
@@ -2704,6 +2736,10 @@ flow 111 只调 `ops_diff`、把 flow 110 采到的 `base-2` 传进去，得到�
 flow 58 / 59 / 60 在 12:26–12:47 之间创建，全部停在 `created`：`reserveFlow` 写完行、`prepareFlow` 起了，但 `CreateFlowWorker` 里的模型调用（`fwc.provs.NewFlowProvider`）没有自己的 deadline。flow 60 的那条连接（宿主机 `127.0.0.1:50723 → 127.0.0.1:18000`，建立于 20:46:42）在 25 分钟后仍然 `Established`，而同时直连网关只要 2.2 秒——一条死连接就足以让 flow 在 `flowPrepareTimeout`（30 分钟）之内既不前进也不失败。执行期的 agent 链有 `API call exceeded deadline`，准备期没有。
 
 两半都已修：准备期的单次调用现在有 90 秒预算（4.81），到期之后 `failFlow` 用不继承取消的新 ctx 写状态和原因（4.80）。
+
+### 18. 子任务被派给了拿不到取证工具的角色，结论却是"未发现"
+
+flow 69 把"验证是否为锁竞争"派给 `log_analyst`（证据表只有 `ops_logs` / `ops_containers` / `k8s_get`），它一次数据库都没连，就用「未在 pg_stat_activity 中发现长事务」把锁假设排除了 —— 而锁是真的。规划期不校验"角色的工具能不能测这个假设"，执行期不要求"结论自证来源"，两条一起把假阴性做成了闭环。详见 4.86：落点一是 `record_plan` 按 `analystToolset` 校验 `assigned_to` 是否覆盖子任务点名的工具，二是三个 `*_finding` 的 schema 增加"本轮实际调用的工具"。
 
 ### 已经关掉的（不再列在上面）
 
