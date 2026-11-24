@@ -739,8 +739,8 @@ func (dc *dockerClient) workVolumesOf(ctx context.Context, containerID string, l
 		return nil
 	}
 
-	names := make([]string, 0, len(inspect.Mounts))
-	for _, mp := range inspect.Mounts {
+	names := make([]string, 0, len(inspect.Container.Mounts))
+	for _, mp := range inspect.Container.Mounts {
 		if mp.Type == mount.TypeVolume && mp.Name != "" {
 			names = append(names, mp.Name)
 		}
@@ -754,7 +754,7 @@ func (dc *dockerClient) workVolumesOf(ctx context.Context, containerID string, l
 // that cannot be deleted now is no reason to fail the removal that preceded it.
 func (dc *dockerClient) removeWorkVolumes(ctx context.Context, volumes []string, logger *logrus.Entry) {
 	for _, name := range volumes {
-		if err := dc.client.VolumeRemove(ctx, name, client.VolumeRemoveOptions{Force: true}); err != nil && !cerrdefs.IsNotFound(err) {
+		if _, err := dc.client.VolumeRemove(ctx, name, client.VolumeRemoveOptions{Force: true}); err != nil && !cerrdefs.IsNotFound(err) {
 			logger.WithError(err).Warnf("failed to remove the work volume '%s'", name)
 		}
 	}
