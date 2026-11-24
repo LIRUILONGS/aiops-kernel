@@ -127,8 +127,8 @@ type customExecutor struct {
 	store    *pgvector.Store
 	vslp     VectorStoreLogProvider
 
-	containerOnce sync.Once
-	containerID   int64
+	containerMX sync.Mutex
+	containerID int64
 
 	definitions []llms.FunctionDefinition
 	handlers    map[string]ExecutorHandler
@@ -222,20 +222,31 @@ type flowContainers interface {
 	GetFlowContainers(ctx context.Context, flowID int64) ([]database.Container, error)
 }
 
+// terminalContainer resolves the flow's primary container once, for the terminal
+// mirror. Only a hit is cached: the lookup can fail while the sandbox is still
+// starting, and remembering that failure would quiet every later command of the
+// flow instead of the ones that ran too early.
 func (ce *customExecutor) terminalContainer(ctx context.Context) (int64, bool) {
-	ce.containerOnce.Do(func() {
-		lookup, ok := ce.db.(flowContainers)
-		if !ok {
-			return
-		}
-		containers, err := lookup.GetFlowContainers(ctx, ce.flowID)
-		if err != nil || len(containers) == 0 {
-			return
-		}
-		ce.containerID = containers[0].ID
-	})
+	ce.containerMX.Lock()
+	defer ce.containerMX.Unlock()
 
-	return ce.containerID, ce.containerID != 0
+	if ce.containerID != 0 {
+		return ce.containerID, true
+	}
+
+	lookup, ok := ce.db.(flowContainers)
+	if !ok {
+		return 0, false
+	}
+
+	containers, err := lookup.GetFlowContainers(ctx, ce.flowID)
+	if err != nil || len(containers) == 0 {
+		return 0, false
+	}
+
+	ce.containerID = containers[0].ID
+
+	return ce.containerID, true
 }
 
 // telemetryName reports whether a tool is an executed probe, so the command and
@@ -420,7 +431,9 @@ func (ce *customExecutor) Execute(
 		if err != nil {
 			durationDelta := time.Since(startTime).Seconds()
 			if reason, refused := refusalText(err); refused {
-				_ = ce.tclp.UpdateLogFailed(persistCtx, tcID, reason, durationDelta)
+				if logErr := ce.tclp.UpdateLogFailed(persistCtx, tcID, reason, durationDelta); logErr != nil {
+					obs.LogErrorOrCancel(logger, logErr, "failed to record a refused tool call")
+				}
 				if telemetryName(name) {
 					ce.recordToolActivity(persistCtx, name, args, "被拒绝："+reason)
 				}
@@ -429,7 +442,9 @@ func (ce *customExecutor) Execute(
 			}
 
 			failureResult := fmt.Sprintf("failed to execute handler: %s", err.Error())
-			_ = ce.tclp.UpdateLogFailed(persistCtx, tcID, failureResult, durationDelta)
+			if logErr := ce.tclp.UpdateLogFailed(persistCtx, tcID, failureResult, durationDelta); logErr != nil {
+				obs.LogErrorOrCancel(logger, logErr, "failed to record a failed tool call")
+			}
 			return "", resultFormat, fmt.Errorf("failed to execute handler: %w", err)
 		}
 
@@ -445,7 +460,9 @@ func (ce *customExecutor) Execute(
 			if ctx.Err() != nil {
 				durationDelta := time.Since(startTime).Seconds()
 				failureResult := fmt.Sprintf("failed to summarize result: %s", err.Error())
-				_ = ce.tclp.UpdateLogFailed(persistCtx, tcID, failureResult, durationDelta)
+				if logErr := ce.tclp.UpdateLogFailed(persistCtx, tcID, failureResult, durationDelta); logErr != nil {
+					obs.LogErrorOrCancel(logger, logErr, "failed to record a tool call whose result could not be summarized")
+				}
 				return "", resultFormat, fmt.Errorf("failed to summarize result: %w", err)
 			}
 			logger.WithError(err).Warn("failed to summarize tool result, truncating it instead")
@@ -752,7 +769,7 @@ func (ce *customExecutor) storeToolResult(ctx context.Context, name, result stri
 		}
 
 		anonymizedQuery := ce.replacer.ReplaceString(rawQuery)
-		_, _ = ce.vslp.PutLog(
+		if _, err := ce.vslp.PutLog(
 			ctx,
 			agentCtx.ParentAgentType,
 			agentCtx.CurrentAgentType,
@@ -762,7 +779,11 @@ func (ce *customExecutor) storeToolResult(ctx context.Context, name, result stri
 			text,
 			ce.taskID,
 			ce.subtaskID,
-		)
+		); err != nil {
+			// The document is already in the store; this row only makes it
+			// addressable from the analytics view, so the caller keeps its result.
+			obs.LogErrorOrCancel(logrus.WithContext(ctx), err, "failed to record a stored tool result")
+		}
 	}
 
 	return nil

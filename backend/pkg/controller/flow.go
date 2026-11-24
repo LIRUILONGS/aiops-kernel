@@ -326,7 +326,19 @@ func buildFlowWorker(
 	go fw.worker()
 
 	if !fwc.dryRun {
-		if err := fw.PutInput(ctx, fwc.input, nil, fwc.resources); err != nil {
+		// ErrInputAccepted means the worker has the input and is still working on
+		// it: the caller learns the outcome from the flow's status, not from this
+		// return, and a caller that hears an error may reasonably send the input
+		// again. Only a failure that leaves the work undone belongs here.
+		if err := fw.PutInput(ctx, fwc.input, nil, fwc.resources); err != nil && !errors.Is(err, ErrInputAccepted) {
+			// The worker owns the sandbox and the message chain by this point, and
+			// nothing outside this function holds a reference to it. Returning with
+			// it alive leaves it looping on fw.input with a live context while
+			// prepareFlow reports the flow as failed and drops the entry from the
+			// controller's map -- generating subtasks in a namespace no caller can
+			// reach. Stop it and give the sandbox back before the error travels.
+			fw.handBack(logger)
+
 			return nil, wrapErrorEndSpan(ctx, flowSpan, "failed to run flow worker", err)
 		}
 	}
@@ -871,6 +883,23 @@ func (fw *flowWorker) Finish(ctx context.Context) error {
 	return nil
 }
 
+// handBack tears down a worker that will never reach a caller, after the point
+// where it owns the sandbox. Finish cannot serve here: it closes the flow as
+// finished and settles its tasks, and the flow this covers is about to be marked
+// failed by the caller that refused its input. Only the worker goroutine has to
+// stop and the executor has to be released -- the latter with a context that
+// survives the refusal, because a prepare deadline that has expired is exactly
+// when the sandbox would otherwise leak.
+func (fw *flowWorker) handBack(logger *logrus.Entry) {
+	fw.cancel()
+	fw.stopReports()
+	fw.wg.Wait()
+
+	if err := fw.flowCtx.Executor.Release(context.WithoutCancel(fw.ctx)); err != nil {
+		logger.WithError(err).Warn("failed to release the sandbox of a flow whose input was refused")
+	}
+}
+
 func (fw *flowWorker) Stop(ctx context.Context) error {
 	ctx, span := obs.Observer.NewSpan(ctx, obs.SpanKindInternal, "controller.flowWorker.Stop")
 	defer span.End()
@@ -1314,7 +1343,10 @@ func (fw *flowWorker) worker() {
 					getLogger(input, task).WithError(err).Error("failed to continue task")
 
 					// anyway there need to set flow status to Waiting new user input even an error happened
-					_ = fw.SetStatus(fw.ctx, database.FlowStatusWaiting)
+					if setErr := fw.SetStatus(fw.ctx, database.FlowStatusWaiting); setErr != nil {
+						getLogger(input, task).WithError(setErr).
+							Error("failed to park the flow as waiting; it will keep reading as running")
+					}
 				}
 			} else {
 				getLogger(input, task).Info("task continued successfully")
@@ -1339,7 +1371,10 @@ func (fw *flowWorker) worker() {
 				getLogger(flin.input, task).WithError(err).Error("failed to process input")
 
 				// anyway there need to set flow status to Waiting new user input even an error happened
-				_ = fw.SetStatus(fw.ctx, database.FlowStatusWaiting)
+				if setErr := fw.SetStatus(fw.ctx, database.FlowStatusWaiting); setErr != nil {
+					getLogger(flin.input, task).WithError(setErr).
+						Error("failed to park the flow as waiting; it will keep reading as running")
+				}
 			}
 		} else {
 			getLogger(flin.input, task).Info("user input processed")
@@ -1364,7 +1399,9 @@ func (fw *flowWorker) processInput(flin flowInput) (TaskWorker, error) {
 	}
 
 	// anyway there need to set flow status to Running to disable user input
-	_ = fw.SetStatus(fw.ctx, database.FlowStatusRunning)
+	if err := fw.SetStatus(fw.ctx, database.FlowStatusRunning); err != nil {
+		fw.logger.WithError(err).Error("failed to mark the flow as running; a second input may be accepted")
+	}
 
 	// Pre-create the per-task cancellable context BEFORE calling CreateTask.
 	// GenerateSubtasks (an LLM call) runs synchronously inside CreateTask and may take
@@ -1388,7 +1425,11 @@ func (fw *flowWorker) processInput(flin flowInput) (TaskWorker, error) {
 			// CreateTask was cancelled by Stop() — not a fatal flow error.
 			// Keep the worker alive and return the flow to Waiting state.
 			flin.reply.deliver(nil)
-			_ = fw.SetStatus(fw.ctx, database.FlowStatusWaiting)
+
+			if setErr := fw.SetStatus(fw.ctx, database.FlowStatusWaiting); setErr != nil {
+				fw.logger.WithError(setErr).Error("failed to return a stopped flow to waiting")
+			}
+
 			return nil, nil
 		}
 		err = fmt.Errorf("failed to create task for flow %d: %w", fw.flowCtx.FlowID, err)

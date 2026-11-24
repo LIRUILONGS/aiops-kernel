@@ -391,7 +391,10 @@ func (tw *taskWorker) Run(ctx context.Context) error {
 				if ctx.Err() != nil {
 					writeCtx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
 				}
-				_ = tw.SetStatus(writeCtx, status)
+				if setErr := tw.SetStatus(writeCtx, status); setErr != nil {
+					logrus.WithError(setErr).WithField("task_id", tw.taskCtx.TaskID).
+						Error("failed to close a task whose batch broke; it will keep reading as running")
+				}
 				if cancel != nil {
 					cancel()
 				}
@@ -406,10 +409,24 @@ func (tw *taskWorker) Run(ctx context.Context) error {
 		} // otherwise subtask is done
 
 		if err := tw.stc.RefineSubtasks(ctx); err != nil {
-			if errors.Is(err, context.Canceled) {
-				ctx = context.Background()
+			// The refine ran on a context that may already be dead, and the status
+			// write has to land anyway: parking the task as waiting is what lets a
+			// restart pick it up. Without a deadline of its own the write inherits
+			// none, and an unresponsive database holds this goroutine for good.
+			writeCtx := ctx
+			var cancel context.CancelFunc
+			if ctx.Err() != nil {
+				writeCtx, cancel = context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
 			}
-			_ = tw.SetStatus(ctx, database.TaskStatusWaiting)
+
+			if setErr := tw.SetStatus(writeCtx, database.TaskStatusWaiting); setErr != nil {
+				logrus.WithError(setErr).WithField("task_id", tw.taskCtx.TaskID).
+					Error("failed to park a task whose subtasks could not be refined")
+			}
+			if cancel != nil {
+				cancel()
+			}
+
 			return fmt.Errorf("failed to refine subtasks list for the task %d: %w", tw.taskCtx.TaskID, err)
 		}
 	}
@@ -570,7 +587,11 @@ func (tw *taskWorker) Report(ctx context.Context) error {
 			if ctx.Err() != nil {
 				resetCtx = context.WithoutCancel(ctx)
 			}
-			_ = tw.SetStatus(resetCtx, database.TaskStatusWaiting)
+
+			if setErr := tw.SetStatus(resetCtx, database.TaskStatusWaiting); setErr != nil {
+				logrus.WithError(setErr).WithField("task_id", tw.taskCtx.TaskID).
+					Error("failed to reset a task whose report could not be written")
+			}
 		}
 
 		return err
