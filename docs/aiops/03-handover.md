@@ -2412,6 +2412,40 @@ flow 115（native 8899，`deepseek-v4.1`，`ops_trace` 10 秒窗口，lab 上 4 
 
 第一版测试为了把种下的语句顶到 rank 1，直接 `pg_stat_statements_reset()` 了 `bench` 库——顺手把同一个靶场上「语句段」验收依赖的历史统计清空了，`LiveStatementSection` 立刻变红。现在的写法不重置任何东西：种完语句再把它的 rank 查回来传给工具，两个验收互不影响。
 
+### 4.85 `ops_containers` 现在自己数数：filter 命中多少个，首行就说（2026-11-24）
+
+第 7 章第 11 条的根子是"一次成稿"：assistant 没有 refiner 复核，凡是要它自己数、自己筛的活都容易错一位。4.72 里它把 4 个 seal-engraver 容器写成 5 行又自我更正，就是这种错。
+
+#### 一、把"数"从模型手里拿走
+
+`ops_containers` 多了一个可选参数 `filter`（子串匹配，不是正则），输出首行直接给命中数：
+
+```
+名字里包含 "opslab-" 的容器 15 个（这台主机上共 64 个）
+```
+
+不带 `filter` 时给总数（`容器 64 个`）；`filter` 一个都没匹配上时说 `0 个（这台主机上共 64 个）`并提示换子串，而不是把"没有检测到容器（可能未安装 Docker）"这句话甩出来——一个筛空的查询不等于主机没装 Docker。工具描述里也明写了"要报「有几个」时用 filter，别自己数行"。
+
+#### 二、证据
+
+| 层 | 结果 |
+|---|---|
+| 真机（live tier） | `filter=opslab-` → 首行 `15 个（这台主机上共 64 个）`，表体正好 15 行 |
+| 单测 | 命中计数、空命中与"没装 Docker"的区分、空 filter 原样返回，三条都钉住 |
+| 变异 | 去掉过滤、把首行计数换成总数、删掉空命中分支、handler 不传过滤，四个变异全红 |
+
+真 flow 侧，同一个问题（"lab 上现在有几个以 opslab- 开头的容器？给数字和列表，两者必须一致"）在 assistant 上跑，答案是 `**15 个**（该主机共有 64 个容器，其中名字包含 opslab- 的有 15 个）`，后面 15 行表格，落款写着 `ops_containers（target=lab，filter=opslab-）`——数字来自工具，不是数出来的。
+
+#### 三、同一轮跑的三问
+
+| 问题 | 结果 |
+|---|---|
+| seal-engraver- 开头的容器有哪些（名字、状态、退出码） | 4 行表格，行数正确；两周前那一版在这里多写了一行 |
+| bench 库最慢的业务语句 | 先查错容器（`seal-engraver-postgres` 已退出），随即改查 `opslab-db`，给出 `select count(*) from pgbench_accounts where round(extract($1 from now())) > $2`、累计 7381.9 ms、9 次、平均 820.21 ms，与 pg_stat_statements 一致 |
+| opslab- 开头的容器有几个 | 15 个，与 `filter` 的命中数一致 |
+
+assistant 依然是一次成稿，没有第二次复核；但它现在有工具替它数、替它筛，四问里没再出现 4.72 那种行数错位。第 11 条因此从"结构性无解"降级为"模型质量问题，继续观察"。
+
 ## 5 环境
 
 ### 5.1 开发机
@@ -2637,7 +2671,7 @@ chore: fork OpsAGI as AIOps kernel; add design docs and incident prompts
 
 ### 11. assistant 的单次问答质量不如 flow
 
-4.72 里 assistant 只用 1.3 分钟就答对了"哪些 seal-engraver 容器在跑"，但它把 4 个容器的表格写成了 5 行（多出的那行是自己拼错的），随后在正文里自我更正。flow 有多轮取证与 refiner 复核兜底，assistant 是一次成稿，这一档差距目前靠模型本身，没有结构性补偿。
+4.72 里 assistant 只用 1.3 分钟就答对了"哪些 seal-engraver 容器在跑"，但它把 4 个容器的表格写成了 5 行（多出的那行是自己拼错的），随后在正文里自我更正。flow 有多轮取证与 refiner 复核兜底，assistant 是一次成稿，这一档差距目前靠模型本身，没有结构性补偿。4.85 给计数类问题补了一半：`ops_containers` 现在带 `filter` 并自己报命中数，四问重测没有再出现行数错位（问题本身的结论仍靠模型质量）。
 
 ### 12. 子任务 `ask` 之后，答案进不来（已修，见 4.74）
 
