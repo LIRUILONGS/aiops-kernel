@@ -18,7 +18,11 @@ func TestVersion_GetBinaryVersion_FollowsTheSharedTable(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(func() { PackageVer, PackageRev = "", "" })
 
-	for _, line := range strings.Split(strings.TrimRight(string(data), "\n"), "\n") {
+	// A Windows checkout keeps the table's CRLF, and the trailing \r would land in
+	// the expected column of every row.
+	table := strings.ReplaceAll(string(data), "\r\n", "\n")
+
+	for _, line := range strings.Split(strings.TrimRight(table, "\n"), "\n") {
 		fields := strings.Split(line, "\t")
 		require.Len(t, fields, 3, "malformed row %q", line)
 

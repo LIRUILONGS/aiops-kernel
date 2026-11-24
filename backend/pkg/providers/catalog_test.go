@@ -878,7 +878,11 @@ func readmeSection(t *testing.T, heading string) []string {
 	raw, err := os.ReadFile("../../../docs/platform-reference.md")
 	require.NoError(t, err)
 
-	return readmeHeading(t, strings.Split(string(raw), "\n"), "###", heading)
+	// A Windows checkout keeps the file's CRLF, and the trailing \r makes every
+	// heading comparison miss.
+	lines := strings.Split(strings.ReplaceAll(string(raw), "\r\n", "\n"), "\n")
+
+	return readmeHeading(t, lines, "###", heading)
 }
 
 func readmeBlock(t *testing.T, section []string, marker string) []string {

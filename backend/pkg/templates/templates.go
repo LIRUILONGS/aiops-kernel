@@ -296,7 +296,7 @@ func GetDefaultPrompts() (*DefaultPrompts, error) {
 		}
 
 		promptName := strings.TrimSuffix(prompt.Name(), ".tmpl")
-		promptsMap[PromptType(promptName)] = string(promptBytes)
+		promptsMap[PromptType(promptName)] = normalizeLineEndings(promptBytes)
 	}
 
 	getPrompt := func(promptType PromptType) Prompt {
@@ -421,7 +421,7 @@ func (dp *defaultPrompter) GetTemplate(promptType PromptType) (string, error) {
 		return "", fmt.Errorf("failed to read template: %v: %w", err, ErrTemplateNotFound)
 	}
 
-	return string(promptBytes), nil
+	return normalizeLineEndings(promptBytes), nil
 }
 
 func (dp *defaultPrompter) RenderTemplate(promptType PromptType, params any) (string, error) {
@@ -515,7 +515,15 @@ func ReadGraphitiTemplate(name string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to read graphiti template %s: %w", name, err)
 	}
-	return string(templateBytes), nil
+	return normalizeLineEndings(templateBytes), nil
+}
+
+// normalizeLineEndings renders a template the same way on every checkout: a
+// Windows working tree keeps CRLF, and a prompt assembled from it would reach
+// the model, the knowledge graph and the stored chain with trailing \r that the
+// Linux checkout and CI never produce.
+func normalizeLineEndings(templateBytes []byte) string {
+	return strings.ReplaceAll(string(templateBytes), "\r\n", "\n")
 }
 
 // String pattern template format:
