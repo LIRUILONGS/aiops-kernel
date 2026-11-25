@@ -1063,7 +1063,7 @@ Only test systems you own or are explicitly authorized to assess. See [EULA.md](
 
 The new flow form includes a template picker, which can prefill the message box with a saved flow template. This is useful when you run similar assessments repeatedly.
 
-Every account starts with built-in templates covering alert diagnosis, logs and metrics, change review, capacity and performance, Kubernetes, and databases and middleware. They appear in **Templates** the first time the page loads, and they are ordinary templates from then on: rename, edit or delete them freely. The template editor's built-in panel offers the same catalogue as a starting point.
+An account with no templates of its own starts with twelve built-in ones covering alert diagnosis, logs and metrics, change review, capacity and performance, Kubernetes, and databases and middleware. They appear in **Templates** the first time the page loads and are ordinary templates from then on: rename, edit or delete them freely, and clearing the list brings them back. An account that already keeps templates is left as it is. The template editor's built-in panel offers the same catalogue at any time.
 
 - Use an existing template if you already have one saved in **Templates**
 - Start from the example prompt in [`examples/prompts/base_web_pentest.md`](examples/prompts/base_web_pentest.md) if you need a practical baseline for web testing
