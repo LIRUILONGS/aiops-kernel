@@ -28,7 +28,7 @@ export const TEMPLATE_SEED = makeTemplate('11', 'E2E Seed Template', 'Scan the t
 
 const flowTemplates: ResultOf<typeof FlowTemplatesDocument> = { flowTemplates: [TEMPLATE_SEED] };
 
-const PRESET_TITLE = 'E2E 内置模板';
+export const PRESET_TITLE = 'E2E 内置模板';
 
 const flowTemplatePresets: ResultOf<typeof FlowTemplatePresetsDocument> = {
     flowTemplatePresets: [

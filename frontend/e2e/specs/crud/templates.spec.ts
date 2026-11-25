@@ -11,7 +11,7 @@ import { ResultType } from '@/graphql/types';
 import { expect, test } from '../../fixtures/test.ts';
 import { typeIntoEditor } from '../../helpers/editor.ts';
 import { expectCleanPage } from '../../helpers/errors.ts';
-import { makeTemplate, TEMPLATE_SEED, templatesCassette } from '../../mocks/cassettes/templates.ts';
+import { makeTemplate, PRESET_TITLE, TEMPLATE_SEED, templatesCassette } from '../../mocks/cassettes/templates.ts';
 
 test.describe('templates crud', { tag: '@crud' }, () => {
     test.describe('create', () => {
@@ -51,13 +51,13 @@ test.describe('templates crud', { tag: '@crud' }, () => {
 
             await expect(page.getByRole('row', { name: /E2E Seed Template/ })).toBeVisible();
 
-            await page.getByRole('button', { name: 'New Template' }).click();
+            await page.getByRole('button', { name: '新建模板' }).click();
 
             await expect(page).toHaveURL(/\/templates\/new$/);
 
-            await page.getByLabel('Title').fill(NEW_TITLE);
-            await typeIntoEditor(page, 'Template content', NEW_TEXT);
-            await page.getByRole('button', { name: 'Create' }).click();
+            await page.getByLabel('标题').fill(NEW_TITLE);
+            await typeIntoEditor(page, '模板内容', NEW_TEXT);
+            await page.getByRole('button', { exact: true, name: '创建' }).click();
 
             await expect(page).toHaveURL(/\/templates$/);
             await expect(page.getByRole('row', { name: /E2E Created Template/ })).toBeVisible();
@@ -93,12 +93,12 @@ test.describe('templates crud', { tag: '@crud' }, () => {
             const row = page.getByRole('row', { name: /E2E Seed Template/ });
 
             await row.hover();
-            await row.getByRole('button', { name: 'Open menu' }).click();
+            await row.getByRole('button', { name: '打开菜单' }).click();
             await page.getByRole('menuitem', { name: 'Rename' }).click();
-            await page.getByPlaceholder('Template title').fill('E2E Renamed Template');
-            await page.getByPlaceholder('Template title').press('Enter');
+            await page.getByPlaceholder('模板标题').fill('E2E Renamed Template');
+            await page.getByPlaceholder('模板标题').press('Enter');
 
-            await expect(page.getByText('Template renamed successfully')).toBeVisible();
+            await expect(page.getByText('已重命名')).toBeVisible();
             await expect(page.getByRole('row', { name: /E2E Renamed Template/ })).toBeVisible();
             await expect(page.getByRole('row', { name: /E2E Seed Template/ })).toBeHidden();
             expectCleanPage(pageErrorLog);
@@ -140,16 +140,30 @@ test.describe('templates crud', { tag: '@crud' }, () => {
             const row = page.getByRole('row', { name: /E2E Seed Template/ });
 
             await row.hover();
-            await row.getByRole('button', { name: 'Open menu' }).click();
+            await row.getByRole('button', { name: '打开菜单' }).click();
             await page.getByRole('menuitem', { name: 'Delete' }).click();
 
             const dialog = page.getByRole('dialog');
 
-            await expect(dialog.getByText('Delete template')).toBeVisible();
-            await dialog.getByRole('button', { name: 'Delete' }).click();
+            await expect(dialog.getByText('删除 template')).toBeVisible();
+            await dialog.getByRole('button', { exact: true, name: '删除' }).click();
 
             await expect(page.getByRole('row', { name: /E2E Seed Template/ })).toBeHidden();
-            await expect(page.getByText('No templates yet')).toBeVisible();
+            await expect(page.getByText('还没有模板')).toBeVisible();
+            expectCleanPage(pageErrorLog);
+        });
+    });
+
+    test.describe('built-in presets', () => {
+        test.use({ cassette: templatesCassette() });
+
+        test('fills the new template form from a built-in preset', async ({ page, pageErrorLog }) => {
+            await page.goto('/templates/new');
+
+            await page.getByRole('button', { name: new RegExp(PRESET_TITLE) }).click();
+
+            await expect(page.getByLabel('标题')).toHaveValue(PRESET_TITLE);
+            await expect(page.getByRole('textbox', { name: '模板内容' })).toContainText('ops_system');
             expectCleanPage(pageErrorLog);
         });
     });
