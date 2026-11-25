@@ -466,6 +466,8 @@ func (fp *flowProvider) RefineSubtasks(ctx context.Context, taskID int64) ([]too
 		},
 		"system": {
 			"SubtaskPatchToolName":    tools.SubtaskPatchToolName,
+			"ApplyToolName":           tools.OpsApplyToolName,
+			"WritesEnabled":           fp.capabilityEnforcing(ctx),
 			"SubtaskListToolName":     tools.SubtaskListToolName,
 			"TerminalToolName":        tools.TerminalToolName,
 			"FileToolName":            tools.FileToolName,

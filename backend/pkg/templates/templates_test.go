@@ -262,3 +262,99 @@ func TestTemplates_RenderPrompt_AssistantDescribesTheProbesOnlyWhenATargetIsConf
 		assert.Contains(t, rendered, "<finding>", "the finding tool needs no probe and is offered on its own")
 	})
 }
+
+// Rule 1 is the one line that says what the commander may change. It read
+// "repairs are never yours to run" long after the write tool existed, and the
+// model obeyed the sentence rather than the tool list.
+func TestTemplates_RenderPrompt_CommanderStatesWhatItMayChangePerMode(t *testing.T) {
+	prompts, err := GetDefaultPrompts()
+	require.NoError(t, err)
+
+	commander := prompts.AgentsPrompts.Commander.System.Template
+	if !strings.Contains(commander, ".WritesEnabled") {
+		t.Fatal("the shipped commander prompt no longer branches on WritesEnabled")
+	}
+
+	params := func(writes, ask, unattended bool) map[string]any {
+		values := make(map[string]any, len(PromptVariables[PromptTypeCommander]))
+		for _, variable := range PromptVariables[PromptTypeCommander] {
+			values[variable] = "x"
+		}
+		values["WritesEnabled"] = writes
+		values["ApplyToolName"] = "<apply>"
+		values["AskUserEnabled"] = ask
+		values["Unattended"] = unattended
+		values["AskToolName"] = "<ask>"
+		values["OptimizationMode"] = false
+
+		return values
+	}
+
+	noWrites := "修复动作永远不由你执行"
+
+	t.Run("a flow without a lease may not repair", func(t *testing.T) {
+		rendered, err := RenderPrompt(string(PromptTypeCommander), commander, params(false, true, false))
+		require.NoError(t, err)
+
+		assert.Contains(t, rendered, noWrites)
+		assert.NotContains(t, rendered, "<apply>", "a write tool the flow does not have")
+	})
+
+	t.Run("an enforcing flow with an operator is told to check before retrying", func(t *testing.T) {
+		rendered, err := RenderPrompt(string(PromptTypeCommander), commander, params(true, true, false))
+		require.NoError(t, err)
+
+		assert.NotContains(t, rendered, noWrites)
+		assert.Contains(t, rendered, "<apply>")
+		assert.Contains(t, rendered, "<ask>")
+		assert.Contains(t, rendered, "审批编号")
+	})
+
+	t.Run("an unattended enforcing flow reports the request instead of retrying", func(t *testing.T) {
+		rendered, err := RenderPrompt(string(PromptTypeCommander), commander, params(true, true, true))
+		require.NoError(t, err)
+
+		assert.NotContains(t, rendered, noWrites)
+		assert.Contains(t, rendered, "没人会批准")
+		assert.NotContains(t, rendered, "同一个问题不要问两遍")
+	})
+}
+
+// The refiner decides what gets verified next, so a rule that forbids planning
+// a write is what keeps an approved repair from ever being revisited.
+func TestTemplates_RenderPrompt_RefinerPlansAWriteOnlyWhenOneIsWaiting(t *testing.T) {
+	prompts, err := GetDefaultPrompts()
+	require.NoError(t, err)
+
+	refiner := prompts.AgentsPrompts.Refiner.System.Template
+
+	params := func(writes bool) map[string]any {
+		values := make(map[string]any, len(PromptVariables[PromptTypeRefiner]))
+		for _, variable := range PromptVariables[PromptTypeRefiner] {
+			values[variable] = "x"
+		}
+		values["WritesEnabled"] = writes
+		values["ApplyToolName"] = "<apply>"
+		values["N"] = 3
+
+		return values
+	}
+
+	t.Run("a flow without a lease may not plan a write", func(t *testing.T) {
+		rendered, err := RenderPrompt(string(PromptTypeRefiner), refiner, params(false))
+		require.NoError(t, err)
+
+		assert.Contains(t, rendered, "禁止规划写操作")
+		assert.NotContains(t, rendered, "<apply>")
+	})
+
+	t.Run("an enforcing flow plans an approved repair", func(t *testing.T) {
+		rendered, err := RenderPrompt(string(PromptTypeRefiner), refiner, params(true))
+		require.NoError(t, err)
+
+		assert.NotContains(t, rendered, "禁止规划写操作")
+		assert.Contains(t, rendered, "<apply>")
+		assert.Contains(t, rendered, "审批编号")
+		assert.Contains(t, rendered, "变更结论")
+	})
+}

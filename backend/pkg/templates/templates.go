@@ -105,6 +105,8 @@ var PromptVariables = map[PromptType][]string{
 	},
 	PromptTypeRefiner: {
 		"SubtaskPatchToolName",
+		"ApplyToolName",
+		"WritesEnabled",
 		"Lang",
 		"N",
 		"ToolPlaceholder",
