@@ -1,0 +1,27 @@
+{
+  "id": "l1-hdfs-block-warnings",
+  "kind": "diagnosis",
+  "title": "真实 HDFS 日志：八十条 block 服务告警",
+  "premise": "日志是 Loghub 的真实采样，异常条目带 block id。要判断的是丢块、传输中断还是客户端主动断开。",
+  "fixture": [
+    "docker run -d --name opslab-log-hdfs -v /path/to/HDFS_2k.log:/archive/app.log:ro busybox:latest sh -c 'cat /archive/app.log; sleep infinity'"
+  ],
+  "cleanup": [
+    "docker rm -f opslab-log-hdfs"
+  ],
+  "task": "HDFS 集群的日志采集箱把某个 DataNode 的归档日志打到了容器 opslab-log-hdfs 的标准输出（目标主机 id 是 lab）。最近有人反映读某些 block 会失败，但监控上没有磁盘告警。\n请只用 ops_logs（source=opslab-log-hdfs，lines 取 500）读这段日志，然后：\n1) 找出所有异常级别的条目，逐条引用原文（保留时间戳和 block id）；\n2) 统计这类异常出现了多少次、涉及多少个不同的 block、异常集中在哪个时间段；\n3) 根据原文判断性质：是磁盘写失败、副本传输被打断、还是客户端主动断开；\n4) 用 diagnosis 收口：根因写清哪一层出了问题，recommendation.action 给出下一步该在集群侧执行的检查命令（例如 hdfs fsck -blocks 的具体用法），needs_human 按实际填。\n引用必须与日志原文逐字一致，不要编造 block id 或次数。",
+  "expect": [
+    "异常条数、block 数、时间段都来自原文",
+    "性质的判断能追到具体原文措辞",
+    "recommendation.action 是集群侧可执行的检查"
+  ],
+  "traps": [
+    "编造 block id",
+    "把 WARN 当成丢块事实",
+    "次数与日志对不上"
+  ],
+  "recorded": {
+    "section": "4.72",
+    "verdict": "日志读取正确性一档"
+  }
+}

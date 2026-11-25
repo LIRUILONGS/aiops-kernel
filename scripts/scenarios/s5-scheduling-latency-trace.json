@@ -1,0 +1,30 @@
+{
+  "id": "s5-scheduling-latency-trace",
+  "kind": "diagnosis",
+  "title": "eBPF 排队延迟：数字否定了报障假设",
+  "premise": "报障说是 CPU 调度排队导致时延抖动。runqlat 的直方图能给出排队时长的真实量级，答案可能是\"假设不成立\"。",
+  "fixture": [
+    "docker rm -f opslab-stress-b; docker run -d --name opslab-stress-b --cpus=2 busybox:latest sh -c 'i=0; while [ $i -lt 4 ]; do (while true; do :; done) & i=$((i+1)); done; wait'"
+  ],
+  "cleanup": [
+    "docker rm -f opslab-stress-b"
+  ],
+  "requires": [
+    "OPSAGI_SANDBOX_BPF=true"
+  ],
+  "task": "容量问题：lab 这台主机在高峰时延抖动，怀疑是 CPU 调度排队。目标主机 id 是 lab，机器上有持续吃 CPU 的压测进程。\n请按顺序取证，每一步都要抄工具原文：\n1) 用 ops_trace 在 lab 上跑 runqlat（seconds=10）。工具输出的最后会有一行「延迟汇总」，把这一行连同 p50/p90/p99 原样抄进证据；如果工具输出里没有这一行，照实说没有，不要自己算。\n2) 用 ops_exec 的 top_cpu 找到吃 CPU 的进程，把名字和占比写进证据。\n3) 用 ops_system 取 load1 与核数，说明队列长度和 p99 是否吻合。\n4) 用 diagnosis 收口：结论必须给出「排队多久（p99）」和「谁占满了 CPU」两个数字，recommendation.action 给出可执行处置，needs_human 按实际填。\n所有数字必须来自工具输出。",
+  "expect": [
+    "p99 排队时长是 runqlat 原文里的数字",
+    "把排队量级与报障的\"毫秒级抖动\"对照，指出是否吻合",
+    "占 CPU 的进程有名字与占比"
+  ],
+  "traps": [
+    "没读到汇总行就自己算一个 p99",
+    "把占 CPU 的容器直接写成根因，而不看排队量级"
+  ],
+  "recorded": {
+    "flow": 136,
+    "section": "4.101",
+    "verdict": "否定了原始假设，指出尖峰在块设备侧"
+  }
+}

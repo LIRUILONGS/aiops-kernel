@@ -1,0 +1,27 @@
+{
+  "id": "s6-statement-baseline",
+  "kind": "optimization",
+  "title": "让 ops_diff 自己证明改动的效果",
+  "premise": "性能改动最容易被\"看起来快了\"糊弄过去。基线指纹里带语句段，diff 必须出现语句平均耗时那一行才算数。",
+  "fixture": [
+    "docker exec opslab-db psql -U postgres -d bench -tAc \"drop index if exists pgbench_accounts_region_balance_idx\"",
+    "docker exec opslab-db psql -U postgres -d bench -tAc \"select count(*) from pgbench_accounts where region = 'cn-east'\""
+  ],
+  "cleanup": [],
+  "task": "性能优化任务（第二轮）：opslab-db 的 bench 库（pgbench TPC-B，500 万行 pgbench_accounts）里，报表查询 `select aid, bid, abalance from pgbench_accounts where region = 'cn-east' order by abalance desc limit 20` 一次要 800 毫秒以上，业务要求降到 50 毫秒以内。这一轮的重点是让工具自己证明效果，所以：\n1) 先用 ops_baseline 采变更前的基线，参数必须带上 container=opslab-db、database=bench、statement='order by abalance desc'（工具会把这条语句的 calls 与 mean_exec_time 一起记进指纹），记下返回的采样编号与\"语句段\"那一行；\n2) 用 ops_exec 的 pg_explain 说明瓶颈；\n3) 把索引 DDL 用 ask 交给操作员执行；\n4) 操作员执行后，再用完全相同的参数（同一个 statement）采一次基线；\n5) 用 ops_diff 对比两个采样编号，检查输出里是否出现「语句平均耗时」「语句累计耗时」两行，并如实抄下来；\n6) 用 optimization_result 收口，observed_gain 引用 ops_diff 里语句那两行，verdict 按这两行填。如果 ops_diff 里没有语句行，就在结论里明说没有，不要编。",
+  "expect": [
+    "两次基线用的是同一个 statement 参数",
+    "ops_diff 里出现「语句平均耗时」行，observed_gain 引用它",
+    "没有语句行时如实说没有"
+  ],
+  "traps": [
+    "ops_diff 传同一个采样编号（自比对），把噪声写成改善",
+    "编造语句平均耗时",
+    "拿第一次的采样编号去比对第二次采的另一个 statement"
+  ],
+  "recorded": {
+    "flow": 129,
+    "section": "4.99",
+    "verdict": "自比对被拦下；编号写错时要求列出可用编号"
+  }
+}

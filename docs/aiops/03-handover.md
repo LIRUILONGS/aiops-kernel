@@ -3165,6 +3165,68 @@ flow 94（`deepseek-v4.1`，镜像 `local/opsagi:prompts2`，57 次工具调用�
 
 两张表最有价值的地方是它们**没有编**：日志面明确说"真实首发取不到，缓冲区已被滚动"，指标面明确说"这条指标在这个后端不存在"。这正是 4.86 那条假阴性的反面——同样的 `log_analyst`，彼时用"没看见"排除锁，此时把"取不到"标成取不到。
 
+### 4.103 README 重整：截图换成真跑，场景进仓库（2026-11-25）
+
+README 原来的截图是 Playwright 视觉基线直接拷过来的测试夹具：会话叫 `E2E Alpha`、模板叫 `E2E Seed Template`，终端区域还被 mask 掉。这不是产品长什么样，是测试台长什么样。这一节把图换成真跑出来的，把散的实验收成仓库资产，并把 README 的结构理顺。
+
+#### 一、截图：为什么原来的不能要
+
+十四张图（七组明暗）全部哈希等同于 `frontend/e2e/specs/visual/routes.spec.ts-snapshots/` 下的基线文件，说明它们是 `toHaveScreenshot` 的产物而不是手工截的产品图。三个具体问题：
+
+| 问题 | 具体表现 |
+|---|---|
+| 数据是夹具 | 会话名 `E2E Alpha`、模板名 `E2E Seed Template`，都是 e2e 种子 |
+| 终端是遮罩 | `routes.spec.ts` 对 `.xterm` 做 mask（SwiftShader 渲染在 runner 间不一致），所以"右侧是终端"那张图上终端是一块空白 |
+| 图名与内容不符 | README 里叫 `flow-detail`，实际取的是 `flows-5-*.png`（flow 5 的详情），而说明文字写的是"诊断结论按证据组织" |
+
+#### 二、截图：现在怎么来的
+
+靶场上的真数据在原生进程里（`127.0.0.1:8899`，库是 `opsagi-pg`，还是这一轮的 flow 125–136），但它只提供 API、不带前端包。所以起了 `frontend/dist` 的静态服务，把 `/api/` 与 `/graphql` 反代到 8899，再用 Playwright 登录后截图——图上的每个字都是那几次真跑留下的。
+
+四张图，每张两个主题：
+
+| 图 | 取的是 | 图里能看到的真东西 |
+|---|---|---|
+| `dashboard-*.png` | `/dashboard` | 11/18–11/25 的会话、工具调用、token 三条趋势，峰值对得上这几天真跑的轮次 |
+| `flows-*.png` | `/flows` | 会话标题就是当时贴进去的告警原文（`lab CPU调度排队取证`、`pgbench报表查询优化第二轮`…） |
+| `flow-conclusion-*.png` | `/flows/136` 滚到底 | 第 6 节「未完成与后续」、三处证据缺口、`置信度 0.60`、`needs_human=true` |
+| `flow-roles-*.png` | `/flows/136` 的角色页 | 十二个角色的拓扑，Commander `4 ch / 1.3M tok`、Summarizer `25 ch`、Log Analyst `2 ch / 132.3K tok` |
+
+截图前先断言页面上确实有该有的内容（`lab CPU调度排队取证`、`Commander`、`会话活动趋势`），断言不过就跳过——不然骨架屏也会被拍成产品图。WebSocket 也要一起反代，否则每张图上都挂着一条 `Not receiving updates — reconnecting` 横幅。
+
+#### 三、八个实验场景进仓库
+
+`scripts/scenarios/` 现在是仓库的一部分：八份 JSON，加一篇说明字段与判卷口径的 `README.md`。每份写清靶场怎么摆（`fixture`）、问什么（`task`）、什么算答对（`expect`）、什么算糊弄（`traps`）、以及这一轮实跑的 flow 编号。
+
+| 场景 | 类型 | 实跑 |
+|---|---|---|
+| `s1-dependency-container-exit` | 故障定位 | flow 125：根因落到依赖容器退出，130 次调用 / 36 分钟 |
+| `s2-slow-query-missing-index` | 性能优化 | flow 126：诊断正确，DDL 没执行，`success=false` |
+| `s3-row-lock-wait` | 故障定位 | flow 127：现场已无阻塞方，如实说结论与报障前提冲突 |
+| `s4-log-archive-replay` | 故障定位 | flow 128：认出是归档回放，改口并解释两套口径 |
+| `s5-scheduling-latency-trace` | 故障定位 | flow 136：用 runqlat 否定了报障假设 |
+| `s6-statement-baseline` | 性能优化 | flow 129：自比对被拦，编号写错时要求它列出可用编号 |
+| `l1-hdfs-block-warnings` | 纯日志 | Loghub HDFS 样本 |
+| `l4-spark-healthy-control` | 对照组 | 全 INFO，必须答"健康" |
+
+八份里两份是控制组。控制组的价值在这一轮已经验过：`l4` 这种"日志全绿"的输入，模型编造的概率远高于故障场景答错——它得顶回工单，而不是配合演出。
+
+#### 四、README 结构
+
+按读者顺序重排：它做什么 → 它不做什么 → 截图 → 实验场景 → 核心机制 → 界面 → 快速开始 → 目录 → 文档 → 状态。「它不做什么」补了第四条（不为让工单好看而编造故障），「状态」按本轮实测重写，把"尚未验证"里加了 k8s 崩溃循环与 Prometheus 旁路的大规模表现。
+
+场景那一节给了一条能直接粘的命令：
+
+```bash
+python scripts/opsagi_run.py "$(python -c "import json;print(json.load(open('scripts/scenarios/s1-dependency-container-exit.json'))['task'])")"
+```
+
+#### 五、这一轮踩到的两个坑
+
+第一，`opsagi` 容器在跑但 `8443` 连不上（`curl` 返回 000），所以没走容器那条路，改用 `dist` + 反代；这条路不需要重新构建镜像，也不碰正在跑的原生进程。
+
+第二，`pkg/providers/catalog_test.go` 里那个读 README 的测试（`TestCatalog_ReadmeProviderSectionsMatchTheShippedConfig`）在改完之后仍然是绿的——它的 gemini / qwen 两个子测试只校验"如果存在该节，其内容要与 catalogue 一致"，而本分支的 README 从来没有这两节。重写之前先确认过这一点，否则整篇会因为它变红。
+
 ## 5 环境
 
 ### 5.1 开发机

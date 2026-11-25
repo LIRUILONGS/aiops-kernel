@@ -1,0 +1,28 @@
+{
+  "id": "s4-log-archive-replay",
+  "kind": "diagnosis",
+  "title": "看起来是实时爆破，其实是归档回放",
+  "premise": "日志容器把一份历史归档 cat 到标准输出并挂着不退出。取证要能看出\"这条读数是回放，不是现在\"，否则会把 2005 年的攻击写成今天的事故。",
+  "fixture": [
+    "docker run -d --name opslab-log-linux -v /path/to/Linux_2k.log:/archive/app.log:ro busybox:latest sh -c 'cat /archive/app.log; sleep infinity'"
+  ],
+  "cleanup": [
+    "docker rm -f opslab-log-linux"
+  ],
+  "task": "安全告警：一台 Linux 主机的 sshd 日志里出现大量认证失败，怀疑正在被暴力破解。日志采集箱把该主机 sshd 的日志打到了容器 opslab-log-linux 的标准输出（目标主机 id 是 lab）。\n请只用 ops_logs（source=opslab-log-linux，lines 取 500）读这段日志，然后：\n1) 统计认证失败次数、来源 IP 排行（前 5 个），以及是否存在成功登录；\n2) 引用的每一行都要与日志原文逐字一致，保留时间戳；\n3) 判断这是正在发生的攻击还是历史归档，说明你的依据（时间戳、日志连续性）；\n4) 用 diagnosis 收口：root_cause 写清性质，recommendation.action 给出处置（如果只是归档回放，就说不需要处置，并说明该去看哪份实时日志），needs_human 按实际填。\n不要编造 IP 或次数。",
+  "expect": [
+    "次数与来源 IP 排行来自实际读到的行",
+    "识别出时间戳属于历史归档，明确说\"不是正在发生\"",
+    "exists successful login 的判断有原文支撑"
+  ],
+  "traps": [
+    "把 2005 年时间戳的归档写成\"正在被爆破\"",
+    "统计数字与日志不一致",
+    "声称有成功登录而日志里没有"
+  ],
+  "recorded": {
+    "flow": 128,
+    "section": "4.99",
+    "verdict": "识别为回放，改判并解释两套口径"
+  }
+}

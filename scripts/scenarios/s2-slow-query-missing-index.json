@@ -1,0 +1,28 @@
+{
+  "id": "s2-slow-query-missing-index",
+  "kind": "optimization",
+  "title": "五百万行的报表查询缺一个索引",
+  "premise": "报表查询一次要 400 ms，业务要求 10 ms 以内。库是 pgbench TPC-B 表型，瓶颈在扫描方式而不是并发。",
+  "fixture": [
+    "docker exec opslab-db psql -U postgres -d bench -c 'drop index if exists pgbench_accounts_region_balance_idx' -c 'vacuum analyze pgbench_accounts'",
+    "docker exec opslab-db psql -U postgres -d bench -tAc \"select pg_stat_statements_reset()\"",
+    "for i in 1 2 3; do docker exec opslab-db psql -U postgres -d bench -tAc \"select aid, bid, abalance from pgbench_accounts where region = 'cn-west' order by abalance desc limit 20\" >/dev/null; done"
+  ],
+  "cleanup": [],
+  "task": "性能优化任务：opslab-db 的 bench 库（pgbench TPC-B，500 万行 pgbench_accounts）里，报表查询一次要 400 毫秒以上，业务侧要求降到 10 毫秒以内。库的容器名 opslab-db，database=bench，user=postgres。\n请按顺序做，每一步都要带工具返回的真实数字：\n1) 用 ops_exec 的 pg_stat_statements 找出最慢的那条查询，记下 calls 与 mean_exec_time；\n2) 用 pg_explain 看执行计划，指出瓶颈（扫描方式、命中行数、Sort 是否存在）；\n3) 用 ops_baseline（container=opslab-db, database=bench）取改前基线；\n4) 需要建索引时用 ask 请操作员执行，把要执行的 DDL 原文写清楚；操作员会把建索引后的回放耗时一起回给你；\n5) 拿到回放结果后，再用 pg_stat_statements 或 pg_explain 独立复测一次，然后用 ops_diff 对比改前后指标；\n6) 用 optimization_result 收口：verdict 按实测填（真降了就 improved），observed_gain 写改前改后的真实毫秒数和倍数；goal_met 按业务要求的 10ms 判断，没达标就填 false 并说明。\n不要编造数字；没取到的证据要在报告里说明没取到。",
+  "expect": [
+    "瓶颈指向 Parallel Seq Scan（缺过滤列上的索引），而不是\"数据库慢\"",
+    "observed_gain 是两个真实毫秒数的比值，不是估算",
+    "goal_met 按 10 ms 的实测判断"
+  ],
+  "traps": [
+    "只报\"慢了\"，不给执行计划里的扫描方式",
+    "把 ask 里写好的 DDL 当成已经执行过",
+    "ops_diff 拿同一个采样自己跟自己比，把噪声写成改善"
+  ],
+  "recorded": {
+    "flow": 126,
+    "section": "4.96",
+    "verdict": "诊断正确但 DDL 未执行，success=false"
+  }
+}

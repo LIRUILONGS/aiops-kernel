@@ -1,0 +1,30 @@
+{
+  "id": "s1-dependency-container-exit",
+  "kind": "diagnosis",
+  "title": "依赖容器退出，健康检查仍然 200",
+  "premise": "接口从某个时刻起返回 500，而健康检查一直是 200。两者矛盾的地方就是取证入口：健康检查探的是进程，业务探的是数据库连接。",
+  "fixture": [
+    "docker start seal-engraver-postgres; sleep 8; docker stop seal-engraver-postgres; sleep 4",
+    "docker ps -a --format '{{.Names}} {{.Status}}' | grep seal-engraver"
+  ],
+  "cleanup": [
+    "docker start seal-engraver-postgres"
+  ],
+  "task": "生产告警：seal-engraver 服务的 persistence 接口从 11:20 起返回 500，健康检查还是 200，用户侧只看到 5xx。目标主机 id 是 lab，应用栈都跑在它的 docker 里（本机只有一个 docker，容器名以 seal-engraver- 开头）。\n请按这个顺序取证，每一步都要留下痕迹：\n1) 用 ops_containers 看整栈哪些容器在跑、哪些不在跑，把退出状态和退出码读出来；\n2) 用 ops_logs 读 seal-engraver-backend 最近的错误日志，把真实的异常原文（最后几行）抄进证据；\n3) 用 ops_exec 或 ops_system 补充一条独立证据，说明这台机器本身的资源没有异常；\n4) 用 diagnosis 收口：根因写清楚是哪一层的什么问题（不要停在\"数据库连不上\"，要说明为什么是 name resolution 而不是拒绝连接），recommendation.action 写成可以直接执行的一条命令，needs_human 置为 false。\n证据里每一条都要带工具名和日志原文片段，不要编造没有取到的内容。",
+  "expect": [
+    "根因落在依赖容器已退出（不是数据库拒绝连接、不是磁盘满）",
+    "证据里出现该容器的退出状态与退出码",
+    "解释健康检查为什么还绿：它探的是本进程，不经过数据库",
+    "recommendation.action 是一条能直接执行的命令"
+  ],
+  "traps": [
+    "\"数据库连不上\"收尾，不区分是拒绝连接还是名字解析失败",
+    "把健康检查 200 当成\"服务正常\"的证据",
+    "编造一条没读到的日志行"
+  ],
+  "recorded": {
+    "flow": 125,
+    "section": "4.96",
+    "verdict": "根因正确，130 次工具调用 / 36 分钟"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "id": "s3-row-lock-wait",
+  "kind": "diagnosis",
+  "title": "行锁等待，但阻塞方已经不存在",
+  "premise": "写入卡住是真的，现场能读到等待链；难点是判断这条链会不会自愈，以及还能不能找到可终止的目标。",
+  "fixture": [],
+  "cleanup": [],
+  "task": "线上事故：opslab-db 的 lockdb 库 accounts 表写入卡住，应用侧 update 一直不返回。库在容器 opslab-db 里，database=lockdb，user=postgres。这个卡住是正在发生的，不是历史事件，请以 pg_locks / pg_stat_activity 的实时读数为准（容器日志里可能有更早的历史记录，别把历史当现状）。\n请按顺序取证：\n1) 用 ops_exec 的 pg_lock_wait_summary 和 pg_locks 读出实时等待关系：谁在等、被哪个 pid 挡住、锁类型、等了多久；\n2) 用 pg_stat_activity 找到阻塞方正在执行的那条语句原文，把语句抄进证据；\n3) 判断它能不能自愈，说明依据（pg_sleep 的事务什么时候结束）；\n4) 用 ask 请操作员终止阻塞方，把 pg_terminate_backend 的完整命令写出来；\n5) 操作员回复后，用 pg_lock_wait_summary 或 pg_locks 复测，确认等待链已消失；\n6) 用 diagnosis 收口：根因写清哪把锁、谁挡谁、为什么不会自愈，recommendation.action 写防复发手段（长事务告警、statement_timeout、lock_timeout），needs_human 按实际填。\n证据必须引用工具返回的实时原文，pid 和耗时都要与返回一致，不要编造。",
+  "expect": [
+    "读出现场等待链（谁等谁、锁类型、等待时长）",
+    "阻塞方消失时如实说\"已无阻塞方，链会自愈\"，并给出依据",
+    "区分\"现在还在等\"与\"日志里的历史等待\""
+  ],
+  "traps": [
+    "照着告警描述直接给一个 pg_terminate_backend 的 pid，而那个 pid 已经不存在",
+    "把日志里的历史等待当成当前现场"
+  ],
+  "recorded": {
+    "flow": 127,
+    "section": "4.99",
+    "verdict": "部分成功：结论与报障前提冲突，如实说明"
+  }
+}

@@ -13,7 +13,7 @@
   <a href="https://github.com/LIRUILONGS/aiops-kernel/commits/main"><img src="https://img.shields.io/github/last-commit/LIRUILONGS/aiops-kernel" alt="Last commit"></a>
 </p>
 
-<p align="center"><b>导航：</b> <a href="#它做什么">它做什么</a> · <a href="#它不做什么">它不做什么</a> · <a href="#截图">截图</a> · <a href="#核心机制">核心机制</a> · <a href="#界面">界面</a> · <a href="#快速开始">快速开始</a> · <a href="#文档">文档</a></p>
+<p align="center"><b>导航：</b> <a href="#它做什么">它做什么</a> · <a href="#它不做什么">它不做什么</a> · <a href="#截图">截图</a> · <a href="#实验场景">实验场景</a> · <a href="#核心机制">核心机制</a> · <a href="#界面">界面</a> · <a href="#快速开始">快速开始</a> · <a href="#文档">文档</a></p>
 
 OpsAGI 是 [PentAGI](https://github.com/vxcontrol/pentagi)（MIT）的分支。上游是一个自主渗透测试平台；这棵树保留它的运行时——flow / task / subtask 调度、模型提供商层、工具调用执行器、GraphQL API 与 React 界面——把智能体、工具与提示词换成值班工程师的那一套：SSH 上的只读取证、可回溯的诊断结论、带实测判定的性能改动。
 
@@ -32,17 +32,20 @@ OpsAGI 是 [PentAGI](https://github.com/vxcontrol/pentagi)（MIT）的分支。�
 
 产出的结论长这样：根因一句话、至少两三条能复现的查询、置信度、影响面、建议动作与回滚方式、是否需要人工介入。
 
+结论的判定发生在代码里，不在提示词里：性能结论必须带改前基线、改后实测与差值，没测到就只能是 `unverified`；诊断的每条证据必须点名它来自哪个工具，点名不到就退回重填。这两条都跑出过真实缺陷，记录在[交接文档](docs/aiops/03-handover.md)。
+
 ## 它不做什么
 
 - **不改线上状态。** 唯一的例外是经操作员批准的取证动作（一次性采集容器、取证工具安装），且必须写进 `evidence` 与 `recommendation.rollback`。修复永远只写成建议。
 - **不做单点猜测。** 单一信号只能提示原因，下根因结论至少要两个独立来源交叉验证。
 - **不假装查过。** 没调用的工具、没看到的日志行、没发生的对话，都不允许出现在报告里。
+- **不为了让工单好看而编造故障。** 日志全绿时，正确答案是顶回去，并说明下一步该查哪里。
 
 ---
 
 ## 截图
 
-界面截图取自仓库自带的视觉基线（`frontend/e2e/specs/visual/`），数据是测试夹具里的演示会话，不是真实客户环境。图随 GitHub 主题切换。
+图来自本项目自己在参照靶场上的真实运行（[交接文档第 5 节](docs/aiops/03-handover.md)）：会话标题是当时贴进去的告警原文，角色视图里的 token 与 chain 数是那几次运行留下的，不是演示夹具。图随 GitHub 主题切换。
 
 <table>
   <tr>
@@ -50,73 +53,71 @@ OpsAGI 是 [PentAGI](https://github.com/vxcontrol/pentagi)（MIT）的分支。�
       <a href="assets/screenshots/dashboard-light.png"><picture>
         <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/dashboard-dark.png">
         <source media="(prefers-color-scheme: light)" srcset="assets/screenshots/dashboard-light.png">
-        <img src="assets/screenshots/dashboard-light.png" alt="仪表盘" width="100%">
+        <img src="assets/screenshots/dashboard-light.png" alt="概览" width="100%">
       </picture></a>
       <br>
-      <sub><b>仪表盘。</b> 最近的会话、成功率与未收尾的告警；一眼看出值班当天有没有悬着的东西。</sub>
+      <sub><b>概览。</b> 会话活动、工具调用与 Token 用量按天铺开——哪几天真在干活，一眼看得出。</sub>
     </td>
   </tr>
   <tr>
-    <td width="50%" align="center">
+    <td colspan="2" align="center">
       <a href="assets/screenshots/flows-light.png"><picture>
         <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/flows-dark.png">
         <source media="(prefers-color-scheme: light)" srcset="assets/screenshots/flows-light.png">
         <img src="assets/screenshots/flows-light.png" alt="会话列表" width="100%">
       </picture></a>
       <br>
-      <sub><b>会话列表。</b> 每个 flow 的标题就是一条告警；状态、耗时、消耗都在列表上。</sub>
-    </td>
-    <td width="50%" align="center">
-      <a href="assets/screenshots/flow-detail-light.png"><picture>
-        <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/flow-detail-dark.png">
-        <source media="(prefers-color-scheme: light)" srcset="assets/screenshots/flow-detail-light.png">
-        <img src="assets/screenshots/flow-detail-light.png" alt="会话详情" width="100%">
-      </picture></a>
-      <br>
-      <sub><b>会话详情。</b> 右侧是终端、任务、智能体、角色等观察面；诊断结论按证据组织。</sub>
+      <sub><b>会话列表。</b> 标题就是告警原文，状态、耗时与终端镜像都在列表上。</sub>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center">
-      <a href="assets/screenshots/templates-light.png"><picture>
-        <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/templates-dark.png">
-        <source media="(prefers-color-scheme: light)" srcset="assets/screenshots/templates-light.png">
-        <img src="assets/screenshots/templates-light.png" alt="模板" width="100%">
+      <a href="assets/screenshots/flow-conclusion-light.png"><picture>
+        <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/flow-conclusion-dark.png">
+        <source media="(prefers-color-scheme: light)" srcset="assets/screenshots/flow-conclusion-light.png">
+        <img src="assets/screenshots/flow-conclusion-light.png" alt="会话详情" width="100%">
       </picture></a>
       <br>
-      <sub><b>模板。</b> 常用问法存成模板，下次只换主机名。</sub>
+      <sub><b>会话详情。</b> 一份真跑出来的收尾报告：证据缺口逐条列明，置信度 0.60，`needs_human=true`。</sub>
     </td>
     <td width="50%" align="center">
-      <a href="assets/screenshots/knowledges-light.png"><picture>
-        <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/knowledges-dark.png">
-        <source media="(prefers-color-scheme: light)" srcset="assets/screenshots/knowledges-light.png">
-        <img src="assets/screenshots/knowledges-light.png" alt="知识库" width="100%">
+      <a href="assets/screenshots/flow-roles-light.png"><picture>
+        <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/flow-roles-dark.png">
+        <source media="(prefers-color-scheme: light)" srcset="assets/screenshots/flow-roles-light.png">
+        <img src="assets/screenshots/flow-roles-light.png" alt="角色视图" width="100%">
       </picture></a>
       <br>
-      <sub><b>知识库。</b> 值班手册与历史结论入库，检索时按条目召回。</sub>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" align="center">
-      <a href="assets/screenshots/resources-light.png"><picture>
-        <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/resources-dark.png">
-        <source media="(prefers-color-scheme: light)" srcset="assets/screenshots/resources-light.png">
-        <img src="assets/screenshots/resources-light.png" alt="资源" width="100%">
-      </picture></a>
-      <br>
-      <sub><b>资源。</b> 取证脚本、日志包、截图挂在会话外，可跨 flow 复用。</sub>
-    </td>
-    <td width="50%" align="center">
-      <a href="assets/screenshots/settings-providers-light.png"><picture>
-        <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/settings-providers-dark.png">
-        <source media="(prefers-color-scheme: light)" srcset="assets/screenshots/settings-providers-light.png">
-        <img src="assets/screenshots/settings-providers-light.png" alt="模型提供商" width="100%">
-      </picture></a>
-      <br>
-      <sub><b>模型提供商。</b> 任意 OpenAI 兼容端点，按角色分配模型。</sub>
+      <sub><b>角色视图。</b> 十二个角色按层摆放，节点带各自的 chain 数、日志条数与 token 用量。</sub>
     </td>
   </tr>
 </table>
+
+---
+
+## 实验场景
+
+[`scripts/scenarios/`](scripts/scenarios/) 里有八个场景，都是这套内核被真模型、真主机跑过之后留下来的：靶场要摆成什么样、对产品说哪一句话、什么算答对、什么算糊弄，各写在一份 JSON 里。
+
+| 场景 | 验的是 | 实跑记录 |
+|---|---|---|
+| `s1-dependency-container-exit` | 健康检查绿着、接口 500 时，根因能不能落到依赖容器的退出上 | flow 125 |
+| `s2-slow-query-missing-index` | 性能结论里的毫秒数是不是量出来的，没改成敢不敢填 `goal_met=false` | flow 126 |
+| `s3-row-lock-wait` | 现场等待链与日志里的历史等待分不分得开，阻塞方消失后会不会硬编一个 pid | flow 127 |
+| `s4-log-archive-replay` | 读数是回放还是实时，能不能从时间戳上看出来并改口 | flow 128 |
+| `s5-scheduling-latency-trace` | `ops_trace` 的直方图汇总能不能进结论，数字否定报障假设时敢不敢说 | flow 136 |
+| `s6-statement-baseline` | `ops_baseline` → `ops_diff` 的闭环，自比对会不会被拦下 | flow 129 |
+| `l1-hdfs-block-warnings` | 从真实日志原文里读次数、block 数与故障性质 | — |
+| `l4-spark-healthy-control` | 对照组：日志全 INFO 时，敢不敢顶回"没病" | — |
+
+八个里两个是控制组（`l4` 全 INFO，`s3` 现场已无阻塞方）。控制组比故障组更容易露馅：故障场景答错只是不准，控制场景编造就是硬伤。
+
+跑其中一个：先把 `fixture` 里的命令执行掉，再把 `task` 交给产品——
+
+```bash
+python scripts/opsagi_run.py "$(python -c "import json;print(json.load(open('scripts/scenarios/s1-dependency-container-exit.json'))['task'])")"
+```
+
+`fixture` 的命令是给[参照靶场](docs/aiops/03-handover.md)用的；换环境按自己的容器名和路径改。场景的字段含义、判卷口径与新增场景的写法见 [`scripts/scenarios/README.md`](scripts/scenarios/README.md)。
 
 ---
 
@@ -175,7 +176,7 @@ OpsAGI 是 [PentAGI](https://github.com/vxcontrol/pentagi)（MIT）的分支。�
 
 ## 界面
 
-一个 flow 的右侧是可切换的观察面：终端、任务、智能体、**角色**、工具调用、向量库、文件、截图。
+一个 flow 的右侧是可切换的观察面：概览、终端、任务、智能体、**角色**、工具调用、向量库、文件、截图。
 
 **角色**页回答"这一轮是谁在干活"。上方是按层摆放的十二个角色拓扑——规划（生成 / 精炼）在上，指挥官居中，四个取证分析师在下，消费与修补型角色在底；节点上带该角色在本 flow 的 chain 数、日志条数、token 用量与最后活动时间，一分钟内有动作的角色描一圈绿边，发生过的委派用带次数的箭头连起来。下方是按角色过滤的日志：点节点或点角色标签，只看这个角色写下或应答的条目。
 
@@ -236,6 +237,7 @@ frontend/                React + TypeScript 界面
 docs/aiops/              设计、交接、验收记录
 docs/platform-reference.md  继承自 PentAGI 的平台文档（提供商与模型目录、部署细节）
 scripts/                 命令行工具与批测脚本
+scripts/scenarios/       实验场景：靶场怎么摆、问什么、什么算答对
 ```
 
 ---
@@ -253,9 +255,14 @@ scripts/                 命令行工具与批测脚本
 
 ## 状态
 
-已实测通过：真实主机上的故障定位（含 OOM 循环，三家证据交叉验证）、性能优化的判定链路、纯日志的离线诊断、容器终端面板的实时回显、日志数据集批量回归。
+真模型、真靶场下跑通过的：
 
-尚未验证：多目标主机并发、长时间运行的内存与连接泄漏、非 Debian 系的宿主机取证。
+- **故障定位**：容器依赖退出（健康检查仍在 200）、真实行锁等待、sshd 日志归档回放、eBPF 排队延迟（结论否定了报障假设）。
+- **性能优化**：pgbench 五百万行的报表查询，基线 → 执行计划 → DDL → 复测 → `ops_diff` 判定；没测到改善时如实给出 `unverified`。
+- **纯日志**：六个 Loghub 真实样本（HDFS / Linux 认证 / Apache / Spark / Zookeeper / OpenStack），含"全 INFO 应当答健康"的对照组。
+- **界面**：容器终端实时回显、角色拓扑、会话结论渲染。
+
+尚未验证：多目标主机并发、长时间运行的连接泄漏、非 Debian 系的宿主机取证、k8s 崩溃循环场景、Prometheus 旁路在大规模指标下的表现。
 
 ---
 
