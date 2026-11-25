@@ -239,6 +239,12 @@ type FlowTemplate {
   updatedAt: Time!
 }
 
+type FlowTemplatePreset {
+  domain: String!
+  title: String!
+  text: String!
+}
+
 input CreateFlowTemplateInput {
   title: String!
   text: String!
@@ -1153,6 +1159,7 @@ type Query {
   # Flow Templates management
   flowTemplate(templateId: ID!): FlowTemplate
   flowTemplates: [FlowTemplate!]!
+  flowTemplatePresets: [FlowTemplatePreset!]!
 
   resources(path: String, recursive: Boolean): [UserResource!]!
 

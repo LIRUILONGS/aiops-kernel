@@ -327,6 +327,12 @@ type FlowTemplate struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
+type FlowTemplatePreset struct {
+	Domain string `json:"domain"`
+	Title  string `json:"title"`
+	Text   string `json:"text"`
+}
+
 type FlowsStats struct {
 	TotalFlowsCount      int `json:"totalFlowsCount"`
 	TotalTasksCount      int `json:"totalTasksCount"`

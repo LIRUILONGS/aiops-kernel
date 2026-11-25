@@ -36,6 +36,9 @@ type graphDB struct {
 	updatedTokens    []database.UpdateUserAPITokenParams
 	createdTemplates []database.CreateFlowTemplateParams
 	updatedTemplates []database.UpdateFlowTemplateParams
+	seededTemplates  []database.SeedFlowTemplatesParams
+	seedTemplatesErr error
+	templates        []database.FlowTemplate
 	favorites        []database.AddFavoriteFlowParams
 	droppedFavorites []database.DeleteFavoriteFlowParams
 	flowTitles       []string
@@ -195,6 +198,24 @@ func (db *graphDB) UpdateFlowTemplate(
 ) (database.FlowTemplate, error) {
 	err := graphWrite(ctx, func() { db.updatedTemplates = append(db.updatedTemplates, arg) })
 	return database.FlowTemplate{ID: arg.ID, UserID: arg.UserID, Title: arg.Title, Text: arg.Text}, err
+}
+
+func (db *graphDB) SeedFlowTemplates(
+	ctx context.Context, arg database.SeedFlowTemplatesParams,
+) (int64, error) {
+	if err := ctx.Err(); err != nil {
+		return 0, err
+	}
+	if db.seedTemplatesErr != nil {
+		return 0, db.seedTemplatesErr
+	}
+	db.seededTemplates = append(db.seededTemplates, arg)
+
+	return int64(len(arg.Titles)), nil
+}
+
+func (db *graphDB) GetFlowTemplatesByUserID(context.Context, int64) ([]database.FlowTemplate, error) {
+	return db.templates, nil
 }
 
 func (db *graphDB) AddFavoriteFlow(ctx context.Context, arg database.AddFavoriteFlowParams) (database.UserPreference, error) {

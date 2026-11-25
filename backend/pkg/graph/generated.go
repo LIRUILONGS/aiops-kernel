@@ -348,6 +348,12 @@ type ComplexityRoot struct {
 		UserID    func(childComplexity int) int
 	}
 
+	FlowTemplatePreset struct {
+		Domain func(childComplexity int) int
+		Text   func(childComplexity int) int
+		Title  func(childComplexity int) int
+	}
+
 	FlowsStats struct {
 		TotalAssistantsCount func(childComplexity int) int
 		TotalFlowsCount      func(childComplexity int) int
@@ -573,6 +579,7 @@ type ComplexityRoot struct {
 		FlowRoleActivity                func(childComplexity int, flowID int64) int
 		FlowStatsByFlow                 func(childComplexity int, flowID int64) int
 		FlowTemplate                    func(childComplexity int, templateID int64) int
+		FlowTemplatePresets             func(childComplexity int) int
 		FlowTemplates                   func(childComplexity int) int
 		Flows                           func(childComplexity int) int
 		FlowsExecutionStatsByPeriod     func(childComplexity int, period model.UsageStatsPeriod, timezone *string) int
@@ -946,6 +953,7 @@ type QueryResolver interface {
 	APITokens(ctx context.Context) ([]*model.APIToken, error)
 	FlowTemplate(ctx context.Context, templateID int64) (*model.FlowTemplate, error)
 	FlowTemplates(ctx context.Context) ([]*model.FlowTemplate, error)
+	FlowTemplatePresets(ctx context.Context) ([]*model.FlowTemplatePreset, error)
 	Resources(ctx context.Context, path *string, recursive *bool) ([]*model.UserResource, error)
 	KnowledgeDocuments(ctx context.Context, filter *model.KnowledgeFilter, withContent bool) ([]*model.KnowledgeDocument, error)
 	KnowledgeDocument(ctx context.Context, id string) (*model.KnowledgeDocument, error)
@@ -2446,6 +2454,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.FlowTemplate.UserID(childComplexity), true
 
+	case "FlowTemplatePreset.domain":
+		if e.complexity.FlowTemplatePreset.Domain == nil {
+			break
+		}
+
+		return e.complexity.FlowTemplatePreset.Domain(childComplexity), true
+
+	case "FlowTemplatePreset.text":
+		if e.complexity.FlowTemplatePreset.Text == nil {
+			break
+		}
+
+		return e.complexity.FlowTemplatePreset.Text(childComplexity), true
+
+	case "FlowTemplatePreset.title":
+		if e.complexity.FlowTemplatePreset.Title == nil {
+			break
+		}
+
+		return e.complexity.FlowTemplatePreset.Title(childComplexity), true
+
 	case "FlowsStats.totalAssistantsCount":
 		if e.complexity.FlowsStats.TotalAssistantsCount == nil {
 			break
@@ -3823,6 +3852,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.FlowTemplate(childComplexity, args["templateId"].(int64)), true
+
+	case "Query.flowTemplatePresets":
+		if e.complexity.Query.FlowTemplatePresets == nil {
+			break
+		}
+
+		return e.complexity.Query.FlowTemplatePresets(childComplexity), true
 
 	case "Query.flowTemplates":
 		if e.complexity.Query.FlowTemplates == nil {
@@ -19477,6 +19513,138 @@ func (ec *executionContext) fieldContext_FlowTemplate_updatedAt(_ context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _FlowTemplatePreset_domain(ctx context.Context, field graphql.CollectedField, obj *model.FlowTemplatePreset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FlowTemplatePreset_domain(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Domain, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FlowTemplatePreset_domain(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FlowTemplatePreset",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FlowTemplatePreset_title(ctx context.Context, field graphql.CollectedField, obj *model.FlowTemplatePreset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FlowTemplatePreset_title(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Title, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FlowTemplatePreset_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FlowTemplatePreset",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FlowTemplatePreset_text(ctx context.Context, field graphql.CollectedField, obj *model.FlowTemplatePreset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FlowTemplatePreset_text(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Text, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FlowTemplatePreset_text(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FlowTemplatePreset",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _FlowsStats_totalFlowsCount(ctx context.Context, field graphql.CollectedField, obj *model.FlowsStats) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_FlowsStats_totalFlowsCount(ctx, field)
 	if err != nil {
@@ -30061,6 +30229,58 @@ func (ec *executionContext) fieldContext_Query_flowTemplates(_ context.Context, 
 				return ec.fieldContext_FlowTemplate_updatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type FlowTemplate", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_flowTemplatePresets(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_flowTemplatePresets(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().FlowTemplatePresets(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.FlowTemplatePreset)
+	fc.Result = res
+	return ec.marshalNFlowTemplatePreset2ᚕᚖopsagiᚋpkgᚋgraphᚋmodelᚐFlowTemplatePresetᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_flowTemplatePresets(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "domain":
+				return ec.fieldContext_FlowTemplatePreset_domain(ctx, field)
+			case "title":
+				return ec.fieldContext_FlowTemplatePreset_title(ctx, field)
+			case "text":
+				return ec.fieldContext_FlowTemplatePreset_text(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type FlowTemplatePreset", field.Name)
 		},
 	}
 	return fc, nil
@@ -44546,6 +44766,55 @@ func (ec *executionContext) _FlowTemplate(ctx context.Context, sel ast.Selection
 	return out
 }
 
+var flowTemplatePresetImplementors = []string{"FlowTemplatePreset"}
+
+func (ec *executionContext) _FlowTemplatePreset(ctx context.Context, sel ast.SelectionSet, obj *model.FlowTemplatePreset) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, flowTemplatePresetImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("FlowTemplatePreset")
+		case "domain":
+			out.Values[i] = ec._FlowTemplatePreset_domain(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "title":
+			out.Values[i] = ec._FlowTemplatePreset_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "text":
+			out.Values[i] = ec._FlowTemplatePreset_text(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var flowsStatsImplementors = []string{"FlowsStats"}
 
 func (ec *executionContext) _FlowsStats(ctx context.Context, sel ast.SelectionSet, obj *model.FlowsStats) graphql.Marshaler {
@@ -46888,6 +47157,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_flowTemplates(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "flowTemplatePresets":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_flowTemplatePresets(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -50003,6 +50294,60 @@ func (ec *executionContext) marshalNFlowTemplate2ᚖopsagiᚋpkgᚋgraphᚋmodel
 		return graphql.Null
 	}
 	return ec._FlowTemplate(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNFlowTemplatePreset2ᚕᚖopsagiᚋpkgᚋgraphᚋmodelᚐFlowTemplatePresetᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.FlowTemplatePreset) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNFlowTemplatePreset2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐFlowTemplatePreset(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNFlowTemplatePreset2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐFlowTemplatePreset(ctx context.Context, sel ast.SelectionSet, v *model.FlowTemplatePreset) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._FlowTemplatePreset(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNFlowType2opsagiᚋpkgᚋgraphᚋmodelᚐFlowType(ctx context.Context, v interface{}) (model.FlowType, error) {

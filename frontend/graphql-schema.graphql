@@ -1101,6 +1101,14 @@ query flowTemplates {
     }
 }
 
+query flowTemplatePresets {
+    flowTemplatePresets {
+        domain
+        title
+        text
+    }
+}
+
 query flowTemplate($templateId: ID!) {
     flowTemplate(templateId: $templateId) {
         ...flowTemplateFragment

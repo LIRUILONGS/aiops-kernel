@@ -14,6 +14,7 @@ import (
 	"opsagi/pkg/database"
 	"opsagi/pkg/database/converter"
 	"opsagi/pkg/flowfiles"
+	"opsagi/pkg/flowtemplates"
 	"opsagi/pkg/graph/model"
 	"opsagi/pkg/providers"
 	"opsagi/pkg/providers/pconfig"
@@ -2681,12 +2682,37 @@ func (r *queryResolver) FlowTemplates(ctx context.Context) ([]*model.FlowTemplat
 		"uid": uid,
 	}).Debug("get flow templates")
 
+	// Seeding on read keeps a new account usable without a separate step: the picker
+	// and the list are this query, and the seed is a no-op after the first call.
+	if _, err := flowtemplates.Seed(ctx, r.DB, uid); err != nil {
+		r.Logger.WithError(err).Warn("failed to seed the shipped flow templates")
+	}
+
 	templates, err := r.DB.GetFlowTemplatesByUserID(ctx, uid)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get templates: %w", err)
 	}
 
 	return converter.ConvertFlowTemplates(templates), nil
+}
+
+// FlowTemplatePresets is the resolver for the flowTemplatePresets field.
+func (r *queryResolver) FlowTemplatePresets(ctx context.Context) ([]*model.FlowTemplatePreset, error) {
+	if _, _, err := validatePermission(ctx, "templates.view"); err != nil {
+		return nil, err
+	}
+
+	presets := flowtemplates.Shipped()
+	result := make([]*model.FlowTemplatePreset, 0, len(presets))
+	for _, preset := range presets {
+		result = append(result, &model.FlowTemplatePreset{
+			Domain: preset.Domain,
+			Title:  preset.Title,
+			Text:   preset.Text,
+		})
+	}
+
+	return result, nil
 }
 
 // Resources is the resolver for the resources field.

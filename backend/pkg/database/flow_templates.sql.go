@@ -7,6 +7,8 @@ package database
 
 import (
 	"context"
+
+	"github.com/lib/pq"
 )
 
 const createFlowTemplate = `-- name: CreateFlowTemplate :one
@@ -115,6 +117,33 @@ func (q *Queries) GetFlowTemplatesByUserID(ctx context.Context, userID int64) ([
 		return nil, err
 	}
 	return items, nil
+}
+
+const seedFlowTemplates = `-- name: SeedFlowTemplates :execrows
+WITH claimed AS (
+  INSERT INTO flow_template_seeds (user_id)
+  VALUES ($1)
+  ON CONFLICT DO NOTHING
+  RETURNING user_id
+)
+INSERT INTO flow_templates (user_id, title, text)
+SELECT $1, preset.title, preset.text
+FROM unnest($2::text[], $3::text[]) AS preset(title, text)
+WHERE EXISTS (SELECT 1 FROM claimed)
+`
+
+type SeedFlowTemplatesParams struct {
+	UserID int64    `json:"user_id"`
+	Titles []string `json:"titles"`
+	Texts  []string `json:"texts"`
+}
+
+func (q *Queries) SeedFlowTemplates(ctx context.Context, arg SeedFlowTemplatesParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, seedFlowTemplates, arg.UserID, pq.Array(arg.Titles), pq.Array(arg.Texts))
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
 
 const updateFlowTemplate = `-- name: UpdateFlowTemplate :one

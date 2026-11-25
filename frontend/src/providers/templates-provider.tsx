@@ -7,6 +7,7 @@ import {
     DeleteFlowTemplateDocument,
     FlowTemplateCreatedDocument,
     FlowTemplateDeletedDocument,
+    FlowTemplatePresetsDocument,
     FlowTemplatesDocument,
     FlowTemplateUpdatedDocument,
     UpdateFlowTemplateDocument,
@@ -23,12 +24,20 @@ export interface Template {
     userId: string;
 }
 
+/** One template this build ships: the same catalogue the server seeds into a new account. */
+export interface TemplatePreset {
+    domain: string;
+    text: string;
+    title: string;
+}
+
 interface TemplatesContextValue {
     createTemplate: (title: string, text: string) => Promise<void>;
     deleteTemplate: (id: string) => Promise<void>;
     error?: Error;
     getTemplate: (id: string) => Template | undefined;
     isLoading: boolean;
+    presets: TemplatePreset[];
     refetch: () => unknown;
     templates: Template[];
     updateTemplate: (id: string, payload: { text: string; title: string }) => Promise<void>;
@@ -51,6 +60,11 @@ export function TemplatesProvider({ children }: TemplatesProviderProps) {
         loading: isLoadingTemplates,
         refetch,
     } = useQuery(FlowTemplatesDocument, shouldFetchTemplates ? { fetchPolicy: 'cache-and-network' } : skipToken);
+
+    const { data: presetsData } = useQuery(
+        FlowTemplatePresetsDocument,
+        shouldFetchTemplates ? { fetchPolicy: 'cache-and-network' } : skipToken,
+    );
 
     const [createTemplateMutation] = useMutation(CreateFlowTemplateDocument);
     const [updateTemplateMutation] = useMutation(UpdateFlowTemplateDocument);
@@ -86,6 +100,16 @@ export function TemplatesProvider({ children }: TemplatesProviderProps) {
             return templates.find((t) => t.id === id);
         },
         [templates],
+    );
+
+    const presets = useMemo<TemplatePreset[]>(
+        () =>
+            (presetsData?.flowTemplatePresets ?? []).map((preset) => ({
+                domain: preset.domain,
+                text: preset.text,
+                title: preset.title,
+            })),
+        [presetsData?.flowTemplatePresets],
     );
 
     const createTemplate = useCallback(
@@ -162,6 +186,7 @@ export function TemplatesProvider({ children }: TemplatesProviderProps) {
             error: templatesError,
             getTemplate,
             isLoading: isLoadingTemplates,
+            presets,
             refetch,
             templates,
             updateTemplate,
@@ -172,6 +197,7 @@ export function TemplatesProvider({ children }: TemplatesProviderProps) {
             templatesError,
             getTemplate,
             isLoadingTemplates,
+            presets,
             refetch,
             templates,
             updateTemplate,

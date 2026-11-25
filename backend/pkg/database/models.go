@@ -1028,6 +1028,11 @@ type FlowTemplate struct {
 	UpdatedAt sql.NullTime `json:"updated_at"`
 }
 
+type FlowTemplateSeed struct {
+	UserID   int64     `json:"user_id"`
+	SeededAt time.Time `json:"seeded_at"`
+}
+
 type LangchainPgCollection struct {
 	Name      sql.NullString        `json:"name"`
 	Cmetadata pqtype.NullRawMessage `json:"cmetadata"`

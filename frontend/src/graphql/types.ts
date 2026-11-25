@@ -1135,6 +1135,10 @@ export type FlowTemplatesQueryVariables = Exact<{ [key: string]: never }>;
 
 export type FlowTemplatesQuery = { flowTemplates: Array<FlowTemplateFragmentFragment> };
 
+export type FlowTemplatePresetsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type FlowTemplatePresetsQuery = { flowTemplatePresets: Array<{ domain: string; title: string; text: string }> };
+
 export type FlowTemplateQueryVariables = Exact<{
     templateId: string | number;
 }>;
@@ -7801,6 +7805,33 @@ export const FlowTemplatesDocument = {
         },
     ],
 } as unknown as DocumentNode<FlowTemplatesQuery, FlowTemplatesQueryVariables>;
+export const FlowTemplatePresetsDocument = {
+    kind: 'Document',
+    definitions: [
+        {
+            kind: 'OperationDefinition',
+            operation: 'query',
+            name: { kind: 'Name', value: 'flowTemplatePresets' },
+            selectionSet: {
+                kind: 'SelectionSet',
+                selections: [
+                    {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'flowTemplatePresets' },
+                        selectionSet: {
+                            kind: 'SelectionSet',
+                            selections: [
+                                { kind: 'Field', name: { kind: 'Name', value: 'domain' } },
+                                { kind: 'Field', name: { kind: 'Name', value: 'title' } },
+                                { kind: 'Field', name: { kind: 'Name', value: 'text' } },
+                            ],
+                        },
+                    },
+                ],
+            },
+        },
+    ],
+} as unknown as DocumentNode<FlowTemplatePresetsQuery, FlowTemplatePresetsQueryVariables>;
 export const FlowTemplateDocument = {
     kind: 'Document',
     definitions: [

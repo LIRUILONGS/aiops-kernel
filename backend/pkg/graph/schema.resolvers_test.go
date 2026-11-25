@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"context"
 	"database/sql"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,6 +17,7 @@ import (
 	"opsagi/pkg/database"
 	"opsagi/pkg/database/knowledge"
 	"opsagi/pkg/flowfiles"
+	"opsagi/pkg/flowtemplates"
 	"opsagi/pkg/graph/model"
 	"opsagi/pkg/graph/subscriptions"
 	"opsagi/pkg/providers"
@@ -427,6 +429,51 @@ func TestSchemaResolvers_AMissingFlowTemplateIsNotFound(t *testing.T) {
 			assert.ErrorIs(t, tt.call(), sql.ErrNoRows, "the presenter classifies only sql.ErrNoRows as NOT_FOUND")
 		})
 	}
+}
+
+func TestSchemaResolvers_FlowTemplates_SeedsTheShippedPresetsBeforeListing(t *testing.T) {
+	db := &graphDB{}
+	r := graphResolver(db)
+
+	templates, err := r.Query().FlowTemplates(graphSessionContext("templates.view"))
+	require.NoError(t, err)
+
+	require.Len(t, db.seededTemplates, 1, "the list must seed before it reads the rows")
+	assert.Equal(t, int64(1), db.seededTemplates[0].UserID)
+	assert.Equal(t, len(flowtemplates.Shipped()), len(db.seededTemplates[0].Titles))
+	assert.Equal(t, len(db.seededTemplates[0].Titles), len(db.seededTemplates[0].Texts))
+	assert.Empty(t, templates)
+}
+
+func TestSchemaResolvers_FlowTemplates_KeepsListingWhenTheSeedFails(t *testing.T) {
+	db := &graphDB{
+		seedTemplatesErr: errors.New("seed refused"),
+		templates:        []database.FlowTemplate{{ID: 5, UserID: 1, Title: "mine", Text: "body"}},
+	}
+
+	templates, err := graphResolver(db).Query().FlowTemplates(graphSessionContext("templates.view"))
+	require.NoError(t, err)
+
+	require.Len(t, templates, 1)
+	assert.Equal(t, "mine", templates[0].Title, "a failed seed must not cost the caller their own templates")
+}
+
+func TestSchemaResolvers_FlowTemplatePresets_ReturnsTheShippedCatalogue(t *testing.T) {
+	presets, err := graphResolver(&graphDB{}).Query().FlowTemplatePresets(graphSessionContext("templates.view"))
+	require.NoError(t, err)
+
+	require.Len(t, presets, len(flowtemplates.Shipped()))
+	for _, preset := range presets {
+		assert.NotEmpty(t, preset.Domain)
+		assert.NotEmpty(t, preset.Title)
+		assert.NotEmpty(t, preset.Text)
+	}
+}
+
+func TestSchemaResolvers_FlowTemplatePresets_RequiresTheViewPermission(t *testing.T) {
+	_, err := graphResolver(&graphDB{}).Query().FlowTemplatePresets(graphSessionContext())
+
+	assert.ErrorIs(t, err, ErrForbidden)
 }
 
 func TestSchemaResolvers_CreateKnowledgeDocument_RefusesABlankQuestionOrContent(t *testing.T) {
