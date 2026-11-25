@@ -128,6 +128,7 @@ type Querier interface {
 	GetFlowTaskTypeLastMsgChain(ctx context.Context, arg GetFlowTaskTypeLastMsgChainParams) (Msgchain, error)
 	GetFlowTasks(ctx context.Context, flowID int64) ([]Task, error)
 	GetFlowTemplate(ctx context.Context, arg GetFlowTemplateParams) (FlowTemplate, error)
+	// Seeded rows share one timestamp, so the id decides their order.
 	GetFlowTemplatesByUserID(ctx context.Context, userID int64) ([]FlowTemplate, error)
 	GetFlowTermLogs(ctx context.Context, flowID int64) ([]Termlog, error)
 	GetFlowToolcall(ctx context.Context, arg GetFlowToolcallParams) (Toolcall, error)

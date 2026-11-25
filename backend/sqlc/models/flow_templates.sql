@@ -2,10 +2,11 @@
 SELECT * FROM flow_templates
 WHERE id = $1 AND user_id = $2 LIMIT 1;
 
+-- Seeded rows share one timestamp, so the id decides their order.
 -- name: GetFlowTemplatesByUserID :many
 SELECT * FROM flow_templates
 WHERE user_id = $1
-ORDER BY created_at DESC;
+ORDER BY created_at DESC, id DESC;
 
 -- name: CreateFlowTemplate :one
 INSERT INTO flow_templates (
@@ -34,7 +35,8 @@ WHERE id = $1 AND user_id = $2;
 -- name: SeedFlowTemplates :execrows
 WITH claimed AS (
   INSERT INTO flow_template_seeds (user_id)
-  VALUES (sqlc.arg(user_id))
+  SELECT sqlc.arg(user_id)
+  WHERE cardinality(sqlc.arg(titles)::text[]) > 0
   ON CONFLICT DO NOTHING
   RETURNING user_id
 )

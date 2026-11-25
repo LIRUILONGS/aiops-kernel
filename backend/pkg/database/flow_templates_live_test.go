@@ -65,3 +65,41 @@ func TestFlowTemplates_SeedFlowTemplates_InsertsTheCatalogueOnceAndNothingOnTheS
 		t.Fatalf("%d claim rows, want exactly 1", claims)
 	}
 }
+
+func TestFlowTemplates_SeedFlowTemplates_LeavesTheUserUnclaimedWhenTheCatalogueIsEmpty(t *testing.T) {
+	db := openSchema(t)
+	uid := seedUser(t, db)
+	q := database.New(db)
+	ctx := context.Background()
+
+	inserted, err := q.SeedFlowTemplates(ctx, database.SeedFlowTemplatesParams{UserID: uid})
+	if err != nil {
+		t.Fatalf("empty seed: %v", err)
+	}
+	if inserted != 0 {
+		t.Fatalf("the empty seed inserted %d rows, want 0", inserted)
+	}
+
+	var claims int
+	if err := db.QueryRow(
+		`SELECT count(*) FROM flow_template_seeds WHERE user_id = $1`, uid,
+	).Scan(&claims); err != nil {
+		t.Fatalf("count claims: %v", err)
+	}
+	if claims != 0 {
+		t.Fatalf("the empty seed took a claim; a later release would then find the user already handled")
+	}
+
+	// A user whose first call carried nothing must still receive the catalogue once it exists.
+	inserted, err = q.SeedFlowTemplates(ctx, database.SeedFlowTemplatesParams{
+		UserID: uid,
+		Titles: []string{"late arrival"},
+		Texts:  []string{"body"},
+	})
+	if err != nil {
+		t.Fatalf("seed after the empty call: %v", err)
+	}
+	if inserted != 1 {
+		t.Fatalf("the seed after an empty call inserted %d rows, want 1", inserted)
+	}
+}

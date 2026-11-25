@@ -86,9 +86,10 @@ func (q *Queries) GetFlowTemplate(ctx context.Context, arg GetFlowTemplateParams
 const getFlowTemplatesByUserID = `-- name: GetFlowTemplatesByUserID :many
 SELECT id, user_id, title, text, created_at, updated_at FROM flow_templates
 WHERE user_id = $1
-ORDER BY created_at DESC
+ORDER BY created_at DESC, id DESC
 `
 
+// Seeded rows share one timestamp, so the id decides their order.
 func (q *Queries) GetFlowTemplatesByUserID(ctx context.Context, userID int64) ([]FlowTemplate, error) {
 	rows, err := q.db.QueryContext(ctx, getFlowTemplatesByUserID, userID)
 	if err != nil {
@@ -122,7 +123,8 @@ func (q *Queries) GetFlowTemplatesByUserID(ctx context.Context, userID int64) ([
 const seedFlowTemplates = `-- name: SeedFlowTemplates :execrows
 WITH claimed AS (
   INSERT INTO flow_template_seeds (user_id)
-  VALUES ($1)
+  SELECT $1
+  WHERE cardinality($2::text[]) > 0
   ON CONFLICT DO NOTHING
   RETURNING user_id
 )
