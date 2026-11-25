@@ -116,8 +116,9 @@ OpsAGI 是 [PentAGI](https://github.com/vxcontrol/pentagi)（MIT）的分支。�
 
 | 变量 | 默认 | 作用 |
 |---|---|---|
-| `OPSAGI_TARGETS` | 空 | 目标主机清单（JSON 数组：id / host / port / user / password 或 key） |
+| `OPSAGI_TARGETS` | 空 | 目标主机清单（JSON 数组：id / host / port / user / password 或 key，也可以只写 `credential_id`） |
 | `OPSAGI_POLICY` | 空 | 能力租约策略文件（YAML）；不配则用内置默认策略 |
+| `OPSAGI_SECRET_KEY` | 空 | 凭据主密钥（32 字节，hex 或 base64）；空则凭据接口返回 503 |
 | `OPSAGI_DEFAULT_SANDBOX_IMAGE` | 空 | 采集容器镜像；空则回落到 `DOCKER_DEFAULT_IMAGE_FOR_PENTEST` 或内置镜像 |
 | `PROMETHEUS_URL` | 空 | 配了才有 `prom_query` |
 | `K8S_KUBECONFIG` | 空 | 配了才有 `k8s_get` |
@@ -131,6 +132,8 @@ OpsAGI 是 [PentAGI](https://github.com/vxcontrol/pentagi)（MIT）的分支。�
 | `OPSAGI_SUBTASK_CONCURRENCY` | `1` | 同一任务内子任务并发度 |
 
 没配的东西不会出现在工具表里，而不是出现了再报错。
+
+**凭据**（设置 → 凭据）是另一条线：目标主机可以不在 `OPSAGI_TARGETS` 里写密码，而是写 `credential_id` 引用库里的一条凭据。凭据用 AES-256-GCM 密封后存库，密钥只在启动时从 `OPSAGI_SECRET_KEY` 读入内存、从不落库，所以只备份数据库并不能恢复凭据；接口永远只回元数据，明文仅在建立 SSH 连接的那一刻解开。凭据是全局的——所有 flow 共用同一份，增删与轮换都在界面上完成。
 
 ## 工具
 

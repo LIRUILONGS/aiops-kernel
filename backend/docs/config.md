@@ -1826,6 +1826,17 @@ The commander and the four analysts read a target host over SSH and, optionally,
 | K8sAPIURL | `K8S_API_URL` | *(none)* | A bare API server URL, used when no kubeconfig is available (typically a tunnel). |
 | K8sInsecureSkipTLSVerify | `K8S_INSECURE_SKIP_TLS_VERIFY` | `false` | Accept a self-signed certificate. Intended for a cluster reached over an SSH tunnel. |
 
+### Stored Credentials
+
+A target may name a stored credential instead of carrying its own password: `{"id":"lab","credential_id":3}` fills the host, user and host-key pin from the credential row, and the secret is opened in memory when the SSH connection is dialled, never written back to disk.
+
+| Field | Env Variable | Default | Description |
+|-------|--------------|---------|-------------|
+| OpsPolicy | `OPSAGI_POLICY` | *(none)* | Path to the capability lease policy file. A lease decides which targets and tools a subtask may use; see [ops-policy.md](ops-policy.md). |
+| — | `OPSAGI_SECRET_KEY` | *(none)* | The credential master key, as 64 hex characters or the base64 form of the same 32 bytes. It is read once at start-up and never reaches the database: the `credentials` table holds only what this key sealed, so a deployment that loses the key cannot open what it stored. Empty leaves the credential API answering 503 rather than storing secrets it cannot protect. Generate one with `openssl rand -hex 32`. |
+
+The key is deliberately outside the schema's reach: a database backup alone is not a backup of the credentials, and a value in the table would put the key beside the ciphertext it protects.
+
 ## Observability Settings
 
 These settings control the observability and monitoring capabilities, including telemetry and trace collection for system performance and debugging.
