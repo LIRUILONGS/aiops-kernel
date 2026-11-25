@@ -2886,6 +2886,8 @@ flow 88 的计划里 `assigned_to` 确实是 `log_analyst`，通道没问题—�
 
 "一个 specialist 用 `*_finding` 收口"仍然没有实机样本，而且现在看不是闸门的问题：`deepseek-v4-flash` 在这套提示下不选那张表。要关它得先让 planner 或 analyst 的提示把"窄结论用 finding 收口"说成硬要求，否则这四张表会一直是单测覆盖、实机零流量。
 
+这一格在 4.102 关掉了。根因不在闸门也不在模型挑食：四份分析员提示里列的字段，和它们各自那张表真正接收的字段对不上。
+
 ### 4.96 换回 deepseek 之后，容器场景在 main 上跑通了（2026-11-24）
 
 4.90 记的是 `flashnext-abli` 的下限；它跑不动的那些场景，换回 `deepseek-v4.1` 后在同一天的 main（`82dfa276`）上跑通了。
@@ -3127,6 +3129,41 @@ for _, tool := range []string{
 #### 五、这条的教训
 
 `evidenceToolIDs` 的注释原本写的是"every tool id a specialist can name"——"specialist" 是分析师，而收口的是 commander，两者工具表不同。**一个由"A 的工具集"推导出来的校验，用在"B 的退出路径"上，只会把所有 A 没有而 B 有的工具判成违规。**这类错误在单元测试里看不见（测试一直用分析师的工具构造证据），只有真 flow 走到那条路径才会暴露——而它一旦暴露，整条 flow 就永远收不了口。
+
+### 4.102 分析员的提示写着工具不收的字段，于是四张表一直没人填（2026-11-25）
+
+#### 一、现象
+
+4.95 记的是同一件事的上半段：连续四个 flow（85/87/88/89）的收口全落在 commander 的 `diagnosis`，`log_finding` / `metric_finding` / `change_finding` / `triage_result` 零次。当时的结论是"模型不选那张表，得把'窄结论用 finding 收口'写成硬要求"。
+
+#### 二、真正的根因
+
+四份分析员提示里 `<log_finding>` / `<metric_finding>` / `<change_finding>` / `<triage_result>` 这几段，列的是**另一套字段**：
+
+| 提示写的字段 | 工具实际接收的字段 |
+|---|---|
+| `summary` / `first_occurrence` / `patterns` / `pre_onset_events` / `queries` / `confidence` | `pattern` / `onset` / `result` / `evidence` / `message` |
+| `inflection` / `series` / `negative_checks` | `metric` / `onset` / `result` / `evidence` |
+| `changes` / `suspects` / `coverage` | `change` / `onset` / `result` / `evidence` |
+| `impact` / `first_actions` | `blast_radius` / `result` / `evidence` |
+
+schema 是 `reflector.Reflect(&LogFinding{})` 从结构体推出来的，所以模型同时收到两份互相矛盾的契约：工具定义说 `pattern`，系统提示说 `summary`。真走到那一步，它按提示写就会被工具拒；更省事的路径是根本不派活，自己查一次日志、用 `diagnosis` 收口——这正是 flow 88/89 的行为。
+
+#### 三、落点
+
+四段全部按结构体重写，逐条列出 `pattern` / `onset` / `result` / `evidence` / `message` 的语义，并写明"这条子任务的唯一出口就是它，`diagnosis` 不在你的工具表里"；三份带 `<procedure>` 的提示，把最后一步从"输出结论"改成"用 `<finding 工具>` 收口"，并给出 `query` 的写法（`ops_logs source=…` / `prom_query expr=…`）。commander 的 `<delegation>` 补了一段：一个证据面就能说清的结论交给对应分析师收口，自己在 `diagnosis` 里引用它给出的 `query`；自己取证再自己收口只用于"一次调用就确认了的事实"。
+
+防止再漂：`TestAIOpsHandlers_AnalystPromptsNameEveryFieldItsFindingCarries` 从 `TriageResult` / `LogFinding` / `MetricFinding` / `ChangeFinding` 的 json tag 里取字段名，逐个要求在对应提示里以 `- <字段>：` 的形式出现。把 `log_analyst.tmpl` 里的 `- pattern：` 改成 `- summary：`，这条测试立刻报 `prompt never names "pattern" as a field of its finding`。
+
+#### 四、实机
+
+flow 94（`deepseek-v4.1`，镜像 `local/opsagi:prompts2`，57 次工具调用，约 8 分钟）：commander 派了两次活，`log_analyst` 与 `metrics_analyst` 各回一张表，两张都被接收。
+
+- `log_finding`：`pattern` 是能直接匹配的原文正则（`\[emerg\] unknown directive "upstream_timeout" in /etc/nginx/nginx.conf:7`），`onset` 写的是"可见窗口边界 2026-11-25T06:51:05Z，非真实首发，日志缓冲已滚动"，`evidence` 六条，`query` 分别是 `ops_logs source=opslab-broken lines=500` / `lines=2` / `lines=50`、`ops_containers filter=opslab-broken`、`ops_logs lines=50`、`k8s_get what=pods name=opslab-broken`——每一条都点到了它自己工具表里的工具。
+- `metric_finding`：如实写"`container_memory_working_set_bytes` 在指标后端不存在，315 条指标里没有任何容器维度序列，所以 RSS 与 limit 曲线无法采集"，onset 写"资源面无拐点，唯一的可观测拐点是 restart 计数仍在增长"。
+- `diagnosis` 的 evidence 直接引用前者的 query：`ops_logs source=opslab-broken lines=50（等同 log_analyst 的 log_finding query…）`。
+
+两张表最有价值的地方是它们**没有编**：日志面明确说"真实首发取不到，缓冲区已被滚动"，指标面明确说"这条指标在这个后端不存在"。这正是 4.86 那条假阴性的反面——同样的 `log_analyst`，彼时用"没看见"排除锁，此时把"取不到"标成取不到。
 
 ## 5 环境
 
@@ -3389,13 +3426,15 @@ flow 58 / 59 / 60 在 12:26–12:47 之间创建，全部停在 `created`：`res
 
 两半都已修：准备期的单次调用现在有 90 秒预算（4.81），到期之后 `failFlow` 用不继承取消的新 ctx 写状态和原因（4.80）。
 
-### 18. 子任务被派给了拿不到取证工具的角色，结论却是"未发现"（两半都已修，见 4.86 / 4.91）
+### 18. 子任务被派给了拿不到取证工具的角色，结论却是"未发现"（已修，见 4.86 / 4.91 / 4.102）
 
 flow 69 把"验证是否为锁竞争"派给 `log_analyst`（证据表只有 `ops_logs` / `ops_containers` / `k8s_get`），它一次数据库都没连，就用「未在 pg_stat_activity 中发现长事务」把锁假设排除了 —— 而锁是真的。规划期不校验"角色的工具能不能测这个假设"，执行期不要求"结论自证来源"，两条一起把假阴性做成了闭环。
 
 规划期已经拦住了（4.86 第五节），实机也拦到过一次（4.91 第一节）：flow 74 第一次把两条数据库假设派给 `log_analyst`，被"工具表里没有 ops_exec"拒绝后改派 `commander`，同一份计划随即通过。
 
-执行期这一半也做了（4.91 第二、三节）：四张收口表要求每条 `evidence[].query` 以工具 id 开头，且点到的工具必须在该角色自己的证据表里；单测覆盖了拒绝与放行两侧，把校验的入参换成空证据即红。还没验到的是"一个 specialist 在闸门下正常收口"的实机——网关对 `deepseek-v4.1` 返回 500 期间跑不成，等恢复后补一次。
+执行期这一半也做了（4.91 第二、三节）：四张收口表要求每条 `evidence[].query` 以工具 id 开头，且点到的工具必须在该角色自己的证据表里；单测覆盖了拒绝与放行两侧，把校验的入参换成空证据即红。
+
+最后一个洞在提示上（4.102）：四份分析员提示列的字段和工具实际接收的字段不是一套，于是"派活 → 分析师收口"这条路径根本走不通，四张表长期零流量。提示按结构体重写之后，flow 94 第一次跑出被接收的 `log_finding` 与 `metric_finding`，两张表都写明了"取不到"而不是编一个结论。
 
 ### 已经关掉的（不再列在上面）
 
