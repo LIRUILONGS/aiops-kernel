@@ -9,6 +9,7 @@ import (
 	"hash/crc32"
 	"math/rand"
 	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"slices"
@@ -943,4 +944,67 @@ func TestClient_KillFlowCommands_ReportsASweepThatCannotRun(t *testing.T) {
 
 	require.ErrorContains(t, dc.KillFlowCommands(t.Context(), containerID),
 		"the TERM sweep for '"+containerID+"' exited with code")
+}
+
+// discardedContainerDaemon answers container removal and records every volume deletion.
+func discardedContainerDaemon(t *testing.T, containerID, volume string, removed *atomic.Int32, deleted *[]string) *client.Client {
+	t.Helper()
+
+	return daemonWith(t, func(r *http.Request) (*http.Response, error) {
+		switch {
+		case strings.HasSuffix(r.URL.Path, "/containers/"+containerID+"/json"):
+			return statusResponse(http.StatusOK, `{"Id":"`+containerID+`","Mounts":[`+
+				`{"Type":"volume","Name":"`+volume+`","Destination":"/work"}]}`), nil
+		case r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/containers/"+containerID+"/stop"):
+			return statusResponse(http.StatusNoContent, ""), nil
+		case r.Method == http.MethodDelete && strings.HasSuffix(r.URL.Path, "/containers/"+containerID):
+			removed.Add(1)
+			return statusResponse(http.StatusNoContent, ""), nil
+		case r.Method == http.MethodDelete && strings.HasSuffix(r.URL.Path, "/volumes/"+volume):
+			*deleted = append(*deleted, volume)
+			return statusResponse(http.StatusNoContent, ""), nil
+		}
+		return nil, fmt.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
+	})
+}
+
+func TestClient_DiscardContainer_KeepsTheWorkVolumeTheRetryResumesFrom(t *testing.T) {
+	var removed atomic.Int32
+	var deleted []string
+	cli := discardedContainerDaemon(t, "c1", "flow-data", &removed, &deleted)
+	dc := &dockerClient{client: cli, logger: quietLogger(t)}
+
+	dc.discardContainer(t.Context(), "c1", dc.logger.WithField("local_id", "c1"))
+
+	require.Equal(t, int32(1), removed.Load(), "the container that did not start")
+	require.Empty(t, deleted, "the work volume holds the previous run's /work")
+}
+
+func TestClient_RemoveContainer_ReclaimsTheWorkVolumeOfTheFlowItRemoves(t *testing.T) {
+	var removed atomic.Int32
+	var deleted []string
+	cli := discardedContainerDaemon(t, "c1", "flow-data", &removed, &deleted)
+	dc := &dockerClient{client: cli, logger: quietLogger(t), db: &containerRemovalRecorder{}}
+
+	require.NoError(t, dc.RemoveContainer(t.Context(), "c1", 7))
+
+	require.Equal(t, int32(1), removed.Load(), "the container the flow owned")
+	require.Equal(t, []string{"flow-data"}, deleted, "the work volume the flow owned")
+}
+
+// containerRemovalRecorder answers the status write RemoveContainer makes and nothing else.
+type containerRemovalRecorder struct {
+	database.Querier
+
+	status database.ContainerStatus
+	exit   int64
+}
+
+func (r *containerRemovalRecorder) UpdateContainerStatus(
+	_ context.Context, arg database.UpdateContainerStatusParams,
+) (database.Container, error) {
+	r.status = arg.Status
+	r.exit = arg.ID
+
+	return database.Container{}, nil
 }

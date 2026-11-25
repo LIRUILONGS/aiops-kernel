@@ -726,9 +726,8 @@ func (dc *dockerClient) removeContainerByName(ctx context.Context, containerName
 //
 // ContainerRemove's RemoveVolumes reclaims only anonymous volumes; the work
 // volume of a flow is created with VolumeCreate and mounted by name, so it
-// outlives every container that ever used it. Left alone it is unreachable --
-// nothing records its name once the container row is deleted -- and a long-lived
-// host accumulates one per flow.
+// outlives the container and cannot be found from the daemon once the container
+// is gone. This is the only moment its name is still readable.
 func (dc *dockerClient) workVolumesOf(ctx context.Context, containerID string, logger *logrus.Entry) []string {
 	inspect, err := dc.client.ContainerInspect(ctx, containerID, client.ContainerInspectOptions{})
 	if err != nil {
@@ -761,15 +760,18 @@ func (dc *dockerClient) removeWorkVolumes(ctx context.Context, volumes []string,
 }
 
 // discardContainer removes a container that never became usable, so the failure
-// leaves nothing behind: no dead container accumulating on the host and no name
-// blocking the retry. Removal is detached from the caller's context because a
-// cancelled flow is exactly when the leftover would otherwise survive, and any
-// failure is logged rather than returned so it cannot mask the startup error.
+// leaves no dead container accumulating on the host and no name blocking the
+// retry. Removal is detached from the caller's context because a cancelled flow
+// is exactly when the leftover would otherwise survive, and any failure is logged
+// rather than returned so it cannot mask the startup error.
+//
+// The work volume is deliberately left alone. It is named after the flow, not the
+// attempt, so it is also what a retried sandbox resumes from: a container that
+// never started wrote nothing into it, and deleting it would take the previous
+// run's /work with it. RemoveContainer reclaims it once the flow is over.
 func (dc *dockerClient) discardContainer(ctx context.Context, containerID string, logger *logrus.Entry) {
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), containerDiscardTimeout)
 	defer cancel()
-
-	volumes := dc.workVolumesOf(ctx, containerID, logger)
 
 	_, err := dc.client.ContainerRemove(ctx, containerID, client.ContainerRemoveOptions{
 		RemoveVolumes: true,
@@ -778,8 +780,6 @@ func (dc *dockerClient) discardContainer(ctx context.Context, containerID string
 	if err != nil && !cerrdefs.IsNotFound(err) {
 		logger.WithError(err).Error("failed to remove the container that did not start")
 	}
-
-	dc.removeWorkVolumes(ctx, volumes, logger)
 }
 
 func (dc *dockerClient) StopContainer(ctx context.Context, containerID string, dbID int64) error {
