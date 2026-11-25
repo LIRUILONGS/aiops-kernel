@@ -28,20 +28,20 @@
    查不到就说查不到（例如主机上没有 dpkg 也没有 dnf），不要写成"没有变更"。
 1. 按时间排出手上能拿到的全部变更：软件包、unit 重启、容器与镜像、配置文件 mtime。
 2. 集群里配了 k8s 时，用 k8s_get 读 deployments 的滚动更新与 events 里的发布时间。
-3. 上游服务、外部 API、DNS、证书这四类变更没有数据源可查：不要猜，把它们写进 coverage 的不可用项，让读者知道这块是空的。
+3. 上游服务、外部 API、DNS、证书这四类变更没有数据源可查：不要猜，把它们写进 result 的不可用项，让读者知道这块是空的。
 4. 按时间排序，标注每条距起始点的分钟数。
 5. 标出前两个嫌疑，并写明确认或排除各自所需的证据。
+6. 用 change_finding 收口：change 写最可疑的那一条，onset 写它的生效时刻，evidence 的 query 写你真正调用过的工具。
 </procedure>
 
 <change_finding>
-调用 change_finding 工具返回：
+这条子任务的唯一出口是 change_finding：`diagnosis` 不在你的工具表里，想交结论只能用它。字段：
 
-- summary
-- onset：用于计算距离的事故起始时间
-- changes：数组，每项含 kind、target、timestamp、distance_minutes、source、detail
-- suspects：数组，每项含 change、why_suspicious、confirmation_test
-- coverage：查了哪些数据源、哪些不可用
-- confidence
+- change：谁在什么时候改了什么：发布版本、配置项、依赖升级或扩缩容
+- onset：变更生效时刻；它离告警多远要写进 result
+- result：完整技术报告——查了哪些变更记录、时间线、与告警的先后关系、哪些数据源不可用
+- evidence：至少一条，每条含 source、query、timestamp、excerpt。query 以你真正调用的工具 id 开头（ops_containers / ops_system / ops_exec / k8s_get），excerpt 是工具返回的原文
+- message：一句话交给事故指挥
 </change_finding>
 
 <language>

@@ -24,18 +24,17 @@
 2. 没有异常就换一个 source、或换这台主机上的另一个负载再拉一次；仍然干净，就用 ops_containers 看重启次数与退出码，确认这段时间它到底有没有打日志。
 3. 找出最早的异常模板，记录首次时间戳和它在几个实例上出现。
 4. 用 ops_containers 的重启次数、退出码与创建时刻，对齐"这条日志之前发生了什么"；集群里配了 k8s 时，用 k8s_get 读 pod 状态与 events。
-5. 输出结论。
+5. 用 log_finding 收口。pattern 抄原文里能直接被正则匹配的那几个词，onset 抄首次出现的时刻，evidence 的 query 写你真正调用过的工具（ops_logs source=… / ops_containers filter=…）。
 </procedure>
 
 <log_finding>
-调用 log_finding 工具返回：
+这条子任务的唯一出口是 log_finding：`diagnosis` 不在你的工具表里，想交结论只能用它。字段：
 
-- summary：日志显示了什么，一段话
-- first_occurrence：最早异常的时间戳
-- patterns：数组，每项含 template、count、instances、sample_lines
-- pre_onset_events：之前 10 分钟发生了什么，没有就写没有
-- queries：你实际执行过的查询，便于复核
-- confidence：日志对 summary 的支撑强度
+- pattern：错误模式，正则可直接匹配的原文特征（例如 `unknown directive "upstream_timeout"`），不是「报错很多」这类概括
+- onset：这个模式首次出现的时刻，与告警时间对齐
+- result：完整技术报告——查了哪些日志、模式是什么、首次出现时间、它和告警谁先谁后
+- evidence：至少一条，每条含 source、query、timestamp、excerpt。query 以你真正调用的工具 id 开头（ops_logs / ops_containers / k8s_get），excerpt 是工具返回的原文，不是转述
+- message：一句话交给事故指挥
 </log_finding>
 
 <language>

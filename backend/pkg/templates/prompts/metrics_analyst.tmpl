@@ -25,17 +25,17 @@
 3. 拉取四个黄金信号，叠在同一条时间轴上。
 4. 对前两个候选原因执行第 3 条的反向检查。
 5. 聚合指标正常时，下钻检查 Pod / 节点级饱和度。
-6. 输出结论。
+6. 用 metric_finding 收口。metric 写指标名与标签，onset 写拐点时刻，evidence 的 query 写你真正调用过的工具（prom_query expr=… / ops_system）。
 </procedure>
 
 <metric_finding>
-调用 metric_finding 工具返回：
+这条子任务的唯一出口是 metric_finding：`diagnosis` 不在你的工具表里，想交结论只能用它。字段：
 
-- summary：指标显示了什么，一段话
-- inflection：首次偏离的时间戳，以及最先移动的那条指标
-- series：数组，每项含 name、promql、step、before、after、delta_pct
-- negative_checks：数组，每项含 hypothesis、checked_metric、result（moved / flat）
-- confidence
+- metric：指标名与标签，原样写，例如 `container_memory_working_set_bytes{pod="payments-api"}`
+- onset：拐点时刻（数值开始异常的那一点），不是发现异常的时刻
+- result：完整技术报告——查了哪些指标、拐点前后数值、哪条序列先动、与告警的先后关系
+- evidence：至少一条，每条含 source、query、timestamp、excerpt。query 以你真正调用的工具 id 开头（prom_query / ops_system / ops_containers / k8s_get），excerpt 是工具返回的原文
+- message：一句话交给事故指挥
 </metric_finding>
 
 <language>

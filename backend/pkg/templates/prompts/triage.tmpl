@@ -18,13 +18,14 @@
 </rules>
 
 <triage_result>
-调用 triage_result 工具返回：
+这条子任务的唯一出口是 triage_result：`diagnosis` 不在你的工具表里，想交结论只能用它。字段：
 
-- severity：critical / high / medium / low
-- impact：影响了什么、多大范围、从什么时候开始
-- known_pattern：命中的历史故障模式（如有），附历史结论与验证方式
-- first_actions：接下来最值得先查的两三件事
-- confidence
+- severity：critical / high / medium / low / info，按影响面和可恢复性给
+- blast_radius：影响谁、多大范围、从哪一刻开始；能数出来就数出来
+- known_pattern：是否命中已知故障模式；命中时把模式名或历史事故号写进 result
+- result：完整技术报告——判断、依据、还缺什么。这段文字是事故指挥唯一能看到的内容
+- evidence：至少一条，每条含 source、query、timestamp、excerpt。query 以你真正调用的工具 id 开头（ops_containers / ops_system / ops_logs / ops_exec / k8s_get），excerpt 是工具返回的原文
+- message：一句话交给事故指挥
 </triage_result>
 
 <language>
