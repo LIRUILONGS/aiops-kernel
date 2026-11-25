@@ -103,3 +103,57 @@ func TestFlowTemplates_SeedFlowTemplates_LeavesTheUserUnclaimedWhenTheCatalogueI
 		t.Fatalf("the seed after an empty call inserted %d rows, want 1", inserted)
 	}
 }
+
+func TestFlowTemplates_SeedFlowTemplates_LeavesAnAccountThatKeepsItsOwnTemplatesAlone(t *testing.T) {
+	db := openSchema(t)
+	uid := seedUser(t, db)
+	q := database.New(db)
+	ctx := context.Background()
+
+	own, err := q.CreateFlowTemplate(ctx, database.CreateFlowTemplateParams{
+		UserID: uid,
+		Title:  "mine",
+		Text:   "my own body",
+	})
+	if err != nil {
+		t.Fatalf("seed the user's own template: %v", err)
+	}
+
+	inserted, err := q.SeedFlowTemplates(ctx, database.SeedFlowTemplatesParams{
+		UserID: uid,
+		Titles: []string{"one", "two"},
+		Texts:  []string{"body one", "body two"},
+	})
+	if err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	if inserted != 0 {
+		t.Fatalf("the seed added %d templates to an account that already keeps one", inserted)
+	}
+
+	var claims int
+	if err := db.QueryRow(
+		`SELECT count(*) FROM flow_template_seeds WHERE user_id = $1`, uid,
+	).Scan(&claims); err != nil {
+		t.Fatalf("count claims: %v", err)
+	}
+	if claims != 0 {
+		t.Fatalf("the seed took a claim while the account was not empty, so a cleared list would never get the start")
+	}
+
+	if err := q.DeleteFlowTemplate(ctx, database.DeleteFlowTemplateParams{ID: own.ID, UserID: uid}); err != nil {
+		t.Fatalf("delete the user's own template: %v", err)
+	}
+
+	inserted, err = q.SeedFlowTemplates(ctx, database.SeedFlowTemplatesParams{
+		UserID: uid,
+		Titles: []string{"one", "two"},
+		Texts:  []string{"body one", "body two"},
+	})
+	if err != nil {
+		t.Fatalf("seed after the list was cleared: %v", err)
+	}
+	if inserted != 2 {
+		t.Fatalf("the seed after a cleared list inserted %d rows, want 2", inserted)
+	}
+}

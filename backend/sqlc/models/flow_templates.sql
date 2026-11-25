@@ -32,11 +32,13 @@ RETURNING *;
 DELETE FROM flow_templates
 WHERE id = $1 AND user_id = $2;
 
+-- The shipped templates are a starting point for an account that has none: a user who already keeps templates of their own is left alone, and one who clears the list gets the start again.
 -- name: SeedFlowTemplates :execrows
 WITH claimed AS (
   INSERT INTO flow_template_seeds (user_id)
   SELECT sqlc.arg(user_id)
   WHERE cardinality(sqlc.arg(titles)::text[]) > 0
+    AND NOT EXISTS (SELECT 1 FROM flow_templates WHERE flow_templates.user_id = sqlc.arg(user_id))
   ON CONFLICT DO NOTHING
   RETURNING user_id
 )

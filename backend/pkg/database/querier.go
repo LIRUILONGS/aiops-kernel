@@ -298,6 +298,7 @@ type Querier interface {
 	// lim          maximum number of rows to return
 	// user_id      owner filter as a decimal text string (e.g. "42")
 	SearchUserKnowledgeDocuments(ctx context.Context, arg SearchUserKnowledgeDocumentsParams) ([]SearchUserKnowledgeDocumentsRow, error)
+	// The shipped templates are a starting point for an account that has none: a user who already keeps templates of their own is left alone, and one who clears the list gets the start again.
 	SeedFlowTemplates(ctx context.Context, arg SeedFlowTemplatesParams) (int64, error)
 	TouchCredential(ctx context.Context, id int64) error
 	UpdateAPIToken(ctx context.Context, arg UpdateAPITokenParams) (ApiToken, error)

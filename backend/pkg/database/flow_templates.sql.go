@@ -125,6 +125,7 @@ WITH claimed AS (
   INSERT INTO flow_template_seeds (user_id)
   SELECT $1
   WHERE cardinality($2::text[]) > 0
+    AND NOT EXISTS (SELECT 1 FROM flow_templates WHERE flow_templates.user_id = $1)
   ON CONFLICT DO NOTHING
   RETURNING user_id
 )
@@ -140,6 +141,7 @@ type SeedFlowTemplatesParams struct {
 	Texts  []string `json:"texts"`
 }
 
+// The shipped templates are a starting point for an account that has none: a user who already keeps templates of their own is left alone, and one who clears the list gets the start again.
 func (q *Queries) SeedFlowTemplates(ctx context.Context, arg SeedFlowTemplatesParams) (int64, error) {
 	result, err := q.db.ExecContext(ctx, seedFlowTemplates, arg.UserID, pq.Array(arg.Titles), pq.Array(arg.Texts))
 	if err != nil {
