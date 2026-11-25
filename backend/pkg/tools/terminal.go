@@ -429,6 +429,16 @@ func validateFilePath(path string) error {
 		return fmt.Errorf("path is required and cannot be empty: give an absolute path such as /work/notes.txt")
 	}
 
+	// A path that names no file cannot be written: the archive entry would be the
+	// directory itself, and what the copy API makes of that depends on which OS
+	// built the header -- Linux refuses the entry, Windows reports a successful
+	// write. Neither is what the caller asked for, so it is refused here. Both
+	// spellings matter: "." is the working directory, and a path made only of
+	// separators is the root, whichever separator this build uses.
+	if cleaned := filepath.Clean(path); cleaned == "." || strings.Trim(cleaned, `/\`) == "" {
+		return fmt.Errorf("path must name a file, but %q names a directory", path)
+	}
+
 	if token := shellExpansion.FindString(path); token != "" {
 		return fmt.Errorf(
 			"path must be a literal filename, but it contains %q: this field is not run through a shell, "+

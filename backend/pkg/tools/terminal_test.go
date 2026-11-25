@@ -304,10 +304,11 @@ func TestTerminal_WriteFile_RefusesANameTheArchiveCannotCarry(t *testing.T) {
 			want: "tar archive header generation failed: archive/tar: cannot encode header",
 		},
 		{
-			// The entry for "/" is a directory, which holds no content.
+			// The entry for "/" would be the directory itself, which is not a file
+			// and leaves the archive with nothing it can name.
 			name: "the root directory",
 			path: "/",
-			want: "tar archive content serialization failed: archive/tar: write too long",
+			want: `path must name a file, but "/" names a directory`,
 		},
 	}
 
@@ -961,6 +962,17 @@ func TestTerminal_ValidateFilePath_AcceptsOnlyALiteralPath(t *testing.T) {
 		} {
 			if err := validateFilePath(path); err != nil {
 				t.Errorf("%q: want no error, got %v", path, err)
+			}
+		}
+	})
+
+	t.Run("rejects the directory that holds everything else", func(t *testing.T) {
+		t.Parallel()
+
+		for _, path := range []string{"/", "//", ".", "./", "/work/.."} {
+			err := validateFilePath(path)
+			if err == nil {
+				t.Errorf("%q: want an error saying it names a directory", path)
 			}
 		}
 	})
