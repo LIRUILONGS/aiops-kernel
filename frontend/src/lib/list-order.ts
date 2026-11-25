@@ -6,6 +6,7 @@ export const listOrder = {
     apiTokens: 'newestFirst',
     assistantLogs: 'chronological',
     assistants: 'newestFirst',
+    credentials: 'unmirrored',
     flowFiles: 'unmirrored',
     flows: 'newestFirst',
     flowTemplates: 'newestFirst',

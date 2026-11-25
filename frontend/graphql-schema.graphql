@@ -202,6 +202,19 @@ fragment userResourceFragment on UserResource {
     updatedAt
 }
 
+fragment credentialFragment on CredentialInfo {
+    id
+    name
+    kind
+    host
+    port
+    username
+    hostKeyFingerprint
+    rotatedAt
+    lastUsedAt
+    createdAt
+}
+
 fragment agentLogFragment on AgentLog {
     id
     flowId
@@ -1487,5 +1500,47 @@ subscription knowledgeDocumentUpdated {
 subscription knowledgeDocumentDeleted {
     knowledgeDocumentDeleted {
         ...knowledgeDocumentFragment
+    }
+}
+
+# ==================== Credentials ====================
+
+query credentials {
+    credentials {
+        ...credentialFragment
+    }
+}
+
+mutation createCredential($input: CredentialCreateInput!) {
+    createCredential(input: $input) {
+        ...credentialFragment
+    }
+}
+
+mutation rotateCredential($credentialId: ID!, $input: CredentialRotateInput!) {
+    rotateCredential(credentialId: $credentialId, input: $input) {
+        ...credentialFragment
+    }
+}
+
+mutation deleteCredential($credentialId: ID!) {
+    deleteCredential(credentialId: $credentialId)
+}
+
+subscription credentialAdded {
+    credentialAdded {
+        ...credentialFragment
+    }
+}
+
+subscription credentialUpdated {
+    credentialUpdated {
+        ...credentialFragment
+    }
+}
+
+subscription credentialDeleted {
+    credentialDeleted {
+        ...credentialFragment
     }
 }

@@ -98,6 +98,27 @@ export type CreateKnowledgeDocumentInput = {
     question: string;
 };
 
+export type CredentialCreateInput = {
+    host?: string | null | undefined;
+    hostKeyFingerprint?: string | null | undefined;
+    kind: CredentialKind;
+    name: string;
+    port?: number | null | undefined;
+    secret: string;
+    username?: string | null | undefined;
+};
+
+export enum CredentialKind {
+    DbPassword = 'db_password',
+    K8sToken = 'k8s_token',
+    SshKey = 'ssh_key',
+    SshPassword = 'ssh_password',
+}
+
+export type CredentialRotateInput = {
+    secret: string;
+};
+
 export enum FlowType {
     Auto = 'auto',
     Diagnosis = 'diagnosis',
@@ -507,6 +528,19 @@ export type UserResourceFragmentFragment = {
     isDir: boolean;
     createdAt: string;
     updatedAt: string;
+};
+
+export type CredentialFragmentFragment = {
+    id: string;
+    name: string;
+    kind: CredentialKind;
+    host: string;
+    port: number;
+    username: string;
+    hostKeyFingerprint: string;
+    rotatedAt: string;
+    lastUsedAt: string | null;
+    createdAt: string;
 };
 
 export type AgentLogFragmentFragment = {
@@ -1530,6 +1564,41 @@ export type KnowledgeDocumentDeletedSubscriptionVariables = Exact<{ [key: string
 
 export type KnowledgeDocumentDeletedSubscription = { knowledgeDocumentDeleted: KnowledgeDocumentFragmentFragment };
 
+export type CredentialsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type CredentialsQuery = { credentials: Array<CredentialFragmentFragment> };
+
+export type CreateCredentialMutationVariables = Exact<{
+    input: CredentialCreateInput;
+}>;
+
+export type CreateCredentialMutation = { createCredential: CredentialFragmentFragment };
+
+export type RotateCredentialMutationVariables = Exact<{
+    credentialId: string | number;
+    input: CredentialRotateInput;
+}>;
+
+export type RotateCredentialMutation = { rotateCredential: CredentialFragmentFragment };
+
+export type DeleteCredentialMutationVariables = Exact<{
+    credentialId: string | number;
+}>;
+
+export type DeleteCredentialMutation = { deleteCredential: boolean };
+
+export type CredentialAddedSubscriptionVariables = Exact<{ [key: string]: never }>;
+
+export type CredentialAddedSubscription = { credentialAdded: CredentialFragmentFragment };
+
+export type CredentialUpdatedSubscriptionVariables = Exact<{ [key: string]: never }>;
+
+export type CredentialUpdatedSubscription = { credentialUpdated: CredentialFragmentFragment };
+
+export type CredentialDeletedSubscriptionVariables = Exact<{ [key: string]: never }>;
+
+export type CredentialDeletedSubscription = { credentialDeleted: CredentialFragmentFragment };
+
 export const SettingsFragmentFragmentDoc = {
     kind: 'Document',
     definitions: [
@@ -1968,6 +2037,31 @@ export const UserResourceFragmentFragmentDoc = {
         },
     ],
 } as unknown as DocumentNode<UserResourceFragmentFragment, unknown>;
+export const CredentialFragmentFragmentDoc = {
+    kind: 'Document',
+    definitions: [
+        {
+            kind: 'FragmentDefinition',
+            name: { kind: 'Name', value: 'credentialFragment' },
+            typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'CredentialInfo' } },
+            selectionSet: {
+                kind: 'SelectionSet',
+                selections: [
+                    { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'kind' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'host' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'port' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'username' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'hostKeyFingerprint' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'rotatedAt' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'lastUsedAt' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                ],
+            },
+        },
+    ],
+} as unknown as DocumentNode<CredentialFragmentFragment, unknown>;
 export const AgentLogFragmentFragmentDoc = {
     kind: 'Document',
     definitions: [
@@ -12669,3 +12763,350 @@ export const KnowledgeDocumentDeletedDocument = {
         },
     ],
 } as unknown as DocumentNode<KnowledgeDocumentDeletedSubscription, KnowledgeDocumentDeletedSubscriptionVariables>;
+export const CredentialsDocument = {
+    kind: 'Document',
+    definitions: [
+        {
+            kind: 'OperationDefinition',
+            operation: 'query',
+            name: { kind: 'Name', value: 'credentials' },
+            selectionSet: {
+                kind: 'SelectionSet',
+                selections: [
+                    {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'credentials' },
+                        selectionSet: {
+                            kind: 'SelectionSet',
+                            selections: [
+                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'credentialFragment' } },
+                            ],
+                        },
+                    },
+                ],
+            },
+        },
+        {
+            kind: 'FragmentDefinition',
+            name: { kind: 'Name', value: 'credentialFragment' },
+            typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'CredentialInfo' } },
+            selectionSet: {
+                kind: 'SelectionSet',
+                selections: [
+                    { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'kind' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'host' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'port' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'username' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'hostKeyFingerprint' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'rotatedAt' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'lastUsedAt' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                ],
+            },
+        },
+    ],
+} as unknown as DocumentNode<CredentialsQuery, CredentialsQueryVariables>;
+export const CreateCredentialDocument = {
+    kind: 'Document',
+    definitions: [
+        {
+            kind: 'OperationDefinition',
+            operation: 'mutation',
+            name: { kind: 'Name', value: 'createCredential' },
+            variableDefinitions: [
+                {
+                    kind: 'VariableDefinition',
+                    variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+                    type: {
+                        kind: 'NonNullType',
+                        type: { kind: 'NamedType', name: { kind: 'Name', value: 'CredentialCreateInput' } },
+                    },
+                },
+            ],
+            selectionSet: {
+                kind: 'SelectionSet',
+                selections: [
+                    {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'createCredential' },
+                        arguments: [
+                            {
+                                kind: 'Argument',
+                                name: { kind: 'Name', value: 'input' },
+                                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+                            },
+                        ],
+                        selectionSet: {
+                            kind: 'SelectionSet',
+                            selections: [
+                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'credentialFragment' } },
+                            ],
+                        },
+                    },
+                ],
+            },
+        },
+        {
+            kind: 'FragmentDefinition',
+            name: { kind: 'Name', value: 'credentialFragment' },
+            typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'CredentialInfo' } },
+            selectionSet: {
+                kind: 'SelectionSet',
+                selections: [
+                    { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'kind' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'host' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'port' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'username' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'hostKeyFingerprint' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'rotatedAt' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'lastUsedAt' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                ],
+            },
+        },
+    ],
+} as unknown as DocumentNode<CreateCredentialMutation, CreateCredentialMutationVariables>;
+export const RotateCredentialDocument = {
+    kind: 'Document',
+    definitions: [
+        {
+            kind: 'OperationDefinition',
+            operation: 'mutation',
+            name: { kind: 'Name', value: 'rotateCredential' },
+            variableDefinitions: [
+                {
+                    kind: 'VariableDefinition',
+                    variable: { kind: 'Variable', name: { kind: 'Name', value: 'credentialId' } },
+                    type: { kind: 'NonNullType', type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } } },
+                },
+                {
+                    kind: 'VariableDefinition',
+                    variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+                    type: {
+                        kind: 'NonNullType',
+                        type: { kind: 'NamedType', name: { kind: 'Name', value: 'CredentialRotateInput' } },
+                    },
+                },
+            ],
+            selectionSet: {
+                kind: 'SelectionSet',
+                selections: [
+                    {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'rotateCredential' },
+                        arguments: [
+                            {
+                                kind: 'Argument',
+                                name: { kind: 'Name', value: 'credentialId' },
+                                value: { kind: 'Variable', name: { kind: 'Name', value: 'credentialId' } },
+                            },
+                            {
+                                kind: 'Argument',
+                                name: { kind: 'Name', value: 'input' },
+                                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+                            },
+                        ],
+                        selectionSet: {
+                            kind: 'SelectionSet',
+                            selections: [
+                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'credentialFragment' } },
+                            ],
+                        },
+                    },
+                ],
+            },
+        },
+        {
+            kind: 'FragmentDefinition',
+            name: { kind: 'Name', value: 'credentialFragment' },
+            typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'CredentialInfo' } },
+            selectionSet: {
+                kind: 'SelectionSet',
+                selections: [
+                    { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'kind' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'host' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'port' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'username' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'hostKeyFingerprint' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'rotatedAt' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'lastUsedAt' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                ],
+            },
+        },
+    ],
+} as unknown as DocumentNode<RotateCredentialMutation, RotateCredentialMutationVariables>;
+export const DeleteCredentialDocument = {
+    kind: 'Document',
+    definitions: [
+        {
+            kind: 'OperationDefinition',
+            operation: 'mutation',
+            name: { kind: 'Name', value: 'deleteCredential' },
+            variableDefinitions: [
+                {
+                    kind: 'VariableDefinition',
+                    variable: { kind: 'Variable', name: { kind: 'Name', value: 'credentialId' } },
+                    type: { kind: 'NonNullType', type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } } },
+                },
+            ],
+            selectionSet: {
+                kind: 'SelectionSet',
+                selections: [
+                    {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'deleteCredential' },
+                        arguments: [
+                            {
+                                kind: 'Argument',
+                                name: { kind: 'Name', value: 'credentialId' },
+                                value: { kind: 'Variable', name: { kind: 'Name', value: 'credentialId' } },
+                            },
+                        ],
+                    },
+                ],
+            },
+        },
+    ],
+} as unknown as DocumentNode<DeleteCredentialMutation, DeleteCredentialMutationVariables>;
+export const CredentialAddedDocument = {
+    kind: 'Document',
+    definitions: [
+        {
+            kind: 'OperationDefinition',
+            operation: 'subscription',
+            name: { kind: 'Name', value: 'credentialAdded' },
+            selectionSet: {
+                kind: 'SelectionSet',
+                selections: [
+                    {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'credentialAdded' },
+                        selectionSet: {
+                            kind: 'SelectionSet',
+                            selections: [
+                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'credentialFragment' } },
+                            ],
+                        },
+                    },
+                ],
+            },
+        },
+        {
+            kind: 'FragmentDefinition',
+            name: { kind: 'Name', value: 'credentialFragment' },
+            typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'CredentialInfo' } },
+            selectionSet: {
+                kind: 'SelectionSet',
+                selections: [
+                    { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'kind' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'host' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'port' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'username' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'hostKeyFingerprint' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'rotatedAt' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'lastUsedAt' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                ],
+            },
+        },
+    ],
+} as unknown as DocumentNode<CredentialAddedSubscription, CredentialAddedSubscriptionVariables>;
+export const CredentialUpdatedDocument = {
+    kind: 'Document',
+    definitions: [
+        {
+            kind: 'OperationDefinition',
+            operation: 'subscription',
+            name: { kind: 'Name', value: 'credentialUpdated' },
+            selectionSet: {
+                kind: 'SelectionSet',
+                selections: [
+                    {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'credentialUpdated' },
+                        selectionSet: {
+                            kind: 'SelectionSet',
+                            selections: [
+                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'credentialFragment' } },
+                            ],
+                        },
+                    },
+                ],
+            },
+        },
+        {
+            kind: 'FragmentDefinition',
+            name: { kind: 'Name', value: 'credentialFragment' },
+            typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'CredentialInfo' } },
+            selectionSet: {
+                kind: 'SelectionSet',
+                selections: [
+                    { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'kind' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'host' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'port' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'username' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'hostKeyFingerprint' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'rotatedAt' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'lastUsedAt' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                ],
+            },
+        },
+    ],
+} as unknown as DocumentNode<CredentialUpdatedSubscription, CredentialUpdatedSubscriptionVariables>;
+export const CredentialDeletedDocument = {
+    kind: 'Document',
+    definitions: [
+        {
+            kind: 'OperationDefinition',
+            operation: 'subscription',
+            name: { kind: 'Name', value: 'credentialDeleted' },
+            selectionSet: {
+                kind: 'SelectionSet',
+                selections: [
+                    {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'credentialDeleted' },
+                        selectionSet: {
+                            kind: 'SelectionSet',
+                            selections: [
+                                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'credentialFragment' } },
+                            ],
+                        },
+                    },
+                ],
+            },
+        },
+        {
+            kind: 'FragmentDefinition',
+            name: { kind: 'Name', value: 'credentialFragment' },
+            typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'CredentialInfo' } },
+            selectionSet: {
+                kind: 'SelectionSet',
+                selections: [
+                    { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'kind' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'host' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'port' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'username' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'hostKeyFingerprint' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'rotatedAt' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'lastUsedAt' } },
+                    { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                ],
+            },
+        },
+    ],
+} as unknown as DocumentNode<CredentialDeletedSubscription, CredentialDeletedSubscriptionVariables>;

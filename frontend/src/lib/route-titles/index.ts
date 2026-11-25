@@ -36,6 +36,7 @@ export type TitleResolver = ((params: RouteParams) => string) | ComponentType<{ 
 export const routeTitles = {
     account: { title: '账户' },
     apiTokens: { title: 'API 令牌' },
+    credentials: { title: '凭据' },
     dashboard: { title: '概览' },
     flow: {
         title: apolloTitle({

@@ -51,6 +51,7 @@ const Templates = lazy(() => import('@/pages/templates/templates'));
 const OAuthResult = lazy(() => import('@/pages/oauth-result'));
 const SettingsAccount = lazy(() => import('@/pages/settings/settings-account'));
 const SettingsAPITokens = lazy(() => import('@/pages/settings/settings-api-tokens'));
+const SettingsCredentials = lazy(() => import('@/pages/settings/settings-credentials'));
 const SettingsPrompt = lazy(() => import('@/pages/settings/settings-prompt'));
 const SettingsPrompts = lazy(() => import('@/pages/settings/settings-prompts'));
 const SettingsProvider = lazy(() => import('@/pages/settings/settings-provider'));
@@ -235,6 +236,11 @@ const router = createBrowserRouter(
                         element={<SettingsAPITokens />}
                         handle={routeTitles.apiTokens}
                         path="api-tokens"
+                    />
+                    <Route
+                        element={<SettingsCredentials />}
+                        handle={routeTitles.credentials}
+                        path="credentials"
                     />
                     <Route
                         element={
