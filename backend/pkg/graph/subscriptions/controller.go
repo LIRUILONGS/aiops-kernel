@@ -31,6 +31,8 @@ type SubscriptionsController interface {
 	NewFlowTemplatePublisher(userID int64) FlowTemplatePublisher
 	NewKnowledgeSubscriber(userID int64) KnowledgeSubscriber
 	NewKnowledgePublisher(userID int64) KnowledgePublisher
+	NewCredentialSubscriber(userID int64) CredentialSubscriber
+	NewCredentialPublisher(userID int64) CredentialPublisher
 }
 
 type UserContext interface {
@@ -185,10 +187,27 @@ type FlowTemplatePublisher interface {
 	UserContext
 }
 
+// ResourcePublisher publishes resource events.
 type ResourcePublisher interface {
 	ResourceAdded(ctx context.Context, resource *model.UserResource)
 	ResourceUpdated(ctx context.Context, resource *model.UserResource)
 	ResourceDeleted(ctx context.Context, resource *model.UserResource)
+	UserContext
+}
+
+// CredentialSubscriber subscribes to the credential events every admin sees, because credentials are shared by every flow.
+type CredentialSubscriber interface {
+	CredentialAdded(ctx context.Context) (<-chan *model.CredentialInfo, error)
+	CredentialUpdated(ctx context.Context) (<-chan *model.CredentialInfo, error)
+	CredentialDeleted(ctx context.Context) (<-chan *model.CredentialInfo, error)
+	UserContext
+}
+
+// CredentialPublisher publishes the credential events every admin sees.
+type CredentialPublisher interface {
+	CredentialAdded(ctx context.Context, credential *model.CredentialInfo)
+	CredentialUpdated(ctx context.Context, credential *model.CredentialInfo)
+	CredentialDeleted(ctx context.Context, credential *model.CredentialInfo)
 	UserContext
 }
 
@@ -246,6 +265,10 @@ type controller struct {
 	knowledgeDocumentCreatedAdmin Channel[*model.KnowledgeDocument]
 	knowledgeDocumentUpdatedAdmin Channel[*model.KnowledgeDocument]
 	knowledgeDocumentDeletedAdmin Channel[*model.KnowledgeDocument]
+
+	credentialAdded   Channel[*model.CredentialInfo]
+	credentialUpdated Channel[*model.CredentialInfo]
+	credentialDeleted Channel[*model.CredentialInfo]
 }
 
 func NewSubscriptionsController() SubscriptionsController {
@@ -303,6 +326,10 @@ func NewSubscriptionsController() SubscriptionsController {
 		knowledgeDocumentCreatedAdmin: NewChannel[*model.KnowledgeDocument](),
 		knowledgeDocumentUpdatedAdmin: NewChannel[*model.KnowledgeDocument](),
 		knowledgeDocumentDeletedAdmin: NewChannel[*model.KnowledgeDocument](),
+
+		credentialAdded:   NewChannel[*model.CredentialInfo](),
+		credentialUpdated: NewChannel[*model.CredentialInfo](),
+		credentialDeleted: NewChannel[*model.CredentialInfo](),
 	}
 }
 
@@ -374,6 +401,14 @@ func (s *controller) NewKnowledgePublisher(userID int64) KnowledgePublisher {
 
 func (s *controller) NewKnowledgeSubscriber(userID int64) KnowledgeSubscriber {
 	return &knowledgeSubscriber{userID: userID, ctrl: s}
+}
+
+func (s *controller) NewCredentialPublisher(userID int64) CredentialPublisher {
+	return &credentialPublisher{userID: userID, ctrl: s}
+}
+
+func (s *controller) NewCredentialSubscriber(userID int64) CredentialSubscriber {
+	return &credentialSubscriber{userID: userID, ctrl: s}
 }
 
 type Channel[T any] interface {

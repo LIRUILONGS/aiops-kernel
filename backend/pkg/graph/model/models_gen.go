@@ -228,6 +228,33 @@ type CreateKnowledgeDocumentInput struct {
 	CodeLang    *string              `json:"codeLang,omitempty"`
 }
 
+type CredentialCreateInput struct {
+	Name               string         `json:"name"`
+	Kind               CredentialKind `json:"kind"`
+	Secret             string         `json:"secret"`
+	Host               *string        `json:"host,omitempty"`
+	Port               *int           `json:"port,omitempty"`
+	Username           *string        `json:"username,omitempty"`
+	HostKeyFingerprint *string        `json:"hostKeyFingerprint,omitempty"`
+}
+
+type CredentialInfo struct {
+	ID                 int64          `json:"id"`
+	Name               string         `json:"name"`
+	Kind               CredentialKind `json:"kind"`
+	Host               string         `json:"host"`
+	Port               int            `json:"port"`
+	Username           string         `json:"username"`
+	HostKeyFingerprint string         `json:"hostKeyFingerprint"`
+	RotatedAt          time.Time      `json:"rotatedAt"`
+	LastUsedAt         *time.Time     `json:"lastUsedAt,omitempty"`
+	CreatedAt          time.Time      `json:"createdAt"`
+}
+
+type CredentialRotateInput struct {
+	Secret string `json:"secret"`
+}
+
 type DailyFlowsStats struct {
 	Date  time.Time   `json:"date"`
 	Stats *FlowsStats `json:"stats"`
@@ -998,6 +1025,51 @@ func (e *CapabilityVerdict) UnmarshalGQL(v interface{}) error {
 }
 
 func (e CapabilityVerdict) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type CredentialKind string
+
+const (
+	CredentialKindSSHKey      CredentialKind = "ssh_key"
+	CredentialKindSSHPassword CredentialKind = "ssh_password"
+	CredentialKindK8sToken    CredentialKind = "k8s_token"
+	CredentialKindDbPassword  CredentialKind = "db_password"
+)
+
+var AllCredentialKind = []CredentialKind{
+	CredentialKindSSHKey,
+	CredentialKindSSHPassword,
+	CredentialKindK8sToken,
+	CredentialKindDbPassword,
+}
+
+func (e CredentialKind) IsValid() bool {
+	switch e {
+	case CredentialKindSSHKey, CredentialKindSSHPassword, CredentialKindK8sToken, CredentialKindDbPassword:
+		return true
+	}
+	return false
+}
+
+func (e CredentialKind) String() string {
+	return string(e)
+}
+
+func (e *CredentialKind) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = CredentialKind(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid CredentialKind", str)
+	}
+	return nil
+}
+
+func (e CredentialKind) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

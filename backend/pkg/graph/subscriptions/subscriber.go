@@ -299,3 +299,29 @@ func (s *knowledgeSubscriber) KnowledgeDocumentUpdatedAdmin(ctx context.Context)
 func (s *knowledgeSubscriber) KnowledgeDocumentDeletedAdmin(ctx context.Context) (<-chan *model.KnowledgeDocument, error) {
 	return s.ctrl.knowledgeDocumentDeletedAdmin.Subscribe(ctx, s.userID), nil
 }
+
+// credentialSubscriber subscribes to the credential events every admin sees.
+type credentialSubscriber struct {
+	userID int64
+	ctrl   *controller
+}
+
+func (s *credentialSubscriber) GetUserID() int64 {
+	return s.userID
+}
+
+func (s *credentialSubscriber) SetUserID(userID int64) {
+	s.userID = userID
+}
+
+func (s *credentialSubscriber) CredentialAdded(ctx context.Context) (<-chan *model.CredentialInfo, error) {
+	return s.ctrl.credentialAdded.Subscribe(ctx, s.userID), nil
+}
+
+func (s *credentialSubscriber) CredentialUpdated(ctx context.Context) (<-chan *model.CredentialInfo, error) {
+	return s.ctrl.credentialUpdated.Subscribe(ctx, s.userID), nil
+}
+
+func (s *credentialSubscriber) CredentialDeleted(ctx context.Context) (<-chan *model.CredentialInfo, error) {
+	return s.ctrl.credentialDeleted.Subscribe(ctx, s.userID), nil
+}

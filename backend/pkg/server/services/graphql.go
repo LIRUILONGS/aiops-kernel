@@ -64,6 +64,7 @@ func NewGraphqlService(
 	replacer anonymizer.Replacer,
 	updates *update.Service,
 	timezones *timezone.Catalog,
+	credentialStore graph.CredentialStore,
 ) *GraphqlService {
 	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{
 		DB:              db,
@@ -78,6 +79,7 @@ func NewGraphqlService(
 		Replacer:        replacer,
 		Updates:         updates,
 		Timezones:       timezones,
+		CredentialStore: credentialStore,
 	}}))
 
 	component := "opsagi-gql"

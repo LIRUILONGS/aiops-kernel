@@ -524,6 +524,43 @@ type UserResource {
   updatedAt: Time!
 }
 
+# =================== Credential types ===================
+
+# What kind of secret the credential carries; the remote tools use the two SSH forms today
+enum CredentialKind {
+  ssh_key
+  ssh_password
+  k8s_token
+  db_password
+}
+
+type CredentialInfo {
+  id: ID!
+  name: String!
+  kind: CredentialKind!
+  host: String!
+  port: Int!
+  username: String!
+  hostKeyFingerprint: String!
+  rotatedAt: Time!
+  lastUsedAt: Time
+  createdAt: Time!
+}
+
+input CredentialCreateInput {
+  name: String!
+  kind: CredentialKind!
+  secret: String!
+  host: String
+  port: Int
+  username: String
+  hostKeyFingerprint: String
+}
+
+input CredentialRotateInput {
+  secret: String!
+}
+
 # =================== API Tokens types ===================
 
 enum TokenStatus {
@@ -1163,6 +1200,9 @@ type Query {
 
   resources(path: String, recursive: Boolean): [UserResource!]!
 
+  # credential management
+  credentials: [CredentialInfo!]!
+
   # Knowledge (vector store) management
   knowledgeDocuments(filter: KnowledgeFilter, withContent: Boolean!): [KnowledgeDocument!]!
   knowledgeDocument(id: String!): KnowledgeDocument!
@@ -1219,6 +1259,11 @@ type Mutation {
   renameKnowledgeDocument(id: String!, question: String!): KnowledgeDocument!
   deleteKnowledgeDocument(id: String!): ResultType!
   anonymizeText(text: String!): String!
+
+  # Credential management
+  createCredential(input: CredentialCreateInput!): CredentialInfo!
+  rotateCredential(credentialId: ID!, input: CredentialRotateInput!): CredentialInfo!
+  deleteCredential(credentialId: ID!): Boolean!
 }
 
 type Subscription {
@@ -1273,6 +1318,11 @@ type Subscription {
   resourceAdded: UserResource!
   resourceUpdated: UserResource!
   resourceDeleted: UserResource!
+
+  # Credential events
+  credentialAdded: CredentialInfo!
+  credentialUpdated: CredentialInfo!
+  credentialDeleted: CredentialInfo!
 
   # Knowledge (vector store) events
   knowledgeDocumentCreated: KnowledgeDocument!

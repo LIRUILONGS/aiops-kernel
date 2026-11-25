@@ -249,6 +249,19 @@ type ComplexityRoot struct {
 		Used func(childComplexity int) int
 	}
 
+	CredentialInfo struct {
+		CreatedAt          func(childComplexity int) int
+		Host               func(childComplexity int) int
+		HostKeyFingerprint func(childComplexity int) int
+		ID                 func(childComplexity int) int
+		Kind               func(childComplexity int) int
+		LastUsedAt         func(childComplexity int) int
+		Name               func(childComplexity int) int
+		Port               func(childComplexity int) int
+		RotatedAt          func(childComplexity int) int
+		Username           func(childComplexity int) int
+	}
+
 	DailyFlowsStats struct {
 		Date  func(childComplexity int) int
 		Stats func(childComplexity int) int
@@ -452,6 +465,7 @@ type ComplexityRoot struct {
 		CallAssistant           func(childComplexity int, flowID int64, assistantID int64, input string, resourceIds []int64) int
 		CreateAPIToken          func(childComplexity int, input model.CreateAPITokenInput) int
 		CreateAssistant         func(childComplexity int, flowID int64, modelProvider string, input string, resourceIds []int64) int
+		CreateCredential        func(childComplexity int, input model.CredentialCreateInput) int
 		CreateFlow              func(childComplexity int, modelProvider string, input string, flowType *model.FlowType, capabilityMode *model.CapabilityMode, resourceIds []int64) int
 		CreateFlowTemplate      func(childComplexity int, input model.CreateFlowTemplateInput) int
 		CreateKnowledgeDocument func(childComplexity int, input model.CreateKnowledgeDocumentInput) int
@@ -460,6 +474,7 @@ type ComplexityRoot struct {
 		DecideCapabilityRequest func(childComplexity int, requestID int64, approve bool) int
 		DeleteAPIToken          func(childComplexity int, tokenID string) int
 		DeleteAssistant         func(childComplexity int, flowID int64, assistantID int64) int
+		DeleteCredential        func(childComplexity int, credentialID int64) int
 		DeleteFavoriteFlow      func(childComplexity int, flowID int64) int
 		DeleteFlow              func(childComplexity int, flowID int64) int
 		DeleteFlowTemplate      func(childComplexity int, templateID int64) int
@@ -470,6 +485,7 @@ type ComplexityRoot struct {
 		PutUserInput            func(childComplexity int, flowID int64, input string, modelProvider *string, resourceIds []int64) int
 		RenameFlow              func(childComplexity int, flowID int64, title string) int
 		RenameKnowledgeDocument func(childComplexity int, id string, question string) int
+		RotateCredential        func(childComplexity int, credentialID int64, input model.CredentialRotateInput) int
 		StopAssistant           func(childComplexity int, flowID int64, assistantID int64) int
 		StopFlow                func(childComplexity int, flowID int64) int
 		TestAgent               func(childComplexity int, typeArg model.ProviderType, agentType model.AgentConfigType, agent model.AgentConfig, simple *model.AgentConfig) int
@@ -574,6 +590,7 @@ type ComplexityRoot struct {
 		CapabilityGrants                func(childComplexity int, flowID int64) int
 		CapabilityLeases                func(childComplexity int, flowID int64, limit *int) int
 		CapabilityRequests              func(childComplexity int, flowID int64, status *model.CapabilityRequestStatus, limit *int) int
+		Credentials                     func(childComplexity int) int
 		Flow                            func(childComplexity int, flowID int64) int
 		FlowFiles                       func(childComplexity int, flowID int64) int
 		FlowRoleActivity                func(childComplexity int, flowID int64) int
@@ -682,6 +699,9 @@ type ComplexityRoot struct {
 		AssistantLogAdded        func(childComplexity int, flowID int64) int
 		AssistantLogUpdated      func(childComplexity int, flowID int64) int
 		AssistantUpdated         func(childComplexity int, flowID int64) int
+		CredentialAdded          func(childComplexity int) int
+		CredentialDeleted        func(childComplexity int) int
+		CredentialUpdated        func(childComplexity int) int
 		FlowCreated              func(childComplexity int) int
 		FlowDeleted              func(childComplexity int) int
 		FlowFileAdded            func(childComplexity int, flowID int64) int
@@ -906,6 +926,9 @@ type MutationResolver interface {
 	RenameKnowledgeDocument(ctx context.Context, id string, question string) (*model.KnowledgeDocument, error)
 	DeleteKnowledgeDocument(ctx context.Context, id string) (model.ResultType, error)
 	AnonymizeText(ctx context.Context, text string) (string, error)
+	CreateCredential(ctx context.Context, input model.CredentialCreateInput) (*model.CredentialInfo, error)
+	RotateCredential(ctx context.Context, credentialID int64, input model.CredentialRotateInput) (*model.CredentialInfo, error)
+	DeleteCredential(ctx context.Context, credentialID int64) (bool, error)
 }
 type QueryResolver interface {
 	Providers(ctx context.Context) ([]*model.Provider, error)
@@ -955,6 +978,7 @@ type QueryResolver interface {
 	FlowTemplates(ctx context.Context) ([]*model.FlowTemplate, error)
 	FlowTemplatePresets(ctx context.Context) ([]*model.FlowTemplatePreset, error)
 	Resources(ctx context.Context, path *string, recursive *bool) ([]*model.UserResource, error)
+	Credentials(ctx context.Context) ([]*model.CredentialInfo, error)
 	KnowledgeDocuments(ctx context.Context, filter *model.KnowledgeFilter, withContent bool) ([]*model.KnowledgeDocument, error)
 	KnowledgeDocument(ctx context.Context, id string) (*model.KnowledgeDocument, error)
 	SearchKnowledge(ctx context.Context, query string, filter *model.KnowledgeFilter, limit *int) ([]*model.KnowledgeDocumentWithScore, error)
@@ -995,6 +1019,9 @@ type SubscriptionResolver interface {
 	ResourceAdded(ctx context.Context) (<-chan *model.UserResource, error)
 	ResourceUpdated(ctx context.Context) (<-chan *model.UserResource, error)
 	ResourceDeleted(ctx context.Context) (<-chan *model.UserResource, error)
+	CredentialAdded(ctx context.Context) (<-chan *model.CredentialInfo, error)
+	CredentialUpdated(ctx context.Context) (<-chan *model.CredentialInfo, error)
+	CredentialDeleted(ctx context.Context) (<-chan *model.CredentialInfo, error)
 	KnowledgeDocumentCreated(ctx context.Context) (<-chan *model.KnowledgeDocument, error)
 	KnowledgeDocumentUpdated(ctx context.Context) (<-chan *model.KnowledgeDocument, error)
 	KnowledgeDocumentDeleted(ctx context.Context) (<-chan *model.KnowledgeDocument, error)
@@ -2034,6 +2061,76 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.CapabilityToolUse.Used(childComplexity), true
 
+	case "CredentialInfo.createdAt":
+		if e.complexity.CredentialInfo.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.CredentialInfo.CreatedAt(childComplexity), true
+
+	case "CredentialInfo.host":
+		if e.complexity.CredentialInfo.Host == nil {
+			break
+		}
+
+		return e.complexity.CredentialInfo.Host(childComplexity), true
+
+	case "CredentialInfo.hostKeyFingerprint":
+		if e.complexity.CredentialInfo.HostKeyFingerprint == nil {
+			break
+		}
+
+		return e.complexity.CredentialInfo.HostKeyFingerprint(childComplexity), true
+
+	case "CredentialInfo.id":
+		if e.complexity.CredentialInfo.ID == nil {
+			break
+		}
+
+		return e.complexity.CredentialInfo.ID(childComplexity), true
+
+	case "CredentialInfo.kind":
+		if e.complexity.CredentialInfo.Kind == nil {
+			break
+		}
+
+		return e.complexity.CredentialInfo.Kind(childComplexity), true
+
+	case "CredentialInfo.lastUsedAt":
+		if e.complexity.CredentialInfo.LastUsedAt == nil {
+			break
+		}
+
+		return e.complexity.CredentialInfo.LastUsedAt(childComplexity), true
+
+	case "CredentialInfo.name":
+		if e.complexity.CredentialInfo.Name == nil {
+			break
+		}
+
+		return e.complexity.CredentialInfo.Name(childComplexity), true
+
+	case "CredentialInfo.port":
+		if e.complexity.CredentialInfo.Port == nil {
+			break
+		}
+
+		return e.complexity.CredentialInfo.Port(childComplexity), true
+
+	case "CredentialInfo.rotatedAt":
+		if e.complexity.CredentialInfo.RotatedAt == nil {
+			break
+		}
+
+		return e.complexity.CredentialInfo.RotatedAt(childComplexity), true
+
+	case "CredentialInfo.username":
+		if e.complexity.CredentialInfo.Username == nil {
+			break
+		}
+
+		return e.complexity.CredentialInfo.Username(childComplexity), true
+
 	case "DailyFlowsStats.date":
 		if e.complexity.DailyFlowsStats.Date == nil {
 			break
@@ -2969,6 +3066,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateAssistant(childComplexity, args["flowId"].(int64), args["modelProvider"].(string), args["input"].(string), args["resourceIds"].([]int64)), true
 
+	case "Mutation.createCredential":
+		if e.complexity.Mutation.CreateCredential == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createCredential_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateCredential(childComplexity, args["input"].(model.CredentialCreateInput)), true
+
 	case "Mutation.createFlow":
 		if e.complexity.Mutation.CreateFlow == nil {
 			break
@@ -3064,6 +3173,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteAssistant(childComplexity, args["flowId"].(int64), args["assistantId"].(int64)), true
+
+	case "Mutation.deleteCredential":
+		if e.complexity.Mutation.DeleteCredential == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteCredential_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteCredential(childComplexity, args["credentialId"].(int64)), true
 
 	case "Mutation.deleteFavoriteFlow":
 		if e.complexity.Mutation.DeleteFavoriteFlow == nil {
@@ -3184,6 +3305,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.RenameKnowledgeDocument(childComplexity, args["id"].(string), args["question"].(string)), true
+
+	case "Mutation.rotateCredential":
+		if e.complexity.Mutation.RotateCredential == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_rotateCredential_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RotateCredential(childComplexity, args["credentialId"].(int64), args["input"].(model.CredentialRotateInput)), true
 
 	case "Mutation.stopAssistant":
 		if e.complexity.Mutation.StopAssistant == nil {
@@ -3792,6 +3925,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.CapabilityRequests(childComplexity, args["flowId"].(int64), args["status"].(*model.CapabilityRequestStatus), args["limit"].(*int)), true
+
+	case "Query.credentials":
+		if e.complexity.Query.Credentials == nil {
+			break
+		}
+
+		return e.complexity.Query.Credentials(childComplexity), true
 
 	case "Query.flow":
 		if e.complexity.Query.Flow == nil {
@@ -4556,6 +4696,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Subscription.AssistantUpdated(childComplexity, args["flowId"].(int64)), true
+
+	case "Subscription.credentialAdded":
+		if e.complexity.Subscription.CredentialAdded == nil {
+			break
+		}
+
+		return e.complexity.Subscription.CredentialAdded(childComplexity), true
+
+	case "Subscription.credentialDeleted":
+		if e.complexity.Subscription.CredentialDeleted == nil {
+			break
+		}
+
+		return e.complexity.Subscription.CredentialDeleted(childComplexity), true
+
+	case "Subscription.credentialUpdated":
+		if e.complexity.Subscription.CredentialUpdated == nil {
+			break
+		}
+
+		return e.complexity.Subscription.CredentialUpdated(childComplexity), true
 
 	case "Subscription.flowCreated":
 		if e.complexity.Subscription.FlowCreated == nil {
@@ -5608,6 +5769,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateAPITokenInput,
 		ec.unmarshalInputCreateFlowTemplateInput,
 		ec.unmarshalInputCreateKnowledgeDocumentInput,
+		ec.unmarshalInputCredentialCreateInput,
+		ec.unmarshalInputCredentialRotateInput,
 		ec.unmarshalInputKnowledgeFilter,
 		ec.unmarshalInputModelPriceInput,
 		ec.unmarshalInputReasoningConfigInput,
@@ -6066,6 +6229,38 @@ func (ec *executionContext) field_Mutation_createAssistant_argsResourceIds(
 	}
 
 	var zeroVal []int64
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_createCredential_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	arg0, err := ec.field_Mutation_createCredential_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_createCredential_argsInput(
+	ctx context.Context,
+	rawArgs map[string]interface{},
+) (model.CredentialCreateInput, error) {
+	// We won't call the directive if the argument is null.
+	// Set call_argument_directives_with_null to true to call directives
+	// even if the argument is null.
+	_, ok := rawArgs["input"]
+	if !ok {
+		var zeroVal model.CredentialCreateInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNCredentialCreateInput2opsagiᚋpkgᚋgraphᚋmodelᚐCredentialCreateInput(ctx, tmp)
+	}
+
+	var zeroVal model.CredentialCreateInput
 	return zeroVal, nil
 }
 
@@ -6568,6 +6763,38 @@ func (ec *executionContext) field_Mutation_deleteAssistant_argsAssistantID(
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_Mutation_deleteCredential_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	arg0, err := ec.field_Mutation_deleteCredential_argsCredentialID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["credentialId"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_deleteCredential_argsCredentialID(
+	ctx context.Context,
+	rawArgs map[string]interface{},
+) (int64, error) {
+	// We won't call the directive if the argument is null.
+	// Set call_argument_directives_with_null to true to call directives
+	// even if the argument is null.
+	_, ok := rawArgs["credentialId"]
+	if !ok {
+		var zeroVal int64
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("credentialId"))
+	if tmp, ok := rawArgs["credentialId"]; ok {
+		return ec.unmarshalNID2int64(ctx, tmp)
+	}
+
+	var zeroVal int64
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_deleteFavoriteFlow_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -7020,6 +7247,65 @@ func (ec *executionContext) field_Mutation_renameKnowledgeDocument_argsQuestion(
 	}
 
 	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_rotateCredential_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	arg0, err := ec.field_Mutation_rotateCredential_argsCredentialID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["credentialId"] = arg0
+	arg1, err := ec.field_Mutation_rotateCredential_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg1
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_rotateCredential_argsCredentialID(
+	ctx context.Context,
+	rawArgs map[string]interface{},
+) (int64, error) {
+	// We won't call the directive if the argument is null.
+	// Set call_argument_directives_with_null to true to call directives
+	// even if the argument is null.
+	_, ok := rawArgs["credentialId"]
+	if !ok {
+		var zeroVal int64
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("credentialId"))
+	if tmp, ok := rawArgs["credentialId"]; ok {
+		return ec.unmarshalNID2int64(ctx, tmp)
+	}
+
+	var zeroVal int64
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_rotateCredential_argsInput(
+	ctx context.Context,
+	rawArgs map[string]interface{},
+) (model.CredentialRotateInput, error) {
+	// We won't call the directive if the argument is null.
+	// Set call_argument_directives_with_null to true to call directives
+	// even if the argument is null.
+	_, ok := rawArgs["input"]
+	if !ok {
+		var zeroVal model.CredentialRotateInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNCredentialRotateInput2opsagiᚋpkgᚋgraphᚋmodelᚐCredentialRotateInput(ctx, tmp)
+	}
+
+	var zeroVal model.CredentialRotateInput
 	return zeroVal, nil
 }
 
@@ -16551,6 +16837,443 @@ func (ec *executionContext) fieldContext_CapabilityToolUse_used(_ context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _CredentialInfo_id(ctx context.Context, field graphql.CollectedField, obj *model.CredentialInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CredentialInfo_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNID2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CredentialInfo_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CredentialInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CredentialInfo_name(ctx context.Context, field graphql.CollectedField, obj *model.CredentialInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CredentialInfo_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CredentialInfo_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CredentialInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CredentialInfo_kind(ctx context.Context, field graphql.CollectedField, obj *model.CredentialInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CredentialInfo_kind(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Kind, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.CredentialKind)
+	fc.Result = res
+	return ec.marshalNCredentialKind2opsagiᚋpkgᚋgraphᚋmodelᚐCredentialKind(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CredentialInfo_kind(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CredentialInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type CredentialKind does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CredentialInfo_host(ctx context.Context, field graphql.CollectedField, obj *model.CredentialInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CredentialInfo_host(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Host, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CredentialInfo_host(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CredentialInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CredentialInfo_port(ctx context.Context, field graphql.CollectedField, obj *model.CredentialInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CredentialInfo_port(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Port, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CredentialInfo_port(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CredentialInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CredentialInfo_username(ctx context.Context, field graphql.CollectedField, obj *model.CredentialInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CredentialInfo_username(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Username, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CredentialInfo_username(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CredentialInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CredentialInfo_hostKeyFingerprint(ctx context.Context, field graphql.CollectedField, obj *model.CredentialInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CredentialInfo_hostKeyFingerprint(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HostKeyFingerprint, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CredentialInfo_hostKeyFingerprint(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CredentialInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CredentialInfo_rotatedAt(ctx context.Context, field graphql.CollectedField, obj *model.CredentialInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CredentialInfo_rotatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RotatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CredentialInfo_rotatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CredentialInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CredentialInfo_lastUsedAt(ctx context.Context, field graphql.CollectedField, obj *model.CredentialInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CredentialInfo_lastUsedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastUsedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*time.Time)
+	fc.Result = res
+	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CredentialInfo_lastUsedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CredentialInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CredentialInfo_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.CredentialInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CredentialInfo_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CredentialInfo_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CredentialInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _DailyFlowsStats_date(ctx context.Context, field graphql.CollectedField, obj *model.DailyFlowsStats) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DailyFlowsStats_date(ctx, field)
 	if err != nil {
@@ -24528,6 +25251,215 @@ func (ec *executionContext) fieldContext_Mutation_anonymizeText(ctx context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_createCredential(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_createCredential(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateCredential(rctx, fc.Args["input"].(model.CredentialCreateInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.CredentialInfo)
+	fc.Result = res
+	return ec.marshalNCredentialInfo2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐCredentialInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createCredential(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_CredentialInfo_id(ctx, field)
+			case "name":
+				return ec.fieldContext_CredentialInfo_name(ctx, field)
+			case "kind":
+				return ec.fieldContext_CredentialInfo_kind(ctx, field)
+			case "host":
+				return ec.fieldContext_CredentialInfo_host(ctx, field)
+			case "port":
+				return ec.fieldContext_CredentialInfo_port(ctx, field)
+			case "username":
+				return ec.fieldContext_CredentialInfo_username(ctx, field)
+			case "hostKeyFingerprint":
+				return ec.fieldContext_CredentialInfo_hostKeyFingerprint(ctx, field)
+			case "rotatedAt":
+				return ec.fieldContext_CredentialInfo_rotatedAt(ctx, field)
+			case "lastUsedAt":
+				return ec.fieldContext_CredentialInfo_lastUsedAt(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_CredentialInfo_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CredentialInfo", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createCredential_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_rotateCredential(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_rotateCredential(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().RotateCredential(rctx, fc.Args["credentialId"].(int64), fc.Args["input"].(model.CredentialRotateInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.CredentialInfo)
+	fc.Result = res
+	return ec.marshalNCredentialInfo2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐCredentialInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_rotateCredential(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_CredentialInfo_id(ctx, field)
+			case "name":
+				return ec.fieldContext_CredentialInfo_name(ctx, field)
+			case "kind":
+				return ec.fieldContext_CredentialInfo_kind(ctx, field)
+			case "host":
+				return ec.fieldContext_CredentialInfo_host(ctx, field)
+			case "port":
+				return ec.fieldContext_CredentialInfo_port(ctx, field)
+			case "username":
+				return ec.fieldContext_CredentialInfo_username(ctx, field)
+			case "hostKeyFingerprint":
+				return ec.fieldContext_CredentialInfo_hostKeyFingerprint(ctx, field)
+			case "rotatedAt":
+				return ec.fieldContext_CredentialInfo_rotatedAt(ctx, field)
+			case "lastUsedAt":
+				return ec.fieldContext_CredentialInfo_lastUsedAt(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_CredentialInfo_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CredentialInfo", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_rotateCredential_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteCredential(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_deleteCredential(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteCredential(rctx, fc.Args["credentialId"].(int64))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteCredential(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteCredential_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _PromptValidationResult_result(ctx context.Context, field graphql.CollectedField, obj *model.PromptValidationResult) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PromptValidationResult_result(ctx, field)
 	if err != nil {
@@ -30359,6 +31291,72 @@ func (ec *executionContext) fieldContext_Query_resources(ctx context.Context, fi
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_credentials(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_credentials(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Credentials(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.CredentialInfo)
+	fc.Result = res
+	return ec.marshalNCredentialInfo2ᚕᚖopsagiᚋpkgᚋgraphᚋmodelᚐCredentialInfoᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_credentials(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_CredentialInfo_id(ctx, field)
+			case "name":
+				return ec.fieldContext_CredentialInfo_name(ctx, field)
+			case "kind":
+				return ec.fieldContext_CredentialInfo_kind(ctx, field)
+			case "host":
+				return ec.fieldContext_CredentialInfo_host(ctx, field)
+			case "port":
+				return ec.fieldContext_CredentialInfo_port(ctx, field)
+			case "username":
+				return ec.fieldContext_CredentialInfo_username(ctx, field)
+			case "hostKeyFingerprint":
+				return ec.fieldContext_CredentialInfo_hostKeyFingerprint(ctx, field)
+			case "rotatedAt":
+				return ec.fieldContext_CredentialInfo_rotatedAt(ctx, field)
+			case "lastUsedAt":
+				return ec.fieldContext_CredentialInfo_lastUsedAt(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_CredentialInfo_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CredentialInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_knowledgeDocuments(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_knowledgeDocuments(ctx, field)
 	if err != nil {
@@ -35204,6 +36202,246 @@ func (ec *executionContext) fieldContext_Subscription_resourceDeleted(_ context.
 				return ec.fieldContext_UserResource_updatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UserResource", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Subscription_credentialAdded(ctx context.Context, field graphql.CollectedField) (ret func(ctx context.Context) graphql.Marshaler) {
+	fc, err := ec.fieldContext_Subscription_credentialAdded(ctx, field)
+	if err != nil {
+		return nil
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = nil
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Subscription().CredentialAdded(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return nil
+	}
+	return func(ctx context.Context) graphql.Marshaler {
+		select {
+		case res, ok := <-resTmp.(<-chan *model.CredentialInfo):
+			if !ok {
+				return nil
+			}
+			return graphql.WriterFunc(func(w io.Writer) {
+				w.Write([]byte{'{'})
+				graphql.MarshalString(field.Alias).MarshalGQL(w)
+				w.Write([]byte{':'})
+				ec.marshalNCredentialInfo2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐCredentialInfo(ctx, field.Selections, res).MarshalGQL(w)
+				w.Write([]byte{'}'})
+			})
+		case <-ctx.Done():
+			return nil
+		}
+	}
+}
+
+func (ec *executionContext) fieldContext_Subscription_credentialAdded(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Subscription",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_CredentialInfo_id(ctx, field)
+			case "name":
+				return ec.fieldContext_CredentialInfo_name(ctx, field)
+			case "kind":
+				return ec.fieldContext_CredentialInfo_kind(ctx, field)
+			case "host":
+				return ec.fieldContext_CredentialInfo_host(ctx, field)
+			case "port":
+				return ec.fieldContext_CredentialInfo_port(ctx, field)
+			case "username":
+				return ec.fieldContext_CredentialInfo_username(ctx, field)
+			case "hostKeyFingerprint":
+				return ec.fieldContext_CredentialInfo_hostKeyFingerprint(ctx, field)
+			case "rotatedAt":
+				return ec.fieldContext_CredentialInfo_rotatedAt(ctx, field)
+			case "lastUsedAt":
+				return ec.fieldContext_CredentialInfo_lastUsedAt(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_CredentialInfo_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CredentialInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Subscription_credentialUpdated(ctx context.Context, field graphql.CollectedField) (ret func(ctx context.Context) graphql.Marshaler) {
+	fc, err := ec.fieldContext_Subscription_credentialUpdated(ctx, field)
+	if err != nil {
+		return nil
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = nil
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Subscription().CredentialUpdated(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return nil
+	}
+	return func(ctx context.Context) graphql.Marshaler {
+		select {
+		case res, ok := <-resTmp.(<-chan *model.CredentialInfo):
+			if !ok {
+				return nil
+			}
+			return graphql.WriterFunc(func(w io.Writer) {
+				w.Write([]byte{'{'})
+				graphql.MarshalString(field.Alias).MarshalGQL(w)
+				w.Write([]byte{':'})
+				ec.marshalNCredentialInfo2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐCredentialInfo(ctx, field.Selections, res).MarshalGQL(w)
+				w.Write([]byte{'}'})
+			})
+		case <-ctx.Done():
+			return nil
+		}
+	}
+}
+
+func (ec *executionContext) fieldContext_Subscription_credentialUpdated(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Subscription",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_CredentialInfo_id(ctx, field)
+			case "name":
+				return ec.fieldContext_CredentialInfo_name(ctx, field)
+			case "kind":
+				return ec.fieldContext_CredentialInfo_kind(ctx, field)
+			case "host":
+				return ec.fieldContext_CredentialInfo_host(ctx, field)
+			case "port":
+				return ec.fieldContext_CredentialInfo_port(ctx, field)
+			case "username":
+				return ec.fieldContext_CredentialInfo_username(ctx, field)
+			case "hostKeyFingerprint":
+				return ec.fieldContext_CredentialInfo_hostKeyFingerprint(ctx, field)
+			case "rotatedAt":
+				return ec.fieldContext_CredentialInfo_rotatedAt(ctx, field)
+			case "lastUsedAt":
+				return ec.fieldContext_CredentialInfo_lastUsedAt(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_CredentialInfo_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CredentialInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Subscription_credentialDeleted(ctx context.Context, field graphql.CollectedField) (ret func(ctx context.Context) graphql.Marshaler) {
+	fc, err := ec.fieldContext_Subscription_credentialDeleted(ctx, field)
+	if err != nil {
+		return nil
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = nil
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Subscription().CredentialDeleted(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return nil
+	}
+	return func(ctx context.Context) graphql.Marshaler {
+		select {
+		case res, ok := <-resTmp.(<-chan *model.CredentialInfo):
+			if !ok {
+				return nil
+			}
+			return graphql.WriterFunc(func(w io.Writer) {
+				w.Write([]byte{'{'})
+				graphql.MarshalString(field.Alias).MarshalGQL(w)
+				w.Write([]byte{':'})
+				ec.marshalNCredentialInfo2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐCredentialInfo(ctx, field.Selections, res).MarshalGQL(w)
+				w.Write([]byte{'}'})
+			})
+		case <-ctx.Done():
+			return nil
+		}
+	}
+}
+
+func (ec *executionContext) fieldContext_Subscription_credentialDeleted(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Subscription",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_CredentialInfo_id(ctx, field)
+			case "name":
+				return ec.fieldContext_CredentialInfo_name(ctx, field)
+			case "kind":
+				return ec.fieldContext_CredentialInfo_kind(ctx, field)
+			case "host":
+				return ec.fieldContext_CredentialInfo_host(ctx, field)
+			case "port":
+				return ec.fieldContext_CredentialInfo_port(ctx, field)
+			case "username":
+				return ec.fieldContext_CredentialInfo_username(ctx, field)
+			case "hostKeyFingerprint":
+				return ec.fieldContext_CredentialInfo_hostKeyFingerprint(ctx, field)
+			case "rotatedAt":
+				return ec.fieldContext_CredentialInfo_rotatedAt(ctx, field)
+			case "lastUsedAt":
+				return ec.fieldContext_CredentialInfo_lastUsedAt(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_CredentialInfo_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CredentialInfo", field.Name)
 		},
 	}
 	return fc, nil
@@ -42505,6 +43743,102 @@ func (ec *executionContext) unmarshalInputCreateKnowledgeDocumentInput(ctx conte
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCredentialCreateInput(ctx context.Context, obj interface{}) (model.CredentialCreateInput, error) {
+	var it model.CredentialCreateInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "kind", "secret", "host", "port", "username", "hostKeyFingerprint"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "kind":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
+			data, err := ec.unmarshalNCredentialKind2opsagiᚋpkgᚋgraphᚋmodelᚐCredentialKind(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Kind = data
+		case "secret":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("secret"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Secret = data
+		case "host":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("host"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Host = data
+		case "port":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("port"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Port = data
+		case "username":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Username = data
+		case "hostKeyFingerprint":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostKeyFingerprint"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HostKeyFingerprint = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputCredentialRotateInput(ctx context.Context, obj interface{}) (model.CredentialRotateInput, error) {
+	var it model.CredentialRotateInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"secret"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "secret":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("secret"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Secret = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputKnowledgeFilter(ctx context.Context, obj interface{}) (model.KnowledgeFilter, error) {
 	var it model.KnowledgeFilter
 	asMap := map[string]interface{}{}
@@ -44034,6 +45368,87 @@ func (ec *executionContext) _CapabilityToolUse(ctx context.Context, sel ast.Sele
 			}
 		case "used":
 			out.Values[i] = ec._CapabilityToolUse_used(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var credentialInfoImplementors = []string{"CredentialInfo"}
+
+func (ec *executionContext) _CredentialInfo(ctx context.Context, sel ast.SelectionSet, obj *model.CredentialInfo) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, credentialInfoImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CredentialInfo")
+		case "id":
+			out.Values[i] = ec._CredentialInfo_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._CredentialInfo_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "kind":
+			out.Values[i] = ec._CredentialInfo_kind(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "host":
+			out.Values[i] = ec._CredentialInfo_host(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "port":
+			out.Values[i] = ec._CredentialInfo_port(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "username":
+			out.Values[i] = ec._CredentialInfo_username(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "hostKeyFingerprint":
+			out.Values[i] = ec._CredentialInfo_hostKeyFingerprint(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "rotatedAt":
+			out.Values[i] = ec._CredentialInfo_rotatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "lastUsedAt":
+			out.Values[i] = ec._CredentialInfo_lastUsedAt(ctx, field, obj)
+		case "createdAt":
+			out.Values[i] = ec._CredentialInfo_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -45643,6 +47058,27 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "createCredential":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createCredential(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "rotateCredential":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_rotateCredential(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteCredential":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteCredential(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -47213,6 +48649,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "credentials":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_credentials(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "knowledgeDocuments":
 			field := field
 
@@ -47755,6 +49213,12 @@ func (ec *executionContext) _Subscription(ctx context.Context, sel ast.Selection
 		return ec._Subscription_resourceUpdated(ctx, fields[0])
 	case "resourceDeleted":
 		return ec._Subscription_resourceDeleted(ctx, fields[0])
+	case "credentialAdded":
+		return ec._Subscription_credentialAdded(ctx, fields[0])
+	case "credentialUpdated":
+		return ec._Subscription_credentialUpdated(ctx, fields[0])
+	case "credentialDeleted":
+		return ec._Subscription_credentialDeleted(ctx, fields[0])
 	case "knowledgeDocumentCreated":
 		return ec._Subscription_knowledgeDocumentCreated(ctx, fields[0])
 	case "knowledgeDocumentUpdated":
@@ -49860,6 +51324,84 @@ func (ec *executionContext) unmarshalNCreateFlowTemplateInput2opsagiᚋpkgᚋgra
 
 func (ec *executionContext) unmarshalNCreateKnowledgeDocumentInput2opsagiᚋpkgᚋgraphᚋmodelᚐCreateKnowledgeDocumentInput(ctx context.Context, v interface{}) (model.CreateKnowledgeDocumentInput, error) {
 	res, err := ec.unmarshalInputCreateKnowledgeDocumentInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNCredentialCreateInput2opsagiᚋpkgᚋgraphᚋmodelᚐCredentialCreateInput(ctx context.Context, v interface{}) (model.CredentialCreateInput, error) {
+	res, err := ec.unmarshalInputCredentialCreateInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNCredentialInfo2opsagiᚋpkgᚋgraphᚋmodelᚐCredentialInfo(ctx context.Context, sel ast.SelectionSet, v model.CredentialInfo) graphql.Marshaler {
+	return ec._CredentialInfo(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNCredentialInfo2ᚕᚖopsagiᚋpkgᚋgraphᚋmodelᚐCredentialInfoᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.CredentialInfo) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNCredentialInfo2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐCredentialInfo(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNCredentialInfo2ᚖopsagiᚋpkgᚋgraphᚋmodelᚐCredentialInfo(ctx context.Context, sel ast.SelectionSet, v *model.CredentialInfo) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._CredentialInfo(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNCredentialKind2opsagiᚋpkgᚋgraphᚋmodelᚐCredentialKind(ctx context.Context, v interface{}) (model.CredentialKind, error) {
+	var res model.CredentialKind
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNCredentialKind2opsagiᚋpkgᚋgraphᚋmodelᚐCredentialKind(ctx context.Context, sel ast.SelectionSet, v model.CredentialKind) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNCredentialRotateInput2opsagiᚋpkgᚋgraphᚋmodelᚐCredentialRotateInput(ctx context.Context, v interface{}) (model.CredentialRotateInput, error) {
+	res, err := ec.unmarshalInputCredentialRotateInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 

@@ -3409,6 +3409,12 @@ func (s *captureSubscriptions) NewKnowledgeSubscriber(int64) subscriptions.Knowl
 func (s *captureSubscriptions) NewKnowledgePublisher(int64) subscriptions.KnowledgePublisher {
 	return nil
 }
+func (s *captureSubscriptions) NewCredentialSubscriber(int64) subscriptions.CredentialSubscriber {
+	return nil
+}
+func (s *captureSubscriptions) NewCredentialPublisher(int64) subscriptions.CredentialPublisher {
+	return nil
+}
 
 func newResourceTestContextWithUID(
 	method, target string,

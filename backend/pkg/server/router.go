@@ -212,7 +212,8 @@ func NewRouter(
 	if credentialSealerErr != nil && !errors.Is(credentialSealerErr, credentials.ErrNoKey) {
 		logrus.WithError(credentialSealerErr).Error("OPSAGI_SECRET_KEY is set but is not a usable master key; the credential API will answer 503")
 	}
-	credentialService := services.NewCredentialService(credentials.NewStore(db, credentialSealer))
+	credentialStore := credentials.NewStore(db, credentialSealer)
+	credentialService := services.NewCredentialService(credentialStore)
 	flowService := services.NewFlowService(orm, db, providers, controller, subscriptions)
 	flowFileService := services.NewFlowFileService(orm, cfg.DataDir, cfg.TenantPrefix(), dockerClient, subscriptions)
 	resourceService := services.NewResourceService(orm, cfg.DataDir, subscriptions)
@@ -236,7 +237,7 @@ func NewRouter(
 	anonymizerService := services.NewAnonymizerService(textReplacer)
 	graphqlService := services.NewGraphqlService(
 		db, cfg, baseURL, cfg.CorsOrigins, tokenCache, providers, controller, subscriptions, knowledgeStore, textReplacer,
-		updates, timezones,
+		updates, timezones, credentialStore,
 	)
 
 	router := newEngine(cfg.TrustedProxies)

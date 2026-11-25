@@ -286,3 +286,29 @@ func (p *knowledgePublisher) KnowledgeDocumentDeleted(ctx context.Context, doc *
 	p.ctrl.knowledgeDocumentDeleted.Publish(ctx, p.userID, doc)
 	p.ctrl.knowledgeDocumentDeletedAdmin.Broadcast(ctx, doc)
 }
+
+// credentialPublisher publishes the credential events every admin sees.
+type credentialPublisher struct {
+	userID int64
+	ctrl   *controller
+}
+
+func (p *credentialPublisher) GetUserID() int64 {
+	return p.userID
+}
+
+func (p *credentialPublisher) SetUserID(userID int64) {
+	p.userID = userID
+}
+
+func (p *credentialPublisher) CredentialAdded(ctx context.Context, credential *model.CredentialInfo) {
+	p.ctrl.credentialAdded.Broadcast(ctx, credential)
+}
+
+func (p *credentialPublisher) CredentialUpdated(ctx context.Context, credential *model.CredentialInfo) {
+	p.ctrl.credentialUpdated.Broadcast(ctx, credential)
+}
+
+func (p *credentialPublisher) CredentialDeleted(ctx context.Context, credential *model.CredentialInfo) {
+	p.ctrl.credentialDeleted.Broadcast(ctx, credential)
+}

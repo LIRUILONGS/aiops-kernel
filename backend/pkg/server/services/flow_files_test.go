@@ -3446,6 +3446,12 @@ func (s *flowFileCaptureSubscriptions) NewKnowledgeSubscriber(int64) subscriptio
 func (s *flowFileCaptureSubscriptions) NewKnowledgePublisher(int64) subscriptions.KnowledgePublisher {
 	return nil
 }
+func (s *flowFileCaptureSubscriptions) NewCredentialSubscriber(int64) subscriptions.CredentialSubscriber {
+	return nil
+}
+func (s *flowFileCaptureSubscriptions) NewCredentialPublisher(int64) subscriptions.CredentialPublisher {
+	return nil
+}
 
 func (s *flowFileCaptureSubscriptions) record(e flowFileEvent) {
 	s.mu.Lock()
