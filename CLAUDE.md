@@ -56,7 +56,7 @@ After editing the schema, regenerate: `gqlgen`, then `swag init` — the swagger
 
 ## Project Overview
 
-**OpsAGI** is an AIOps agent kernel forked from PentAGI. A `primary_agent` drives a flow, a `generator`/`refiner` pair plans and re-plans its subtasks, and specialist agents execute them against LLM providers, Docker-sandboxed tools and a pgvector memory store. In this fork the AIOps chain is `commander` plus the four analysts — `triage`, `log_analyst`, `metrics_analyst`, `change_analyst` — which hold only the read-only `ops_*` probes and close on a structured exit (`diagnosis` or `optimization_result`). The upstream specialist agents (`pentester`, `coder`, `searcher`, `installer`, `memorist`, `adviser`, `reflector`, `enricher`, `reporter`, `summarizer`, `assistant`, `tool_call_fixer`) are still wired and still reachable through the generic path, but the AIOps prompts never delegate to them. The authoritative list of roles is the `MsgchainType` enum in `backend/pkg/database/models.go`, mirrored as `AgentType` in the GraphQL schema.
+**OpsAGI** is an AIOps agent kernel forked from PentAGI. A flow is a chain of agent roles over LLM providers, Docker-sandboxed tools and a pgvector memory store: `commander` turns the flow into tasks, a `generator`/`refiner` pair plans and re-plans their subtasks, and `reporter` writes up the result. In this fork the AIOps chain is `commander` plus the four analysts — `triage`, `log_analyst`, `metrics_analyst`, `change_analyst` — which hold only the read-only `ops_*` probes and close on a structured exit (`diagnosis` or `optimization_result`). Those, plus `reflector`, `summarizer`, `tool_call_fixer` and `assistant`, are every role there is: the authoritative list is the `MsgchainType` enum in `backend/pkg/database/models.go`, mirrored as `AgentType` in the GraphQL schema. PentAGI's task-execution specialists — `pentester`, `coder`, `searcher`, `installer`, `memorist`, `adviser`, `enricher` — have no counterpart here: no enum value, no prompt template, and no delegation path reaches them.
 
 The application is a monorepo:
 
@@ -216,7 +216,7 @@ Server state comes from **Apollo Client 4** (note the v4 import paths, `@apollo/
 
 1. A user creates a "flow" — the UI calls the GraphQL `createFlow` mutation; REST is the programmatic equivalent.
 2. `CreateFlow` (`pkg/controller/flows.go`) reserves the row and builds the worker asynchronously; there is no queue, and a build failure marks the flow `failed` and says so on its message log.
-3. The `primary_agent` decomposes the flow into tasks; the `generator` produces each task's subtasks and the `refiner` re-plans after every completed one. Subtasks run one at a time and delegate to the specialist agents.
+3. `commander` decomposes the flow into tasks — `GetTaskTitle` runs under `MsgchainTypeCommander`; the `generator` produces each task's subtasks and the `refiner` re-plans after every completed one. Subtasks run one at a time.
 4. Those agents call tools — terminal, file, browser, search — inside per-flow Docker containers.
 5. Results, tool output and LLM reasoning land in PostgreSQL (pgvector for semantic memory).
 6. Progress reaches the UI through GraphQL subscriptions fed by `pkg/graph/subscriptions`.
@@ -276,7 +276,7 @@ Engines are primitives under `backend/pkg/tools/searchers/`, orchestrated by the
 4. Attribution, if the engine needs a **new** `SearchengineType`: a goose migration rebuilding the enum, the constant in `pkg/database/models.go`, **and** the value in both the constant block and the `Valid()` switch in `pkg/server/models/searchlogs.go`. Reusing an existing value needs none of it.
 5. `<name>_test.go` in `searchers/` (the shared MITM proxy harness is in `fixtures_test.go`), and orchestrator coverage in `web_search_test.go` if behaviour changes.
 6. The installer wizard (`cmd/installer/wizard/`: the config field, the `GetVar`/`SetVar` pair, the descriptions and masked/critical lists, the labels, the form field) and `cmd/ftester` if you want to drive the engine in isolation.
-7. The prose that enumerates engines: `pkg/templates/prompts/searcher.tmpl` (what the agent is told exists), `backend/docs/config.md`, and `docs/platform-reference.md`.
+7. The prose that enumerates engines: `backend/docs/config.md` and `docs/platform-reference.md`. No prompt template lists them — an agent names an intent (`mode`) and `web_search` picks the engine from the fallback chain.
 
 No frontend change is needed: it treats `SearchLog.engine` as an opaque string.
 
