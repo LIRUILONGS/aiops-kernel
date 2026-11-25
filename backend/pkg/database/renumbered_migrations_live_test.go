@@ -68,6 +68,60 @@ func openTenant(t *testing.T) (*sql.DB, string) {
 	return db, schema
 }
 
+// openTenantUpTo creates a tenant schema and migrates it up to (and including)
+// the given version — the closest a test can get to the structure a real old
+// instance would have. A migration that follows is not power-idempotent and must
+// run only once; when the test renumbers and replays them, they must target a
+// structure that does not have them yet.
+func openTenantUpTo(t *testing.T, version int64) (*sql.DB, string) {
+	t.Helper()
+
+	dsn := os.Getenv("OPSAGI_TEST_DSN")
+	if dsn == "" {
+		t.Fatal("OPSAGI_TEST_DSN is unset; this tier needs a postgres to prove anything")
+	}
+
+	admin, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	t.Cleanup(func() { admin.Close() })
+	schema := fmt.Sprintf("renumbered_%d", time.Now().UnixNano())
+	if _, err := admin.Exec("CREATE SCHEMA " + schema); err != nil {
+		t.Fatalf("create schema: %v", err)
+	}
+	t.Cleanup(func() {
+		if _, err := admin.Exec("DROP SCHEMA " + schema + " CASCADE"); err != nil {
+			t.Errorf("drop schema %s: %v", schema, err)
+		}
+	})
+
+	tenantURL, err := url.Parse(dsn)
+	if err != nil {
+		t.Fatalf("parse dsn: %v", err)
+	}
+	query := tenantURL.Query()
+	query.Set("options", "-c search_path="+schema+",public")
+	tenantURL.RawQuery = query.Encode()
+
+	db, err := sql.Open("postgres", tenantURL.String())
+	if err != nil {
+		t.Fatalf("open tenant: %v", err)
+	}
+	t.Cleanup(func() { db.Close() })
+
+	goose.SetBaseFS(migrations.EmbedMigrations)
+	if err := goose.SetDialect("postgres"); err != nil {
+		t.Fatalf("dialect: %v", err)
+	}
+	goose.SetTableName(schema + ".goose_db_version")
+	if err := goose.UpTo(db, "sql", version); err != nil {
+		t.Fatalf("migrate to %d: %v", version, err)
+	}
+
+	return db, schema
+}
+
 func recordEarlierNumbering(t *testing.T, db *sql.DB) {
 	t.Helper()
 
@@ -101,7 +155,7 @@ const earlierVersions = "20260823, 20260910, 20260911, 20260915"
 func migrateUp(db *sql.DB) error { return goose.Up(db, "sql") }
 
 func TestRenumberedMigrations_RenumberMigrations_MovesADatabaseRecordedUnderTheEarlierNumbering(t *testing.T) {
-	db, schema := openTenant(t)
+	db, schema := openTenantUpTo(t, 20260720)
 	recordEarlierNumbering(t, db)
 
 	if err := database.RunMigrations(context.Background(), db, &config.Config{TenantID: schema}, migrateUp); err != nil {
