@@ -3072,6 +3072,62 @@ pkg/tools/tools.go:934:78: ...WithLedger undefined (type *opsTools has no field 
 
 这一条我不再当作可以靠改提示词关掉的洞：`enforce` 的 flow 要真正修一次，需要**计划里出现一条"执行已批准的修复"的子任务**，而不是靠指挥在诊断链里临时决定。下一步要么让 `generator` 在题面含修复意图时能直接产出这条子任务，要么给修复一条独立的入口（不在诊断链里）。这两个都是流程结构改动，不是提示词改动，写在这里留给下一步。
 
+### 4.101 追踪类诊断必死：证据门禁不认 commander 自己的探针（2026-11-25）
+
+`ops_trace` 一出场，`diagnosis` 就必然失败。两个 flow（132、133）都是同一个死法，修完之后同一个场景（flow 136）跑通。
+
+#### 一、现象
+
+`lab CPU 调度延迟` 场景（`s13_trace_summary.json`）在 flow 132 / 133 上连续三次报同一句：
+
+> 诊断不完整: evidence[0].query 没有点名工具：写成"工具 id 加参数"，例如 `ops_logs source=<容器名>`
+
+但把模型发出去的参数捞出来看，`query` 明明是 `ops_trace target=lab script=runqlat seconds=10`——工具 id 就在开头，参数也齐全。三次重试之后 commander 链断开，整个 flow 以 stopped on an error 收场。
+
+#### 二、根因
+
+`evidenceToolIDs` 这个集合是用来判断"这条证据点名的工具是不是一个证据工具"，它的构建方式是：
+
+```go
+for _, toolset := range analystToolset {
+    for _, tool := range toolset { ids[tool] = struct{}{} }
+}
+```
+
+而 `analystToolset` 是**分析师**的工具表：`triage` / `log` / `metric` / `change` 四个角色，里面只有 `ops_containers`、`ops_system`、`ops_logs`、`ops_exec`、`prom_query`、`k8s_get`。
+
+`diagnosis` 这个收口工具是由 **commander** 调的，commander 自己的探针——`ops_trace`、`ops_watch`、`ops_sandbox`、`ops_baseline`、`ops_diff`——一个都不在这张表里。于是"任何点名 `ops_trace` 的证据"都被判成"没点名工具"，而这次的诊断恰恰只能靠 `ops_trace` 的 runqlat 直方图说话。
+
+盘面很清楚：**只要 flow 走了 eBPF 追踪，它的结论就永远递不上去**，而且错误信息误导模型——它被要求"写成工具 id 加参数"，可它已经这么写了。
+
+#### 三、修法
+
+集合里补上会产出读数的探针：
+
+```go
+for _, tool := range []string{
+	OpsContainersToolName, OpsLogsToolName, OpsSystemToolName, OpsExecToolName,
+	OpsBaselineToolName, OpsDiffToolName, OpsWatchToolName, OpsSandboxToolName,
+	OpsTraceToolName, K8sGetToolName, PromQueryToolName,
+} {
+	ids[tool] = struct{}{}
+}
+```
+
+单测 `TestAIOps_Diagnosis_ValidateAcceptsEvidenceFromTheCommandersOwnProbes` 拿三条 commander 探针的 query 逐一过 `Validate()`；把上面那段循环删掉的变异会让它红，报出的正是真实 flow 里那句错误。分析师那条更严的检查（`validateCitedTools`，按角色白名单）没有动——它管的是"分析师不许引用自己看不到的东西"，那是另一回事。
+
+#### 四、修完之后的 flow 136
+
+同一个场景，21 次工具调用（`ops_trace` 7、`ops_exec` 17 中的一部分、`diagnosis` 4），四个子任务全部收口，`diagnosis` 四次调用全部 `successfully processed arguments`，报告结论：
+
+> **部分成功**：四轮子任务全部跑完且证据齐全，用户要求的四个数字都已从工具输出原样取到；但证据同时**否定了"压测进程造成 CPU 队列积压"这一原始假设**——CPU 排队只有 756.0µs，而毫秒级尖峰出现在块设备 IO 侧（p99 12.00ms），原始问题的根因仍未闭合，需人工确认抖动时间窗与磁盘设备身份。
+
+这是这一轮里质量最高的一份诊断：它查了 `runqlat`（CPU 排队 p99 756µs）、`top_cpu`（无压测进程）、`load1`（20 核上 0.17–0.22/核）、PSI `cpu full`（恒 0），然后据此**否掉**了用户给的假设，并指出真正的时间消耗在块设备侧，最后诚实地把根因标成"未闭合"。
+
+#### 五、这条的教训
+
+`evidenceToolIDs` 的注释原本写的是"every tool id a specialist can name"——"specialist" 是分析师，而收口的是 commander，两者工具表不同。**一个由"A 的工具集"推导出来的校验，用在"B 的退出路径"上，只会把所有 A 没有而 B 有的工具判成违规。**这类错误在单元测试里看不见（测试一直用分析师的工具构造证据），只有真 flow 走到那条路径才会暴露——而它一旦暴露，整条 flow 就永远收不了口。
+
 ## 5 环境
 
 ### 5.1 开发机
