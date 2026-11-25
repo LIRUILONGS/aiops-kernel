@@ -26,6 +26,17 @@ done`
 // listingMarker is in every genuine listing; a refused exec's daemon message lacks it.
 const listingMarker = `/proc/[0-9]*`
 
+// quietLogger is the logger every test client writes through: a test asserts on
+// what the code did, and a nil logger would panic the moment the code logs.
+func quietLogger(t *testing.T) *logrus.Logger {
+	t.Helper()
+
+	logger := logrus.New()
+	logger.SetOutput(io.Discard)
+
+	return logger
+}
+
 // newDaemonClient binds a client to the local daemon, skipping the test when none is reachable.
 func newDaemonClient(t *testing.T) *dockerClient {
 	t.Helper()
@@ -39,10 +50,7 @@ func newDaemonClient(t *testing.T) *dockerClient {
 		t.Skipf("docker daemon unavailable: %v", err)
 	}
 
-	logger := logrus.New()
-	logger.SetOutput(io.Discard)
-
-	return &dockerClient{client: cli, logger: logger}
+	return &dockerClient{client: cli, logger: quietLogger(t)}
 }
 
 func startProbeSandbox(t *testing.T, dc *dockerClient, image string) string {
