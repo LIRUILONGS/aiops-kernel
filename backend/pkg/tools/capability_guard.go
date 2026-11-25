@@ -141,7 +141,7 @@ func (g *CapabilityGuard) refusal(ctx context.Context, call capability.Call, dec
 		return decision.Reason
 	}
 
-	return fmt.Sprintf("%s。已提交审批 #%d，操作员批准后重试即可", decision.Reason, id)
+	return fmt.Sprintf("%s。这不算失败：已提交审批 #%d，操作员批准后同一个调用就能过；在批准之前不要改用别的方式绕开它", decision.Reason, id)
 }
 
 // authorize adds the one check the lease cannot make on its own: an empty

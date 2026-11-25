@@ -349,6 +349,13 @@ func TestCapabilityGuard_Apply_FilesTheApprovalItQuotes(t *testing.T) {
 	if !strings.Contains(err.Error(), "审批 #42") {
 		t.Errorf("the refusal must quote the request it filed, got %q", err.Error())
 	}
+	// The model decides what to do next from this sentence alone, so it has to
+	// say that waiting for the approval is the way through, not a dead end.
+	for _, want := range []string{"这不算失败", "批准后同一个调用就能过", "不要改用别的方式绕开它"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("the refusal must say %q, got %q", want, err.Error())
+		}
+	}
 	if len(filed) != 1 || filed[0].Target != "prod" || filed[0].Command != "unit_logs" {
 		t.Fatalf("the filed request must name the refused call, got %+v", filed)
 	}
