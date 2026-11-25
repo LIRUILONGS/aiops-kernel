@@ -90,6 +90,16 @@ func (s *baselineSamples) get(id string) (opsremote.Fingerprint, bool) {
 	return fp, ok
 }
 
+// ids is what a refusal quotes: the model guessed "base-2" in another subtask's
+// window, and a list of what this window holds turns a dead end into a retry it
+// can make. Order matters — keep is the order they were taken in.
+func (s *baselineSamples) ids() []string {
+	s.mx.Lock()
+	defer s.mx.Unlock()
+
+	return append([]string(nil), s.keep...)
+}
+
 // NewOpsTools builds the read-only probe toolset from configuration. No targets
 // configured means the tools stay unavailable instead of failing mid-flow.
 func NewOpsTools(cfg *config.Config) *opsTools {
@@ -969,11 +979,22 @@ func (o *opsTools) fingerprintOf(side, value string) (opsremote.Fingerprint, err
 
 	var fp opsremote.Fingerprint
 	if err := json.Unmarshal([]byte(extractJSON(value)), &fp); err != nil {
-		return opsremote.Fingerprint{}, fmt.Errorf("解析 %s 失败（%q）：它既不是指纹 JSON，也不是这条任务采集过的采样编号——编号只在采集它的那条 flow 里有效（本 flow 还留着最近 %d 次），请先用 ops_baseline 采一次再比对",
-			side, clip(value, 60), baselineSamplesKept)
+		return opsremote.Fingerprint{}, fmt.Errorf("解析 %s 失败（%q）：它既不是指纹 JSON，也不是这条任务采集过的采样编号——%s，请先用 ops_baseline 采一次再比对",
+			side, clip(value, 60), availableSamples(o.samples.ids()))
 	}
 
 	return fp, nil
+}
+
+// availableSamples says what the diff can actually be pointed at, in the order the
+// samples were taken: "本任务现有的采样编号：base-1、base-3" or none.
+func availableSamples(ids []string) string {
+	if len(ids) == 0 {
+		return "本任务还没有采集过任何采样"
+	}
+
+	return fmt.Sprintf("本任务现有的采样编号：%s（编号只在采集它的那条任务里有效，最多保留最近 %d 次）",
+		strings.Join(ids, "、"), baselineSamplesKept)
 }
 
 // clip shortens a value for an error message: a pasted fingerprint would otherwise fill

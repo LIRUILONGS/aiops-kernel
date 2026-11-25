@@ -322,9 +322,30 @@ func TestOpsDiff_HandleDiff_NamesTheSideWhoseSampleIsGone(t *testing.T) {
 	if err == nil {
 		t.Fatal("an id that names no sample was accepted")
 	}
-	for _, want := range []string{"before", "base-99", "只在采集它的那条 flow 里有效"} {
+	for _, want := range []string{"before", "base-99", "本任务现有的采样编号", afterID} {
 		if !strings.Contains(err.Error(), want) {
-			t.Errorf("error %q does not tell the model %q, so it cannot tell a typo from a sample taken in another flow", err, want)
+			t.Errorf("error %q does not tell the model %q, so it cannot tell a typo from a sample taken in another task", err, want)
+		}
+	}
+}
+
+func TestOpsDiff_HandleDiff_SaysSoWhenThereIsNoSampleToPointAt(t *testing.T) {
+	t.Parallel()
+
+	tools := &opsTools{}
+
+	args, err := json.Marshal(OpsDiffArgs{Before: "base-1", After: "base-2"})
+	if err != nil {
+		t.Fatalf("marshal args: %v", err)
+	}
+
+	_, err = tools.HandleDiff(t.Context(), OpsDiffToolName, args)
+	if err == nil {
+		t.Fatal("an id that names no sample was accepted")
+	}
+	for _, want := range []string{"base-1", "本任务还没有采集过任何采样"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error %q does not tell the model %q, so it waits for a list that will never come", err, want)
 		}
 	}
 }
