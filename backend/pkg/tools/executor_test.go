@@ -23,8 +23,8 @@ import (
 	"opsagi/pkg/observability/langfuse"
 
 	"github.com/moby/moby/client"
-	"github.com/stretchr/testify/require"
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/require"
 	"github.com/vxcontrol/langchaingo/llms"
 )
 

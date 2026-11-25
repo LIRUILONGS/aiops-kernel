@@ -70,14 +70,14 @@ func openAIShapedAnswer(w http.ResponseWriter) {
 func TestRunner_GroupResults_FilesEachAgentsResultsUnderItsOwnField(t *testing.T) {
 	fields := func(r ProviderTestResults) map[pconfig.ProviderOptionsType]AgentTestResults {
 		return map[pconfig.ProviderOptionsType]AgentTestResults{
-			pconfig.OptionsTypeSimple:       r.Simple,
-			pconfig.OptionsTypeSimpleJSON:   r.SimpleJSON,
-			pconfig.OptionsTypeCommander: r.Commander,
-			pconfig.OptionsTypeAssistant:    r.Assistant,
-			pconfig.OptionsTypeGenerator:    r.Generator,
-			pconfig.OptionsTypeRefiner:      r.Refiner,
-			pconfig.OptionsTypeReflector:    r.Reflector,
-			pconfig.OptionsTypeAnalyst:     r.Analyst,
+			pconfig.OptionsTypeSimple:     r.Simple,
+			pconfig.OptionsTypeSimpleJSON: r.SimpleJSON,
+			pconfig.OptionsTypeCommander:  r.Commander,
+			pconfig.OptionsTypeAssistant:  r.Assistant,
+			pconfig.OptionsTypeGenerator:  r.Generator,
+			pconfig.OptionsTypeRefiner:    r.Refiner,
+			pconfig.OptionsTypeReflector:  r.Reflector,
+			pconfig.OptionsTypeAnalyst:    r.Analyst,
 		}
 	}
 

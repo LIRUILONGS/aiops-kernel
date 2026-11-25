@@ -157,7 +157,7 @@ func TestProviders_CallWithSetupRetries_AsksAgainOnlyWhileTheCallMayStillPass(t 
 				t.Cleanup(cancel)
 				return ctx
 			},
-			budget: 100 * time.Millisecond,
+			budget:  100 * time.Millisecond,
 			wantErr: context.DeadlineExceeded, wantCalls: 1, within: 2 * time.Second,
 			why: "the flow's preparation deadline must not be what ends a dead call",
 		},

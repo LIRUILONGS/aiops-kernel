@@ -39,6 +39,7 @@ const (
 	toolCallsHistorySeparator    = "---------------TOOL_CALLS_HISTORY---------------"
 	ChainContinuationMessage     = "Continue from where we left off"
 )
+
 func toolCallIDTemplateOrDefault(template string) string {
 	if template != "" {
 		return template

@@ -71,7 +71,7 @@ func (fp *flowProvider) performAgentChain(
 	var (
 		wantToStop        bool
 		nudged            bool
-			detector          = &repeatingDetector{}
+		detector          = &repeatingDetector{}
 		summarizerHandler = fp.GetSummarizeResultHandler(taskID, subtaskID)
 	)
 

@@ -154,9 +154,9 @@ func TestCustom_DefaultProviderConfig_ReadsTheAgentsFromTheFileOrTheEnvironment(
 			name: "a file overrides the environment for the agents it names",
 			cfg:  config.Config{LLMServerModel: "gpt-4o-mini", LLMServerConfig: file},
 			want: map[pconfig.ProviderOptionsType]customAgent{
-				pconfig.OptionsTypeSimple:       {model: "gpt-3.5-turbo", maxTokens: 2000},
+				pconfig.OptionsTypeSimple:    {model: "gpt-3.5-turbo", maxTokens: 2000},
 				pconfig.OptionsTypeCommander: {model: "gpt-4", maxTokens: 16384},
-				pconfig.OptionsTypeRefiner:      {model: "gpt-4o-mini", maxTokens: 16384},
+				pconfig.OptionsTypeRefiner:   {model: "gpt-4o-mini", maxTokens: 16384},
 			},
 		},
 		{name: "no model anywhere leaves the choice to the server", want: every("")},

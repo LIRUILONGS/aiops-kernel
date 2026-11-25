@@ -141,14 +141,14 @@ func (c *CallUsage) String() string {
 type ProviderOptionsType string
 
 const (
-	OptionsTypeCommander    ProviderOptionsType = "commander"
-	OptionsTypeAssistant    ProviderOptionsType = "assistant"
-	OptionsTypeSimple       ProviderOptionsType = "simple"
-	OptionsTypeSimpleJSON   ProviderOptionsType = "simple_json"
-	OptionsTypeGenerator    ProviderOptionsType = "generator"
-	OptionsTypeRefiner      ProviderOptionsType = "refiner"
-	OptionsTypeAnalyst      ProviderOptionsType = "analyst"
-	OptionsTypeReflector    ProviderOptionsType = "reflector"
+	OptionsTypeCommander  ProviderOptionsType = "commander"
+	OptionsTypeAssistant  ProviderOptionsType = "assistant"
+	OptionsTypeSimple     ProviderOptionsType = "simple"
+	OptionsTypeSimpleJSON ProviderOptionsType = "simple_json"
+	OptionsTypeGenerator  ProviderOptionsType = "generator"
+	OptionsTypeRefiner    ProviderOptionsType = "refiner"
+	OptionsTypeAnalyst    ProviderOptionsType = "analyst"
+	OptionsTypeReflector  ProviderOptionsType = "reflector"
 )
 
 var AllAgentTypes = []ProviderOptionsType{
@@ -293,15 +293,15 @@ type AgentConfig struct {
 
 // ProviderConfig represents the configuration for all agents
 type ProviderConfig struct {
-	Name           string            `json:"name,omitempty" yaml:"name,omitempty"`
-	Simple         *AgentConfig      `json:"simple,omitempty" yaml:"simple,omitempty"`
-	SimpleJSON     *AgentConfig      `json:"simple_json,omitempty" yaml:"simple_json,omitempty"`
-	Commander      *AgentConfig      `json:"commander,omitempty" yaml:"commander,omitempty"`
-	Assistant      *AgentConfig      `json:"assistant,omitempty" yaml:"assistant,omitempty"`
-	Generator      *AgentConfig      `json:"generator,omitempty" yaml:"generator,omitempty"`
-	Refiner        *AgentConfig      `json:"refiner,omitempty" yaml:"refiner,omitempty"`
-	Reflector      *AgentConfig      `json:"reflector,omitempty" yaml:"reflector,omitempty"`
-	Analyst        *AgentConfig      `json:"analyst,omitempty" yaml:"analyst,omitempty"`
+	Name       string       `json:"name,omitempty" yaml:"name,omitempty"`
+	Simple     *AgentConfig `json:"simple,omitempty" yaml:"simple,omitempty"`
+	SimpleJSON *AgentConfig `json:"simple_json,omitempty" yaml:"simple_json,omitempty"`
+	Commander  *AgentConfig `json:"commander,omitempty" yaml:"commander,omitempty"`
+	Assistant  *AgentConfig `json:"assistant,omitempty" yaml:"assistant,omitempty"`
+	Generator  *AgentConfig `json:"generator,omitempty" yaml:"generator,omitempty"`
+	Refiner    *AgentConfig `json:"refiner,omitempty" yaml:"refiner,omitempty"`
+	Reflector  *AgentConfig `json:"reflector,omitempty" yaml:"reflector,omitempty"`
+	Analyst    *AgentConfig `json:"analyst,omitempty" yaml:"analyst,omitempty"`
 
 	// PrimaryAgent and Searcher exist so a config written before the buckets were
 	// renamed still loads: handleLegacyConfig folds them into Commander and
@@ -1267,14 +1267,14 @@ func (pc *ProviderConfig) BuildOptionsMap() map[ProviderOptionsType][]llms.CallO
 	}
 
 	options := map[ProviderOptionsType][]llms.CallOption{
-		OptionsTypeSimple:       pc.GetOptionsForType(OptionsTypeSimple),
-		OptionsTypeSimpleJSON:   pc.GetOptionsForType(OptionsTypeSimpleJSON),
-		OptionsTypeCommander: pc.GetOptionsForType(OptionsTypeCommander),
-		OptionsTypeAssistant:    pc.GetOptionsForType(OptionsTypeAssistant),
-		OptionsTypeGenerator:    pc.GetOptionsForType(OptionsTypeGenerator),
-		OptionsTypeRefiner:      pc.GetOptionsForType(OptionsTypeRefiner),
-		OptionsTypeReflector:    pc.GetOptionsForType(OptionsTypeReflector),
-		OptionsTypeAnalyst:     pc.GetOptionsForType(OptionsTypeAnalyst),
+		OptionsTypeSimple:     pc.GetOptionsForType(OptionsTypeSimple),
+		OptionsTypeSimpleJSON: pc.GetOptionsForType(OptionsTypeSimpleJSON),
+		OptionsTypeCommander:  pc.GetOptionsForType(OptionsTypeCommander),
+		OptionsTypeAssistant:  pc.GetOptionsForType(OptionsTypeAssistant),
+		OptionsTypeGenerator:  pc.GetOptionsForType(OptionsTypeGenerator),
+		OptionsTypeRefiner:    pc.GetOptionsForType(OptionsTypeRefiner),
+		OptionsTypeReflector:  pc.GetOptionsForType(OptionsTypeReflector),
+		OptionsTypeAnalyst:    pc.GetOptionsForType(OptionsTypeAnalyst),
 	}
 
 	return options

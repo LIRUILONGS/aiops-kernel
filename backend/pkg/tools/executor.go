@@ -73,7 +73,6 @@ func (w *toolObservationWrapper) end(result string, err error, durationSeconds f
 	w.observation.End(opts...)
 }
 
-
 // spanObservationWrapper wraps SPAN observation (used for barrier tools)
 type spanObservationWrapper struct {
 	context     context.Context

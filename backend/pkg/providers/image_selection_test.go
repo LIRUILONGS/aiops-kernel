@@ -13,11 +13,11 @@ func TestImageSelection_Resolve_FallsBackUnlessTheAnswerIsAnAllowedImage(t *test
 
 	kali := &config.Config{
 		OpsagiDefaultSandboxImage: "vxcontrol/kali-linux",
-		DockerAllowedImages:          "vxcontrol/kali-linux, debian:latest",
+		DockerAllowedImages:       "vxcontrol/kali-linux, debian:latest",
 	}
 	private := &config.Config{
 		OpsagiDefaultSandboxImage: "vxcontrol/kali-linux",
-		DockerAllowedImages:          "registry.internal:5000/kali, docker.io/library/debian",
+		DockerAllowedImages:       "registry.internal:5000/kali, docker.io/library/debian",
 	}
 	open := &config.Config{OpsagiDefaultSandboxImage: "vxcontrol/kali-linux"}
 
@@ -119,7 +119,7 @@ func TestImageSelection_SkipsModel_OnlyInFixedMode(t *testing.T) {
 			t.Parallel()
 
 			policy := newImagePolicy(&config.Config{
-				DockerImageSelectionMode:     tt.mode,
+				DockerImageSelectionMode:  tt.mode,
 				OpsagiDefaultSandboxImage: "vxcontrol/kali-linux",
 			}, "debian:latest")
 

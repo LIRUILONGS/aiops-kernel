@@ -260,18 +260,18 @@ searcher:
 			name:      "the vendor cloud prices every agent model",
 			serverURL: "https://ollama.com",
 			want: map[pconfig.ProviderOptionsType]*pconfig.PriceInfo{
-				pconfig.OptionsTypeSimple:       {Input: 0.06, Output: 0.24},
+				pconfig.OptionsTypeSimple:    {Input: 0.06, Output: 0.24},
 				pconfig.OptionsTypeCommander: {Input: 0.95, Output: 4.00, CacheRead: 0.16},
-				pconfig.OptionsTypeAnalyst:     {Input: 0.30, Output: 1.20, CacheRead: 0.006},
+				pconfig.OptionsTypeAnalyst:   {Input: 0.30, Output: 1.20, CacheRead: 0.006},
 			},
 		},
 		{
 			name:      "a local daemon prices none",
 			serverURL: "http://localhost:11434",
 			want: map[pconfig.ProviderOptionsType]*pconfig.PriceInfo{
-				pconfig.OptionsTypeSimple:       nil,
+				pconfig.OptionsTypeSimple:    nil,
 				pconfig.OptionsTypeCommander: nil,
-				pconfig.OptionsTypeAnalyst:     nil,
+				pconfig.OptionsTypeAnalyst:   nil,
 			},
 		},
 	} {

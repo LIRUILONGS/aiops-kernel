@@ -477,6 +477,7 @@ func TestFlowProvider_budgetNudge_LeavesRoomToConclude(t *testing.T) {
 		})
 	}
 }
+
 // The reflector and the adviser send no tools; the agent the reflector answers for keeps its own.
 
 // performerFailingProvider fails every call; with cancel set it cancels the chain first, the way a stopped flow does.

@@ -18,6 +18,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 )
+
 func wrapErrorEndAgentSpan(ctx context.Context, span langfuse.Agent, msg string, err error) error {
 	obs.LogErrorOrCancel(logrus.WithContext(ctx), err, msg)
 	err = fmt.Errorf("%s: %w", msg, err)
@@ -47,12 +48,6 @@ func wrapErrorEndEvaluatorSpan(ctx context.Context, span langfuse.Evaluator, msg
 	)
 	return err
 }
-
-
-
-
-
-
 
 func (fp *flowProvider) GetSummarizeResultHandler(taskID, subtaskID *int64) tools.SummarizeHandler {
 	return func(ctx context.Context, result string) (string, error) {

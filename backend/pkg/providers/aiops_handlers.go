@@ -30,6 +30,7 @@ var analystPromptType = map[string]templates.PromptType{
 	tools.MetricsAnalystToolName: templates.PromptTypeMetricsAnalyst,
 	tools.ChangeAnalystToolName:  templates.PromptTypeChangeAnalyst,
 }
+
 // GetTriageHandler and its three siblings are the delegation surface of the
 // commander: each runs its specialist's chain under its own prompt and tools,
 // and returns that specialist's finding as the tool result.

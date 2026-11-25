@@ -69,14 +69,14 @@ func configAgentFields(t *testing.T) map[ProviderOptionsType]string {
 }
 
 var configAgentCallsCarryTools = map[ProviderOptionsType]bool{
-	OptionsTypeSimple:       true,
-	OptionsTypeSimpleJSON:   false,
-	OptionsTypeCommander: true,
-	OptionsTypeAssistant:    true,
-	OptionsTypeGenerator:    true,
-	OptionsTypeRefiner:      true,
-	OptionsTypeReflector:    false,
-	OptionsTypeAnalyst:     true,
+	OptionsTypeSimple:     true,
+	OptionsTypeSimpleJSON: false,
+	OptionsTypeCommander:  true,
+	OptionsTypeAssistant:  true,
+	OptionsTypeGenerator:  true,
+	OptionsTypeRefiner:    true,
+	OptionsTypeReflector:  false,
+	OptionsTypeAnalyst:    true,
 }
 
 // configChatServer answers every chat completion, so an error from the door is a refusal raised before sending.
@@ -186,7 +186,7 @@ func TestConfig_AgentConfigForType_ResolvesEveryAgentToItsOwnConfig(t *testing.T
 
 func TestConfig_AgentConfigForType_FallsBackToTheStandInOfAnUnsetAgent(t *testing.T) {
 	config := &ProviderConfig{
-		Simple:       &AgentConfig{Model: "simple-model"},
+		Simple:    &AgentConfig{Model: "simple-model"},
 		Commander: &AgentConfig{Model: "primary-model"},
 	}
 
