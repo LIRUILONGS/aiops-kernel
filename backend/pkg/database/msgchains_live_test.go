@@ -42,7 +42,7 @@ func TestMsgchains_GetUserTotalUsageStats_CountsARowOnlyForTheOwnerOfItsFlow(t *
 	}
 	if _, err := db.Exec(`
 		INSERT INTO msgchains (type, model, model_provider, usage_in, chain, flow_id, task_id)
-		VALUES ('primary_agent', 'm', 'p', 1000, '[]', $1, $2)`, ownFlow, otherTask); err != nil {
+		VALUES ('commander', 'm', 'p', 1000, '[]', $1, $2)`, ownFlow, otherTask); err != nil {
 		t.Fatalf("seed msgchain: %v", err)
 	}
 	if _, err := db.Exec(`
