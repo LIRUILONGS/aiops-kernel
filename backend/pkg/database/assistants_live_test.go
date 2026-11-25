@@ -4,7 +4,6 @@ package database_test
 
 import (
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"testing"
 	"time"
