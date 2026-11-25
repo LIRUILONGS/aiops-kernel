@@ -24,13 +24,24 @@ import (
 // could reproduce the excerpt.
 var evidenceSources = []string{"host", "containers", "logs", "metrics", "changes", "k8s"}
 
-// evidenceToolIDs is every tool id a specialist can name in an evidence query.
+// evidenceToolIDs is every tool id an evidence query may name. The analysts'
+// toolsets are not enough: a diagnosis is closed by the commander, whose probes
+// (ops_trace, ops_watch, ops_sandbox) appear in no analyst toolset, so a
+// trace-backed diagnosis had every evidence item refused and the chain died on
+// the third retry.
 var evidenceToolIDs = func() map[string]struct{} {
 	ids := make(map[string]struct{})
 	for _, toolset := range analystToolset {
 		for _, tool := range toolset {
 			ids[tool] = struct{}{}
 		}
+	}
+	for _, tool := range []string{
+		OpsContainersToolName, OpsLogsToolName, OpsSystemToolName, OpsExecToolName,
+		OpsBaselineToolName, OpsDiffToolName, OpsWatchToolName, OpsSandboxToolName,
+		OpsTraceToolName, K8sGetToolName, PromQueryToolName,
+	} {
+		ids[tool] = struct{}{}
 	}
 	return ids
 }()

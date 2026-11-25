@@ -179,6 +179,21 @@ func TestAIOps_Diagnosis_ValidateRefusesAnIncompleteConclusion(t *testing.T) {
 	}
 }
 
+func TestAIOps_Diagnosis_ValidateAcceptsEvidenceFromTheCommandersOwnProbes(t *testing.T) {
+	for _, query := range []string{
+		"ops_trace target=lab script=runqlat seconds=10",
+		"ops_watch target=lab command=load samples=8 interval_seconds=5",
+		"ops_sandbox target=lab image=debian:latest script=cat /proc/pressure/cpu",
+	} {
+		diagnosis := validDiagnosis()
+		diagnosis.Evidence[0].Query = query
+
+		if err := diagnosis.Validate(); err != nil {
+			t.Errorf("evidence citing %q was refused: %v", query, err)
+		}
+	}
+}
+
 func TestAIOps_Diagnosis_RenderKeepsTheEvidenceVerbatim(t *testing.T) {
 	diagnosis := validDiagnosis()
 
