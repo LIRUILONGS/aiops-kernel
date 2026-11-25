@@ -696,6 +696,29 @@ func TestTerminal_ExecCommand_TimeoutKeepsWhatTheCommandPrinted(t *testing.T) {
 	}
 }
 
+func TestTerminal_ExecCommand_CapsWhatItKeepsAndSaysWhatItDropped(t *testing.T) {
+	t.Parallel()
+
+	const kept = 4 * 1024 * 1024
+	dropped := "the tail past the cap"
+	mock := &fakeDockerClient{
+		isRunning:      true,
+		execCreateResp: client.ExecCreateResult{ID: "exec-capped"},
+		attachOutput:   []byte(strings.Repeat("a", kept) + dropped),
+		inspectResp:    client.ExecInspectResult{ExitCode: 0},
+	}
+
+	got, err := terminalFor(mock, &recordingTermLog{}).ExecCommand(t.Context(), "/work", "cat big.log", false, 0)
+	require.NoError(t, err)
+
+	assert.NotContains(t, got, dropped, "the output past the cap must not be kept")
+	cut := strings.Index(got, "\n[output truncated")
+	require.NotEqual(t, -1, cut, "a capped result has to say that it was capped")
+	assert.Equal(t, kept, cut, "everything the cap allows has to be kept")
+	assert.Equal(t, strings.Repeat("a", kept), got[:cut])
+	assert.Contains(t, got[cut:], fmt.Sprintf("%d bytes past", len(dropped)))
+}
+
 func TestTerminal_RequireRunningContainer_ReportsASandboxFoundNotRunning(t *testing.T) {
 	calls := map[string]func(context.Context, *terminal) error{
 		"a command": func(ctx context.Context, term *terminal) error {

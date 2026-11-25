@@ -33,6 +33,13 @@ const (
 	defaultExtraExecTimeout       = 5 * time.Second
 	defaultQuickCheckTimeout      = 500 * time.Millisecond
 
+	// maxExecOutputBytes bounds how much of a command's output is held in memory.
+	// The command keeps running and its output keeps being read -- a full pipe
+	// would block it -- but everything past this is discarded, so dumping a large
+	// file is still served while a runaway `yes` costs a fixed amount instead of
+	// the process. Anything near this size is summarized downstream anyway.
+	maxExecOutputBytes = 4 * 1024 * 1024
+
 	// ANSI terminal color codes (aligned with OpsAGI UI palette)
 	ansiColorInputCmd  = "\033[96m" // Bright Cyan - matches UI blue accents
 	ansiColorSystemMsg = "\033[92m" // Bright Green - universal success/info
@@ -43,6 +50,40 @@ const (
 type execResult struct {
 	output string
 	err    error
+}
+
+// cappedBuffer keeps the first limit bytes written to it and counts the rest, so
+// a command that prints without end costs a fixed amount of memory.
+type cappedBuffer struct {
+	buf     bytes.Buffer
+	limit   int
+	dropped int
+}
+
+func (b *cappedBuffer) Write(p []byte) (int, error) {
+	unkept := len(p)
+	if room := b.limit - b.buf.Len(); room > 0 {
+		kept := min(len(p), room)
+		b.buf.Write(p[:kept])
+		unkept -= kept
+	}
+	b.dropped += unkept
+
+	return len(p), nil
+}
+
+func (b *cappedBuffer) String() string {
+	return b.buf.String()
+}
+
+// truncationNotice names what was discarded, so neither the agent nor the
+// operator reads a cut-off result as the whole of it.
+func (b *cappedBuffer) truncationNotice() string {
+	if b.dropped == 0 {
+		return ""
+	}
+
+	return fmt.Sprintf("\n[output truncated: %d bytes past the first %d were discarded]", b.dropped, b.buf.Len())
 }
 
 type terminal struct {
@@ -275,11 +316,11 @@ func (t *terminal) getExecResult(ctx context.Context, id string, timeout time.Du
 	}
 	defer resp.Close()
 
-	dst := bytes.Buffer{}
+	dst := &cappedBuffer{limit: maxExecOutputBytes}
 	errChan := make(chan error, 1)
 
 	go func() {
-		_, copyErr := io.Copy(&dst, resp.Reader)
+		_, copyErr := io.Copy(dst, resp.Reader)
 		errChan <- copyErr
 	}()
 
@@ -303,7 +344,7 @@ func (t *terminal) getExecResult(ctx context.Context, id string, timeout time.Du
 		// call's own context has already fired, so the write needs one that has
 		// not, the way the detached path does.
 		if partial != "" {
-			styled := fmt.Sprintf("%s%s%s%s", ansiColorSystemMsg, partial, ansiColorReset, ansiLineTerminator)
+			styled := fmt.Sprintf("%s%s%s%s", ansiColorSystemMsg, partial+dst.truncationNotice(), ansiColorReset, ansiLineTerminator)
 			if _, err := t.tlp.PutMsg(context.WithoutCancel(ctx), database.TermlogTypeStdout,
 				styled, t.containerID, t.taskID, t.subtaskID); err != nil {
 				logrus.WithContext(ctx).WithError(err).Error("failed to put terminal log (timeout partial)")
@@ -316,13 +357,16 @@ func (t *terminal) getExecResult(ctx context.Context, id string, timeout time.Du
 		// channel wrapCommandResult forwards on the error branch; its `result`
 		// argument is used as a log field and then dropped. The cap is the
 		// pipeline's own, not the 500 bytes this used to keep -- the executor
-		// already summarizes a terminal result above DefaultResultSizeLimit.
+		// already summarizes a terminal result above DefaultResultSizeLimit. The
+		// truncation notice follows the cut rather than being part of it, so a
+		// result that hit both limits still says it lost the tail.
 		return "", fmt.Errorf(
-			"command execution timeout (%v). Partial output: %s. "+
+			"command execution timeout (%v). Partial output: %s%s. "+
 				"HINT: If this is an interactive command (shell/REPL/listener), use detach=true. "+
 				"For long batch commands, wrap with shell timeout utility: 'timeout %d <command>' to ensure clean completion",
 			ctx.Err(),
 			truncateString(partial, DefaultResultSizeLimit),
+			dst.truncationNotice(),
 			suggestedTimeout,
 		)
 	}
@@ -332,7 +376,7 @@ func (t *terminal) getExecResult(ctx context.Context, id string, timeout time.Du
 		return "", fmt.Errorf("failed to inspect exec process: %w", err)
 	}
 
-	results := dst.String()
+	results := dst.String() + dst.truncationNotice()
 	// Style system output with color coding
 	styledOutput := fmt.Sprintf("%s%s%s%s", ansiColorSystemMsg, results, ansiColorReset, ansiLineTerminator)
 	_, err = t.tlp.PutMsg(ctx, database.TermlogTypeStdout, styledOutput, t.containerID, t.taskID, t.subtaskID)
