@@ -13,7 +13,7 @@
   <a href="https://github.com/LIRUILONGS/aiops-kernel/commits/main"><img src="https://img.shields.io/github/last-commit/LIRUILONGS/aiops-kernel" alt="Last commit"></a>
 </p>
 
-<p align="center"><b>导航：</b> <a href="#它是什么">它是什么</a> · <a href="#一次诊断怎么走">一次诊断怎么走</a> · <a href="#角色">角色</a> · <a href="#工具">工具</a> · <a href="#它不做什么">它不做什么</a> · <a href="#约束落在哪里">约束落在哪里</a> · <a href="#界面">界面</a> · <a href="#快速开始">快速开始</a> · <a href="#验证记录">验证记录</a> · <a href="#开发">开发</a> · <a href="#目录">目录</a> · <a href="#文档">文档</a> · <a href="#许可">许可</a></p>
+<p align="center"><b>导航：</b> <a href="#它是什么">它是什么</a> · <a href="#一次诊断怎么走">一次诊断怎么走</a> · <a href="#多角色如何协作">多角色如何协作</a> · <a href="#角色">角色</a> · <a href="#工具">工具</a> · <a href="#它不做什么">它不做什么</a> · <a href="#约束落在哪里">约束落在哪里</a> · <a href="#界面">界面</a> · <a href="#快速开始">快速开始</a> · <a href="#验证记录">验证记录</a> · <a href="#开发">开发</a> · <a href="#目录">目录</a> · <a href="#文档">文档</a> · <a href="#许可">许可</a></p>
 
 ---
 
@@ -43,24 +43,95 @@ flow 类型是显式的（`diagnosis` / `optimization`）就覆盖计划里的 `
 
 一条 flow 可以有多条 task；每个 task 的子任务按计划顺序执行（`OPSAGI_SUBTASK_CONCURRENCY` 可并行）。子任务完成后 `refiner` 按结果调整剩余计划，`reporter` 把 task 的结果写成报告。
 
+## 多角色如何协作
+
+多角色不是"让几个模型各答一遍再拼起来"。诊断链上的角色之间只有三样接口：一份结构化的计划、一次带 `question` 的委派、一张类型化的 finding。除此之外，它们不共享对话上下文，也不共享工具表。
+
+### 一次委派的时序
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant G as generator
+    participant C as commander
+    participant A as 分析师
+
+    G->>C: subtask_list（mode / assigned_to / expected_signal）
+    C->>C: 取下一条子任务，决定自己查还是派活
+    C->>A: 委派（question + 已知上下文）
+    A->>A: 起一条独立 chain：自己的 prompt / 模型槽位 / 工具表
+    A-->>C: triage_result / log_finding / metric_finding / change_finding
+    C->>C: 合并证据，写 diagnosis 或 optimization_result
+```
+
+`reporter` 不在委派链里：子任务结出结果后，任务运行时才叫它写报告。图中也省略了任务运行时：`generator` 的 `subtask_list` 落库后，由它把每条子任务交给 `commander`。
+
+三条硬边界：
+
+1. **计划是数据，不是提示词。** `generator` 交的 `subtask_list` 每条都带 `mode`（`diagnosis` / `optimization`）、`assigned_to`（建议由谁执行）和 `expected_signal`（假设成立时应看到什么）。事故指挥拿到的是可逐条核对的计划，不是一段"帮我查查"的散文。
+2. **委派是子 chain，不是转贴。** 指挥官调用 `triage` / `log_analyst` / `metrics_analyst` / `change_analyst` 中的一个，委派 handler 会为这次调用新建一个执行器：分析师的提示词、`analyst` 模型槽位、这一角色的工具白名单、这一角色的出口。它跑完自己的循环，把 finding 作为这次工具调用的返回值交回指挥官；两边各留一份记录，角色页才能把委派画成边。
+3. **结论是类型化的。** 分析师只能用自己那张表收口（`triage_result` / `log_finding` / `metric_finding` / `change_finding`），指挥官只能用它这条链路的出口（`diagnosis` 或 `optimization_result`，二选一）。finding 的字段由代码校验：`query` 必须点名工具，`excerpt` 不能为空；至于是不是原文，代码验不了，只能靠提示词约束和事后审阅。不合格的那次调用被拒绝，模型重填。
+
+分析师没有委派工具，也没有终端、文件、浏览器；它拿到的工具表就是它这一轮能看的全部证据。所以委派只向下分叉一层，指挥官始终是唯一看过所有 finding 的角色。
+
+### 一次实跑的轨迹：flow 136
+
+下面这张图按 flow 136 的角色页与交接文档重绘；原始页面见[界面](#界面)那张角色图（[明色](assets/screenshots/flow-roles-light.png) / [暗色](assets/screenshots/flow-roles-dark.png)）。flow 136 是 `scripts/scenarios/s5-scheduling-latency-trace.json` 的实跑，四个子任务全部收口：
+
+```mermaid
+flowchart TB
+    G["generator<br/>1 chain：拆成 4 条假设"] --> C["commander<br/>4 chains：一条子任务一条"]
+    R["refiner<br/>2 chains：按结果重规划"] --> C
+    C -->|委派| T["triage"]
+    C -->|委派| L["log_analyst<br/>2 chains / 132.3K tok"]
+    C -->|委派| M["metrics_analyst"]
+    C -->|委派| H["change_analyst"]
+    T -.->|triage_result| C
+    L -.->|log_finding| C
+    M -.->|metric_finding| C
+    H -.->|change_finding| C
+    C --> D["diagnosis ×4<br/>4/4 accepted"]
+```
+
+实线是计划 / 委派，虚线是 finding 回流。`reporter` 与 `summarizer` 不由指挥官调用，在下面的表里单列。
+
+| 角色 | 在 flow 136 里做了什么 | 记录 |
+|---|---|---|
+| `generator` | 把 CPU 调度延迟拆成四条可验证假设 | 1 条 chain |
+| `refiner` | 按已完成的结果调整剩余计划 | 2 条 chain |
+| `commander` | 四条子任务各跑一条 chain，四次 `diagnosis` 全部被接受 | 4 条 chain / 1.3M token |
+| `triage` / `log_analyst` / `metrics_analyst` / `change_analyst` | 被委派取证，用各自的 finding 交回；日志分析员跑了两条 chain | 四个分析师都有委派边；`log_analyst` 2 条 chain / 132.3K token |
+| `summarizer` | 压缩长链上下文 | 25 条 chain |
+| `reporter` | 任务结束后写最终报告 | 1 条 chain |
+
+整条 flow 21 次工具调用，其中 `ops_trace` 7 次、`diagnosis` 4 次（四次都成功）。结论没有迎合报障假设：CPU 排队 p99 只有 756.0µs，毫秒级尖峰出现在块设备 IO 侧（p99 12.00ms），所以报告把根因标成"未闭合"，置信度 0.60，`needs_human=true`。
+
+角色页上的 `ch` 是 chain 数，边是该角色在本 flow 里实际发生的委派；节点上还带日志条数、token 用量与最后活动时间，一分钟内有动作的角色描绿边。
+
+### 另一种轨迹：finding 回到指挥官
+
+flow 94 是另一条常见的形状：指挥官派了两次活，`log_analyst` 与 `metrics_analyst` 各回一张 finding，两张都被接收；`diagnosis` 的 `evidence` 直接引用前者给出的 `query`。分析师说"取不到"时，finding 里也写明取不到——日志面写"真实首发取不到，日志缓冲已滚动"，指标面写"这条指标在这个后端不存在"——而不是编一个值。
+
+这就是多角色协作的验收标准：计划能被逐条核对，委派能追到具体角色，finding 能追到具体工具，结论能追到 finding 的 `query`。
+
 ## 角色
 
 十二个角色，全部来自 `MsgchainType` 枚举（`backend/pkg/database/models.go`），GraphQL 侧镜像为 `AgentType`：
 
-| 角色 | 职责 | 正常出口 |
-|---|---|---|
-| `commander` | 事故指挥：执行计划、委派分析师、合并证据、收尾 | `diagnosis` / `optimization_result` |
-| `generator` | 诊断规划器：把目标拆成可证伪假设 | `subtask_list` |
-| `refiner` | 执行中重规划：按已完成的结果调整剩余计划 | `subtask_patch` |
-| `triage` | 分级、影响面、是否命中已知故障模式 | `triage_result` |
-| `log_analyst` | 日志面：错误模板、首次出现、实例分布 | `log_finding` |
-| `metrics_analyst` | 指标面：拐点、先后顺序、未动的序列 | `metric_finding` |
-| `change_analyst` | 变更面：变更时间线、与起始点的间隔 | `change_finding` |
-| `reporter` | 把任务结果写成报告 | `report_result` |
-| `reflector` | 工具调用接近上限时给出收尾建议 | — |
-| `summarizer` | 压缩长链上下文 | — |
-| `tool_call_fixer` | 修复格式错误的工具调用参数 | — |
-| `assistant` | 挂在 flow 上的交互式助手，共享容器与 provider 设置；不参与诊断计划 | — |
+| 角色 | 中文名 | 职责 | 正常出口 |
+|---|---|---|---|
+| `commander` | 事故指挥 | 执行计划、委派分析师、合并证据、收尾 | `diagnosis` / `optimization_result` |
+| `generator` | 诊断规划器 | 把目标拆成可证伪假设 | `subtask_list` |
+| `refiner` | 计划修订器 | 按已完成的结果调整剩余计划 | `subtask_patch` |
+| `triage` | 分诊员 | 分级、影响面、是否命中已知故障模式 | `triage_result` |
+| `log_analyst` | 日志分析员 | 日志面：错误模板、首次出现、实例分布 | `log_finding` |
+| `metrics_analyst` | 指标分析员 | 指标面：拐点、先后顺序、未动的序列 | `metric_finding` |
+| `change_analyst` | 变更分析员 | 变更面：变更时间线、与起始点的间隔 | `change_finding` |
+| `reporter` | 事故报告员 | 把任务结果写成报告 | `report_result` |
+| `reflector` | 反思员 | 工具调用接近上限时给出收尾建议 | — |
+| `summarizer` | 摘要员 | 压缩长链上下文 | — |
+| `tool_call_fixer` | 工具调用修复 | 修复格式错误的工具调用参数 | — |
+| `assistant` | 助手 | 挂在 flow 上的交互式助手，共享容器与 provider 设置；不参与诊断计划 | — |
 
 分析师只拿一个证据面，工具表是硬边界：
 
