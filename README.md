@@ -321,21 +321,16 @@ docker compose up -d
 docker compose -f docker-compose.yml -f docker-compose-observability.yml up -d
 ```
 
-基础栈起来后是四个容器：
+基础栈起来后是四个容器，各自的端口与职责：
 
-| 容器 | 状态 | 端口 |
+| 容器 | 端口 | 作用 |
 |---|---|---|
-| `opsagi` | ✅ 运行中 | `127.0.0.1:8443 → 8443`（TLS） |
-| `pgvector` | ✅ 运行中（健康） | `127.0.0.1:5432 → 5432` |
-| `pgexporter` | ✅ 运行中 | `127.0.0.1:9187 → 9187` |
-| `scraper` | ✅ 运行中 | `127.0.0.1:9443 → 443` |
+| `opsagi` | `127.0.0.1:8443 → 8443`（TLS） | API、GraphQL、订阅与界面；对外地址由 `OPSAGI_LISTEN_IP` / `OPSAGI_LISTEN_PORT` 决定，设成 `8444` 对外就是 8444 |
+| `pgvector` | `127.0.0.1:5432 → 5432` | PostgreSQL + pgvector：会话、任务、日志与向量记忆都在这里；`opsagi` 每次启动时对它跑迁移，这一项带健康检查 |
+| `pgexporter` | `127.0.0.1:9187 → 9187` | Prometheus 的 postgres-exporter，把 `pgvector` 的指标交给监控栈 |
+| `scraper` | `127.0.0.1:9443 → 443` | 浏览器自动化；`opsagi` 通过 `SCRAPER_PRIVATE_URL` / `SCRAPER_PUBLIC_URL` 连它，`web_search` 的浏览器引擎与截图走这条线 |
 
-- `opsagi` — API、GraphQL、订阅与界面都在这一侧，默认走 TLS（`SERVER_USE_SSL` 为 `true`）；对外地址由 `OPSAGI_LISTEN_IP` / `OPSAGI_LISTEN_PORT` 决定，设成 `8444` 对外就是 8444。
-- `pgvector` — PostgreSQL + pgvector：会话、任务、日志与向量记忆都在这里，`opsagi` 每次启动时对它跑迁移。
-- `pgexporter` — Prometheus 的 postgres-exporter，把 `pgvector` 的指标暴露在 9187，供监控栈采集。
-- `scraper` — 浏览器自动化服务，`opsagi` 通过 `SCRAPER_PRIVATE_URL` / `SCRAPER_PUBLIC_URL` 连它，`web_search` 的浏览器引擎与截图走这条线。
-
-四个端口都能改环境变量：`PGVECTOR_LISTEN_PORT`、`POSTGRES_EXPORTER_LISTEN_PORT`、`SCRAPER_LISTEN_PORT`，以及 `OPSAGI_LISTEN_PORT`。
+起来后 `docker compose ps` 就是这四个，缺哪个说明那一步没成。四个端口都能改环境变量：`PGVECTOR_LISTEN_PORT`、`POSTGRES_EXPORTER_LISTEN_PORT`、`SCRAPER_LISTEN_PORT`，以及 `OPSAGI_LISTEN_PORT`。
 
 ### 方式二：从源码运行后端
 
