@@ -301,7 +301,41 @@ docker build -t local/opsagi:latest .
 docker compose up -d
 ```
 
-打开 `https://localhost:8443`，用 `admin@opsagi.com` / `admin` 登录，首次登录会要求改密码。数据库、pgvector、scraper 等由 compose 提供；`docker-compose-observability.yml`、`docker-compose-langfuse.yml`、`docker-compose-graphiti.yml` 分别加上监控、LLM 分析与知识图谱。
+打开 `https://localhost:8443`，用 `admin@opsagi.com` / `admin` 登录，首次登录会要求改密码。数据库、pgvector、scraper 等由 compose 提供。
+
+### 部署文件与容器
+
+五份 compose 文件里只有 `docker-compose.yml` 是基础栈，其余四份都用 `-f` 叠在它上面：
+
+| 文件 | 管什么 |
+|---|---|
+| `docker-compose.yml` | 基础栈：`opsagi`、`pgvector`、`pgexporter`、`scraper` |
+| `docker-compose-observability.yml` | 监控：VictoriaMetrics、Loki、Jaeger、Grafana、node-exporter、cAdvisor、OTel 采集器与 ClickHouse |
+| `docker-compose-langfuse.yml` | LLM 分析：Langfuse worker/web，以及它自带的 ClickHouse、MinIO、Redis、PostgreSQL |
+| `docker-compose-graphiti.yml` | 知识图谱：Neo4j 与 Graphiti 服务 |
+| `docker-compose.e2e.yml` | 不是部署栈：Tier-2 端到端后端，用独立 compose 项目（`-p opsagi-e2e`）与开发者栈并存 |
+
+需要哪一块就叠哪一块，例如加上监控：
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose-observability.yml up -d
+```
+
+基础栈起来后是四个容器：
+
+| 容器 | 状态 | 端口 |
+|---|---|---|
+| `opsagi` | ✅ 运行中 | `127.0.0.1:8443 → 8443`（TLS） |
+| `pgvector` | ✅ 运行中（健康） | `127.0.0.1:5432 → 5432` |
+| `pgexporter` | ✅ 运行中 | `127.0.0.1:9187 → 9187` |
+| `scraper` | ✅ 运行中 | `127.0.0.1:9443 → 443` |
+
+- `opsagi` — API、GraphQL、订阅与界面都在这一侧，默认走 TLS（`SERVER_USE_SSL` 为 `true`）；对外地址由 `OPSAGI_LISTEN_IP` / `OPSAGI_LISTEN_PORT` 决定，设成 `8444` 对外就是 8444。
+- `pgvector` — PostgreSQL + pgvector：会话、任务、日志与向量记忆都在这里，`opsagi` 每次启动时对它跑迁移。
+- `pgexporter` — Prometheus 的 postgres-exporter，把 `pgvector` 的指标暴露在 9187，供监控栈采集。
+- `scraper` — 浏览器自动化服务，`opsagi` 通过 `SCRAPER_PRIVATE_URL` / `SCRAPER_PUBLIC_URL` 连它，`web_search` 的浏览器引擎与截图走这条线。
+
+四个端口都能改环境变量：`PGVECTOR_LISTEN_PORT`、`POSTGRES_EXPORTER_LISTEN_PORT`、`SCRAPER_LISTEN_PORT`，以及 `OPSAGI_LISTEN_PORT`。
 
 ### 方式二：从源码运行后端
 
@@ -433,6 +467,7 @@ docs/platform-reference.md  提供商与模型目录、部署与配置细节
 scripts/                 命令行工具与批测脚本
 scripts/scenarios/       实验场景：靶场怎么摆、问什么、什么算答对
 observability/           可选监控栈配置
+docker-compose*.yml      部署编排：基础栈与监控、LLM 分析、知识图谱、e2e 叠加层
 ```
 
 ## 文档
