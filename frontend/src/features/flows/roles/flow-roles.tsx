@@ -66,7 +66,7 @@ function FlowRoles() {
                 <div className="flex w-fit items-center gap-1.5 pb-1">
                     <button
                         className={cn(
-                            'rounded-full border px-2.5 py-1 text-xs transition-colors',
+                            'rounded-full border px-2.5 py-1 text-xs whitespace-nowrap transition-colors',
                             !selected
                                 ? 'border-primary bg-primary/10 text-primary'
                                 : 'text-muted-foreground hover:bg-muted',
@@ -80,7 +80,7 @@ function FlowRoles() {
                     {activeRoles.map((node) => (
                         <button
                             className={cn(
-                                'flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors',
+                                'flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs whitespace-nowrap transition-colors',
                                 selected === node.role
                                     ? 'border-primary bg-primary/10 text-primary'
                                     : 'text-muted-foreground hover:bg-muted',
