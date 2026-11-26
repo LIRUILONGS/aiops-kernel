@@ -103,7 +103,7 @@ Backend startup replays flows and can take a minute; poll rather than sleep.
   yours to create — every `.env.*` is gitignored, so no checkout carries one:
   copy `.env.example`, put one provider's real key in it, and give it a salt
   (see above). Then check what it actually enables — `{ settingsProviders
-  { enabled { … } } }` answers in one request. A type with a placeholder key
+{ enabled { … } } }` answers in one request. A type with a placeholder key
   still shows as enabled and fails at the first call, so run the flow against
   the one type whose credentials are real.
 - **`/settings/providers` is not that list.** The page renders
@@ -150,14 +150,15 @@ Backend startup replays flows and can take a minute; poll rather than sleep.
   base of its own. Containers left behind by a previous database are orphans —
   their flow ids no longer exist, and they still hold ports.
 
-  The name collides before the port does, and it fails the whole mutation:
-  `createFlow` answers `Conflict. The container name "/opsagi-terminal-<id>" is
-  already in use`, so a stack whose database you recreated cannot start a flow
-  until the old sandboxes are removed. `run-local-tier.sh` handles both halves —
-  it removes `opsagi-terminal-9xxxx` and their `-data` volumes, then runs
-  `ALTER SEQUENCE flows_id_seq RESTART WITH 90001`. Bringing the same compose
-  project up by hand does neither, and ids restart at 1 straight into a developer
-  stack's names.
+          The name collides before the port does, and it fails the whole mutation:
+          `createFlow` answers `Conflict. The container name "/opsagi-terminal-<id>" is
+
+    already in use`, so a stack whose database you recreated cannot start a flow
+  until the old sandboxes are removed. `run-local-tier.sh`handles both halves —
+  it removes`opsagi-terminal-9xxxx`and their`-data`volumes, then runs
+ `ALTER SEQUENCE flows_id_seq RESTART WITH 90001`. Bringing the same compose
+    project up by hand does neither, and ids restart at 1 straight into a developer
+    stack's names.
 
 ## Driving the UI
 
@@ -216,7 +217,7 @@ genuinely visual.
   click, which is what makes the failure look arbitrary.
 - **An inactive tab panel is unmounted.** Measuring a panel you have not switched
   to returns zero characters, which reads exactly like an empty state. Switch the
-  tab, then measure the panel whose `data-state` is `active`.
+  tab, then measure the panel whose `data-state` is `有效`.
 - **Validation is reported in the field, not in a toast.** A submit that fails
   client-side leaves the page silent: no toast, no navigation, and the reason
   sits in `[data-slot="form-message"]` with `aria-invalid="true"` on the control.
@@ -261,7 +262,7 @@ genuinely visual.
   mode, which every `docker build` defeats. What it does not recognise — a
   resolver's own validation, for one — reaches the client verbatim and carries no
   `extensions.code` on any build, so waiting for a code on `token creation is
-  disabled with default salt` waits forever. Match the code where there is one,
+disabled with default salt` waits forever. Match the code where there is one,
   never a redacted sentence.
 - **Everything is gzipped, except a ranged request.** The compression middleware
   sits on the root engine, so GraphQL, every REST route and the static bundle all
@@ -282,7 +283,7 @@ genuinely visual.
   still returns zero. Wait for `[role=menu]` to detach.
 - **Settings is a second shell.** `/settings/*` replaces the main sidebar with its
   own (Account, Providers, Prompts, API Tokens), so a walk that clicks "Flows"
-  from a settings route waits forever. Leave through **Back to App** in the
+  from a settings route waits forever. Leave through **返回应用** in the
   settings sidebar footer, and remember that a probe which ends inside settings
   starts the next one there.
 - **The theme switcher is a tab group, not menu items.** It lives inside the user
@@ -309,7 +310,7 @@ The first login is not a single step:
 
 1. `navigate_page` to `https://localhost:8443/` — an unauthenticated session
    lands on `/login`.
-2. `take_snapshot`; fill **Login** and **Password** through the `fill` tool (a
+2. `take_snapshot`; fill **登录** and **Password** through the `fill` tool (a
    raw `el.value = …` is invisible to React), then click **Sign in**.
 3. The seeded admin carries `password_change_required`, so the next screen is
    **Update Password**. Click **Skip for now**. Skipping is the point: changing
@@ -369,31 +370,31 @@ have to be sought out:
 - **Menu-only** — a control that exists only after its trigger is opened
   (**Open menu**, **Flow actions**, **Templates and resources**). Open the
   trigger, snapshot again, then act: uids from the previous snapshot are stale.
-- **State-gated** — controls that render only for a given status. **Finish**
+- **State-gated** — controls that render only for a given status. **结束**
   disappears once a flow is Finished or Failed; the composer shows **Stop**
   instead of **Submit** while a flow is running; every assistant row's delete
   button hides once the flow **or the selected assistant** is terminal — a
   Finished assistant hides the button on all the rows, not only its own. If you
   never saw the alternative state, you did not test the control — seed one.
 
-  On the Tier-2 stack a whole run settles in about 300 ms, which is shorter than
-  the state you are trying to look at. Bring the mock up with a per-completion
-  delay and **Stop**, the disabled composer and the working placeholder stay on
-  screen long enough to click and read:
+    On the Tier-2 stack a whole run settles in about 300 ms, which is shorter than
+    the state you are trying to look at. Bring the mock up with a per-completion
+    delay and **Stop**, the disabled composer and the working placeholder stay on
+    screen long enough to click and read:
 
-  ```bash
-  MOCK_LLM_DELAY_MS=4000 docker compose -p opsagi-e2e --env-file /dev/null \
-    -f docker-compose.yml -f docker-compose.e2e.yml up -d --force-recreate mock-llm
-  ```
+    ```bash
+    MOCK_LLM_DELAY_MS=4000 docker compose -p opsagi-e2e --env-file /dev/null \
+      -f docker-compose.yml -f docker-compose.e2e.yml up -d --force-recreate mock-llm
+    ```
 
 - **Roleless** — a `div` with `onClick` and nothing else. The message bubble's
-  **Show thinking** / **Hide thinking** and **Show details** / **Hide details**
+  **展开思考过程** / **收起思考过程** and **展开详情** / **收起详情**
   are exactly that, so the snippet above never lists them and a role-based sweep
   reports the bubble as having no controls at all. Reach them by text:
 
-  ```js
-  [...document.querySelectorAll('div.cursor-pointer')].map((el) => el.textContent.trim());
-  ```
+    ```js
+    [...document.querySelectorAll('div.cursor-pointer')].map((el) => el.textContent.trim());
+    ```
 
 A control with no accessible name is itself a finding: it is unreachable for a
 screen reader and for every spec that matches by role and name. The four roleless
@@ -417,8 +418,8 @@ service thinks of it. Three things are worth a pass of their own.
 Settings in the settings — and the version under it;
 the panel repeats the version, adds a `build` line with the revision, a channel
 badge (`preview`, `stable` or `nightly` — the server cannot answer `disabled`), the
-verdict with its own tone, the facts as pairs (`Installed`, `Available` when an
-update is offered, `Checked`), and the release links. The `build` line is
+verdict with its own tone, the facts as pairs (`已安装`, `可用` when an
+update is offered, `已检查`), and the release links. The `build` line is
 unconditional: when the pipeline stamped no git revision, the server answers with
 the sha256 prefix of the running binary instead, so an empty build line is a defect,
 not a state.
@@ -471,16 +472,16 @@ without a reachable embedder — the mutation answers "embedding provider is not
 available" and nothing is written. On a stack without those, walk the read,
 update and delete halves and say plainly which creates you could not exercise.
 
-| entity             | create                                                               | read                         | update                                                               | delete                                  |
-| ------------------ | -------------------------------------------------------------------- | ---------------------------- | -------------------------------------------------------------------- | --------------------------------------- |
-| flow               | composer on `/flows/new`, both **Automation** and **Assistant** tabs | row in the list, detail page | inline rename (row menu and breadcrumb), favorite toggle, **Finish** | row menu → dialog, header menu → dialog |
-| assistant          | first message with no assistant selected                             | picker popover               | follow-up message, **Stop** while running                            | trash in the picker row → dialog        |
-| flow template      | `/templates/new`                                                     | list, detail                 | **Edit** opens the detail; **Rename** edits the title in place, in the row itself | row menu → dialog                       |
-| knowledge document | `/knowledges/new`                                                    | list, detail                 | edit, rename                                                         | row menu → dialog                       |
-| resource           | upload, create folder                                                | file manager list            | rename, move, copy                                                   | delete, bulk delete                     |
-| provider           | create by type, clone                                                | settings list, detail        | edit fields, per-agent **Test**                                      | delete → dialog                         |
-| prompt             | —                                                                    | list, detail                 | edit, **Reset System**, **Reset All**                                | —                                       |
-| API token          | inline create row                                                    | list                         | rename, revoke/activate                                              | row menu → dialog                       |
+| entity             | create                                                      | read                         | update                                                                            | delete                                  |
+| ------------------ | ----------------------------------------------------------- | ---------------------------- | --------------------------------------------------------------------------------- | --------------------------------------- |
+| flow               | composer on `/flows/new`, both **自动化** and **助手** tabs | row in the list, detail page | inline rename (row menu and breadcrumb), favorite toggle, **结束**                | row menu → dialog, header menu → dialog |
+| assistant          | first message with no assistant selected                    | picker popover               | follow-up message, **Stop** while running                                         | trash in the picker row → dialog        |
+| flow template      | `/templates/new`                                            | list, detail                 | **编辑** opens the detail; **重命名** edits the title in place, in the row itself | row menu → dialog                       |
+| knowledge document | `/knowledges/new`                                           | list, detail                 | edit, rename                                                                      | row menu → dialog                       |
+| resource           | upload, create folder                                       | file manager list            | rename, move, copy                                                                | delete, bulk delete                     |
+| provider           | create by type, clone                                       | settings list, detail        | edit fields, per-agent **Test**                                                   | delete → dialog                         |
+| prompt             | —                                                           | list, detail                 | edit, **Reset System**, **Reset All**                                             | —                                       |
+| API token          | inline create row                                           | list                         | rename, revoke/activate                                                           | row menu → dialog                       |
 
 Three creates are gated by something other than the obvious field, and each looks
 like a dead button until you find it: a **knowledge document** needs an **answer
@@ -493,7 +494,7 @@ answers in seconds, not milliseconds — read the list back after the mutation
 resolves, not after a fixed wait.
 
 Two rows in the table read differently from the rest. A **prompt** row does not
-open on click, only through its row menu → **Edit**; its reset entries are named
+open on click, only through its row menu → **编辑**; its reset entries are named
 **Reset System**, **Reset Human** and **Reset All**, each shown only when that
 half of the prompt actually differs from the default, so a prompt with a custom
 system text offers two of the three and never the third. A **resource** row
@@ -521,7 +522,7 @@ that ran.
 
 All three, plus sorting and page size, persist per page under a localStorage key
 shaped `table_4_<path>` — the `_4_` is the separator from `src/lib/storage-keys.ts`
-and reads as "table *for* /flows", not as a user id, so two accounts sharing a
+and reads as "table _for_ /flows", not as a user id, so two accounts sharing a
 browser share the state. That is the mechanism behind "it behaved differently
 yesterday": clear the key before claiming a table is broken, and clear it between
 cases that change columns.
@@ -553,7 +554,7 @@ type to look around leaves a form that warns about unsaved changes.
 The token is created from an inline row on the settings page, and the secret
 appears exactly once, in a dialog titled **API Token Created** with a **Copy
 Token** button. Dismiss it and the value is gone for good — there is no second
-view, and the row in the table offers only **Copy Token ID**, which is not the
+view, and the row in the table offers only **复制令牌 ID**, which is not the
 secret. Any case that needs a working token must copy it in that dialog or start
 over.
 
@@ -621,12 +622,12 @@ not exist — `role="toolbar"` is absent from the page — so a sweep run in raw
 reports the whole group missing.
 
 **The toolbar** is `role="toolbar"`, accessible name **Formatting**,
-`data-slot="markdown-editor-toolbar"`. Left to right: a **Text style** dropdown
-(Heading 1…6 and Text), then **Bold**, **Italic**, **Strikethrough**,
-**Inline code**, **Link**, then a **List** dropdown (bullet, ordered, task), a
-**Table** dropdown, then **Blockquote**, **Code block**, **Insert image**,
-**Horizontal rule**, **Clear formatting**, and pinned to the right **Undo** and
-**Redo**. Every control is icon-only: its visible text appears in a tooltip after
+`data-slot="markdown-editor-toolbar"`. Left to right: a **文本样式** dropdown
+(Heading 1…6 and Text), then **加粗**, **斜体**, **删除线**,
+**行内代码**, **Link**, then a **列表** dropdown (bullet, ordered, task), a
+**Table** dropdown, then **引用**, **代码块**, **Insert image**,
+**分割线**, **清除格式**, and pinned to the right **撤销** and
+**重做**. Every control is icon-only: its visible text appears in a tooltip after
 a hover delay, so search by accessible name, never by text.
 
 Three things about it will make a check lie.
@@ -634,7 +635,7 @@ Three things about it will make a check lie.
 - The two dropdown triggers name their current value — **Text style: Heading 2**,
   **List: Bullet list**, **List: None**. A locator captured by name goes stale as
   soon as the caret moves.
-- Below the `md` breakpoint the strip renders *under* the text area, and it
+- Below the `md` breakpoint the strip renders _under_ the text area, and it
   scrolls horizontally with the scrollbar hidden: controls exist and answer to a
   click by name while being invisible on a screenshot.
 - Inside a code block the five inline marks are disabled; inside a table cell
@@ -671,8 +672,8 @@ field as valid.
 
 Two routes mount it: `/resources`, and a flow's **Files** tab. It is
 `role="tree"`, accessible name **File tree**; rows are `role="treeitem"` carrying
-`data-path`. On a flow the rows sit under three synthetic groups — **Uploads**,
-**Resources**, **Container** — which are not themselves selectable.
+`data-path`. On a flow the rows sit under three synthetic groups — **上传**,
+**资源**, **容器** — which are not themselves selectable.
 
 **It has a keyboard model, and the document never said so.** One Tab lands on the
 active row; Arrow Up/Down move between visible rows without wrapping, Home/End
@@ -683,20 +684,20 @@ select-all checkbox or a sort header.
 
 **Selection is not Finder's.** A plain click replaces the selection with the row
 — and a directory brings its whole subtree, collapsed or not. Cmd/Ctrl+click
-toggles a row, a directory all-or-nothing. Shift+click is *additive* over the
+toggles a row, a directory all-or-nothing. Shift+click is _additive_ over the
 visible range, deliberately unlike Finder: a check asserting that a range click
 replaces the selection is asserting the wrong contract.
 
 **The header row** carries a three-state **Select all** checkbox
 (`data-state="indeterminate"` in the middle state) that is nonetheless a two-way
 toggle: clicking it while indeterminate selects everything, and it only clears
-when everything was already selected. Its universe is the *visible* tree, so with
+when everything was already selected. Its universe is the _visible_ tree, so with
 a search active it selects what the filter left. Beside it sits **Expand all** /
 **Collapse all**, whose accessible name flips to name the next action — and which
 operates on the full tree, expanding directories the filter is hiding.
 
-**Sorting is three-position** — ascending, descending, cleared — on **Name**,
-**Size** and **Modified**. Two traps: the accessible name states the *next*
+**Sorting is three-position** — ascending, descending, cleared — on **名称**,
+**大小** and **修改时间**. Two traps: the accessible name states the _next_
 action (**Sort by name (ascending)** → **… (descending)** → **Clear sorting on
 name**), so a locator captured by name is stale after one click; and the arrow
 glyph is inverted from intuition, ascending drawing a down arrow. Judge the order
@@ -707,17 +708,17 @@ returns to insertion order.
 ellipsis button named **Row actions** appears — it is `opacity-0` until hover,
 so it is invisible to a screenshot and immediately available to a query by name.
 Right-clicking the row opens the same items as a context menu. On `/resources` a
-directory row has seven items (**Download**, **Copy path**, **New folder**,
-**Upload files**, **Rename or move**, **Copy to…**, **Delete**) and a file row
+directory row has seven items (**下载**, **复制路径**, **新建目录**,
+**Upload files**, **重命名或移动**, **复制到…**, **删除**) and a file row
 five; right-clicking the empty padding under the last row opens a two-item menu
 targeting the library root.
 
 **The bulk bar** appears once anything is ticked: `<N> selected · <size>` on the
-left, then **Download**, **Move to…**, **Delete** with **Copy to…** and **Copy
-paths** under **More actions** — on a flow's Files tab, **Save as resources**
-instead. Two things to know. The N counts *affected* rows including descendants,
+left, then **下载**, **移动到…**, **删除** with **复制到…** and **Copy
+paths** under **More actions** — on a flow's Files tab, **保存为资源**
+instead. Two things to know. The N counts _affected_ rows including descendants,
 so ticking one folder of three files reads "4 selected". And below the `sm`
-breakpoint the buttons keep only their icons, so a text query for **Download**
+breakpoint the buttons keep only their icons, so a text query for **下载**
 fails while the button is right there.
 
 **Column settings** on `/resources` toggles the Size and Modified columns and the
@@ -766,8 +767,8 @@ Beside it sits **Available variables**: a card at 1280px and up, a popover behin
 a button below that, and nothing at all when the active tab declares no variables
 — the System and Human tabs have different variable sets, so the panel appearing
 and disappearing as you switch tabs is correct. Two numbers there are easy to
-swap. The badge in the heading counts variables *declared* for the tab; the `×N`
-on a chip counts *uses* in the text, per `{{ … }}` block rather than per name, so
+swap. The badge in the heading counts variables _declared_ for the tab; the `×N`
+on a chip counts _uses_ in the text, per `{{ … }}` block rather than per name, so
 `{{.Foo}}{{.Foo}}` counts two and `{{ .Foo .Foo }}` counts one. A chip's
 accessible name changes with that count: unused, it offers to insert at the
 cursor; used, it offers to go to the next occurrence.
@@ -811,7 +812,7 @@ This is where most of the surface lives, and where a shallow pass is worst.
 **Flow actions** menu (rename, finish, delete), the **Report** menu, and the
 previous/next navigation between flows.
 
-**Both tab strips** — `Automation`, `Assistant`, `Dashboard` on the left at wide
+**Both tab strips** — `自动化`, `助手`, `仪表盘` on the left at wide
 viewports; `Terminal`, `Tasks`, `Agents`, `Searches`, `Vector Store`, `Files`,
 `Screenshots` on the right. Below 1280 px they collapse into one strip of ten;
 check both layouts. The two strips are two panes side by side, both mounted at
@@ -889,11 +890,11 @@ A pass needs both modes and the seams between them, and one run of each is not
 enough — the interesting failures live in the mixes. Six starts cover it, and
 they can overlap:
 
-1. **Automation only** — the ordinary path: composer on `/flows/new`, Automation
+1. **仅自动化** — the ordinary path: composer on `/flows/new`, Automation
    tab, a provider already selected.
 2. **A second automation, started while the first runs** — this is what makes
    cross-flow leakage visible at all.
-3. **Assistant only** — note that this start does not call `createFlow`; the
+3. **仅助手** — note that this start does not call `createFlow`; the
    composer calls `createAssistant` and the flow appears as a side effect.
 4. **An assistant inside a running automation flow** — switch to the Assistant tab
    on the flow you just started and send a message there.
@@ -970,14 +971,14 @@ watch the open page react without a reload. They are opened by nested providers,
 not by the route, so a page holds its own plus everything above it — which is why
 the same event has to keep arriving on pages that look unrelated to it.
 
-| held by                                                 | subscriptions                                                                                                                                                                                                                                                                                |
-| ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| held by                                                                                                                    | subscriptions                                                                                                                                                                                                                                                                                |
+| -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | the app shell — every authenticated route **except** `/flows/:flowId/report`, which is protected but mounts its own layout | `settingsUserUpdated`, `flowTemplateCreated/Updated/Deleted`, `resourceAdded/Updated/Deleted`, `providerCreated/Updated/Deleted`                                                                                                                                                             |
-| the flows layout — `/flows`, `/flows/new`, `/flows/:id` | `flowCreated`, `flowDeleted`, `flowUpdated`                                                                                                                                                                                                                                                  |
-| `/flows/:id` itself                                     | `flowUpdated`, `taskCreated`, `taskUpdated`, `messageLogAdded`, `messageLogUpdated`, `agentLogAdded`, `terminalLogAdded`, `searchLogAdded`, `vectorStoreLogAdded`, `screenshotAdded`, `assistantCreated`, `assistantUpdated`, `assistantDeleted`, `assistantLogAdded`, `assistantLogUpdated` |
-| the flow's **Files** panel, while it is mounted         | `flowFileAdded`, `flowFileUpdated`, `flowFileDeleted`                                                                                                                                                                                                                                        |
-| `/knowledges*`                                          | `knowledgeDocumentCreated/Updated/Deleted`                                                                                                                                                                                                                                                   |
-| `/settings/api-tokens`                                  | `apiTokenCreated/Updated/Deleted`                                                                                                                                                                                                                                                            |
+| the flows layout — `/flows`, `/flows/new`, `/flows/:id`                                                                    | `flowCreated`, `flowDeleted`, `flowUpdated`                                                                                                                                                                                                                                                  |
+| `/flows/:id` itself                                                                                                        | `flowUpdated`, `taskCreated`, `taskUpdated`, `messageLogAdded`, `messageLogUpdated`, `agentLogAdded`, `terminalLogAdded`, `searchLogAdded`, `vectorStoreLogAdded`, `screenshotAdded`, `assistantCreated`, `assistantUpdated`, `assistantDeleted`, `assistantLogAdded`, `assistantLogUpdated` |
+| the flow's **Files** panel, while it is mounted                                                                            | `flowFileAdded`, `flowFileUpdated`, `flowFileDeleted`                                                                                                                                                                                                                                        |
+| `/knowledges*`                                                                                                             | `knowledgeDocumentCreated/Updated/Deleted`                                                                                                                                                                                                                                                   |
+| `/settings/api-tokens`                                                                                                     | `apiTokenCreated/Updated/Deleted`                                                                                                                                                                                                                                                            |
 
 So the flow page holds twenty-eight, thirty-one with the Files panel open, and
 `flowUpdated` is genuinely open twice — the layout's copy refreshes the list behind
@@ -995,7 +996,7 @@ conditional; these are the categories, with the ones most often missed:
   (**Toggle favorite**, **Open menu**) are `opacity-0` until their row or group
   is hovered. They are in the accessibility tree the whole time: click them by
   name, do not chase the hover.
-- **Menu-only** — **Rename**, **Finish**, **Delete** on a flow live inside
+- **Menu-only** — **重命名**, **结束**, **删除** on a flow live inside
   **Open menu** (list) and **Flow actions** (detail); the report's four exports
   live inside **Report**; the composer's attachments live inside **Templates and
   resources**. Open the trigger, snapshot again, then act — uids from the
@@ -1004,7 +1005,7 @@ conditional; these are the categories, with the ones most often missed:
   (flows, templates, knowledges, providers, prompts, API tokens), and the file
   manager adds one on its rows and one on its empty area. Same writes, different
   path: test both.
-- **State-gated** — **Finish** exists only while the flow is neither Failed nor
+- **State-gated** — **结束** exists only while the flow is neither Failed nor
   Finished; the composer shows **Stop** instead of **Submit** exactly while it
   is Created or Running; the assistant row's delete hides once the flow or the
   selected assistant is terminal; **Report** appears only after the flow has at
@@ -1036,15 +1037,15 @@ navigation is gone but the split-pane layouts are still off — a case written f
 "mobile" never visits it.
 
 **Under 768** the sidebar is a drawer: a **Toggle Sidebar** button opens a dialog
-titled **Sidebar** with the links **Dashboard**, **Flows**, **Templates**,
-**Resources**, **Knowledges**, **Settings**. Its own close X is hidden by CSS, so
+titled **Sidebar** with the links **仪表盘**, **流程**, **模板**,
+**资源**, **Knowledges**, **设置**. Its own close X is hidden by CSS, so
 a role sweep finds no close control — Escape and the overlay are the way out.
-Tapping any link except **Settings** leaves the drawer open on top of the new
+Tapping any link except **设置** leaves the drawer open on top of the new
 page, and nothing resets it when the window widens: widen past 768, come back,
 and the drawer is open without a click.
 
 Also under 768, header actions keep their icons and drop their text. A check by
-visible text reports **Save** as missing while a check by accessible name finds
+visible text reports **保存** as missing while a check by accessible name finds
 it — the label is `display: none`, not absent. Detail-page prev/next leaves the
 header and reappears inside the **…** menu as a row that opens a list sheet.
 
@@ -1059,7 +1060,7 @@ strip on the sidebar's edge — so a strict by-name query throws there and passe
 on `/settings/*`, where the rail does not exist.
 
 **The flow tabs change shape with the window.** Below 1280 the three central
-tabs — **Automation**, **Assistant**, **Dashboard** — join the single strip and
+tabs — **自动化**, **助手**, **仪表盘** — join the single strip and
 the active one is written to `?tab=`. At 1280 and above they are a separate
 pane, and a deep link like `?tab=terminal` lands on a different tab than it does
 narrow. Test a deep link at the width you claim to have tested.
@@ -1189,7 +1190,7 @@ frame carrying the defect. The fake fails the exact call by ordinal
 (`failContentOn: 1`) and reproduces it every run, which is why the assistant
 worker's failure paths are pinned in `aslog_persist_test.go` and not on a stand.
 
-What the stand *is* good for on that path is the healthy half: watching the
+What the stand _is_ good for on that path is the healthy half: watching the
 periodic write land. Poll the stored row while a long answer streams and it grows
 in steps a few seconds apart — 1659, 2634, 3274, 4134 characters on one run —
 which is the ticker doing its job, visible nowhere else.
