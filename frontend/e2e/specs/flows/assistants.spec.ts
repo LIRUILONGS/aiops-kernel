@@ -243,7 +243,7 @@ test.describe('flow assistants', { tag: '@flows' }, () => {
 
             const request = operationRequest(page, 'deleteAssistant');
 
-            await dialog.getByRole('button', { name: 'Delete' }).click();
+            await dialog.getByRole('button', { name: '删除' }).click();
 
             expect((await request).postDataJSON().variables).toEqual({
                 assistantId: RUNNING_ASSISTANT.id,

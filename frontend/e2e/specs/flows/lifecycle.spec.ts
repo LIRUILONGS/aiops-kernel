@@ -54,7 +54,7 @@ test.describe('flow lifecycle', { tag: '@flows' }, () => {
         test('renames from the actions menu and the title persists', async ({ page, pageErrorLog }) => {
             await openFlowA(page);
             await page.getByRole('button', { name: 'Flow actions' }).click();
-            await page.getByRole('menuitem', { name: 'Rename' }).click();
+            await page.getByRole('menuitem', { name: '重命名' }).click();
             await page.getByPlaceholder('Flow title').fill('E2E Alpha Renamed');
             await page.getByPlaceholder('Flow title').press('Enter');
 
@@ -98,7 +98,7 @@ test.describe('flow lifecycle', { tag: '@flows' }, () => {
 
             // Anchor on an item that stays: absence alone also holds while the
             // reopened menu is still rendering.
-            await expect(page.getByRole('menuitem', { name: 'Rename' })).toBeVisible();
+            await expect(page.getByRole('menuitem', { name: '重命名' })).toBeVisible();
             await expect(page.getByRole('menuitem', { name: 'Finish' })).toBeHidden();
             expectCleanPage(pageErrorLog);
         });
@@ -257,7 +257,7 @@ test.describe('flow lifecycle', { tag: '@flows' }, () => {
         test('deletes via the destructive confirm and drops off the list', async ({ page, pageErrorLog }) => {
             await openFlowA(page);
             await page.getByRole('button', { name: 'Flow actions' }).click();
-            await page.getByRole('menuitem', { name: 'Delete' }).click();
+            await page.getByRole('menuitem', { name: '删除' }).click();
 
             const dialog = page.getByRole('dialog');
 
@@ -265,8 +265,8 @@ test.describe('flow lifecycle', { tag: '@flows' }, () => {
             // Anchored on the variant's own fill: every shadcn Button carries
             // `border-destructive`/`ring-destructive` in its base for the invalid
             // state, so a bare /destructive/ matches whatever variant is set.
-            await expect(dialog.getByRole('button', { name: 'Delete' })).toHaveClass(/(^|\s)bg-destructive(\s|$)/);
-            await dialog.getByRole('button', { name: 'Delete' }).click();
+            await expect(dialog.getByRole('button', { name: '删除' })).toHaveClass(/(^|\s)bg-destructive(\s|$)/);
+            await dialog.getByRole('button', { name: '删除' }).click();
 
             await expect(page.getByText('会话已删除')).toBeVisible();
             await expect(page).toHaveURL(/\/flows$/);

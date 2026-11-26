@@ -103,7 +103,7 @@ test.describe('settings providers write path', { tag: '@coverage' }, () => {
                 candidate.method() === 'POST' && candidate.postDataJSON()?.operationName === 'createProvider',
         );
 
-        await page.getByRole('button', { exact: true, name: 'Create' }).click();
+        await page.getByRole('button', { exact: true, name: '创建' }).click();
 
         const { variables } = (await request).postDataJSON();
 
@@ -167,7 +167,7 @@ test.describe('settings provider edit paths', { tag: '@coverage' }, () => {
 
             const request = mutationRequest(page, 'updateProvider');
 
-            await page.getByRole('button', { exact: true, name: 'Save' }).click();
+            await page.getByRole('button', { exact: true, name: '保存' }).click();
 
             const { variables } = (await request).postDataJSON();
 
@@ -196,7 +196,7 @@ test.describe('settings provider edit paths', { tag: '@coverage' }, () => {
         test('Delete confirms by name, sends the id, and returns to the list', async ({ page, pageErrorLog }) => {
             await openProvider(page);
             await page.getByRole('button', { name: 'Provider actions' }).click();
-            await page.getByRole('menuitem', { name: 'Delete' }).click();
+            await page.getByRole('menuitem', { name: '删除' }).click();
 
             const dialog = page.getByRole('dialog');
 
@@ -205,7 +205,7 @@ test.describe('settings provider edit paths', { tag: '@coverage' }, () => {
 
             const request = mutationRequest(page, 'deleteProvider');
 
-            await dialog.getByRole('button', { name: 'Delete' }).click();
+            await dialog.getByRole('button', { name: '删除' }).click();
 
             expect((await request).postDataJSON().variables).toEqual({ providerId: SEEDED_PROVIDER.id });
             await expect(page).toHaveURL(/\/settings\/providers$/);
@@ -244,11 +244,11 @@ test.describe('settings provider edit paths', { tag: '@coverage' }, () => {
             await expect(row).toBeVisible();
             await row.hover();
             await row.getByRole('button', { name: 'Open menu' }).click();
-            await page.getByRole('menuitem', { name: 'Delete' }).click();
+            await page.getByRole('menuitem', { name: '删除' }).click();
 
             const request = mutationRequest(page, 'deleteProvider');
 
-            await page.getByRole('dialog').getByRole('button', { name: 'Delete' }).click();
+            await page.getByRole('dialog').getByRole('button', { name: '删除' }).click();
 
             expect((await request).postDataJSON().variables).toEqual({ providerId: OTHER_PROVIDER.id });
             // The row goes only because the refetch answers without it, and the sibling proves the

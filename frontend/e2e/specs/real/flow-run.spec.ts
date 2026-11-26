@@ -46,7 +46,7 @@ test.describe('real backend flow run', { tag: '@real' }, () => {
         await expect(
             page
                 .getByRole('row', { name: new RegExp(`${flowId}.*Say Hello Flow`) })
-                .getByText('Waiting', { exact: true }),
+                .getByText('等待中', { exact: true }),
         ).toBeVisible({ timeout: 60_000 });
         expect(pageErrors, 'uncaught errors during the flow run').toEqual([]);
     });

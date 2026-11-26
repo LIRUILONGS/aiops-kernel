@@ -117,7 +117,7 @@ test.describe('settings prompt detail', { tag: '@coverage' }, () => {
             (candidate) => candidate.method() === 'POST' && candidate.postDataJSON()?.operationName === 'createPrompt',
         );
 
-        await page.getByRole('button', { exact: true, name: 'Save' }).click();
+        await page.getByRole('button', { exact: true, name: '保存' }).click();
 
         const { variables } = (await request).postDataJSON();
 
@@ -231,7 +231,7 @@ test.describe('settings prompt detail, already overridden', { tag: '@coverage' }
                     candidate.method() === 'POST' && candidate.postDataJSON()?.operationName === 'updatePrompt',
             );
 
-            await page.getByRole('button', { exact: true, name: 'Save' }).click();
+            await page.getByRole('button', { exact: true, name: '保存' }).click();
 
             const { variables } = (await request).postDataJSON();
 

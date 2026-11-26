@@ -86,7 +86,7 @@ test.describe('resources', { tag: '@coverage' }, () => {
             await expect(dialog.getByRole('heading', { name: 'Create directory' })).toBeVisible();
             await expect(dialog.getByLabel('Path')).toHaveValue('new-folder');
             await dialog.getByLabel('Path').fill(TYPED_PATH);
-            await dialog.getByRole('button', { name: 'Create' }).click();
+            await dialog.getByRole('button', { name: '创建' }).click();
 
             await expect(page.getByText('目录已创建')).toBeVisible();
             await expect(page.getByRole('treeitem', { name: new RegExp(TYPED_PATH) })).toBeVisible();
@@ -201,8 +201,8 @@ test.describe('resources', { tag: '@coverage' }, () => {
                     candidate.method() === 'DELETE' && new URL(candidate.url()).pathname === '/api/v1/resources/',
             );
 
-            await page.getByRole('button', { name: 'Delete' }).click();
-            await page.getByRole('dialog').getByRole('button', { exact: true, name: 'Delete' }).click();
+            await page.getByRole('button', { name: '删除' }).click();
+            await page.getByRole('dialog').getByRole('button', { exact: true, name: '删除' }).click();
 
             const sent = new URL((await request).url()).searchParams.getAll('paths[]');
 
@@ -353,7 +353,7 @@ test.describe('resources', { tag: '@coverage' }, () => {
             await expect(page.getByRole('dialog', { name: '替换已有条目？' })).toBeVisible();
             expect(copyRequests, 'nothing is sent while the guard is open').toBe(0);
 
-            await page.getByRole('button', { name: 'Cancel' }).click();
+            await page.getByRole('button', { name: '取消' }).click();
             expect(copyRequests, 'cancelling the guard sends nothing at all').toBe(0);
         });
 
@@ -366,8 +366,8 @@ test.describe('resources', { tag: '@coverage' }, () => {
             );
 
             await openNestedRowActions(page);
-            await page.getByRole('menuitem', { name: 'Delete' }).click();
-            await page.getByRole('dialog').getByRole('button', { exact: true, name: 'Delete' }).click();
+            await page.getByRole('menuitem', { name: '删除' }).click();
+            await page.getByRole('dialog').getByRole('button', { exact: true, name: '删除' }).click();
 
             expect(new URL((await request).url()).searchParams.getAll('paths[]')).toEqual([NESTED_RESOURCE.path]);
             expectCleanPage(pageErrorLog);

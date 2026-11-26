@@ -154,7 +154,7 @@ test.describe('api tokens crud', { tag: '@crud' }, () => {
 
             await row.hover();
             await row.getByRole('button', { name: 'Open menu' }).click();
-            await page.getByRole('menuitem', { name: 'Edit' }).click();
+            await page.getByRole('menuitem', { name: '编辑' }).click();
 
             await page.getByPlaceholder('Token name (optional)').fill('E2E renamed token');
             await page.getByRole('combobox', { name: 'Token status' }).click();
@@ -192,12 +192,12 @@ test.describe('api tokens crud', { tag: '@crud' }, () => {
 
             await doomedRow.hover();
             await doomedRow.getByRole('button', { name: 'Open menu' }).click();
-            await page.getByRole('menuitem', { name: 'Delete' }).click();
+            await page.getByRole('menuitem', { name: '删除' }).click();
 
             const dialog = page.getByRole('dialog');
 
             await expect(dialog.getByText('Delete token')).toBeVisible();
-            await dialog.getByRole('button', { name: 'Delete' }).click();
+            await dialog.getByRole('button', { name: '删除' }).click();
 
             await expect(doomedRow).toBeHidden();
             await expect(page.getByRole('row', { name: /E2E seed token/ })).toBeVisible();

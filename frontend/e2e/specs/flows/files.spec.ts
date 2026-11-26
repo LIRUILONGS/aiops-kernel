@@ -150,7 +150,7 @@ test.describe('flow files', { tag: '@flows' }, () => {
             const row = page.getByRole('treeitem', { name: new RegExp(TABS_FILE_NAME) });
 
             await row.getByRole('button', { name: 'Row actions' }).click();
-            await page.getByRole('menuitem', { name: 'Delete' }).click();
+            await page.getByRole('menuitem', { name: '删除' }).click();
 
             const dialog = page.getByRole('dialog');
 
@@ -161,7 +161,7 @@ test.describe('flow files', { tag: '@flows' }, () => {
                     candidate.method() === 'DELETE' && new URL(candidate.url()).pathname === '/api/v1/flows/5/files/',
             );
 
-            await dialog.getByRole('button', { exact: true, name: 'Delete' }).click();
+            await dialog.getByRole('button', { exact: true, name: '删除' }).click();
 
             expect(new URL((await request).url()).searchParams.getAll('paths[]')).toEqual([TABS_FILE_PATH]);
 
@@ -197,8 +197,8 @@ test.describe('flow files', { tag: '@flows' }, () => {
                     candidate.method() === 'DELETE' && new URL(candidate.url()).pathname === '/api/v1/flows/5/files/',
             );
 
-            await page.getByRole('button', { exact: true, name: 'Delete' }).click();
-            await page.getByRole('dialog').getByRole('button', { exact: true, name: 'Delete' }).click();
+            await page.getByRole('button', { exact: true, name: '删除' }).click();
+            await page.getByRole('dialog').getByRole('button', { exact: true, name: '删除' }).click();
 
             expect(new URL((await request).url()).searchParams.getAll('paths[]')).toEqual([
                 TABS_FILE_PATH,
@@ -237,7 +237,7 @@ test.describe('flow files', { tag: '@flows' }, () => {
 
             const request = promoteRequest(page);
 
-            await dialog.getByRole('button', { exact: true, name: 'Save' }).click();
+            await dialog.getByRole('button', { exact: true, name: '保存' }).click();
 
             expect((await request).postDataJSON()).toMatchObject({
                 destination: PROMOTE_PATH,
@@ -300,7 +300,7 @@ test.describe('flow files', { tag: '@flows' }, () => {
             });
 
             await dialog.getByLabel('Destination path').fill(PROMOTE_PATH);
-            await dialog.getByRole('button', { exact: true, name: 'Save' }).click();
+            await dialog.getByRole('button', { exact: true, name: '保存' }).click();
 
             await expect(page.getByRole('heading', { name: '替换已有条目？' })).toBeVisible();
             expect(sent, 'no write before the answer').toBe(0);

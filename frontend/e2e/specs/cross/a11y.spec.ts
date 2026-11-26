@@ -101,7 +101,7 @@ test.describe('dialog keyboard contract', { tag: '@cross' }, () => {
         await page.goto('/resources');
         await page.getByRole('checkbox', { name: `Select ${FILE_RESOURCE.name}` }).click();
 
-        const opener = page.getByRole('button', { exact: true, name: 'Delete' });
+        const opener = page.getByRole('button', { exact: true, name: '删除' });
 
         await opener.click();
         await expect(page.getByRole('dialog')).toBeVisible();

@@ -36,7 +36,7 @@ test.describe('knowledges crud', { tag: '@crud' }, () => {
             await openNewKnowledgeForm(page);
             await page.getByRole('textbox', { name: '问题' }).fill('What is the E2E answer?');
             await typeIntoEditor(page, 'Content', 'E2E knowledge content');
-            await page.getByRole('button', { name: 'Create' }).click();
+            await page.getByRole('button', { name: '创建' }).click();
 
             await expect(page.getByText('Answer type is required')).toBeVisible();
             await expect(page).toHaveURL(/\/knowledges\/new$/);
@@ -76,7 +76,7 @@ test.describe('knowledges crud', { tag: '@crud' }, () => {
             await typeIntoEditor(page, 'Content', 'E2E knowledge content');
             await page.getByRole('combobox', { name: 'Answer type' }).click();
             await page.getByRole('option', { name: 'other' }).click();
-            await page.getByRole('button', { name: 'Create' }).click();
+            await page.getByRole('button', { name: '创建' }).click();
 
             await expect(page).toHaveURL(/\/knowledges\/301$/);
             await expect(page.getByRole('textbox', { name: '问题' })).toHaveValue('What is the E2E answer?');
@@ -173,7 +173,7 @@ test.describe('knowledges crud', { tag: '@crud' }, () => {
 
             await row.hover();
             await row.getByRole('button', { name: 'Open menu' }).click();
-            await page.getByRole('menuitem', { name: 'Rename' }).click();
+            await page.getByRole('menuitem', { name: '重命名' }).click();
 
             const editor = page.getByRole('row').getByRole('textbox');
 
@@ -219,12 +219,12 @@ test.describe('knowledges crud', { tag: '@crud' }, () => {
 
             await row.hover();
             await row.getByRole('button', { name: 'Open menu' }).click();
-            await page.getByRole('menuitem', { name: 'Delete' }).click();
+            await page.getByRole('menuitem', { name: '删除' }).click();
 
             const dialog = page.getByRole('dialog');
 
             await expect(dialog.getByRole('heading', { name: 'Delete knowledge document' })).toBeVisible();
-            await dialog.getByRole('button', { name: 'Delete' }).click();
+            await dialog.getByRole('button', { name: '删除' }).click();
 
             await expect(page.getByRole('row', { name: /E2E Seed Question/ })).toBeHidden();
             await expect(page.getByText('No knowledge documents yet')).toBeVisible();
@@ -312,7 +312,7 @@ test.describe('knowledges crud', { tag: '@crud' }, () => {
                     candidate.postDataJSON()?.operationName === 'updateKnowledgeDocument',
             );
 
-            await page.getByRole('button', { exact: true, name: 'Save' }).click();
+            await page.getByRole('button', { exact: true, name: '保存' }).click();
 
             const { variables } = (await request).postDataJSON();
 
