@@ -2,8 +2,9 @@ import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
 import { memo } from 'react';
 
 import { cn } from '@/lib/utils';
-import { formatCost, formatName, formatTokenCount } from '@/lib/utils/format';
+import { formatCost, formatTokenCount } from '@/lib/utils/format';
 
+import { formatAgentType } from '../agents/agent-labels';
 import FlowAgentIcon from '../agents/flow-agent-icon';
 import { formatRelativeAge, type RoleGraphNode } from './role-graph';
 
@@ -32,15 +33,15 @@ function RoleNode({ data, selected }: NodeProps<RoleFlowNode>) {
                     tooltip=""
                     type={graphNode.role}
                 />
-                <span className="truncate text-xs font-medium">{formatName(graphNode.role)}</span>
+                <span className="truncate text-xs font-medium">{formatAgentType(graphNode.role)}</span>
                 {graphNode.isActive && (
                     <span className="ml-auto size-1.5 shrink-0 animate-pulse rounded-full bg-emerald-500" />
                 )}
             </div>
             <div className="text-muted-foreground flex items-center gap-2 font-mono text-[10px]">
-                <span>{graphNode.chains} ch</span>
-                <span>{graphNode.logs} logs</span>
-                <span>{formatTokenCount(graphNode.tokens)} tok</span>
+                <span>{graphNode.chains} 链</span>
+                <span>{graphNode.logs} 日志</span>
+                <span>{formatTokenCount(graphNode.tokens)} token</span>
             </div>
             <div className="text-muted-foreground flex items-center gap-2 font-mono text-[10px]">
                 {graphNode.cost > 0 && <span>{formatCost(graphNode.cost)}</span>}

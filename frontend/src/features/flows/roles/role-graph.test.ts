@@ -108,10 +108,10 @@ describe('filterRoleLogs', () => {
 describe('formatRelativeAge', () => {
     it('answers a short age for every distance', () => {
         expect(formatRelativeAge(null, NOW)).toBe('—');
-        expect(formatRelativeAge('2026-11-13T09:59:58.000Z', NOW)).toBe('just now');
-        expect(formatRelativeAge('2026-11-13T09:59:30.000Z', NOW)).toBe('30s ago');
-        expect(formatRelativeAge('2026-11-13T09:58:00.000Z', NOW)).toBe('2m ago');
-        expect(formatRelativeAge('2026-11-13T08:00:00.000Z', NOW)).toBe('2h ago');
-        expect(formatRelativeAge('2026-11-10T10:00:00.000Z', NOW)).toBe('3d ago');
+        expect(formatRelativeAge('2026-11-13T09:59:58.000Z', NOW)).toBe('刚刚');
+        expect(formatRelativeAge('2026-11-13T09:59:30.000Z', NOW)).toBe('30 秒前');
+        expect(formatRelativeAge('2026-11-13T09:58:00.000Z', NOW)).toBe('2 分钟前');
+        expect(formatRelativeAge('2026-11-13T08:00:00.000Z', NOW)).toBe('2 小时前');
+        expect(formatRelativeAge('2026-11-10T10:00:00.000Z', NOW)).toBe('3 天前');
     });
 });

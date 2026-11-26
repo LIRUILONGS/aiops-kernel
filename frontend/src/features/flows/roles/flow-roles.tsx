@@ -9,9 +9,9 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { AgentType, FlowRoleActivityDocument, StatusType } from '@/graphql/types';
 import { cn } from '@/lib/utils';
-import { formatName } from '@/lib/utils/format';
 import { useFlow } from '@/providers/flow-provider';
 
+import { formatAgentType } from '../agents/agent-labels';
 import FlowAgent from '../agents/flow-agent';
 import FlowAgentIcon from '../agents/flow-agent-icon';
 import { buildRoleGraph, filterRoleLogs } from './role-graph';
@@ -53,7 +53,7 @@ function FlowRoles() {
         <div className="flex size-full min-h-0 flex-col gap-3">
             <div className="text-muted-foreground flex items-center gap-2 text-xs">
                 <ListFilter className="size-3.5" />
-                <span>Click a role to read the log it wrote or answered.</span>
+                <span>点一个角色，查看它写下或应答的日志。</span>
             </div>
 
             <RoleTopology
@@ -74,7 +74,7 @@ function FlowRoles() {
                         onClick={() => setSelected(null)}
                         type="button"
                     >
-                        All roles
+                        全部角色
                         <span className="text-muted-foreground ml-1.5 font-mono text-[10px]">{logs.length}</span>
                     </button>
                     {activeRoles.map((node) => (
@@ -94,7 +94,7 @@ function FlowRoles() {
                                 tooltip=""
                                 type={node.role}
                             />
-                            {formatName(node.role)}
+                            {formatAgentType(node.role)}
                             <span className="font-mono text-[10px]">{node.logs}</span>
                         </button>
                     ))}
@@ -102,11 +102,9 @@ function FlowRoles() {
                 <ScrollBar orientation="horizontal" />
             </ScrollArea>
 
-            {error && <p className="text-destructive text-xs">Failed to read the role activity: {error.message}</p>}
+            {error && <p className="text-destructive text-xs">读取角色活动失败：{error.message}</p>}
 
-            {!graph.hasActivity && !error && (
-                <p className="text-muted-foreground text-xs">No role has run in this flow yet.</p>
-            )}
+            {!graph.hasActivity && !error && <p className="text-muted-foreground text-xs">这条会话还没有角色跑过。</p>}
 
             {roleLogs.length > 0 ? (
                 <ScrollArea className="min-h-0 flex-1 pr-3">
@@ -125,11 +123,13 @@ function FlowRoles() {
                         <EmptyMedia variant="icon">
                             <ListFilter />
                         </EmptyMedia>
-                        <EmptyTitle>{selected ? `No log for ${formatName(selected)}` : 'No role log yet'}</EmptyTitle>
+                        <EmptyTitle>
+                            {selected ? `${formatAgentType(selected)}还没有日志` : '还没有角色日志'}
+                        </EmptyTitle>
                         <EmptyDescription>
                             {selected
-                                ? 'This role has not written or answered a log in this flow.'
-                                : 'A role log appears here as soon as a role answers a delegation.'}
+                                ? '这个角色在这条会话里还没有写下或应答日志。'
+                                : '有角色应答委派后，日志会出现在这里。'}
                         </EmptyDescription>
                     </EmptyHeader>
                 </Empty>

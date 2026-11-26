@@ -16,7 +16,8 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { AgentType } from '@/graphql/types';
 import { cn } from '@/lib/utils';
-import { formatName } from '@/lib/utils/format';
+
+import { formatAgentType } from './agent-labels';
 
 interface FlowAgentIconProps {
     className?: string;
@@ -51,7 +52,7 @@ function FlowAgentIcon({ className, type, tooltip = type }: FlowAgentIconProps) 
     return (
         <Tooltip>
             <TooltipTrigger asChild>{iconElement}</TooltipTrigger>
-            <TooltipContent>{formatName(tooltip)}</TooltipContent>
+            <TooltipContent>{formatAgentType(tooltip)}</TooltipContent>
         </Tooltip>
     );
 }

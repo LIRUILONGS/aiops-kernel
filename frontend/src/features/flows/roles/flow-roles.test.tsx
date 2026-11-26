@@ -108,10 +108,10 @@ describe('FlowRoles', () => {
 
         renderRoles();
 
-        expect(screen.getByRole('button', { name: /All roles/ })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /Commander/ })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /Log Analyst/ })).toBeInTheDocument();
-        expect(screen.queryByRole('button', { name: /Reporter/ })).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /全部角色/ })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /事故指挥/ })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /日志分析员/ })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /事故报告员/ })).not.toBeInTheDocument();
         expect(screen.getAllByText(/^(commander|log_analyst|generator):/)).toHaveLength(3);
     });
 
@@ -119,7 +119,7 @@ describe('FlowRoles', () => {
         queryState.current = { data: { flowRoleActivity: activity }, loading: false };
 
         renderRoles();
-        await userEvent.click(screen.getByRole('button', { name: /^Commander/ }));
+        await userEvent.click(screen.getByRole('button', { name: /^事故指挥/ }));
 
         expect(screen.getAllByText(/^(commander|log_analyst|generator):/)).toHaveLength(3);
 
@@ -129,7 +129,7 @@ describe('FlowRoles', () => {
         expect(screen.getByText('log_analyst:read the nginx log')).toBeInTheDocument();
         expect(screen.queryByText('commander:decompose the incident')).not.toBeInTheDocument();
 
-        await userEvent.click(screen.getByRole('button', { name: /All roles/ }));
+        await userEvent.click(screen.getByRole('button', { name: /全部角色/ }));
 
         expect(screen.getAllByText(/^(commander|log_analyst|generator):/)).toHaveLength(3);
     });
@@ -139,8 +139,8 @@ describe('FlowRoles', () => {
 
         renderRoles({ flowData: { agentLogs: [] } });
 
-        expect(screen.getByText('No role has run in this flow yet.')).toBeInTheDocument();
-        expect(screen.getByText('No role log yet')).toBeInTheDocument();
+        expect(screen.getByText('这条会话还没有角色跑过。')).toBeInTheDocument();
+        expect(screen.getByText('还没有角色日志')).toBeInTheDocument();
     });
 
     it('reports a failed read of the role activity', () => {
@@ -148,6 +148,6 @@ describe('FlowRoles', () => {
 
         renderRoles();
 
-        expect(screen.getByText(/Failed to read the role activity: agentlogs\.view denied/)).toBeInTheDocument();
+        expect(screen.getByText(/读取角色活动失败：agentlogs\.view denied/)).toBeInTheDocument();
     });
 });

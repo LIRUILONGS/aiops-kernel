@@ -26,8 +26,9 @@ import {
     StatusType,
 } from '@/graphql/types';
 import { cn } from '@/lib/utils';
-import { formatName } from '@/lib/utils/format';
 import { useFlow } from '@/providers/flow-provider';
+
+import { formatAgentType } from '../agents/agent-labels';
 
 const modeHints: Record<CapabilityMode, string> = {
     [CapabilityMode.Enforce]: '租约外的调用被拦下，并把拦截原因交回给模型。',
@@ -201,7 +202,7 @@ function FlowCapabilitySheet({ mode, onOpenChange, open }: FlowCapabilitySheetPr
                                         </span>
                                     </div>
                                     <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                                        <span>{formatName(request.role)}</span>
+                                        <span>{formatAgentType(request.role)}</span>
                                         {request.target && <span className="font-mono">{request.target}</span>}
                                         {request.subtaskId && <span>子任务 #{request.subtaskId}</span>}
                                     </div>
@@ -307,7 +308,7 @@ function FlowCapabilitySheet({ mode, onOpenChange, open }: FlowCapabilitySheetPr
                                                 </span>
                                             </div>
                                             <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                                                <span>{formatName(decision.role)}</span>
+                                                <span>{formatAgentType(decision.role)}</span>
                                                 {decision.target && (
                                                     <span className="font-mono">{decision.target}</span>
                                                 )}
@@ -379,7 +380,7 @@ function LeaseRow({ lease }: { lease: CapabilityLeaseFragmentFragment }) {
                 )}
                 <span className="min-w-0 flex-1 truncate">
                     <span className="font-mono">子任务 #{lease.subtaskId}</span>
-                    <span className="text-muted-foreground"> · {formatName(lease.role)}</span>
+                    <span className="text-muted-foreground"> · {formatAgentType(lease.role)}</span>
                 </span>
                 <span className="text-muted-foreground shrink-0">{formatTime(lease.createdAt)}</span>
             </button>
