@@ -39,7 +39,7 @@ test.describe('settings providers', { tag: '@coverage' }, () => {
 
         await expect(page).toHaveURL(/\/settings\/providers\/new$/);
         await expect(page.getByRole('heading', { name: 'Create a new provider' })).toBeVisible();
-        await expect(page.getByText('Type', { exact: true })).toBeVisible();
+        await expect(page.getByText('类型', { exact: true })).toBeVisible();
         await expect(page.getByRole('button', { name: 'Select provider' })).toBeVisible();
         await expect(page.getByLabel('Name', { exact: true })).toBeVisible();
 

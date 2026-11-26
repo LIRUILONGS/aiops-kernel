@@ -24,9 +24,9 @@ interface ListOption {
 }
 
 const OPTIONS: ListOption[] = [
-    { icon: List, label: 'Bullet list', value: 'bullet' },
-    { icon: ListOrdered, label: 'Ordered list', value: 'ordered' },
-    { icon: ListTodo, label: 'Task list', value: 'task' },
+    { icon: List, label: '无序列表', value: 'bullet' },
+    { icon: ListOrdered, label: '有序列表', value: 'ordered' },
+    { icon: ListTodo, label: '任务列表', value: 'task' },
 ];
 
 interface ListMenuProps {
@@ -48,7 +48,7 @@ export function ListMenu({ activeType, disabled, editor, isInTableCell }: ListMe
                 <TooltipTrigger asChild>
                     <DropdownMenuTrigger asChild>
                         <Button
-                            aria-label={`List: ${active?.label ?? '无'}`}
+                            aria-label={`列表：${active?.label ?? '无'}`}
                             className={cn('gap-0.5 px-1.5', active && 'bg-accent text-accent-foreground')}
                             data-toolbar-item=""
                             disabled={disabled}

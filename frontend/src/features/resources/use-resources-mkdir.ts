@@ -10,9 +10,9 @@ export const resourcesMkdirFormSchema = z.object({
     path: z
         .string()
         .trim()
-        .min(1, { message: 'Path cannot be empty' })
-        .refine((value) => !value.startsWith('/'), { message: 'Path must be relative (no leading "/")' })
-        .refine((value) => !value.split('/').includes('..'), { message: 'Path must not contain ".."' }),
+        .min(1, { message: '路径不能为空' })
+        .refine((value) => !value.startsWith('/'), { message: '路径必须是相对路径（不能以 "/" 开头）' })
+        .refine((value) => !value.split('/').includes('..'), { message: '路径不能包含 ".."' }),
 });
 
 export type ResourcesMkdirFormValues = z.infer<typeof resourcesMkdirFormSchema>;
@@ -36,13 +36,13 @@ export function useResourcesMkdir(): UseResourcesMkdirResult {
         try {
             await api.post<void, MkdirRequestBody>(RESOURCES_MKDIR_API_PATH, { path: path.trim() });
 
-            toast.success('Directory created', { description: `Created at /${path.trim()}` });
+            toast.success('目录已创建', { description: `Created at /${path.trim()}` });
 
             return true;
         } catch (error) {
-            const description = getApiErrorMessage(error, 'Failed to create directory');
+            const description = getApiErrorMessage(error, '创建目录失败');
 
-            toast.error('Create directory failed', { description });
+            toast.error('创建目录失败', { description });
 
             return false;
         } finally {

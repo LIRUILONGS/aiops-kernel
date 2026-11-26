@@ -56,6 +56,6 @@ describe('EmailChangeForm', () => {
         await user.type(screen.getByPlaceholderText('请输入当前密码'), 'Oldpass0!');
         await user.click(screen.getByRole('button', { name: '更新邮箱' }));
 
-        expect(await screen.findByText('Email address is already in use')).toBeInTheDocument();
+        expect(await screen.findByText('该邮箱已被使用')).toBeInTheDocument();
     });
 });

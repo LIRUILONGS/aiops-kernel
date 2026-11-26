@@ -146,8 +146,8 @@ describe('SettingsProviders list load states', () => {
             </MemoryRouter>,
         );
 
-        expect(screen.getByText(format(new Date('2025-06-15T12:00:00Z'), 'd MMM yyyy'))).toBeInTheDocument();
-        expect(screen.getByText(format(new Date('2025-06-16T12:00:00Z'), 'd MMM yyyy'))).toBeInTheDocument();
+        expect(screen.getByText(format(new Date('2025-06-15T12:00:00Z'), 'yyyy年M月d日'))).toBeInTheDocument();
+        expect(screen.getByText(format(new Date('2025-06-16T12:00:00Z'), 'yyyy年M月d日'))).toBeInTheDocument();
     });
 });
 
@@ -183,7 +183,7 @@ describe('SettingsProviders agent configuration panel', () => {
 
         await expand();
 
-        expect(screen.getByText('Json:').parentElement).toHaveTextContent('Json: yes');
+        expect(screen.getByText('JSON:').parentElement).toHaveTextContent('JSON: 是');
     });
 
     it('keeps a zero-valued field visible so it reads as zero, not as unset', async () => {
@@ -196,7 +196,7 @@ describe('SettingsProviders agent configuration panel', () => {
 
         await expand();
 
-        expect(screen.getByText('Temperature:').parentElement).toHaveTextContent('Temperature: 0');
+        expect(screen.getByText('温度:').parentElement).toHaveTextContent('温度: 0');
     });
 
     it('drops a price the catalogue never carried instead of printing it as a zero tariff', async () => {
@@ -209,10 +209,10 @@ describe('SettingsProviders agent configuration panel', () => {
 
         await expand();
 
-        expect(screen.queryByText('Price Cache Read:')).not.toBeInTheDocument();
-        expect(screen.queryByText('Price Cache Write:')).not.toBeInTheDocument();
-        expect(screen.getByText('Price Input:').parentElement).toHaveTextContent('Price Input: 2');
-        expect(screen.getByText('Price Output:').parentElement).toHaveTextContent('Price Output: 8');
+        expect(screen.queryByText('价格 缓存读取:')).not.toBeInTheDocument();
+        expect(screen.queryByText('价格 缓存写入:')).not.toBeInTheDocument();
+        expect(screen.getByText('价格 输入:').parentElement).toHaveTextContent('价格 输入: 2');
+        expect(screen.getByText('价格 输出:').parentElement).toHaveTextContent('价格 输出: 8');
     });
 
     it('still omits a field the provider did not set', async () => {

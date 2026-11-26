@@ -78,6 +78,6 @@ describe('UserProvider login refusals', () => {
 
         await user.click(screen.getByRole('button', { name: 'sign in' }));
 
-        await waitFor(() => expect(document.title).toBe('Login failed. Please try again.'));
+        await waitFor(() => expect(document.title).toBe('登录失败，请重试。'));
     });
 });

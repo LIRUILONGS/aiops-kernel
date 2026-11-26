@@ -6,9 +6,9 @@ import {
     KnowledgeDocumentDocument,
     SettingsProvidersDocument,
 } from '@/graphql/types';
+import { formatPromptLabel } from '@/lib/prompt-labels';
 
 import { apolloTitle } from './apollo-title';
-import { formatPromptId } from './format-prompt-id';
 import { type RouteParams } from './render-title';
 
 export interface RouteTitleHandle {
@@ -61,7 +61,7 @@ export const routeTitles = {
     newFlow: { title: '新建会话' },
     oauth: { title: 'OAuth' },
     prompt: {
-        title: (params: RouteParams) => (params.promptId ? formatPromptId(params.promptId) : 'Prompt'),
+        title: (params: RouteParams) => (params.promptId ? formatPromptLabel(params.promptId) : '提示词'),
     },
     prompts: { title: '提示词模板' },
 

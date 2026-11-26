@@ -90,7 +90,7 @@ test.describe('api tokens crud', { tag: '@crud' }, () => {
 
             await dialog.getByRole('button', { name: 'Copy Token' }).click();
 
-            await expect(page.getByText('Token copied to clipboard')).toBeVisible();
+            await expect(page.getByText('令牌已复制到剪贴板')).toBeVisible();
             expect(await clipboardWrites(page)).toEqual([CREATED_TOKEN_SECRET]);
 
             await page.keyboard.press('Escape');
@@ -114,7 +114,7 @@ test.describe('api tokens crud', { tag: '@crud' }, () => {
                 .click();
             await page.getByRole('menuitem', { name: 'Copy Token ID' }).click();
 
-            await expect(page.getByText('Token ID copied to clipboard')).toBeVisible();
+            await expect(page.getByText('令牌 ID 已复制到剪贴板')).toBeVisible();
             expect(await clipboardWrites(page)).toEqual([SEED_TOKEN.tokenId]);
             expectCleanPage(pageErrorLog);
         });

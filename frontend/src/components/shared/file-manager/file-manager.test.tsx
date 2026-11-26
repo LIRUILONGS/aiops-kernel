@@ -57,8 +57,8 @@ describe('bulk actions on a partially selected directory', () => {
 
         renderTree(onSelect);
 
-        fireEvent.click(screen.getByRole('checkbox', { name: 'Select docs' }));
-        fireEvent.click(screen.getByRole('checkbox', { name: 'Select a.txt' }));
+        fireEvent.click(screen.getByRole('checkbox', { name: '选择 docs' }));
+        fireEvent.click(screen.getByRole('checkbox', { name: '选择 a.txt' }));
 
         expect(barText()).toMatch(/^1 selected/);
 
@@ -73,7 +73,7 @@ describe('bulk actions on a partially selected directory', () => {
 
         renderTree(onSelect);
 
-        fireEvent.click(screen.getByRole('checkbox', { name: 'Select docs' }));
+        fireEvent.click(screen.getByRole('checkbox', { name: '选择 docs' }));
 
         expect(barText()).toMatch(/^3 selected/);
 
@@ -87,9 +87,9 @@ describe('bulk actions on a partially selected directory', () => {
 
         renderTree(onSelect);
 
-        fireEvent.click(screen.getByRole('checkbox', { name: 'Select docs' }));
-        fireEvent.click(screen.getByRole('checkbox', { name: 'Select a.txt' }));
-        fireEvent.click(screen.getByRole('checkbox', { name: 'Select b.txt' }));
+        fireEvent.click(screen.getByRole('checkbox', { name: '选择 docs' }));
+        fireEvent.click(screen.getByRole('checkbox', { name: '选择 a.txt' }));
+        fireEvent.click(screen.getByRole('checkbox', { name: '选择 b.txt' }));
 
         expect(barText()).toMatch(/^0 selected/);
         expect(screen.getByRole('button', { name: '取消' })).toBeEnabled();
@@ -103,8 +103,8 @@ describe('dragging a partially selected directory', () => {
 
         renderTree(vi.fn(), onMoveItems);
 
-        fireEvent.click(screen.getByRole('checkbox', { name: 'Select docs' }));
-        fireEvent.click(screen.getByRole('checkbox', { name: 'Select a.txt' }));
+        fireEvent.click(screen.getByRole('checkbox', { name: '选择 docs' }));
+        fireEvent.click(screen.getByRole('checkbox', { name: '选择 a.txt' }));
 
         const dataTransfer = stubDataTransfer();
 

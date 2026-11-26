@@ -34,25 +34,25 @@ describe('RetryMeasurement', () => {
     it('offers a retry when the change was not re-measured', () => {
         render(<RetryMeasurement verdict="unverified" />);
 
-        expect(screen.getByRole('button', { name: /Measure again/ })).toBeEnabled();
+        expect(screen.getByRole('button', { name: /重新测量/ })).toBeEnabled();
     });
 
     it('offers a retry when the change made things worse', () => {
         render(<RetryMeasurement verdict="degraded" />);
 
-        expect(screen.getByRole('button', { name: /Measure again/ })).toBeEnabled();
+        expect(screen.getByRole('button', { name: /重新测量/ })).toBeEnabled();
     });
 
     it('offers nothing when the change worked', () => {
         render(<RetryMeasurement verdict="improved" />);
 
-        expect(screen.queryByRole('button', { name: /Measure again/ })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /重新测量/ })).not.toBeInTheDocument();
     });
 
     it('starts a new optimisation with the same input and goes to it', async () => {
         render(<RetryMeasurement verdict="no_measurable_effect" />);
 
-        screen.getByRole('button', { name: /Measure again/ }).click();
+        screen.getByRole('button', { name: /重新测量/ }).click();
 
         await waitFor(() => expect(navigate).toHaveBeenCalledWith('/flows/42'));
         expect(createFlow).toHaveBeenCalledWith({
@@ -69,7 +69,7 @@ describe('RetryMeasurement', () => {
 
         render(<RetryMeasurement verdict="unverified" />);
 
-        const button = screen.getByRole('button', { name: /Measure again/ });
+        const button = screen.getByRole('button', { name: /重新测量/ });
         expect(button).toBeDisabled();
 
         button.click();

@@ -154,7 +154,7 @@ describe('formSchema', () => {
         const result = formSchema.safeParse({ ...valid, content: '' });
 
         expect(result.success).toBe(false);
-        expect(result.error?.issues.find((i) => i.path[0] === 'content')?.message).toBe('Content is required');
+        expect(result.error?.issues.find((i) => i.path[0] === 'content')?.message).toBe('请输入内容');
     });
 
     it.each([
@@ -163,7 +163,7 @@ describe('formSchema', () => {
     ])('refuses a content of nothing but %s', (_name, content) => {
         const result = formSchema.safeParse({ ...valid, content });
 
-        expect(result.error?.issues.find((i) => i.path[0] === 'content')?.message).toBe('Content is required');
+        expect(result.error?.issues.find((i) => i.path[0] === 'content')?.message).toBe('请输入内容');
     });
 
     it('hands the content on as it was written and trims the one-line fields', () => {
@@ -191,7 +191,7 @@ describe('formSchema', () => {
         const result = formSchema.safeParse({ ...valid, question: '' });
 
         expect(result.success).toBe(false);
-        expect(result.error?.issues.find((i) => i.path[0] === 'question')?.message).toBe('Question is required');
+        expect(result.error?.issues.find((i) => i.path[0] === 'question')?.message).toBe('请输入问题');
     });
 
     it.each([
@@ -221,9 +221,9 @@ describe('formSchema', () => {
     });
 
     it.each<[KnowledgeDocType, keyof FormValues, string]>([
-        [KnowledgeDocType.Answer, 'answerType', 'Answer type is required'],
-        [KnowledgeDocType.Code, 'codeLang', 'Code language is required'],
-        [KnowledgeDocType.Guide, 'guideType', 'Guide type is required'],
+        [KnowledgeDocType.Answer, 'answerType', '请选择答案类型'],
+        [KnowledgeDocType.Code, 'codeLang', '请选择代码语言'],
+        [KnowledgeDocType.Guide, 'guideType', '请选择指导类型'],
     ])('requires the %s subtype field', (docType, field, message) => {
         const result = formSchema.safeParse({
             ...valid,

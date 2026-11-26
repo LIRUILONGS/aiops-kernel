@@ -4,7 +4,7 @@ import Logo from '@/components/icons/logo';
 import { routes } from '@/lib/routes';
 
 function OAuthResult() {
-    const [statusMessage, setStatusMessage] = useState('Authentication in progress...');
+    const [statusMessage, setStatusMessage] = useState('正在认证…');
 
     const successDelay = 2000;
     const errorDelay = 5000;
@@ -62,15 +62,15 @@ function OAuthResult() {
                     window.location.origin,
                 );
 
-                updateMessage('Authentication complete, closing window...');
+                updateMessage('认证完成，正在关闭窗口…');
                 handleClose(successDelay);
             } catch (e) {
                 console.error('Failed to send message to opener:', e);
-                updateMessage('Error communicating with parent window. Closing in a few seconds...');
+                updateMessage('与父窗口通信出错，几秒后关闭…');
                 handleClose(errorDelay);
             }
         } else {
-            updateMessage('Authentication window opened directly. Redirecting to login page...');
+            updateMessage('认证窗口被直接打开，正在跳转到登录页…');
             handleRedirect(routes.login(), errorDelay / 2);
             handleClose(errorDelay);
         }

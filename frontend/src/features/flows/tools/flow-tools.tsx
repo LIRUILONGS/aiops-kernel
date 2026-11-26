@@ -237,7 +237,7 @@ function FlowTools() {
                             variant="outline"
                         >
                             <X />
-                            Reset filters
+                            重置筛选
                         </Button>
                     </EmptyContent>
                 </Empty>
@@ -248,9 +248,7 @@ function FlowTools() {
                             <Wrench />
                         </EmptyMedia>
                         <EmptyTitle>还没有工具调用</EmptyTitle>
-                        <EmptyDescription>
-                            Search logs will appear here when the agent performs searches
-                        </EmptyDescription>
+                        <EmptyDescription>Agent 执行搜索时，搜索日志会显示在这里</EmptyDescription>
                     </EmptyHeader>
                 </Empty>
             )}

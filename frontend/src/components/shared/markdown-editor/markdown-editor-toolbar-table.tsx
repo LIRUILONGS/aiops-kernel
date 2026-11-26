@@ -96,24 +96,24 @@ export function TableMenu({ columnAlign, disabled, editor, isActive, isHeaderRow
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onSelect={() => run((chain) => chain.addRowBefore())}>
                             <ArrowUp className="text-muted-foreground size-4 shrink-0" />
-                            Insert row above
+                            在上方插入行
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => run((chain) => chain.addRowAfter())}>
                             <ArrowDown className="text-muted-foreground size-4 shrink-0" />
-                            Insert row below
+                            在下方插入行
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => run((chain) => chain.addColumnBefore())}>
                             <ArrowLeft className="text-muted-foreground size-4 shrink-0" />
-                            Insert column left
+                            在左侧插入列
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => run((chain) => chain.addColumnAfter())}>
                             <ArrowRight className="text-muted-foreground size-4 shrink-0" />
-                            Insert column right
+                            在右侧插入列
                         </DropdownMenuItem>
                         <DropdownMenuSub>
                             <DropdownMenuSubTrigger>
                                 <AlignLeft className="text-muted-foreground size-4 shrink-0" />
-                                Align column
+                                列对齐
                             </DropdownMenuSubTrigger>
                             <DropdownMenuSubContent>
                                 {ALIGN_OPTIONS.map((option) => (
@@ -135,16 +135,16 @@ export function TableMenu({ columnAlign, disabled, editor, isActive, isHeaderRow
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onSelect={() => run((chain) => chain.deleteRow())}>
                             <Delete className="text-muted-foreground size-4 shrink-0 -rotate-90" />
-                            Delete row
+                            删除行
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => run((chain) => chain.deleteColumn())}>
                             <Delete className="text-muted-foreground size-4 shrink-0" />
-                            Delete column
+                            删除列
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onSelect={() => run((chain) => chain.deleteTable())}>
                             <Trash2 className="text-muted-foreground size-4 shrink-0" />
-                            Delete table
+                            删除表格
                         </DropdownMenuItem>
                     </>
                 ) : (
@@ -152,7 +152,7 @@ export function TableMenu({ columnAlign, disabled, editor, isActive, isHeaderRow
                         onSelect={() => run((chain) => chain.insertTable({ cols: 3, rows: 3, withHeaderRow: true }))}
                     >
                         <TableIcon className="text-muted-foreground size-4 shrink-0" />
-                        Insert table
+                        插入表格
                     </DropdownMenuItem>
                 )}
             </DropdownMenuContent>

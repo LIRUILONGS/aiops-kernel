@@ -198,7 +198,7 @@ function FlowTasksDropdown({ disabled, onChange, value }: FlowTasksDropdownProps
                                 className="text-muted-foreground justify-center py-6 text-center"
                                 disabled
                             >
-                                No available tasks
+                                暂无可用任务
                             </CommandItem>
                         )}
                     </CommandList>
@@ -213,7 +213,7 @@ function FlowTasksDropdown({ disabled, onChange, value }: FlowTasksDropdownProps
                                     }}
                                 >
                                     <X />
-                                    Clear filter
+                                    清除筛选
                                 </CommandItem>
                             </CommandGroup>
                         </>

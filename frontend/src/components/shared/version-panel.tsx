@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import { formatDistance } from 'date-fns';
+import { zhCN } from 'date-fns/locale';
 import { ChevronsUpDown, CircleArrowDown, CircleCheck, CircleQuestionMark, ExternalLink } from 'lucide-react';
 
 import type { VersionInfoFragmentFragment } from '@/graphql/types';
@@ -24,8 +25,7 @@ import { useVersionInfo } from '@/providers/version-info-provider';
 
 export const OPSAGI_RELEASES_URL = 'https://github.com/vxcontrol/pentagi/releases';
 
-export const UPDATE_INSTRUCTION =
-    'Run the installer tool on the host where OpsAGI is deployed and choose Maintenance → Update OpsAGI.';
+export const UPDATE_INSTRUCTION = '在部署 OpsAGI 的主机上运行安装工具，选择「维护 → 更新 OpsAGI」。';
 
 export interface VersionFact {
     isAccented?: boolean;
@@ -65,13 +65,16 @@ export function describeTiming(info: VersionInfoFragmentFragment, now: Date = ne
     const facts: VersionFact[] = [];
 
     if (info.checkedAt) {
-        facts.push({ label: 'Checked', value: formatDistance(new Date(info.checkedAt), now, { addSuffix: true }) });
+        facts.push({
+            label: '已检查',
+            value: formatDistance(new Date(info.checkedAt), now, { addSuffix: true, locale: zhCN }),
+        });
     }
 
     if (info.failedAt) {
         facts.push({
-            label: 'Last check failed',
-            value: formatDistance(new Date(info.failedAt), now, { addSuffix: true }),
+            label: '上次检查失败',
+            value: formatDistance(new Date(info.failedAt), now, { addSuffix: true, locale: zhCN }),
         });
     }
 
@@ -88,36 +91,36 @@ export function describeVersion(info: VersionInfoFragmentFragment): VersionPrese
         case UpdateState.Disabled:
             return {
                 ...base,
-                detail: 'Automatic update checks are switched off in the server configuration.',
-                headline: 'Update checks are disabled',
+                detail: '服务器配置已关闭自动更新检查。',
+                headline: '更新检查已关闭',
                 indicator: 'question',
-                tooltip: 'Update checks are disabled in the server configuration.',
+                tooltip: '服务器配置已关闭更新检查。',
             };
         case UpdateState.Pending:
             return {
                 ...base,
-                detail: 'The first update check has not completed yet. It runs shortly after the server starts.',
-                headline: 'Checking for updates',
+                detail: '首次更新检查尚未完成，它会在服务器启动后不久运行。',
+                headline: '正在检查更新',
                 indicator: 'question',
-                tooltip: 'Checking for updates…',
+                tooltip: '正在检查更新…',
             };
         case UpdateState.Unreachable:
             return {
                 ...base,
-                detail: 'The update service could not be reached, so it is unknown whether a newer version exists.',
-                headline: 'Update status unknown',
+                detail: '无法连接更新服务，因此无法确定是否有新版本。',
+                headline: '更新状态未知',
                 indicator: 'question',
-                tooltip: 'Update status unknown: the update service could not be reached.',
+                tooltip: '更新状态未知：无法连接更新服务。',
             };
         case UpdateState.UpdateAvailable:
             if (latest) {
                 return {
                     ...base,
                     action: UPDATE_INSTRUCTION,
-                    detail: 'Update to get the latest fixes and features.',
-                    headline: `New version ${latest} is available`,
+                    detail: '更新以获取最新的修复和功能。',
+                    headline: `新版本 ${latest} 已发布`,
                     indicator: 'update',
-                    tooltip: `New version ${latest} is available. Run the installer tool to update.`,
+                    tooltip: `新版本 ${latest} 已发布，运行安装工具即可更新。`,
                 };
             }
 
@@ -125,10 +128,10 @@ export function describeVersion(info: VersionInfoFragmentFragment): VersionPrese
         case UpdateState.UpToDate:
             return {
                 ...base,
-                detail: `${label} is the newest version on the ${info.strategy} channel.`,
-                headline: 'OpsAGI is up to date',
+                detail: `${label} 是 ${info.strategy} 通道上的最新版本。`,
+                headline: 'OpsAGI 已是最新版本',
                 indicator: 'none',
-                tooltip: `OpsAGI ${label} is up to date.`,
+                tooltip: `OpsAGI ${label} 已是最新版本。`,
             };
         case UpdateState.Unknown:
         default:
@@ -165,14 +168,14 @@ export function splitVersion(current: string): { revision: null | string; versio
 }
 
 function describeUnknown(base: Pick<VersionPresentation, 'action' | 'label' | 'latest'>) {
-    const newest = base.latest ? ` The newest published version is ${base.latest}.` : '';
+    const newest = base.latest ? ` 已发布的最新版本是 ${base.latest}。` : '';
 
     return {
         ...base,
-        detail: `The update service could not tell whether a newer version exists for this build.${newest}`,
-        headline: 'Update status unknown',
+        detail: `更新服务无法判断该构建是否有新版本。${newest}`,
+        headline: '更新状态未知',
         indicator: 'question' as const,
-        tooltip: 'Update status unknown: the update service could not tell whether a newer version exists.',
+        tooltip: '更新状态未知：更新服务无法判断是否有新版本。',
     };
 }
 
@@ -291,7 +294,7 @@ function VersionDetails({
 }) {
     const { className: statusClass, icon: StatusIcon } = indicatorIcons[presentation.indicator];
     const facts: VersionFact[] = [
-        { isMono: true, label: 'Installed', value: presentation.label },
+        { isMono: true, label: '已安装', value: presentation.label },
         ...(presentation.indicator === 'update' && presentation.latest
             ? [{ isAccented: true, isMono: true, label: '可用', value: presentation.latest }]
             : []),
@@ -306,15 +309,13 @@ function VersionDetails({
                 <div className="flex items-start justify-between gap-2 px-1 py-1.5">
                     <div className="min-w-0">
                         <div className="truncate font-semibold">OpsAGI {presentation.label}</div>
-                        <div className="text-muted-foreground truncate font-mono text-xs">
-                            build {versionInfo.build}
-                        </div>
+                        <div className="text-muted-foreground truncate font-mono text-xs">构建 {versionInfo.build}</div>
                     </div>
                     {versionInfo.strategy && (
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Badge
-                                    aria-label={`Update channel: ${versionInfo.strategy}`}
+                                    aria-label={`更新通道：${versionInfo.strategy}`}
                                     className="shrink-0 cursor-help capitalize"
                                     variant="secondary"
                                 >
@@ -322,8 +323,8 @@ function VersionDetails({
                                 </Badge>
                             </TooltipTrigger>
                             <TooltipContent className="max-w-64">
-                                Updates are offered from the {versionInfo.strategy} channel, and the installer pulls its
-                                images from the same one. UPDATE_STRATEGY on the host sets which channel that is.
+                                更新来自 {versionInfo.strategy} 通道，安装器也从同一通道拉取镜像。主机上的
+                                UPDATE_STRATEGY 决定使用哪个通道。
                             </TooltipContent>
                         </Tooltip>
                     )}
@@ -364,9 +365,7 @@ function VersionDetails({
 
             <DropdownMenuSeparator />
 
-            {releaseNotes && (
-                <ExternalLinkRow href={releaseNotes}>Release notes for {presentation.latest}</ExternalLinkRow>
-            )}
+            {releaseNotes && <ExternalLinkRow href={releaseNotes}>发布说明：{presentation.latest}</ExternalLinkRow>}
             <ExternalLinkRow href={OPSAGI_RELEASES_URL}>所有版本</ExternalLinkRow>
         </>
     );

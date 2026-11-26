@@ -73,7 +73,7 @@ describe('toolbar disables controls whose command reports unavailable', () => {
     // Turning a code block into a list WORKS, but `can().toggleBulletList()` reports false for it, because the
     // `clearNodes()` fallback inside toggleList does nothing when dispatch is undefined. Disabling on that
     // answer would take a working conversion away from the user, so these items stay enabled.
-    it.each(['Bullet list', 'Ordered list', 'Task list'])(
+    it.each(['无序列表', '有序列表', '任务列表'])(
         '%s stays enabled inside a code block, where can() under-reports it',
         async (label) => {
             const mounted = mount(CODE_BLOCK_CARET);
@@ -81,7 +81,7 @@ describe('toolbar disables controls whose command reports unavailable', () => {
 
             expect(mounted.editor.can().toggleBulletList()).toBe(false);
 
-            await user.click(screen.getByLabelText(/^List:/));
+            await user.click(screen.getByLabelText(/^列表：/));
 
             await waitFor(() =>
                 expect(screen.getByRole('menuitemradio', { name: new RegExp(label) })).not.toHaveAttribute(
@@ -186,9 +186,9 @@ describe('block controls that a table cell cannot hold are disabled inside one',
         const mounted = mountWithCaretInCell();
         const user = userEvent.setup();
 
-        await user.click(screen.getByLabelText(/^List:/));
+        await user.click(screen.getByLabelText(/^列表：/));
 
-        for (const label of ['Bullet list', 'Ordered list', 'Task list']) {
+        for (const label of ['无序列表', '有序列表', '任务列表']) {
             await waitFor(() =>
                 expect(screen.getByRole('menuitemradio', { name: new RegExp(label) })).toHaveAttribute(
                     'aria-disabled',
@@ -204,10 +204,10 @@ describe('block controls that a table cell cannot hold are disabled inside one',
         const mounted = mountWithCaretInCell();
         const user = userEvent.setup();
 
-        await user.click(screen.getByLabelText(/^Text style:/));
+        await user.click(screen.getByLabelText(/^文本样式：/));
 
         await waitFor(() =>
-            expect(screen.getByRole('menuitemradio', { name: /Heading 2/ })).toHaveAttribute('aria-disabled', 'true'),
+            expect(screen.getByRole('menuitemradio', { name: /标题 2/ })).toHaveAttribute('aria-disabled', 'true'),
         );
         mounted.cleanup();
     });

@@ -58,7 +58,7 @@ test.describe('flow lifecycle', { tag: '@flows' }, () => {
             await page.getByPlaceholder('Flow title').fill('E2E Alpha Renamed');
             await page.getByPlaceholder('Flow title').press('Enter');
 
-            await expect(page.getByText('Flow renamed successfully')).toBeVisible();
+            await expect(page.getByText('会话已重命名')).toBeVisible();
             await expect(page.locator('header').getByText('E2E Alpha Renamed', { exact: true })).toBeVisible();
             expectCleanPage(pageErrorLog);
         });
@@ -92,7 +92,7 @@ test.describe('flow lifecycle', { tag: '@flows' }, () => {
             await page.getByRole('button', { name: 'Flow actions' }).click();
             await page.getByRole('menuitem', { name: 'Finish' }).click();
 
-            await expect(page.getByText('Flow finished successfully')).toBeVisible();
+            await expect(page.getByText('会话已结束')).toBeVisible();
 
             await page.getByRole('button', { name: 'Flow actions' }).click();
 
@@ -268,7 +268,7 @@ test.describe('flow lifecycle', { tag: '@flows' }, () => {
             await expect(dialog.getByRole('button', { name: 'Delete' })).toHaveClass(/(^|\s)bg-destructive(\s|$)/);
             await dialog.getByRole('button', { name: 'Delete' }).click();
 
-            await expect(page.getByText('Flow deleted successfully')).toBeVisible();
+            await expect(page.getByText('会话已删除')).toBeVisible();
             await expect(page).toHaveURL(/\/flows$/);
             await expect(page.getByRole('row', { name: /E2E Beta/ })).toBeVisible();
             await expect(page.getByRole('row', { name: /E2E Alpha/ })).toBeHidden();

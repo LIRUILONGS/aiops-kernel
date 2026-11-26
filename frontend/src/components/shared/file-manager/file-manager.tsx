@@ -57,9 +57,9 @@ const EMPTY_BULK_ACTIONS: readonly FileManagerBulkAction[] = Object.freeze([]);
 const EMPTY_AREA_ACTIONS: readonly FileManagerEmptyAreaAction[] = Object.freeze([]);
 
 const COLUMN_LABEL_FOR_ARIA: Record<FileManagerSortColumn, string> = {
-    modified: 'modified date',
-    name: 'name',
-    size: 'size',
+    modified: '修改时间',
+    name: '名称',
+    size: '大小',
 };
 
 const defaultSortHeaderAriaLabel = (

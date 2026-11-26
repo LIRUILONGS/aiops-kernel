@@ -50,12 +50,12 @@ const optionalTrimmed = (max: number, label: string) =>
 export const formSchema = z
     .object({
         answerType: z.nativeEnum(KnowledgeAnswerType).optional(),
-        codeLang: optionalTrimmed(KNOWLEDGE_LIMITS.codeLang, 'Code language'),
+        codeLang: optionalTrimmed(KNOWLEDGE_LIMITS.codeLang, '代码语言'),
         // The body is a document: it is sent as it was written, the line break it ends with included, and the
         // limit counts all of it, as the endpoint does.
         content: z
             .string()
-            .refine((value) => value.trim() !== '', { message: 'Content is required' })
+            .refine((value) => value.trim() !== '', { message: '请输入内容' })
             .refine(withinLimit(KNOWLEDGE_LIMITS.content), {
                 message: `Content must be ${KNOWLEDGE_LIMITS.content} characters or fewer`,
             }),
@@ -65,7 +65,7 @@ export const formSchema = z
         question: z
             .string()
             .trim()
-            .min(1, { message: 'Question is required' })
+            .min(1, { message: '请输入问题' })
             .refine(withinLimit(KNOWLEDGE_LIMITS.question), {
                 message: `Question must be ${KNOWLEDGE_LIMITS.question} characters or fewer`,
             }),
@@ -73,9 +73,9 @@ export const formSchema = z
     .superRefine((value, ctx) => {
         const requiredByDocType: Partial<Record<KnowledgeDocType, { field: FieldPath<FormValues>; message: string }>> =
             {
-                [KnowledgeDocType.Answer]: { field: 'answerType', message: 'Answer type is required' },
-                [KnowledgeDocType.Code]: { field: 'codeLang', message: 'Code language is required' },
-                [KnowledgeDocType.Guide]: { field: 'guideType', message: 'Guide type is required' },
+                [KnowledgeDocType.Answer]: { field: 'answerType', message: '请选择答案类型' },
+                [KnowledgeDocType.Code]: { field: 'codeLang', message: '请选择代码语言' },
+                [KnowledgeDocType.Guide]: { field: 'guideType', message: '请选择指导类型' },
             };
 
         const rule = requiredByDocType[value.docType];
@@ -245,7 +245,7 @@ export function KnowledgeForm({ initialValues, isNew, knowledge, onSubmit }: Kno
 
                 return result;
             } catch (error) {
-                Log.error('Failed to save knowledge document', error);
+                Log.error('保存知识文档失败', error);
 
                 return null;
             }
@@ -343,22 +343,22 @@ export function KnowledgeForm({ initialValues, isNew, knowledge, onSubmit }: Kno
             const anonymizedContent = data?.anonymizeText;
 
             if (anonymizedContent == null) {
-                toast.error('Anonymizer returned no result');
+                toast.error('匿名化未返回结果');
 
                 return;
             }
 
             if (anonymizedContent === currentContent) {
-                toast.info('No sensitive data detected');
+                toast.info('未检测到敏感数据');
 
                 return;
             }
 
             form.setValue('content', anonymizedContent, { shouldDirty: true });
-            toast.success('Content anonymized');
+            toast.success('内容已匿名化');
         } catch (error) {
-            Log.error('Failed to anonymize content', error);
-            toast.error(error instanceof Error ? error.message : 'Failed to anonymize content');
+            Log.error('内容匿名化失败', error);
+            toast.error(error instanceof Error ? error.message : '内容匿名化失败');
         } finally {
             setIsAnonymizing(false);
         }

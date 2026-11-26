@@ -101,8 +101,7 @@ describe('FlowMessageConclusion', () => {
             />,
         );
 
-        expect(screen.getByText('Not re-measured')).toBeInTheDocument();
-        expect(screen.getByText('not re-measured')).toBeInTheDocument();
+        expect(screen.getAllByText('未重新测量')).toHaveLength(2);
         expect(screen.queryByText('Improved')).not.toBeInTheDocument();
         expect(screen.getByText('Evidence (1)')).toBeInTheDocument();
     });
@@ -123,9 +122,9 @@ describe('FlowMessageConclusion', () => {
 
         expect(screen.getByText('需要人工介入')).toBeInTheDocument();
 
-        await userEvent.click(screen.getByRole('button', { name: 'Show report' }));
+        await userEvent.click(screen.getByRole('button', { name: '展开报告' }));
 
-        expect(screen.getByText('Hide report')).toBeInTheDocument();
+        expect(screen.getByText('收起报告')).toBeInTheDocument();
         expect(screen.queryByText('下一步动作')).not.toBeInTheDocument();
     });
 });

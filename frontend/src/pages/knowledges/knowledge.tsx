@@ -52,7 +52,7 @@ function Knowledge() {
         }
 
         if (!knowledge) {
-            toast.error('Knowledge document not found');
+            toast.error('知识文档不存在');
             navigate(routes.knowledges, { replace: true });
         }
     }, [isNew, isLoadingKnowledge, knowledge, loadError, navigate]);

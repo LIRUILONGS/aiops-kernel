@@ -72,12 +72,9 @@ function ResourcesMkdirDialogForm({ defaultParentPath, onClose }: ResourcesMkdir
             <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                     <FolderPlus className="size-4" />
-                    Create directory
+                    新建目录
                 </DialogTitle>
-                <DialogDescription>
-                    Create a virtual directory inside your resource library. Existing parent directories are reused
-                    automatically.
-                </DialogDescription>
+                <DialogDescription>在资源库中创建虚拟目录。已有的父目录会被自动复用。</DialogDescription>
             </DialogHeader>
 
             <Form {...form}>
@@ -102,7 +99,7 @@ function ResourcesMkdirDialogForm({ defaultParentPath, onClose }: ResourcesMkdir
                                     />
                                 </FormControl>
                                 <FormDescription>
-                                    Relative path. Use <code>/</code> to nest into subdirectories.
+                                    相对路径。用 <code>/</code> 嵌套子目录。
                                 </FormDescription>
                                 <FormMessage />
                             </FormItem>
@@ -116,7 +113,7 @@ function ResourcesMkdirDialogForm({ defaultParentPath, onClose }: ResourcesMkdir
                             type="button"
                             variant="outline"
                         >
-                            Cancel
+                            取消
                         </Button>
                         <FormSubmitButton icon={<FolderPlus />}>创建</FormSubmitButton>
                     </div>

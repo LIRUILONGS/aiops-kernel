@@ -213,7 +213,7 @@ function Knowledges() {
                 />
             ),
             maxSize: 180,
-            meta: { columnMenuLabel: 'Type', searchable: true },
+            meta: { columnMenuLabel: '类型', searchable: true },
             minSize: 110,
             size: 130,
         },
@@ -255,7 +255,7 @@ function Knowledges() {
                     title="问题"
                 />
             ),
-            meta: { columnMenuLabel: 'Question', searchable: true },
+            meta: { columnMenuLabel: '问题', searchable: true },
             minSize: 180,
             size: 280,
         },
@@ -285,12 +285,12 @@ function Knowledges() {
             enableSorting: false,
             header: () => (
                 <span className="text-muted-foreground inline-flex w-full items-center justify-end text-sm font-medium">
-                    Flags
+                    标记
                 </span>
             ),
             id: 'flags',
             maxSize: 200,
-            meta: { columnMenuLabel: 'Flags' },
+            meta: { columnMenuLabel: '标记' },
             minSize: 110,
             size: 150,
         },
@@ -318,11 +318,11 @@ function Knowledges() {
                             >
                                 <DropdownMenuItem onClick={() => handleOpen(k.id)}>
                                     <Pencil />
-                                    Edit
+                                    编辑
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleKnowledgeRenameStart(k)}>
                                     <PencilLine />
-                                    Rename
+                                    重命名
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
@@ -337,7 +337,7 @@ function Knowledges() {
                                     ) : (
                                         <>
                                             <Trash />
-                                            Delete
+                                            删除
                                         </>
                                     )}
                                 </DropdownMenuItem>
@@ -360,11 +360,11 @@ function Knowledges() {
         <>
             <ContextMenuItem onClick={() => handleOpen(k.id)}>
                 <Pencil />
-                Edit
+                编辑
             </ContextMenuItem>
             <ContextMenuItem onClick={() => handleKnowledgeRenameStart(k)}>
                 <PencilLine />
-                Rename
+                重命名
             </ContextMenuItem>
             <ContextMenuSeparator />
             <ContextMenuItem
@@ -384,7 +384,7 @@ function Knowledges() {
             </AppHeaderContent>
             <AppHeaderActions>
                 <InputSearch
-                    ariaLabel="Search knowledge documents"
+                    ariaLabel="搜索知识文档"
                     // Mod+K, not Mod+F — Mod+F collides with the browser's native find-in-page.
                     hotkey="k"
                     maxWidth={220}
@@ -443,9 +443,7 @@ function Knowledges() {
                                 <LibraryBig />
                             </EmptyMedia>
                             <EmptyTitle>还没有知识文档</EmptyTitle>
-                            <EmptyDescription>
-                                Create your first knowledge document to enrich the vector store
-                            </EmptyDescription>
+                            <EmptyDescription>创建第一个知识文档，充实向量库</EmptyDescription>
                         </EmptyHeader>
                         <EmptyContent>
                             <Button
@@ -453,7 +451,7 @@ function Knowledges() {
                                 variant="secondary"
                             >
                                 <Plus />
-                                New Knowledge
+                                新建知识
                             </Button>
                         </EmptyContent>
                     </Empty>
@@ -469,8 +467,8 @@ function Knowledges() {
                 <DataTable
                     columns={columns}
                     data={knowledges}
-                    empty={{ entityName: 'knowledge documents' }}
-                    filterPlaceholder="Filter knowledge documents..."
+                    empty={{ entityName: '知识文档' }}
+                    filterPlaceholder="筛选知识文档…"
                     filterValue={filter}
                     label="知识文档"
                     onFilterChange={setFilter}
@@ -489,7 +487,7 @@ function Knowledges() {
                     handleOpenChange={setIsDeleteDialogOpen}
                     isOpen={isDeleteDialogOpen}
                     itemName={deletingKnowledge?.question}
-                    itemType="knowledge document"
+                    itemType="知识文档"
                 />
             </div>
         </>

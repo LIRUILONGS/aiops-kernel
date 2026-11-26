@@ -93,8 +93,8 @@ export function FlowsProvider({ children }: FlowsProviderProps) {
 
                 return null;
             } catch (error) {
-                const description = error instanceof Error ? error.message : 'An error occurred while creating flow';
-                toast.error('Failed to create flow', {
+                const description = error instanceof Error ? error.message : '创建会话时出错';
+                toast.error('创建会话失败', {
                     description,
                 });
                 Log.error('Error creating flow:', error);
@@ -154,7 +154,7 @@ export function FlowsProvider({ children }: FlowsProviderProps) {
 
             const flowDescription = `${title || 'Unknown'} (ID: ${flowId})`;
 
-            const loadingToastId = toast.loading('Deleting flow...', {
+            const loadingToastId = toast.loading('正在删除会话…', {
                 description: flowDescription,
             });
 
@@ -163,14 +163,14 @@ export function FlowsProvider({ children }: FlowsProviderProps) {
                     variables: { flowId },
                 });
 
-                toast.success('Flow deleted successfully', {
+                toast.success('会话已删除', {
                     description: flowDescription,
                     id: loadingToastId,
                 });
 
                 return true;
             } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'An error occurred while deleting flow';
+                const errorMessage = error instanceof Error ? error.message : '删除会话时出错';
                 toast.error(errorMessage, {
                     description: flowDescription,
                     id: loadingToastId,
@@ -193,7 +193,7 @@ export function FlowsProvider({ children }: FlowsProviderProps) {
 
             const flowDescription = `${title || 'Unknown'} (ID: ${flowId})`;
 
-            const loadingToastId = toast.loading('Finishing flow...', {
+            const loadingToastId = toast.loading('正在结束会话…', {
                 description: flowDescription,
             });
 
@@ -202,14 +202,14 @@ export function FlowsProvider({ children }: FlowsProviderProps) {
                     variables: { flowId },
                 });
 
-                toast.success('Flow finished successfully', {
+                toast.success('会话已结束', {
                     description: flowDescription,
                     id: loadingToastId,
                 });
 
                 return true;
             } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'An error occurred while finishing flow';
+                const errorMessage = error instanceof Error ? error.message : '结束会话时出错';
                 toast.error(errorMessage, {
                     description: flowDescription,
                     id: loadingToastId,

@@ -126,7 +126,7 @@ export function useFlowContainerFiles({ flowId, paths }: UseFlowContainerFilesPa
                 return;
             }
 
-            setError(new Error(getApiErrorMessage(caught, 'Failed to load container files')));
+            setError(new Error(getApiErrorMessage(caught, '加载容器文件失败')));
             setFiles([]);
             setFailures([]);
             setTruncated(false);

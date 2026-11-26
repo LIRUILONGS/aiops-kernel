@@ -27,7 +27,7 @@ export type OverwriteOutcome =
  */
 const ANONYMOUS_FALLBACK_CONFLICT: OverwriteConflict = {
     destination: '',
-    destinationName: 'an item',
+    destinationName: '某个条目',
 };
 
 interface UseOverwriteOptions<TPlan> {

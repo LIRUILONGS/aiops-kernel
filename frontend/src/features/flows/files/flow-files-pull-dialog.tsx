@@ -315,7 +315,7 @@ function FlowFilesPullDialogForm({ cachedFiles, flowId, onClose, onSuccess }: Fl
 
     const overwriteLabel = useMemo(() => {
         if (selectedPaths.size === 0) {
-            return 'Pull with overwrite';
+            return '覆盖拉取';
         }
 
         return `Pull ${selectedPaths.size} with overwrite`;
@@ -343,8 +343,7 @@ function FlowFilesPullDialogForm({ cachedFiles, flowId, onClose, onSuccess }: Fl
                 </EmptyMedia>
                 <EmptyTitle>这里没有可读内容</EmptyTitle>
                 <EmptyDescription>
-                    None of the {listingFailures.length} {listingFailures.length === 1 ? 'entry' : 'entries'} in{' '}
-                    <code>{currentPath}</code> could be read.
+                    <code>{currentPath}</code> 中有 {listingFailures.length} 个条目无法读取。
                 </EmptyDescription>
             </EmptyHeader>
             <ul className="text-muted-foreground max-w-full space-y-1 px-4 text-left text-xs">
@@ -367,7 +366,7 @@ function FlowFilesPullDialogForm({ cachedFiles, flowId, onClose, onSuccess }: Fl
                 </EmptyMedia>
                 <EmptyTitle>目录是空的</EmptyTitle>
                 <EmptyDescription>
-                    Nothing to pull from <code>{currentPath}</code>.
+                    没有可从 <code>{currentPath}</code> 拉取的内容。
                 </EmptyDescription>
             </EmptyHeader>
         </Empty>
@@ -379,11 +378,11 @@ function FlowFilesPullDialogForm({ cachedFiles, flowId, onClose, onSuccess }: Fl
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <ArrowDownToLine className="size-4" />
-                        Pull from container
+                        从容器拉取
                     </DialogTitle>
                     <DialogDescription>
-                        Browse the running container and select files or directories to sync into the local cache under{' '}
-                        <code>container/</code>. Click the arrow on a folder row or double-click the row to drill in.
+                        浏览运行中的容器，选择要同步到本地缓存 <code>container/</code>{' '}
+                        下的文件或目录。点击目录行的箭头或双击该行可展开。
                     </DialogDescription>
                 </DialogHeader>
 
@@ -457,17 +456,14 @@ function FlowFilesPullDialogForm({ cachedFiles, flowId, onClose, onSuccess }: Fl
                     {listingFailures.length > 0 && flatFiles.length > 0 && (
                         <Alert>
                             <TriangleAlert />
-                            <AlertTitle>
-                                {listingFailures.length} {listingFailures.length === 1 ? 'entry' : 'entries'} could not
-                                be read
-                            </AlertTitle>
+                            <AlertTitle>{listingFailures.length} 个条目无法读取</AlertTitle>
                             <AlertDescription>
-                                The readable entries are shown below. Skipped:{' '}
+                                可读的条目已在下方列出。已跳过：{' '}
                                 {listingFailures
                                     .slice(0, 5)
                                     .map((failure) => failure.name)
                                     .join(', ')}
-                                {listingFailures.length > 5 ? `, and ${listingFailures.length - 5} more` : ''}.
+                                {listingFailures.length > 5 ? `，另有 ${listingFailures.length - 5} 个` : ''}。
                             </AlertDescription>
                         </Alert>
                     )}
@@ -477,8 +473,7 @@ function FlowFilesPullDialogForm({ cachedFiles, flowId, onClose, onSuccess }: Fl
                             <TriangleAlert />
                             <AlertTitle>目录内容已截断</AlertTitle>
                             <AlertDescription>
-                                This directory has too many entries to list in full; only the first {files.length} are
-                                shown. Open a subfolder to see the rest.
+                                该目录条目过多，无法全部列出；仅显示前 {files.length} 个。展开子目录可查看其余内容。
                             </AlertDescription>
                         </Alert>
                     )}
@@ -502,7 +497,7 @@ function FlowFilesPullDialogForm({ cachedFiles, flowId, onClose, onSuccess }: Fl
                         type="button"
                         variant="outline"
                     >
-                        Cancel
+                        取消
                     </Button>
                     <OverwriteButtons
                         isDisabled={isPullDisabled}

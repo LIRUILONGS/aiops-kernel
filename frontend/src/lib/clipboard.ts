@@ -132,7 +132,7 @@ export const formatMessageForClipboard = async (messageData: CopyableMessage): P
     let content = '';
 
     if (thinking && thinking.trim()) {
-        content += `<details>\n<summary>Thinking</summary>\n\n${thinking.trim()}\n\n</details>\n\n`;
+        content += `<details>\n<summary>思考过程</summary>\n\n${thinking.trim()}\n\n</details>\n\n`;
     }
 
     if (message && message.trim()) {
@@ -154,7 +154,7 @@ export const formatMessageForClipboard = async (messageData: CopyableMessage): P
             }
         }
 
-        content += `<details>\n<summary>Result</summary>\n\n${resultContent}\n\n</details>`;
+        content += `<details>\n<summary>结果</summary>\n\n${resultContent}\n\n</details>`;
     }
 
     return content;
@@ -164,9 +164,9 @@ export const copyMessageToClipboard = async (messageData: CopyableMessage): Prom
     try {
         const content = await formatMessageForClipboard(messageData);
         await navigator.clipboard.writeText(content);
-        toast.success('Copied to clipboard');
+        toast.success('已复制到剪贴板');
     } catch {
-        toast.error('Failed to copy to clipboard');
+        toast.error('复制失败');
     }
 };
 

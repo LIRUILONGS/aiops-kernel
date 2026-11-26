@@ -64,16 +64,16 @@ export function useResourcesDelete({ onAfterDelete }: UseResourcesDeleteParams =
 
                 if (filesToDelete.length === 1) {
                     const [single] = filesToDelete;
-                    toast.success(single?.isDir ? 'Directory deleted' : 'Resource deleted');
+                    toast.success(single?.isDir ? 'Directory deleted' : '资源已删除');
                 } else {
                     toast.success(`${filesToDelete.length} ${pluralizeItems(filesToDelete.length)} deleted`);
                 }
 
                 onAfterDelete?.();
             } catch (error) {
-                const description = getApiErrorMessage(error, 'Failed to delete resource');
+                const description = getApiErrorMessage(error, '删除资源失败');
 
-                toast.error('Delete failed', { description });
+                toast.error('删除失败', { description });
             }
         },
         [onAfterDelete],

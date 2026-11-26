@@ -154,7 +154,7 @@ export function FlowDashboardOverview({ flowId }: { flowId: string }) {
                     <CardHeader>
                         <CardTitle>各模型与提供商用量</CardTitle>
                         <CardDescription>
-                            LLM token usage and costs grouped by model and provider, with agent types used
+                            按模型和提供商分组的 Token 用量与成本，并列出所用的 Agent 类型
                         </CardDescription>
                     </CardHeader>
                     <CardContent>

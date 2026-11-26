@@ -166,7 +166,7 @@ function useMarkdownEditor({
     id,
     onBlur,
     onChange,
-    placeholder = 'Write something…',
+    placeholder = '写点什么…',
     value,
 }: UseMarkdownEditorOptions): Editor | null {
     // Suppress echoes of our own output: the markdown round-trip can re-serialize a document (a decoded HTML

@@ -3,7 +3,6 @@ import { toast } from 'sonner';
 
 import type { UserResourceFragmentFragment } from '@/graphql/types';
 
-import { pluralizeItems } from '@/components/shared/file-manager';
 import { api, getApiErrorMessage, unwrapApiResponse } from '@/lib/axios';
 import { validateUploadBatch } from '@/lib/upload-validation';
 
@@ -65,15 +64,15 @@ interface UseResourcesUploadResult {
 const UPLOAD_OVERWRITE_HINT = 'Resource already exists — please rename or remove the existing entry';
 
 const buildUploadSuccessMessage = (uploadedCount: number, dir?: string) => {
-    const target = dir ? `to /${dir}` : 'to your library';
+    const target = dir ? `到 /${dir}` : '到资源库';
 
     if (uploadedCount === 1) {
-        return { description: `Uploaded ${target}`, title: 'File uploaded' };
+        return { description: `已上传${target}`, title: '文件已上传' };
     }
 
     return {
-        description: `${uploadedCount} files uploaded ${target}`,
-        title: `${uploadedCount} ${pluralizeItems(uploadedCount)} uploaded`,
+        description: `已上传 ${uploadedCount} 个文件${target}`,
+        title: `已上传 ${uploadedCount} 个文件`,
     };
 };
 
@@ -128,7 +127,7 @@ export function useResourcesUpload({ defaultDir, onSuccess }: UseResourcesUpload
             });
 
             if (validationError) {
-                toast.error('Upload failed', { description: validationError });
+                toast.error('上传失败', { description: validationError });
 
                 return null;
             }
@@ -169,11 +168,11 @@ export function useResourcesUpload({ defaultDir, onSuccess }: UseResourcesUpload
 
                 return data;
             } catch (error) {
-                const description = getApiErrorMessage(error, 'Failed to upload files', {
+                const description = getApiErrorMessage(error, '上传文件失败', {
                     409: UPLOAD_OVERWRITE_HINT,
                 });
 
-                toast.error('Upload failed', { description });
+                toast.error('上传失败', { description });
 
                 return null;
             } finally {

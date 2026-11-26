@@ -145,11 +145,11 @@ function Flow() {
                 });
 
                 if (data?.renameFlow === ResultType.Success) {
-                    toast.success('Flow renamed successfully');
+                    toast.success('会话已重命名');
                     handleFlowRenameCancel();
                 }
             } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'Failed to rename flow';
+                const errorMessage = error instanceof Error ? error.message : '重命名会话失败';
                 toast.error(errorMessage);
             }
         });
@@ -271,14 +271,14 @@ function Flow() {
                                                 className="max-w-64 min-w-0 cursor-text truncate select-none"
                                                 onDoubleClick={handleFlowRenameStart}
                                             >
-                                                {flowTitle || 'Select a flow'}
+                                                {flowTitle || '选择会话'}
                                             </BreadcrumbPage>
                                         </TooltipTrigger>
                                         <TooltipContent>双击重命名</TooltipContent>
                                     </Tooltip>
                                 ) : (
                                     <BreadcrumbPage className="min-w-0 truncate">
-                                        {flowTitle || 'Select a flow'}
+                                        {flowTitle || '选择会话'}
                                     </BreadcrumbPage>
                                 )}
                                 {flow && flow.capabilityMode !== CapabilityMode.Off && (
@@ -341,7 +341,7 @@ function Flow() {
                                         onSelect={(event) => event.preventDefault()}
                                     >
                                         <GitFork />
-                                        Flows
+                                        会话
                                         <div className="-my-1.5 -mr-2 ml-auto flex items-center">
                                             <DetailNavigationButtons<FlowItem>
                                                 controller={flowNav}
@@ -380,7 +380,7 @@ function Flow() {
                                 onClick={handleFlowRenameStart}
                             >
                                 <PencilLine className="size-3" />
-                                Rename
+                                重命名
                             </DropdownMenuItem>
                             {isFlowRunning && (
                                 <DropdownMenuItem
@@ -395,7 +395,7 @@ function Flow() {
                                     ) : (
                                         <>
                                             <Pause />
-                                            Finish
+                                            结束
                                         </>
                                     )}
                                 </DropdownMenuItem>
@@ -413,7 +413,7 @@ function Flow() {
                                 ) : (
                                     <>
                                         <Trash />
-                                        Delete
+                                        删除
                                     </>
                                 )}
                             </DropdownMenuItem>
@@ -474,7 +474,7 @@ function Flow() {
                 handleOpenChange={setIsDeleteDialogOpen}
                 isOpen={isDeleteDialogOpen}
                 itemName={flow?.title}
-                itemType="flow"
+                itemType="会话"
             />
             {flow && (
                 <FlowCapabilitySheet
@@ -503,10 +503,10 @@ function FlowReportDropdown() {
         const success = await copyToClipboard(reportContent);
 
         if (success) {
-            toast.success('Report copied to clipboard');
+            toast.success('报告已复制到剪贴板');
         } else {
-            Log.error('Failed to copy report to clipboard');
-            toast.error('Failed to copy report to clipboard');
+            Log.error('复制报告失败');
+            toast.error('复制报告失败');
         }
     };
 
@@ -564,7 +564,7 @@ function FlowReportDropdown() {
                     onClick={handleOpenWebView}
                 >
                     <ExternalLink />
-                    Open web view
+                    在浏览器中打开
                 </DropdownMenuItem>
                 <DropdownMenuItem
                     className="flex items-center gap-2"
@@ -572,7 +572,7 @@ function FlowReportDropdown() {
                     onClick={handleCopyToClipboard}
                 >
                     <Copy />
-                    Copy to clipboard
+                    复制到剪贴板
                 </DropdownMenuItem>
                 <DropdownMenuItem
                     className="flex items-center gap-2"
@@ -580,7 +580,7 @@ function FlowReportDropdown() {
                     onClick={handleDownloadMD}
                 >
                     <Download />
-                    Download MD
+                    下载 MD
                 </DropdownMenuItem>
                 <DropdownMenuItem
                     className="flex items-center gap-2"
@@ -588,7 +588,7 @@ function FlowReportDropdown() {
                     onClick={handleDownloadPDF}
                 >
                     <Download />
-                    Download PDF
+                    下载 PDF
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>

@@ -266,7 +266,7 @@ function Resources() {
                 appliesToFiles: false,
                 icon: FolderPlus,
                 id: 'resources-mkdir-here',
-                label: 'New folder',
+                label: '新建目录',
                 onSelect: handleMkdirHere,
                 separatorBefore: true,
             },
@@ -282,7 +282,7 @@ function Resources() {
                 appliesToDirs: true,
                 icon: FileSymlink,
                 id: 'resources-rename',
-                label: 'Rename or move',
+                label: '重命名或移动',
                 onSelect: (file) => setFilesToMove([file]),
                 separatorBefore: true,
             },
@@ -290,7 +290,7 @@ function Resources() {
                 appliesToDirs: true,
                 icon: Copy,
                 id: 'resources-copy',
-                label: 'Copy to…',
+                label: '复制到…',
                 onSelect: (file) => setFilesToCopy([file]),
             },
             deleteAction(deletion.requestDelete),
@@ -320,7 +320,7 @@ function Resources() {
             {
                 icon: FolderPlus,
                 id: 'resources-empty-mkdir',
-                label: 'New folder',
+                label: '新建目录',
                 onSelect: () => setIsMkdirOpen(true),
             },
             {
@@ -373,7 +373,7 @@ function Resources() {
         <FileDropZone
             actionLabel="上传文件"
             description="上传文档，OpsAGI 的智能体在会话中可以引用它们。也可以直接把文件拖到面板里。"
-            hint="Up to 300 MB per file · 2 GB per upload"
+            hint="单个文件最大 300 MB · 每次上传最大 2 GB"
             isDragging={isDragging}
             isUploading={upload.isUploading}
             onBrowse={upload.openFilePicker}
@@ -477,14 +477,14 @@ function Resources() {
                                 onCheckedChange={() => toggleViewOption('isSizeVisible')}
                                 onSelect={(event) => event.preventDefault()}
                             >
-                                Size
+                                大小
                             </DropdownMenuCheckboxItem>
                             <DropdownMenuCheckboxItem
                                 checked={viewOptions.isModifiedVisible}
                                 onCheckedChange={() => toggleViewOption('isModifiedVisible')}
                                 onSelect={(event) => event.preventDefault()}
                             >
-                                Modified
+                                修改时间
                             </DropdownMenuCheckboxItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuCheckboxItem
@@ -492,7 +492,7 @@ function Resources() {
                                 onCheckedChange={() => toggleViewOption('isFoldersFirst')}
                                 onSelect={(event) => event.preventDefault()}
                             >
-                                Folders first
+                                目录优先
                             </DropdownMenuCheckboxItem>
                             <DropdownMenuCheckboxItem
                                 checked={viewOptions.isModifiedRelative}
@@ -500,7 +500,7 @@ function Resources() {
                                 onCheckedChange={() => toggleViewOption('isModifiedRelative')}
                                 onSelect={(event) => event.preventDefault()}
                             >
-                                Relative dates
+                                相对时间
                             </DropdownMenuCheckboxItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -554,8 +554,8 @@ function Resources() {
                     handleOpenChange={handleDeleteDialogOpenChange}
                     isOpen={!!deletion.fileToDelete}
                     itemName={deletion.fileToDelete?.name}
-                    itemType={deletion.fileToDelete?.isDir ? 'directory' : 'resource'}
-                    title={deletion.fileToDelete?.isDir ? 'Delete directory' : 'Delete resource'}
+                    itemType={deletion.fileToDelete?.isDir ? '目录' : '资源'}
+                    title={deletion.fileToDelete?.isDir ? '删除目录' : '删除资源'}
                 />
             </div>
         </>

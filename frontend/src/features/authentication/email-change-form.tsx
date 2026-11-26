@@ -12,21 +12,21 @@ import { api, resolveApiErrorMessage } from '@/lib/axios';
 import { useUser } from '@/providers/user-provider';
 
 const emailChangeFormSchema = z.object({
-    currentPassword: z.string().min(1, { message: 'Current password is required' }),
+    currentPassword: z.string().min(1, { message: '请输入当前密码' }),
     newEmail: z
         .string()
         .trim()
         .toLowerCase()
-        .min(1, { message: 'Email is required' })
-        .email({ message: 'Invalid email address' })
-        .max(50, { message: 'Email must not exceed 50 characters' }),
+        .min(1, { message: '请输入邮箱' })
+        .email({ message: '邮箱格式不正确' })
+        .max(50, { message: '邮箱不能超过 50 个字符' }),
 });
 
 const ERROR_BY_CODE: Record<string, string> = {
-    'Users.ChangeEmailCurrentUser.EmailAlreadyExists': 'Email address is already in use',
-    'Users.ChangeEmailCurrentUser.InvalidCurrentPassword': 'Current password is incorrect',
-    'Users.ChangeEmailCurrentUser.InvalidEmail': 'New email does not meet requirements',
-    'Users.NotFound': 'User not found',
+    'Users.ChangeEmailCurrentUser.EmailAlreadyExists': '该邮箱已被使用',
+    'Users.ChangeEmailCurrentUser.InvalidCurrentPassword': '当前密码不正确',
+    'Users.ChangeEmailCurrentUser.InvalidEmail': '新邮箱不符合要求',
+    'Users.NotFound': '用户不存在',
 };
 
 interface EmailChangeFormProps {
@@ -58,14 +58,14 @@ export function EmailChangeForm({ onCancel, onSuccess }: EmailChangeFormProps) {
             });
 
             form.reset();
-            toast.success('Email successfully updated');
+            toast.success('邮箱已更新');
 
             patchUser({ mail: values.newEmail });
             await refreshAuthInfo();
 
             onSuccess?.();
         } catch (err: unknown) {
-            setError(resolveApiErrorMessage(err, ERROR_BY_CODE, 'Failed to update email'));
+            setError(resolveApiErrorMessage(err, ERROR_BY_CODE, '更新邮箱失败'));
         }
     };
 
@@ -123,7 +123,7 @@ export function EmailChangeForm({ onCancel, onSuccess }: EmailChangeFormProps) {
                             type="button"
                             variant="outline"
                         >
-                            Cancel
+                            取消
                         </Button>
                     )}
                     <FormSubmitButton size="sm">

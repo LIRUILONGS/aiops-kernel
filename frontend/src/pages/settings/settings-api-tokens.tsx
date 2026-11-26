@@ -61,7 +61,7 @@ type APIToken = ApiTokenFragmentFragment;
 export const tokenNameSchema = z
     .string()
     .trim()
-    .refine((value) => [...value].length <= 100, 'Token name must be 100 characters or less')
+    .refine((value) => [...value].length <= 100, '令牌名称不能超过 100 个字符')
     .default('');
 
 const createTokenFormSchema = z.object({
@@ -70,7 +70,7 @@ const createTokenFormSchema = z.object({
     expiresAt: z
         .date()
         .nullable()
-        .refine((value) => value !== null, { message: 'Expiration date is required' }),
+        .refine((value) => value !== null, { message: '请选择过期时间' }),
     name: tokenNameSchema,
 });
 
@@ -108,16 +108,16 @@ const getStatusDisplay = (
 ): { label: string; variant: 'default' | 'destructive' | 'outline' | 'secondary' } => {
     if (token.status === 'active') {
         return isTokenExpired(token)
-            ? { label: 'expired', variant: 'destructive' }
-            : { label: 'active', variant: 'default' };
+            ? { label: '已过期', variant: 'destructive' }
+            : { label: '有效', variant: 'default' };
     }
 
     if (token.status === 'expired') {
-        return { label: 'expired', variant: 'destructive' };
+        return { label: '已过期', variant: 'destructive' };
     }
 
     if (token.status === 'revoked') {
-        return { label: 'revoked', variant: 'outline' };
+        return { label: '已撤销', variant: 'outline' };
     }
 
     return { label: token.status, variant: 'secondary' };
@@ -309,7 +309,7 @@ function SettingsAPITokens() {
                 setEditingTokenId(null);
                 editForm.reset(EDIT_TOKEN_DEFAULTS);
             } catch (error) {
-                toast.error('Failed to update token', {
+                toast.error('更新令牌失败', {
                     description: error instanceof Error ? error.message : undefined,
                 });
             }
@@ -363,7 +363,7 @@ function SettingsAPITokens() {
             setCreatingToken(false);
             createForm.reset(CREATE_TOKEN_DEFAULTS);
         } catch (error) {
-            toast.error('Failed to create token', {
+            toast.error('创建令牌失败', {
                 description: error instanceof Error ? error.message : undefined,
             });
         }
@@ -388,7 +388,7 @@ function SettingsAPITokens() {
 
                 setDeletingToken(null);
             } catch (error) {
-                toast.error('Failed to delete token', {
+                toast.error('删除令牌失败', {
                     description: error instanceof Error ? error.message : undefined,
                 });
             }
@@ -400,12 +400,12 @@ function SettingsAPITokens() {
         const success = await copyToClipboard(tokenId);
 
         if (success) {
-            toast.success('Token ID copied to clipboard');
+            toast.success('令牌 ID 已复制到剪贴板');
 
             return;
         }
 
-        toast.error('Failed to copy token ID to clipboard');
+        toast.error('复制令牌 ID 失败');
     }, []);
 
     const columns: ColumnDef<APIToken>[] = useMemo(
@@ -656,7 +656,7 @@ function SettingsAPITokens() {
                         title="创建时间"
                     />
                 ),
-                meta: { columnMenuLabel: 'Created' },
+                meta: { columnMenuLabel: '创建时间' },
                 size: 120,
                 sortingFn: (rowA, rowB) => {
                     const dateA = new Date(rowA.getValue('createdAt') as string);
@@ -712,11 +712,11 @@ function SettingsAPITokens() {
                                 >
                                     <DropdownMenuItem onClick={() => handleEdit(token)}>
                                         <Pencil />
-                                        Edit
+                                        编辑
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleCopyTokenId(token.tokenId)}>
                                         <Copy />
-                                        Copy Token ID
+                                        复制令牌 ID
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem
@@ -731,7 +731,7 @@ function SettingsAPITokens() {
                                         ) : (
                                             <>
                                                 <Trash />
-                                                Delete
+                                                删除
                                             </>
                                         )}
                                     </DropdownMenuItem>
@@ -777,11 +777,11 @@ function SettingsAPITokens() {
                 <>
                     <ContextMenuItem onClick={() => handleEdit(token)}>
                         <Pencil />
-                        Edit
+                        编辑
                     </ContextMenuItem>
                     <ContextMenuItem onClick={() => handleCopyTokenId(token.tokenId)}>
                         <Copy />
-                        Copy Token ID
+                        复制令牌 ID
                     </ContextMenuItem>
                     <ContextMenuSeparator />
                     <ContextMenuItem
@@ -886,9 +886,7 @@ function SettingsAPITokens() {
                                 <Key />
                             </EmptyMedia>
                             <EmptyTitle>还没有 API 令牌</EmptyTitle>
-                            <EmptyDescription>
-                                Create your first API token to access OpsAGI programmatically
-                            </EmptyDescription>
+                            <EmptyDescription>创建第一个 API 令牌，以便通过编程方式访问 OpsAGI</EmptyDescription>
                         </EmptyHeader>
                         <EmptyContent>
                             <Button
@@ -896,7 +894,7 @@ function SettingsAPITokens() {
                                 variant="secondary"
                             >
                                 <Plus />
-                                Create Token
+                                创建令牌
                             </Button>
                         </EmptyContent>
                     </Empty>
@@ -909,8 +907,8 @@ function SettingsAPITokens() {
                 <DataTable<APIToken>
                     columns={columns}
                     data={creatingToken ? [createNewTokenPlaceholder, ...tokens] : tokens}
-                    empty={{ entityName: 'API tokens' }}
-                    filterPlaceholder="Filter tokens..."
+                    empty={{ entityName: 'API 令牌' }}
+                    filterPlaceholder="筛选令牌…"
                     filterValue={filter}
                     label="API 令牌"
                     onFilterChange={setFilter}
@@ -933,9 +931,7 @@ function SettingsAPITokens() {
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>令牌已创建</DialogTitle>
-                        <DialogDescription>
-                            Copy this token now. You won't be able to see it again for security reasons.
-                        </DialogDescription>
+                        <DialogDescription>请立即复制此令牌，出于安全原因之后将无法再次查看。</DialogDescription>
                     </DialogHeader>
                     <div className="bg-muted rounded p-4">
                         <code className="text-sm break-all">{tokenSecret}</code>
@@ -948,16 +944,16 @@ function SettingsAPITokens() {
                                     const success = await copyToClipboard(tokenSecret);
 
                                     if (success) {
-                                        toast.success('Token copied to clipboard');
+                                        toast.success('令牌已复制到剪贴板');
                                     } else {
-                                        toast.error('Failed to copy token to clipboard');
+                                        toast.error('复制令牌失败');
                                     }
                                 }
                             }}
                             variant="secondary"
                         >
                             <Copy />
-                            Copy Token
+                            复制令牌
                         </Button>
                         <Button
                             className="flex-1"
@@ -967,7 +963,7 @@ function SettingsAPITokens() {
                             }}
                             variant="outline"
                         >
-                            Close
+                            关闭
                         </Button>
                     </div>
                 </DialogContent>
@@ -980,7 +976,7 @@ function SettingsAPITokens() {
                 handleOpenChange={setIsDeleteDialogOpen}
                 isOpen={isDeleteDialogOpen}
                 itemName={deletingToken?.name || deletingToken?.tokenId}
-                itemType="token"
+                itemType="令牌"
             />
         </>
     );

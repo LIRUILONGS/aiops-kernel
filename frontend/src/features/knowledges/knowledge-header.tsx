@@ -187,7 +187,7 @@ export function KnowledgeHeader({
                                     </Tooltip>
                                 ) : (
                                     <BreadcrumbPage className="min-w-0 truncate">
-                                        {isNew ? 'New knowledge' : (knowledgeName ?? '知识库')}
+                                        {isNew ? '新建知识' : (knowledgeName ?? '知识库')}
                                     </BreadcrumbPage>
                                 )}
                             </BreadcrumbItem>
@@ -250,7 +250,7 @@ export function KnowledgeHeader({
                                     ) : (
                                         <>
                                             <HatGlasses />
-                                            Anonymize
+                                            匿名化
                                         </>
                                     )}
                                 </DropdownMenuItem>
@@ -263,7 +263,7 @@ export function KnowledgeHeader({
                                         onSelect={(event) => event.preventDefault()}
                                     >
                                         <LibraryBig />
-                                        Knowledges
+                                        知识库
                                         <div className="-my-1.5 -mr-2 ml-auto flex items-center">
                                             <DetailNavigationButtons<Knowledge>
                                                 controller={knowledgeNav}
@@ -282,7 +282,7 @@ export function KnowledgeHeader({
                                         onClick={handleRenameStart}
                                     >
                                         <Pencil className="size-3" />
-                                        Rename
+                                        重命名
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                 </>
@@ -294,12 +294,12 @@ export function KnowledgeHeader({
                                         className="cursor-default gap-4 hover:bg-transparent focus:bg-transparent"
                                         onSelect={(event) => event.preventDefault()}
                                     >
-                                        View
+                                        视图
                                         <EditorViewModeToggle
                                             className="-my-1.5 -mr-2 ml-auto"
                                             mode={viewMode}
                                             onModeChange={onModeChange}
-                                            rawTooltip="Edit the raw markdown"
+                                            rawTooltip="编辑原始 Markdown"
                                         />
                                     </DropdownMenuItem>
                                 </>
@@ -319,7 +319,7 @@ export function KnowledgeHeader({
                                         ) : (
                                             <>
                                                 <Trash />
-                                                Delete
+                                                删除
                                             </>
                                         )}
                                     </DropdownMenuItem>
@@ -344,7 +344,7 @@ export function KnowledgeHeader({
                 handleOpenChange={setIsDeleteDialogOpen}
                 isOpen={isDeleteDialogOpen}
                 itemName={knowledgeName ?? undefined}
-                itemType="knowledge document"
+                itemType="知识文档"
             />
         </>
     );

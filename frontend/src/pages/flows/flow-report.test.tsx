@@ -46,6 +46,6 @@ describe('FlowReport load states', () => {
 
         render(<FlowReport />);
 
-        expect(screen.getByText('Failed to load flow data')).toBeInTheDocument();
+        expect(screen.getByText('加载会话数据失败')).toBeInTheDocument();
     });
 });

@@ -12,14 +12,14 @@ import { cn } from '@/lib/utils';
 
 const passwordChangeFormSchema = z
     .object({
-        confirmPassword: z.string().min(1, { message: 'Confirm your password' }),
-        currentPassword: z.string().min(1, { message: 'Current password is required' }),
+        confirmPassword: z.string().min(1, { message: '请再次输入密码' }),
+        currentPassword: z.string().min(1, { message: '请输入当前密码' }),
         newPassword: z
             .string()
-            .min(8, { message: 'Password must be at least 8 characters' })
+            .min(8, { message: '密码至少 8 个字符' })
             // bcrypt, which hashes it server-side, refuses anything longer than 72 bytes.
             .refine((password) => new TextEncoder().encode(password).length <= 72, {
-                message: 'Password must not exceed 72 characters',
+                message: '密码不能超过 72 个字符',
             })
             .refine(
                 (password) => {
@@ -39,24 +39,24 @@ const passwordChangeFormSchema = z
                 },
                 {
                     message:
-                        'Password must be either longer than 15 characters, or at least 8 characters with a number, lowercase, uppercase, and special character (!@#$&*)',
+                        '密码要么超过 15 个字符，要么至少 8 个字符且同时包含数字、小写字母、大写字母和特殊字符（!@#$&*）',
                 },
             ),
     })
     .refine((data) => data.newPassword === data.confirmPassword, {
-        message: "Passwords don't match",
+        message: '两次输入的密码不一致',
         path: ['confirmPassword'],
     })
     .refine((data) => data.currentPassword !== data.newPassword, {
-        message: 'New password must be different from current password',
+        message: '新密码不能与当前密码相同',
         path: ['newPassword'],
     });
 
 const ERROR_BY_CODE: Record<string, string> = {
-    'Users.ChangePasswordCurrentUser.InvalidCurrentPassword': 'Current password is incorrect',
-    'Users.ChangePasswordCurrentUser.InvalidNewPassword': 'New password does not meet requirements',
-    'Users.ChangePasswordCurrentUser.InvalidPassword': 'Password validation failed',
-    'Users.NotFound': 'User not found',
+    'Users.ChangePasswordCurrentUser.InvalidCurrentPassword': '当前密码不正确',
+    'Users.ChangePasswordCurrentUser.InvalidNewPassword': '新密码不符合要求',
+    'Users.ChangePasswordCurrentUser.InvalidPassword': '密码校验失败',
+    'Users.NotFound': '用户不存在',
 };
 
 interface PasswordChangeFormProps {
@@ -98,11 +98,11 @@ export function PasswordChangeForm({
             });
 
             form.reset();
-            toast.success('Password successfully changed');
+            toast.success('密码已修改');
 
             onSuccess?.();
         } catch (err: unknown) {
-            setError(resolveApiErrorMessage(err, ERROR_BY_CODE, 'Failed to change password'));
+            setError(resolveApiErrorMessage(err, ERROR_BY_CODE, '修改密码失败'));
         }
     };
 
@@ -116,7 +116,7 @@ export function PasswordChangeForm({
             type="button"
             variant="ghost"
         >
-            Skip for now
+            暂时跳过
         </Button>
     );
     const cancelButton = onCancel && (
@@ -127,7 +127,7 @@ export function PasswordChangeForm({
             type="button"
             variant="outline"
         >
-            Cancel
+            取消
         </Button>
     );
     const submitButton = (
@@ -176,8 +176,7 @@ export function PasswordChangeForm({
                                 />
                             </FormControl>
                             <FormDescription className="text-xs">
-                                Must be 16+ characters, or 8+ with number, lowercase, uppercase, and special character
-                                (!@#$&*)
+                                至少 16 个字符；8–15 个字符时需包含数字、小写字母、大写字母以及特殊字符 (!@#$&*)
                             </FormDescription>
                             <FormMessage />
                         </FormItem>

@@ -38,7 +38,7 @@ test.describe('smoke', { tag: '@smoke' }, () => {
             await page.getByRole('textbox', { name: 'Password' }).fill('wrong-password');
             await page.getByRole('button', { name: 'Sign in' }).click();
 
-            await expect(page.getByText('Login failed. Please try again.').first()).toBeVisible();
+            await expect(page.getByText('登录失败，请重试。').first()).toBeVisible();
             await expect(page).toHaveURL(/\/login/);
             // Disabled by FormSubmitButton's `requireValid` gate (`isSubmitted && !isValid`), not by
             // the 401: the typed values are still schema-valid, and only a change recomputes validity.

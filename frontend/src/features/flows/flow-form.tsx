@@ -49,9 +49,9 @@ import { useResources } from '@/providers/resources-provider';
 import { type Template, useTemplates } from '@/providers/templates-provider';
 
 const TARGET_TYPES = [
-    { hint: 'Let the planner decide from the text', label: 'Auto', value: 'auto' as const },
-    { hint: 'Find the root cause of a failure', label: 'Incident', value: 'diagnosis' as const },
-    { hint: 'Find a bottleneck and measure the change', label: 'Performance', value: 'optimization' as const },
+    { hint: '由规划器根据描述决定', label: '自动', value: 'auto' as const },
+    { hint: '定位故障根因', label: '故障诊断', value: 'diagnosis' as const },
+    { hint: '找出瓶颈并度量优化效果', label: '性能优化', value: 'optimization' as const },
 ];
 
 // The lease switch is chosen once per flow. `off` runs the runtime untouched;
@@ -64,12 +64,12 @@ const CAPABILITY_MODES = [
 
 const GOAL_FIELDS = [
     {
-        label: 'Metric',
+        label: '指标',
         name: 'goalMetric' as const,
-        placeholder: 'p99 latency, restart count…',
+        placeholder: 'p99 延迟、重启次数…',
     },
-    { label: 'Target', name: 'goalTarget' as const, placeholder: '< 200ms, 0 restarts…' },
-    { label: 'Constraint', name: 'goalConstraint' as const, placeholder: 'do not restart caddy…' },
+    { label: '目标', name: 'goalTarget' as const, placeholder: '< 200ms、0 次重启…' },
+    { label: '约束', name: 'goalConstraint' as const, placeholder: '不要重启 caddy…' },
 ];
 
 const formSchema = z.object({
@@ -77,8 +77,8 @@ const formSchema = z.object({
     goalConstraint: z.string().optional(),
     goalMetric: z.string().optional(),
     goalTarget: z.string().optional(),
-    message: z.string().trim().min(1, { message: 'Message cannot be empty' }),
-    providerName: z.string().trim().min(1, { message: 'Provider must be selected' }),
+    message: z.string().trim().min(1, { message: '消息不能为空' }),
+    providerName: z.string().trim().min(1, { message: '请选择提供商' }),
     resourceIds: z.array(z.string()),
     targetType: z.enum(['auto', 'diagnosis', 'optimization']),
 });
@@ -106,7 +106,7 @@ export function FlowForm({
     isSubmitting,
     onCancel,
     onSubmit,
-    placeholder = 'Describe the incident to diagnose, or the service to optimise...',
+    placeholder = '描述要诊断的故障，或要优化的服务…',
 }: FlowFormProps) {
     const { providers, setSelectedProvider } = useProviders();
     const { templates } = useTemplates();
@@ -394,7 +394,7 @@ export function FlowForm({
                         className="min-h-16 justify-center"
                         disabled
                     >
-                        {templateSearch ? '没有结果' : 'No available templates'}
+                        {templateSearch ? '没有结果' : '暂无可用模板'}
                     </DropdownMenuItem>
                 ) : (
                     filteredTemplates.map((template) => (
@@ -449,7 +449,7 @@ export function FlowForm({
                         className="min-h-16 justify-center"
                         disabled
                     >
-                        {resourceSearch ? '没有结果' : 'No available resources'}
+                        {resourceSearch ? '没有结果' : '暂无可用资源'}
                     </DropdownMenuItem>
                 ) : (
                     filteredResources.map((resource) => {
@@ -646,7 +646,7 @@ export function FlowForm({
                                                             <span className="max-w-40 truncate">
                                                                 {currentProvider
                                                                     ? getProviderDisplayName(currentProvider)
-                                                                    : 'Select Provider'}
+                                                                    : '选择提供商'}
                                                             </span>
                                                             <ChevronDown />
                                                         </InputGroupButton>
@@ -688,9 +688,7 @@ export function FlowForm({
                                                                     className="min-h-16 justify-center"
                                                                     disabled
                                                                 >
-                                                                    {providerSearch
-                                                                        ? '没有结果'
-                                                                        : 'No available providers'}
+                                                                    {providerSearch ? '没有结果' : '暂无可用提供商'}
                                                                 </DropdownMenuItem>
                                                             ) : (
                                                                 filteredProviders.map((provider) => (
@@ -830,14 +828,14 @@ export function FlowForm({
                                                         value="templates"
                                                     >
                                                         <FileText className="size-3.5" />
-                                                        Templates
+                                                        模板
                                                     </TabsTrigger>
                                                     <TabsTrigger
                                                         className="gap-1.5"
                                                         value="resources"
                                                     >
                                                         <Paperclip className="size-3.5" />
-                                                        Resources
+                                                        资源
                                                         {flowResources.length > 0 && (
                                                             <span className="bg-muted-foreground/20 text-foreground flex h-4 min-w-4 items-center justify-center rounded px-1 text-[10px] font-medium tabular-nums">
                                                                 {flowResources.length}

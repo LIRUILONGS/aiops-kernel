@@ -51,9 +51,9 @@ export function useFlowFilesAttachResources({
             } catch (error) {
                 // Non-numeric IDs indicate an upstream cache contract bug, not a user
                 // mistake. Surface a developer-friendly toast and bail out loudly.
-                const description = error instanceof Error ? error.message : 'Invalid resource IDs.';
+                const description = error instanceof Error ? error.message : '资源 ID 无效。';
 
-                toast.error('Attach failed', { description });
+                toast.error('挂载失败', { description });
 
                 return { kind: 'error' };
             }
@@ -70,7 +70,7 @@ export function useFlowFilesAttachResources({
                     { timeout: 0 },
                 );
 
-                toast.success('Resources attached', {
+                toast.success('资源已挂载', {
                     description: `Copied ${numericIds.length} ${numericIds.length === 1 ? 'item' : 'items'} to ${RESOURCES_TARGET_DIRECTORY}`,
                 });
                 onSuccess?.();
@@ -81,9 +81,9 @@ export function useFlowFilesAttachResources({
                     return { kind: 'conflict' };
                 }
 
-                const description = getApiErrorMessage(error, 'Failed to attach resources');
+                const description = getApiErrorMessage(error, '挂载资源失败');
 
-                toast.error('Attach failed', { description });
+                toast.error('挂载失败', { description });
 
                 return { kind: 'error' };
             } finally {

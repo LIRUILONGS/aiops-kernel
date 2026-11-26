@@ -237,7 +237,7 @@ function FlowVectorStores() {
                             variant="outline"
                         >
                             <X />
-                            Reset filters
+                            重置筛选
                         </Button>
                     </EmptyContent>
                 </Empty>
@@ -248,9 +248,7 @@ function FlowVectorStores() {
                             <Database />
                         </EmptyMedia>
                         <EmptyTitle>还没有向量库日志</EmptyTitle>
-                        <EmptyDescription>
-                            Vector store logs will appear here when the agent uses knowledge database
-                        </EmptyDescription>
+                        <EmptyDescription>Agent 使用知识库时，向量库日志会显示在这里</EmptyDescription>
                     </EmptyHeader>
                 </Empty>
             )}

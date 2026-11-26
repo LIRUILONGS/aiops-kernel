@@ -236,7 +236,7 @@ function FlowAgents() {
                             variant="outline"
                         >
                             <X />
-                            Reset filters
+                            重置筛选
                         </Button>
                     </EmptyContent>
                 </Empty>

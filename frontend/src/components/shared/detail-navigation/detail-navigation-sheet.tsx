@@ -470,9 +470,7 @@ export function DetailNavigationSheet<T extends { id: string }>({
                     </div>
                 ) : (
                     <div className="text-muted-foreground flex flex-1 items-center justify-center px-4 text-center text-sm">
-                        {trimmedQuery.length > 0
-                            ? `No items match "${trimmedQuery}".`
-                            : 'No items match the current filter.'}
+                        {trimmedQuery.length > 0 ? `No items match "${trimmedQuery}".` : '没有匹配当前筛选的条目。'}
                     </div>
                 )}
             </SheetContent>

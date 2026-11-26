@@ -228,7 +228,7 @@ test.describe('flow files', { tag: '@flows' }, () => {
             await openFilesTab(page);
             await page.getByRole('button', { name: 'Expand all' }).click();
             await openRowMenu(page, NESTED_FLOW_FILE.name);
-            await page.getByRole('menuitem', { name: 'Save as resource' }).click();
+            await page.getByRole('menuitem', { name: '保存为资源' }).click();
 
             const dialog = page.getByRole('dialog');
 
@@ -288,7 +288,7 @@ test.describe('flow files', { tag: '@flows' }, () => {
         test('asks before overwriting, and only then sends force', async ({ page, pageErrorLog }) => {
             await openFilesTab(page);
             await openRowMenu(page, TABS_FILE_NAME);
-            await page.getByRole('menuitem', { name: 'Save as resource' }).click();
+            await page.getByRole('menuitem', { name: '保存为资源' }).click();
 
             const dialog = page.getByRole('dialog');
             let sent = 0;
@@ -302,7 +302,7 @@ test.describe('flow files', { tag: '@flows' }, () => {
             await dialog.getByLabel('Destination path').fill(PROMOTE_PATH);
             await dialog.getByRole('button', { exact: true, name: 'Save' }).click();
 
-            await expect(page.getByRole('heading', { name: 'Replace existing item?' })).toBeVisible();
+            await expect(page.getByRole('heading', { name: '替换已有条目？' })).toBeVisible();
             expect(sent, 'no write before the answer').toBe(0);
 
             const request = promoteRequest(page);
@@ -384,7 +384,7 @@ test.describe('flow files', { tag: '@flows' }, () => {
             await recordClipboardWrites(page);
             await openFilesTab(page);
             await openRowMenu(page, TABS_FILE_NAME);
-            await page.getByRole('menuitem', { name: 'Copy path' }).click();
+            await page.getByRole('menuitem', { name: '复制路径' }).click();
 
             await expect(page.getByText('Path copied to clipboard')).toBeVisible();
             expect(await clipboardWrites(page)).toEqual([TABS_FILE_PATH]);

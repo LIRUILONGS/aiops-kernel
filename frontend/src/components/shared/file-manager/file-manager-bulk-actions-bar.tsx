@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 
 import type { FileManagerBulkAction, FileManagerLabels, FileNode } from './file-manager-types';
 
-import { formatFileSize, pluralizeItemsEnglish } from './file-manager-utils';
+import { formatFileSize, formatItemCount } from './file-manager-utils';
 
 interface BulkActionButtonProps {
     action: FileManagerBulkAction;
@@ -133,7 +133,7 @@ export function FileManagerBulkActionsBar({
         return null;
     }
 
-    const pluralize = labels.pluralizeItems ?? pluralizeItemsEnglish;
+    const pluralize = labels.pluralizeItems ?? formatItemCount;
     const countLabel = pluralize(affectedCount);
     const baseSelectedText = labels.selectedLabel?.(affectedCount) ?? `${affectedCount} selected`;
     const sizeSuffix = (labels.formatSelectionSize ?? formatFileSize)(selectionTotalBytes);

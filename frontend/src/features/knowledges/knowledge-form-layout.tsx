@@ -84,27 +84,23 @@ function KnowledgeIntroBlock({ isNew, knowledge }: KnowledgeIntroBlockProps) {
     return (
         <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2 text-center">
-                <h2 className="text-2xl font-semibold">
-                    {isNew ? 'Create a new knowledge document' : 'Edit knowledge document'}
-                </h2>
+                <h2 className="text-2xl font-semibold">{isNew ? '新建知识文档' : '编辑知识文档'}</h2>
                 <p className="text-muted-foreground">
-                    {isNew
-                        ? 'Add an entry to the vector knowledge base'
-                        : 'Edits to content or metadata will trigger re-embedding'}
+                    {isNew ? '向向量知识库添加一条记录' : '修改内容或元数据会触发重新嵌入'}
                 </p>
             </div>
 
             {!isNew && knowledge ? (
                 <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
                     <Badge variant={knowledge.manual ? 'secondary' : 'outline'}>
-                        {knowledge.manual ? 'manual' : 'agent'}
+                        {knowledge.manual ? '手动' : 'Agent'}
                     </Badge>
-                    {knowledge.flowId ? <Badge variant="outline">flow #{knowledge.flowId}</Badge> : null}
-                    {knowledge.taskId ? <Badge variant="outline">task #{knowledge.taskId}</Badge> : null}
-                    {knowledge.subtaskId ? <Badge variant="outline">subtask #{knowledge.subtaskId}</Badge> : null}
+                    {knowledge.flowId ? <Badge variant="outline">会话 #{knowledge.flowId}</Badge> : null}
+                    {knowledge.taskId ? <Badge variant="outline">任务 #{knowledge.taskId}</Badge> : null}
+                    {knowledge.subtaskId ? <Badge variant="outline">子任务 #{knowledge.subtaskId}</Badge> : null}
                     <span>·</span>
                     <span>
-                        chunk {knowledge.partSize} of {knowledge.totalSize}
+                        分块 {knowledge.partSize} / {knowledge.totalSize}
                     </span>
                 </div>
             ) : null}

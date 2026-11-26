@@ -80,16 +80,16 @@ export function useFlowFilesDelete({ flowId, onAfterDelete }: UseFlowFilesDelete
 
                 if (filesToDelete.length === 1) {
                     const [single] = filesToDelete;
-                    toast.success(single?.isDir ? 'Directory deleted' : 'File deleted');
+                    toast.success(single?.isDir ? '目录已删除' : '文件已删除');
                 } else {
                     toast.success(`${filesToDelete.length} ${pluralizeItems(filesToDelete.length)} deleted`);
                 }
 
                 onAfterDelete?.();
             } catch (error) {
-                const description = getApiErrorMessage(error, 'Failed to delete file');
+                const description = getApiErrorMessage(error, '删除文件失败');
 
-                toast.error('Delete failed', { description });
+                toast.error('删除失败', { description });
             }
         },
         [flowId, onAfterDelete],

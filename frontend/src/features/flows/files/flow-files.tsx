@@ -117,7 +117,7 @@ function FlowFiles() {
             appliesToDirs: true,
             icon: FolderOutput,
             id: 'flow-files-save-as-resource',
-            label: 'Save as resource',
+            label: '保存为资源',
             onSelect: handleRequestPromote,
         }),
         [handleRequestPromote],
@@ -364,8 +364,8 @@ function FlowFiles() {
                 handleOpenChange={handleDeleteDialogOpenChange}
                 isOpen={!!deletion.fileToDelete}
                 itemName={deletion.fileToDelete?.name}
-                itemType={deletion.fileToDelete?.isDir ? 'directory' : 'file'}
-                title={deletion.fileToDelete?.isDir ? 'Delete Directory' : 'Delete File'}
+                itemType={deletion.fileToDelete?.isDir ? '目录' : '文件'}
+                title={deletion.fileToDelete?.isDir ? '删除目录' : '删除文件'}
             />
         </div>
     );

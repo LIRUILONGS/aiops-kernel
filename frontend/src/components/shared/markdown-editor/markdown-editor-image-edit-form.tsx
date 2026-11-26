@@ -130,7 +130,7 @@ export function ImageEditForm({
                     id={errorId}
                     role="alert"
                 >
-                    Only http(s) or base64 raster image URLs are allowed.
+                    只支持 http(s) 或 base64 位图图片地址。
                 </p>
             ) : null}
         </div>

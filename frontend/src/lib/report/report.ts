@@ -96,7 +96,7 @@ export const generateReport = (tasks: TaskFragmentFragment[], flow?: FlowFragmen
             return `# ${flowEmoji} ${flow.id}. ${flow.title}\n\nNo tasks available for this flow.`;
         }
 
-        return 'No tasks available for this flow.';
+        return '该会话暂无可用的任务。';
     }
 
     const sortedTasks = [...tasks].sort((a, b) => +a.id - +b.id);

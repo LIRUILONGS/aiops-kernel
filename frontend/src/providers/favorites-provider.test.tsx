@@ -207,7 +207,7 @@ describe('a favorite the server refuses', () => {
 
         await waitFor(() =>
             expect(toast.error).toHaveBeenCalledWith(
-                'Failed to add to favorites',
+                '收藏失败',
                 expect.objectContaining({ description: expect.stringContaining('not permitted') }),
             ),
         );

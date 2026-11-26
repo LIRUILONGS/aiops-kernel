@@ -30,14 +30,14 @@ export interface FileDropZoneProps {
  * `useResourcesUpload().openFilePicker`).
  */
 export function FileDropZone({
-    actionLabel = 'Browse files',
+    actionLabel = '浏览文件',
     className,
-    description = 'or click the button to choose files from your computer',
+    description = '或点击按钮从本机选择文件',
     hint,
     isDragging = false,
     isUploading = false,
     onBrowse,
-    title = 'Drag and drop your files',
+    title = '将文件拖到这里',
 }: FileDropZoneProps) {
     return (
         <div

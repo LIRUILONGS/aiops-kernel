@@ -152,8 +152,8 @@ function ResourcesCopyDialogForm({ files, onClose }: ResourcesCopyDialogFormProp
     // Convention: stay enabled until the first submit, then reflect validity (so an invalid submit surfaces
     // errors instead of a silently-dead button). Mirrors FormSubmitButton's requireValid gate.
     const isSubmitDisabled = form.formState.isSubmitted && !form.formState.isValid;
-    const titleText = isMulti ? `Copy ${files.length} items` : files[0].isDir ? 'Copy directory' : 'Copy resource';
-    const overwriteCtaLabel = isMulti ? `Copy ${files.length} with overwrite` : 'Copy with overwrite';
+    const titleText = isMulti ? `Copy ${files.length} items` : files[0].isDir ? '复制目录' : '复制资源';
+    const overwriteCtaLabel = isMulti ? `Copy ${files.length} with overwrite` : '覆盖复制';
 
     return (
         <>
@@ -192,17 +192,12 @@ function ResourcesCopyDialogForm({ files, onClose }: ResourcesCopyDialogFormProp
                                             autoComplete="off"
                                             autoFocus
                                             disabled={isCopying}
-                                            placeholder={
-                                                isMulti ? 'Leave empty to copy into the library root' : undefined
-                                            }
+                                            placeholder={isMulti ? '留空表示复制到资源库根目录' : undefined}
                                         />
                                     </FormControl>
                                     <FormDescription>
                                         {isMulti ? (
-                                            <>
-                                                Relative directory inside your library. Leave empty for the root. Each
-                                                item keeps its current filename.
-                                            </>
+                                            <>资源库内的相对目录。留空表示根目录。每项保留其现有文件名。</>
                                         ) : (
                                             <>资源库内的相对路径。</>
                                         )}
@@ -219,7 +214,7 @@ function ResourcesCopyDialogForm({ files, onClose }: ResourcesCopyDialogFormProp
                                 type="button"
                                 variant="outline"
                             >
-                                Cancel
+                                取消
                             </Button>
                             <OverwriteButtons
                                 isDisabled={isSubmitDisabled}

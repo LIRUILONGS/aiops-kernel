@@ -117,13 +117,13 @@ test.describe('account settings', { tag: '@settings' }, () => {
             await expect(page.getByText('Password must be either longer than 15 characters')).toBeVisible();
 
             await fillPasswordForm(page, 'short1!');
-            await expect(page.getByText('Password must be at least 8 characters')).toBeVisible();
+            await expect(page.getByText('密码至少 8 个字符')).toBeVisible();
 
             await fillPasswordForm(page, `${MAX_LENGTH_PASSWORD}x`);
-            await expect(page.getByText('Password must not exceed 72 characters')).toBeVisible();
+            await expect(page.getByText('密码不能超过 72 个字符')).toBeVisible();
 
             await fillPasswordForm(page, CURRENT_PASSWORD);
-            await expect(page.getByText('New password must be different from current password')).toBeVisible();
+            await expect(page.getByText('新密码不能与当前密码相同')).toBeVisible();
 
             expect(attempts, 'no invalid password may reach the backend').toEqual([]);
             expectCleanPage(pageErrorLog);
@@ -152,7 +152,7 @@ test.describe('account settings', { tag: '@settings' }, () => {
             await fillPasswordForm(page, MAX_LENGTH_PASSWORD);
             await submitPasswordForm(page);
 
-            await expect(page.getByText('Password successfully changed')).toBeVisible();
+            await expect(page.getByText('密码已修改')).toBeVisible();
             await expect(section(page, 'Password').getByText('••••••••••••')).toBeVisible();
 
             expectCleanPage(pageErrorLog);
@@ -181,7 +181,7 @@ test.describe('account settings', { tag: '@settings' }, () => {
             await fillPasswordForm(page, 'NewPass1!abc');
             await submitPasswordForm(page);
 
-            await expect(page.getByText('Current password is incorrect')).toBeVisible();
+            await expect(page.getByText('当前密码不正确')).toBeVisible();
             await expect(page.getByText('invalid current password')).toBeHidden();
             await expect(page.getByRole('button', { name: 'Update Password' })).toBeVisible();
 
@@ -215,14 +215,14 @@ test.describe('account settings', { tag: '@settings' }, () => {
 
             await nameCard.getByLabel('Display name').fill('E2E renamed admin');
             await nameCard.getByRole('button', { name: 'Update Name' }).click();
-            await expect(page.getByText('Name successfully updated')).toBeVisible();
+            await expect(page.getByText('名称已更新')).toBeVisible();
 
             const emailCard = await openSection(page, 'Email address');
 
             await emailCard.getByLabel('Current Password').fill(CURRENT_PASSWORD);
             await emailCard.getByLabel('New Email').fill('renamed@opsagi.com');
             await emailCard.getByRole('button', { name: 'Update Email' }).click();
-            await expect(page.getByText('Email successfully updated')).toBeVisible();
+            await expect(page.getByText('邮箱已更新')).toBeVisible();
 
             expectCleanPage(pageErrorLog);
         });

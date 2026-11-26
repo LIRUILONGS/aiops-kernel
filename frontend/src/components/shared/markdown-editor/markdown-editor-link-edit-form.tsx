@@ -129,7 +129,7 @@ export function LinkEditForm({ autoFocus = true, editor, initialUrl, isActive, o
                     id={errorId}
                     role="alert"
                 >
-                    Only http, https, mailto and tel links are allowed.
+                    只支持 http、https、mailto 和 tel 链接。
                 </p>
             ) : null}
         </div>

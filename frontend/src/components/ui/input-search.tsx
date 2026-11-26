@@ -33,12 +33,12 @@ interface InputSearchProps {
  * through `handleClear`. A second `Escape` on an empty field collapses + blurs.
  */
 export function InputSearch({
-    ariaLabel = 'Search',
+    ariaLabel = '搜索',
     className,
     hotkey = 'f',
     maxWidth = 140,
     onSearchChange,
-    placeholder = 'Search...',
+    placeholder = '搜索…',
     searchQuery,
 }: InputSearchProps) {
     const [isExpanded, setIsExpanded] = useState(() => searchQuery.trim().length > 0);

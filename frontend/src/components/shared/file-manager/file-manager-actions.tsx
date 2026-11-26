@@ -30,7 +30,7 @@ export const copyPathAction = (onCopyPath: (file: FileNode) => void): FileManage
     appliesToDirs: true,
     icon: ClipboardCopy,
     id: '__builtin_copy_path',
-    label: 'Copy path',
+    label: '复制路径',
     onSelect: onCopyPath,
 });
 
@@ -112,7 +112,7 @@ export const bulkMoveAction = (
 ): FileManagerBulkAction => ({
     icon: FileSymlink,
     id: '__builtin_bulk_move',
-    label: options.label ?? 'Move to…',
+    label: options.label ?? '移动到…',
     onSelect: onMove,
     overflow: options.overflow,
 });
@@ -127,7 +127,7 @@ export const bulkCopyAction = (
 ): FileManagerBulkAction => ({
     icon: Copy,
     id: '__builtin_bulk_copy',
-    label: options.label ?? 'Copy to…',
+    label: options.label ?? '复制到…',
     onSelect: onCopy,
     overflow: options.overflow,
 });

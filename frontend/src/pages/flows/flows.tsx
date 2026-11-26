@@ -50,23 +50,23 @@ const statusConfig: Record<
     { label: string; variant: 'default' | 'destructive' | 'outline' | 'secondary' }
 > = {
     [StatusType.Created]: {
-        label: 'Created',
+        label: '已创建',
         variant: 'outline',
     },
     [StatusType.Failed]: {
-        label: 'Failed',
+        label: '失败',
         variant: 'outline',
     },
     [StatusType.Finished]: {
-        label: 'Finished',
+        label: '已完成',
         variant: 'secondary',
     },
     [StatusType.Running]: {
-        label: 'Running',
+        label: '运行中',
         variant: 'outline',
     },
     [StatusType.Waiting]: {
-        label: 'Waiting',
+        label: '等待中',
         variant: 'outline',
     },
 };
@@ -365,7 +365,7 @@ function Flows() {
                     />
                 ),
                 maxSize: 170,
-                meta: { columnMenuLabel: 'Created' },
+                meta: { columnMenuLabel: '创建时间' },
                 minSize: 128,
                 size: 136,
                 sortingFn: (rowA, rowB) => {
@@ -389,7 +389,7 @@ function Flows() {
                     />
                 ),
                 maxSize: 170,
-                meta: { columnMenuLabel: 'Updated' },
+                meta: { columnMenuLabel: '更新时间' },
                 minSize: 128,
                 size: 136,
                 sortingFn: (rowA, rowB) => {
@@ -439,11 +439,11 @@ function Flows() {
                                 >
                                     <DropdownMenuItem onClick={() => handleFlowOpen(flow.id)}>
                                         <Eye />
-                                        View
+                                        视图
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleFlowRenameStart(flow)}>
                                         <PencilLine className="size-3" />
-                                        Rename
+                                        重命名
                                     </DropdownMenuItem>
                                     {isRunning && (
                                         <DropdownMenuItem
@@ -458,7 +458,7 @@ function Flows() {
                                             ) : (
                                                 <>
                                                     <Pause />
-                                                    Finish
+                                                    结束
                                                 </>
                                             )}
                                         </DropdownMenuItem>
@@ -476,7 +476,7 @@ function Flows() {
                                         ) : (
                                             <>
                                                 <Trash />
-                                                Delete
+                                                删除
                                             </>
                                         )}
                                     </DropdownMenuItem>
@@ -530,11 +530,11 @@ function Flows() {
                     )}
                     <ContextMenuItem onClick={() => handleFlowOpen(flow.id)}>
                         <Eye />
-                        View
+                        视图
                     </ContextMenuItem>
                     <ContextMenuItem onClick={() => handleFlowRenameStart(flow)}>
                         <Pencil />
-                        Rename
+                        重命名
                     </ContextMenuItem>
 
                     {isRunning && (
@@ -644,7 +644,7 @@ function Flows() {
                                 variant="secondary"
                             >
                                 <Plus />
-                                New Flow
+                                新建会话
                             </Button>
                         </EmptyContent>
                     </Empty>
@@ -679,7 +679,7 @@ function Flows() {
                     handleOpenChange={setIsDeleteDialogOpen}
                     isOpen={isDeleteDialogOpen}
                     itemName={deletingFlow?.title}
-                    itemType="flow"
+                    itemType="会话"
                 />
             </div>
         </>

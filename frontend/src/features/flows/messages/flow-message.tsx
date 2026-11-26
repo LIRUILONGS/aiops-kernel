@@ -185,7 +185,7 @@ function FlowMessage({ log, searchValue = '' }: FlowMessageProps) {
                             className="cursor-pointer"
                             onClick={toggleThinking}
                         >
-                            {isThinkingVisible ? 'Hide thinking' : 'Show thinking'}
+                            {isThinkingVisible ? '收起思考过程' : '展开思考过程'}
                         </div>
                     </div>
                 )}

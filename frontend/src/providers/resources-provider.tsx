@@ -100,7 +100,7 @@ export function ResourcesProvider({ children }: ResourcesProviderProps) {
                     return;
                 }
 
-                const message = getApiErrorMessage(caught, 'Failed to load resources');
+                const message = getApiErrorMessage(caught, '加载资源失败');
 
                 setRestError(new Error(message));
             } finally {

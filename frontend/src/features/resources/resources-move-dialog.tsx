@@ -148,12 +148,8 @@ function ResourcesMoveDialogForm({ files, onClose }: ResourcesMoveDialogFormProp
     // Convention: stay enabled until the first submit, then reflect validity (so an invalid submit surfaces
     // errors instead of a silently-dead button). Mirrors FormSubmitButton's requireValid gate.
     const isSubmitDisabled = form.formState.isSubmitted && !form.formState.isValid;
-    const titleText = isMulti
-        ? `Move ${files.length} items`
-        : files[0].isDir
-          ? 'Move directory'
-          : 'Rename or move resource';
-    const overwriteCtaLabel = isMulti ? `Move ${files.length} with overwrite` : 'Move with overwrite';
+    const titleText = isMulti ? `移动 ${files.length} 项` : files[0].isDir ? '移动目录' : '重命名或移动资源';
+    const overwriteCtaLabel = isMulti ? `覆盖移动 ${files.length} 项` : '覆盖移动';
 
     return (
         <>
@@ -168,7 +164,7 @@ function ResourcesMoveDialogForm({ files, onClose }: ResourcesMoveDialogFormProp
                             <>把所选项目移动到目标目录。</>
                         ) : (
                             <>
-                                Update the path of <code>{files[0].path}</code>.
+                                修改 <code>{files[0].path}</code> 的路径。
                             </>
                         )}
                     </DialogDescription>
@@ -185,28 +181,22 @@ function ResourcesMoveDialogForm({ files, onClose }: ResourcesMoveDialogFormProp
                             name="destination"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>{isMulti ? '目标目录' : 'New path'}</FormLabel>
+                                    <FormLabel>{isMulti ? '目标目录' : '新路径'}</FormLabel>
                                     <FormControl>
                                         <Input
                                             {...field}
                                             autoComplete="off"
                                             autoFocus
                                             disabled={isMoving}
-                                            placeholder={
-                                                isMulti ? 'Leave empty to move into the library root' : undefined
-                                            }
+                                            placeholder={isMulti ? '留空表示移动到资源库根目录' : undefined}
                                         />
                                     </FormControl>
                                     <FormDescription>
                                         {isMulti ? (
-                                            <>
-                                                Relative directory inside your library. Leave empty for the root. Each
-                                                item keeps its current filename.
-                                            </>
+                                            <>资源库内的相对目录。留空表示根目录。每项保留其现有文件名。</>
                                         ) : (
                                             <>
-                                                Relative path inside your library. End with <code>/</code> to drop the
-                                                entry into that directory.
+                                                资源库内的相对路径。以 <code>/</code> 结尾表示移动到该目录下。
                                             </>
                                         )}
                                     </FormDescription>
@@ -222,7 +212,7 @@ function ResourcesMoveDialogForm({ files, onClose }: ResourcesMoveDialogFormProp
                                 type="button"
                                 variant="outline"
                             >
-                                Cancel
+                                取消
                             </Button>
                             <OverwriteButtons
                                 isDisabled={isSubmitDisabled}

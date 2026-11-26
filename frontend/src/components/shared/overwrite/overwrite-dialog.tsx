@@ -36,11 +36,11 @@ const buildDefaultDescription = (conflicts: OverwriteConflict[]): string | undef
     const single = conflicts.length === 1 ? conflicts[0] : undefined;
 
     if (single) {
-        return `An item named "${single.destinationName}" already exists at /${single.destination}. Do you want to replace it?`;
+        return `名为 "${single.destinationName}" 的条目已存在于 /${single.destination}。要替换它吗？`;
     }
 
     if (conflicts.length > 1) {
-        return `${conflicts.length} items already exist at the destination. Do you want to replace all of them?`;
+        return `目标位置已存在 ${conflicts.length} 个条目。要全部替换吗？`;
     }
 
     return undefined;
@@ -63,7 +63,7 @@ export function OverwriteDialog({
     description,
     onCancel,
     onReplaceAll,
-    title = 'Replace existing item?',
+    title = '替换已有条目？',
 }: OverwriteDialogProps) {
     return (
         <ConfirmationDialog

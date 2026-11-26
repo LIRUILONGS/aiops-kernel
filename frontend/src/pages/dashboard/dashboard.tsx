@@ -10,9 +10,9 @@ import { DashboardAnalytics } from '@/pages/dashboard/dashboard-analytics';
 import { DashboardOverview } from '@/pages/dashboard/dashboard-overview';
 
 const periodOptions: { label: string; value: UsageStatsPeriod }[] = [
-    { label: 'Week', value: UsageStatsPeriod.Week },
-    { label: 'Month', value: UsageStatsPeriod.Month },
-    { label: 'Quarter', value: UsageStatsPeriod.Quarter },
+    { label: '周', value: UsageStatsPeriod.Week },
+    { label: '月', value: UsageStatsPeriod.Month },
+    { label: '季度', value: UsageStatsPeriod.Quarter },
 ];
 
 const VALID_PERIODS = new Set<string>(Object.values(UsageStatsPeriod));

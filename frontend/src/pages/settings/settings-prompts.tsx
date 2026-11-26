@@ -42,7 +42,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/
 import { Spinner } from '@/components/ui/spinner';
 import { DeletePromptDocument, SettingsPromptsDocument } from '@/graphql/types';
 import { usePageStorageKeys } from '@/hooks/use-page-storage-keys';
-import { formatPromptId } from '@/lib/route-titles/format-prompt-id';
+import { formatPromptLabel } from '@/lib/prompt-labels';
 import { routes } from '@/lib/routes';
 
 type AgentPromptTableData = {
@@ -258,7 +258,7 @@ function SettingsPrompts() {
             const hasCustomHuman = humanType ? userDefined.some((p) => p.type === humanType) : false;
 
             const agentData: AgentPromptTableData = {
-                displayName: formatPromptId(key),
+                displayName: formatPromptLabel(key),
                 hasHuman: !!(prompts as AgentPrompts)?.human,
                 hasSystem: !!(prompts as AgentPrompts)?.system,
                 humanStatus: (prompts as AgentPrompts)?.human ? (hasCustomHuman ? '自定义' : '默认') : '不适用',
@@ -294,7 +294,7 @@ function SettingsPrompts() {
             const hasCustomTool = userDefined.some((p) => p.type === toolType);
 
             const toolData: ToolPromptTableData = {
-                displayName: formatPromptId(key),
+                displayName: formatPromptLabel(key),
                 name: key,
                 promptType: toolType,
                 status: (prompt as DefaultPrompt)?.template ? (hasCustomTool ? '自定义' : '默认') : '不适用',
@@ -325,7 +325,7 @@ function SettingsPrompts() {
                         onClick={() => handleColumnSort(column)}
                         variant="link"
                     >
-                        Agent Name
+                        Agent 名称
                         {sorted === 'asc' ? <ArrowDown /> : sorted === 'desc' ? <ArrowUp /> : null}
                     </Button>
                 );
@@ -501,7 +501,7 @@ function SettingsPrompts() {
                         onClick={() => handleColumnSort(column)}
                         variant="link"
                     >
-                        Tool Name
+                        工具名称
                         {sorted === 'asc' ? <ArrowDown /> : sorted === 'desc' ? <ArrowUp /> : null}
                     </Button>
                 );
@@ -571,7 +571,7 @@ function SettingsPrompts() {
                                             ) : (
                                                 <>
                                                     <RotateCcw className="size-3" />
-                                                    Reset
+                                                    重置
                                                 </>
                                             )}
                                         </DropdownMenuItem>

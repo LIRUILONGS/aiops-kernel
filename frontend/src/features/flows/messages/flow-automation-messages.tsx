@@ -135,16 +135,16 @@ function FlowAutomationMessages({ className }: FlowAutomationMessagesProps) {
 
         switch (flowStatus) {
             case StatusType.Created: {
-                return 'The flow is starting...';
+                return '会话正在启动…';
             }
 
             case StatusType.Failed:
             case StatusType.Finished: {
-                return 'This flow has ended. Create a new one to continue.';
+                return '该会话已结束，新建会话即可继续。';
             }
 
             case StatusType.Running: {
-                return 'OpsAGI is working... Click Stop to interrupt';
+                return 'OpsAGI 正在处理…点击「停止」可中断';
             }
 
             case StatusType.Waiting: {
@@ -295,7 +295,7 @@ function FlowAutomationMessages({ className }: FlowAutomationMessagesProps) {
                             variant="outline"
                         >
                             <X />
-                            Reset filters
+                            重置筛选
                         </Button>
                     </EmptyContent>
                 </Empty>
@@ -307,8 +307,7 @@ function FlowAutomationMessages({ className }: FlowAutomationMessagesProps) {
                         </EmptyMedia>
                         <EmptyTitle>没有进行中的任务</EmptyTitle>
                         <EmptyDescription>
-                            Starting a new task may take some time as the OpsAGI agent downloads the required Docker
-                            image
+                            OpsAGI 的 Agent 需要下载所需的 Docker 镜像，因此开始新任务可能需要一些时间。
                         </EmptyDescription>
                     </EmptyHeader>
                 </Empty>

@@ -34,7 +34,7 @@ test.describe('dashboard', { tag: '@coverage' }, () => {
             await expect(page.getByRole('heading', { exact: true, name: 'Total Flows' })).not.toBeAttached();
             await page.getByRole('tab', { name: 'Overview' }).click();
 
-            for (const title of ['Total Flows', 'Tool Calls', 'Total Tokens', 'Total Cost']) {
+            for (const title of ['Total Flows', '工具调用', 'Total Tokens', 'Total Cost']) {
                 await expect(page.getByRole('heading', { exact: true, name: title })).toBeVisible();
             }
 
@@ -71,10 +71,10 @@ test.describe('dashboard', { tag: '@coverage' }, () => {
                 return operationName === 'usageStatsByPeriod' && variables?.period === 'month';
             });
 
-            await page.getByRole('tab', { name: 'Month' }).click();
+            await page.getByRole('tab', { name: '月' }).click();
             await monthRequest;
 
-            await expect(page.getByRole('tab', { name: 'Month' })).toHaveAttribute('aria-selected', 'true');
+            await expect(page.getByRole('tab', { name: '月' })).toHaveAttribute('aria-selected', 'true');
 
             for (const card of periodCards) {
                 await expect(card.getByText('Aug 15', { exact: true })).toBeVisible();
@@ -111,7 +111,7 @@ test.describe('dashboard', { tag: '@coverage' }, () => {
             await expect(totalFlowsCard.getByText("Couldn't load")).toBeVisible();
             await expect(totalFlowsCard.getByText('—')).toBeVisible();
 
-            const toolCallsCard = cardWith(page, 'Tool Calls');
+            const toolCallsCard = cardWith(page, '工具调用');
 
             await expect(toolCallsCard.getByText('42')).toBeVisible();
             await expect(toolCallsCard.getByText("Couldn't load")).toBeHidden();

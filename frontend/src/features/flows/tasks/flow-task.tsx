@@ -19,15 +19,15 @@ interface FlowTaskProps {
 const describeMissingSubtasks = (status: StatusType) => {
     switch (status) {
         case StatusType.Failed: {
-            return 'The task failed before any subtasks were created.';
+            return '任务在创建子任务之前就失败了。';
         }
 
         case StatusType.Finished: {
-            return 'The task ended before any subtasks were created.';
+            return '任务在创建子任务之前就结束了。';
         }
 
         default: {
-            return 'Waiting for subtasks to be created...';
+            return '正在等待创建子任务…';
         }
     }
 };

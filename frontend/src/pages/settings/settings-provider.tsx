@@ -601,7 +601,7 @@ export const optionalJsonObject = z
                 return false;
             }
         },
-        { message: 'Must be a valid JSON object' },
+        { message: '必须是合法的 JSON 对象' },
     );
 
 const requiredString = (message: string) =>
@@ -623,9 +623,7 @@ export const agentConfigSchema = z
         maxTokens: optionalNumber,
         minLength: optionalNumber,
         minP: optionalNumber,
-        model: requiredString('Model is required').pipe(
-            z.string().refine((value) => value.trim().length > 0, 'Model is required'),
-        ),
+        model: requiredString('请选择模型').pipe(z.string().refine((value) => value.trim().length > 0, '请选择模型')),
         n: optionalNumber,
         presencePenalty: optionalNumber,
         price: z
@@ -652,7 +650,7 @@ export const agentConfigSchema = z
         topP: optionalNumber,
     })
     .refine((data) => data.minLength == null || data.maxLength == null || data.minLength <= data.maxLength, {
-        message: 'Min length must not exceed max length',
+        message: '最小长度不能超过最大长度',
         path: ['minLength'],
     })
     .refine((data) => data.reasoning?.maxTokens == null || data.reasoning.maxTokens <= MAX_REASONING_TOKENS, {
@@ -664,7 +662,7 @@ export const agentConfigSchema = z
             data.reasoning?.mode !== ReasoningMode.Budget ||
             (data.reasoning.maxTokens != null && data.reasoning.maxTokens > 0),
         {
-            message: 'Budget mode requires a token budget',
+            message: '预算模式需要设置 Token 预算',
             path: ['reasoning', 'maxTokens'],
         },
     )
@@ -672,13 +670,13 @@ export const agentConfigSchema = z
 
 const formSchema = z.object({
     agents: z.record(z.string(), agentConfigSchema).optional(),
-    name: requiredString('Provider name is required').pipe(
+    name: requiredString('请输入提供商名称').pipe(
         z
             .string()
-            .refine((value) => value.trim().length > 0, 'Provider name is required')
-            .refine((value) => [...value.trim()].length <= 50, 'Maximum 50 characters allowed'),
+            .refine((value) => value.trim().length > 0, '请输入提供商名称')
+            .refine((value) => [...value.trim()].length <= 50, '最多允许 50 个字符'),
     ),
-    type: requiredString('Provider type is required'),
+    type: requiredString('请选择提供商类型'),
 });
 
 type FormAgents = FormInput['agents'];
@@ -755,12 +753,12 @@ const refusesLevel = (agentKey: string, capability: ModelOption['reasoning'] | u
     capability?.rejectsEffortWithTools === true && !agentsCallingWithoutTools.has(agentKey);
 
 const reasoningEffortLabel: Record<ReasoningEffort, string> = {
-    [ReasoningEffort.High]: 'High',
-    [ReasoningEffort.Low]: 'Low',
-    [ReasoningEffort.Max]: 'Max',
-    [ReasoningEffort.Medium]: 'Medium',
-    [ReasoningEffort.Minimal]: 'Minimal',
-    [ReasoningEffort.Xhigh]: 'Extra High',
+    [ReasoningEffort.High]: '高',
+    [ReasoningEffort.Low]: '低',
+    [ReasoningEffort.Max]: '最高',
+    [ReasoningEffort.Medium]: '中',
+    [ReasoningEffort.Minimal]: '最低',
+    [ReasoningEffort.Xhigh]: '极高',
 };
 
 const isJsonObject = (value: unknown): value is Record<string, unknown> =>
@@ -923,9 +921,9 @@ function ReasoningFields({
         savedReasoning?.mode === ReasoningMode.Off
             ? null
             : savedEffort != null
-              ? `Reasoning Effort was ${reasoningEffortLabel[savedEffort]}`
+              ? `推理强度原本为 ${reasoningEffortLabel[savedEffort]}`
               : savedReasoning?.maxTokens != null
-                ? `Reasoning Max Tokens was ${savedReasoning.maxTokens}`
+                ? `推理最大 Token 原本为 ${savedReasoning.maxTokens}`
                 : null;
     const droppedLevel = isLevelRefused && reasoningEffort == null && reasoningMaxTokens == null ? savedLevel : null;
     const droppedBudget =
@@ -943,8 +941,8 @@ function ReasoningFields({
                         role="status"
                     >
                         {isNonReasoning
-                            ? `Reasoning Mode was Off, but ${selectedModel} does not reason, so it was reset. Save to keep the change.`
-                            : `Reasoning Mode was Off, which ${selectedModel} cannot disable, so it was reset. Save to keep the change.`}
+                            ? `${selectedModel} 不支持推理，因此“推理模式=关闭”已被重置。保存后生效。`
+                            : `${selectedModel} 无法关闭推理，因此“推理模式=关闭”已被重置。保存后生效。`}
                     </p>
                 )}
                 {droppedLevel && (
@@ -952,7 +950,7 @@ function ReasoningFields({
                         className="text-muted-foreground text-sm"
                         role="status"
                     >
-                        {`${droppedLevel}, which ${selectedModel} refuses on requests with function tools, so it was reset. Save to keep the change.`}
+                        {`${droppedLevel}，但 ${selectedModel} 在带函数工具的请求中拒绝该设置，已被重置。保存后生效。`}
                     </p>
                 )}
                 {droppedBudget != null && (
@@ -960,12 +958,12 @@ function ReasoningFields({
                         className="text-muted-foreground text-sm"
                         role="status"
                     >
-                        {`Reasoning Max Tokens was ${droppedBudget}, which ${selectedModel} does not take, so it was reset. Save to keep the change.`}
+                        {`推理最大 Token 原本为 ${droppedBudget}，但 ${selectedModel} 不接受该值，已被重置。保存后生效。`}
                     </p>
                 )}
                 {isNonReasoning && (
                     <p className="text-muted-foreground text-sm">
-                        {`${selectedModel} does not reason, so it has no reasoning settings.`}
+                        {`${selectedModel} 不支持推理，因此没有推理相关设置。`}
                     </p>
                 )}
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -1008,14 +1006,14 @@ function ReasoningFields({
                                     </Select>
                                     <FormDescription>
                                         {pinnedThinking
-                                            ? `Extra Body sets "${pinnedThinking}" for this agent, which overwrites this choice in the request.`
+                                            ? `该 Agent 的附加请求体设置了 "${pinnedThinking}"，会在请求中覆盖此处选择。`
                                             : isLevelRefused
-                                              ? `${selectedModel} refuses a reasoning effort or budget on requests with function tools, which this agent sends: leave the mode unset or choose Off.`
+                                              ? `${selectedModel} 在本 Agent 发送的带函数工具请求中拒绝推理强度或预算：请不要设置模式，或选择关闭。`
                                               : isAdaptiveOnly
                                                 ? canDisable
-                                                    ? 'This model thinks adaptively; choose Off to disable thinking.'
-                                                    : 'This model supports only adaptive thinking and cannot be disabled.'
-                                                : 'Adaptive lets the model decide how much to think; budget uses a fixed token budget; off disables thinking.'}
+                                                    ? '该模型采用自适应思考；选择关闭可禁用思考。'
+                                                    : '该模型只支持自适应思考，无法关闭。'
+                                                : '自适应由模型决定思考量；预算使用固定的 Token 预算；关闭则禁用思考。'}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -1234,7 +1232,7 @@ function TestResultsDialog({ handleOpenChange, isOpen, results }: TestResultsDia
                     className="shrink-0"
                     variant="green"
                 >
-                    Success
+                    成功
                 </Badge>
             );
         }
@@ -1245,7 +1243,7 @@ function TestResultsDialog({ handleOpenChange, isOpen, results }: TestResultsDia
                     className="shrink-0"
                     variant="destructive"
                 >
-                    Failed
+                    失败
                 </Badge>
             );
         }
@@ -1255,7 +1253,7 @@ function TestResultsDialog({ handleOpenChange, isOpen, results }: TestResultsDia
                 className="shrink-0"
                 variant="secondary"
             >
-                Unknown
+                未知
             </Badge>
         );
     };
@@ -1353,7 +1351,7 @@ function TestResultsDialog({ handleOpenChange, isOpen, results }: TestResultsDia
                                             ))}
                                             {tests.length === 0 && (
                                                 <div className="text-muted-foreground py-4 text-center text-sm">
-                                                    No tests available for this agent
+                                                    该 Agent 暂无可用测试
                                                 </div>
                                             )}
                                         </div>
@@ -1617,7 +1615,7 @@ function SettingsProvider() {
             // unknown or disabled type would otherwise create a dead provider or dump a raw
             // zod error on submit. Bounce it to the list. (Clone-by-id is gated separately below.)
             if (!queryId && queryType && !providers.enabled[queryType as keyof typeof providers.enabled]) {
-                toast.error(`Provider type "${queryType}" is not available`);
+                toast.error(`提供商类型 "${queryType}" 不可用`);
                 navigate(routes.settings.providers, { replace: true });
 
                 return;
@@ -1632,7 +1630,7 @@ function SettingsProvider() {
                     // Cloning a provider whose type is now disabled would only make
                     // another dead one — gate it the same as the ?type= path.
                     if (sourceType && !providers.enabled[sourceType as keyof typeof providers.enabled]) {
-                        toast.error(`Provider type "${sourceType}" is not available`);
+                        toast.error(`提供商类型 "${sourceType}" 不可用`);
                         navigate(routes.settings.providers, { replace: true });
 
                         return;
@@ -1816,7 +1814,7 @@ function SettingsProvider() {
             navigate(routes.settings.providers);
         } catch (error) {
             console.error('Delete error:', error);
-            setSubmitError(error instanceof Error ? error.message : 'An error occurred while deleting');
+            setSubmitError(error instanceof Error ? error.message : '删除时发生错误');
         }
     };
 
@@ -1933,7 +1931,7 @@ function SettingsProvider() {
             <div className="flex flex-col gap-2 text-center">
                 <h2 className="text-2xl font-semibold">{isNew ? '新建提供商' : '编辑提供商'}</h2>
                 <p className="text-muted-foreground">
-                    {isNew ? 'Configure a new language model provider' : 'Update provider settings and configuration'}
+                    {isNew ? '配置一个新的语言模型提供商' : '修改提供商的设置与配置'}
                 </p>
             </div>
 

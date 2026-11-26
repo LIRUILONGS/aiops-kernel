@@ -59,7 +59,7 @@ export function useFlowFilesPull({ flowId, onSuccess }: UseFlowFilesPullParams):
                         ? `Saved to local cache under ${CONTAINER_TARGET_DIRECTORY}`
                         : `Saved ${paths.length} ${pluralizeItems(paths.length)} to local cache under ${CONTAINER_TARGET_DIRECTORY}`;
 
-                toast.success('Pulled from container', { description });
+                toast.success('已从容器拉取', { description });
                 onSuccess();
 
                 return { kind: 'ok' };
@@ -70,9 +70,9 @@ export function useFlowFilesPull({ flowId, onSuccess }: UseFlowFilesPullParams):
                     return { kind: 'conflict' };
                 }
 
-                const description = getApiErrorMessage(error, 'Failed to pull from container');
+                const description = getApiErrorMessage(error, '从容器拉取失败');
 
-                toast.error('Pull failed', { description });
+                toast.error('拉取失败', { description });
 
                 return { kind: 'error' };
             } finally {

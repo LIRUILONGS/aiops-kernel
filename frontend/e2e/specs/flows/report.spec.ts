@@ -87,7 +87,7 @@ test.describe('flow report', { tag: '@flows' }, () => {
         await openReportMenu(page);
         await page.getByRole('menuitem', { name: 'Copy to clipboard' }).click();
 
-        await expect(page.getByText('Report copied to clipboard')).toBeVisible();
+        await expect(page.getByText('报告已复制到剪贴板')).toBeVisible();
         expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('E2E Task Alpha');
         expectCleanPage(pageErrorLog);
     });

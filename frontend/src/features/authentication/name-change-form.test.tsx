@@ -61,7 +61,7 @@ describe('NameChangeForm', () => {
         await user.clear(screen.getByLabelText('显示名称'));
         await user.click(screen.getByRole('button', { name: '更新名称' }));
 
-        expect(await screen.findByText('Name is required')).toBeInTheDocument();
+        expect(await screen.findByText('请输入名称')).toBeInTheDocument();
         expect(put).not.toHaveBeenCalled();
     });
 
@@ -75,6 +75,6 @@ describe('NameChangeForm', () => {
         await user.type(input, 'Whoever');
         await user.click(screen.getByRole('button', { name: '更新名称' }));
 
-        expect(await screen.findByText('User not found')).toBeInTheDocument();
+        expect(await screen.findByText('用户不存在')).toBeInTheDocument();
     });
 });

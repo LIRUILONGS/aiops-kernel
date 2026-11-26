@@ -253,7 +253,7 @@ export function DashboardAnalytics({ period }: { period: UsageStatsPeriod }) {
                         <Bar
                             dataKey="count"
                             fill={CHART_COLORS.bar1}
-                            name="Tool Calls"
+                            name="工具调用"
                             radius={[4, 4, 0, 0]}
                         />
                     </BarChart>
@@ -301,7 +301,7 @@ export function DashboardAnalytics({ period }: { period: UsageStatsPeriod }) {
                             dataKey="tokensIn"
                             fill={CHART_COLORS.area1}
                             fillOpacity={0.3}
-                            name="Tokens In"
+                            name="输入 Token"
                             stroke={CHART_COLORS.area1}
                             type="monotone"
                         />
@@ -309,7 +309,7 @@ export function DashboardAnalytics({ period }: { period: UsageStatsPeriod }) {
                             dataKey="tokensOut"
                             fill={CHART_COLORS.area2}
                             fillOpacity={0.3}
-                            name="Tokens Out"
+                            name="输出 Token"
                             stroke={CHART_COLORS.area2}
                             type="monotone"
                         />
@@ -360,7 +360,7 @@ export function DashboardAnalytics({ period }: { period: UsageStatsPeriod }) {
                         dataKey="costIn"
                         fill={CHART_COLORS.area1}
                         fillOpacity={0.3}
-                        name="Cost In"
+                        name="输入成本"
                         stroke={CHART_COLORS.area1}
                         type="monotone"
                     />
@@ -368,7 +368,7 @@ export function DashboardAnalytics({ period }: { period: UsageStatsPeriod }) {
                         dataKey="costOut"
                         fill={CHART_COLORS.area3}
                         fillOpacity={0.3}
-                        name="Cost Out"
+                        name="输出成本"
                         stroke={CHART_COLORS.area3}
                         type="monotone"
                     />
@@ -391,9 +391,7 @@ export function DashboardAnalytics({ period }: { period: UsageStatsPeriod }) {
                     ) : executionStatsError && !executionStatsData ? (
                         <DashboardError className="py-8" />
                     ) : !deferredExecutionStats.length ? (
-                        <p className="text-muted-foreground py-8 text-center text-sm">
-                            No flow executions in this period
-                        </p>
+                        <p className="text-muted-foreground py-8 text-center text-sm">该时间段暂无会话执行</p>
                     ) : (
                         <div
                             className={cn(

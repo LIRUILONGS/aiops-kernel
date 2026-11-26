@@ -84,7 +84,7 @@ import {
 import { useAppForm } from '@/hooks/use-app-form';
 import { useBreakpoint } from '@/hooks/use-breakpoint';
 import { composeRefs } from '@/lib/compose-refs';
-import { formatPromptId } from '@/lib/route-titles/format-prompt-id';
+import { formatPromptLabel } from '@/lib/prompt-labels';
 
 const VARIABLES_TITLE = '可用变量';
 
@@ -452,7 +452,7 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
                 data: agentData,
                 defaultHumanTemplate: (agentData as AgentPrompts)?.human?.template || '',
                 defaultSystemTemplate: agentData?.system?.template || '',
-                displayName: formatPromptId(promptId),
+                displayName: formatPromptLabel(promptId),
                 hasHuman: !!(agentData as AgentPrompts)?.human,
                 humanTemplate: userHumanPrompt?.template || (agentData as AgentPrompts)?.human?.template || '',
                 systemTemplate: userSystemPrompt?.template || agentData?.system?.template || '',
@@ -471,7 +471,7 @@ function SettingsPromptEditor({ promptId }: { promptId?: string }) {
                 data: toolData,
                 defaultHumanTemplate: '',
                 defaultSystemTemplate: toolData?.template || '',
-                displayName: formatPromptId(promptId),
+                displayName: formatPromptLabel(promptId),
                 hasHuman: false,
                 humanTemplate: '',
                 systemTemplate: userToolPrompt?.template || toolData?.template || '',

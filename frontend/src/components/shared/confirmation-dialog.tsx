@@ -45,8 +45,8 @@ function ConfirmationDialog({
     handleConfirm,
     handleOpenChange,
     isOpen,
-    itemName = 'this',
-    itemType = 'item',
+    itemName = '此项',
+    itemType = '项目',
     title,
 }: ConfirmationDialogProps) {
     const [isProcessing, setIsProcessing] = useState(false);
@@ -54,12 +54,12 @@ function ConfirmationDialog({
     // `verb !== '确认'` treats the default confirmText as "no custom verb": a bare
     // Confirm gets the generic "确认操作" title instead of "Confirm <itemType>".
     const verb = confirmText.trim();
-    const resolvedTitle = title ?? (verb && verb !== '确认' ? `${verb} ${itemType}` : '确认操作');
+    const resolvedTitle = title ?? (verb && verb !== '确认' ? `${verb}${itemType}` : '确认操作');
 
     const defaultDescription = description || (
         <>
-            Are you sure you want to {verb.toLowerCase() || 'perform this action on'}{' '}
-            <strong className="text-foreground font-semibold">{itemName}</strong> {itemType}?
+            确定要{verb.toLowerCase() || '执行此操作'}
+            <strong className="text-foreground font-semibold">{itemName}</strong>吗？
         </>
     );
 

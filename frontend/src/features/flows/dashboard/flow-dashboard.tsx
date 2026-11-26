@@ -8,9 +8,7 @@ function FlowDashboard() {
 
     if (!flowId) {
         return (
-            <div className="text-muted-foreground flex items-center justify-center py-12">
-                Select a flow to view the dashboard
-            </div>
+            <div className="text-muted-foreground flex items-center justify-center py-12">选择一个会话以查看仪表盘</div>
         );
     }
 

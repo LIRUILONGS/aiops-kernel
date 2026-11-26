@@ -34,7 +34,7 @@ test.describe('knowledges crud', { tag: '@crud' }, () => {
 
         test('blocks submit until the answer type is picked', async ({ page, pageErrorLog }) => {
             await openNewKnowledgeForm(page);
-            await page.getByRole('textbox', { name: 'Question' }).fill('What is the E2E answer?');
+            await page.getByRole('textbox', { name: '问题' }).fill('What is the E2E answer?');
             await typeIntoEditor(page, 'Content', 'E2E knowledge content');
             await page.getByRole('button', { name: 'Create' }).click();
 
@@ -72,14 +72,14 @@ test.describe('knowledges crud', { tag: '@crud' }, () => {
 
         test('creates a document and lands on its detail page', async ({ page, pageErrorLog }) => {
             await openNewKnowledgeForm(page);
-            await page.getByRole('textbox', { name: 'Question' }).fill('What is the E2E answer?');
+            await page.getByRole('textbox', { name: '问题' }).fill('What is the E2E answer?');
             await typeIntoEditor(page, 'Content', 'E2E knowledge content');
             await page.getByRole('combobox', { name: 'Answer type' }).click();
             await page.getByRole('option', { name: 'other' }).click();
             await page.getByRole('button', { name: 'Create' }).click();
 
             await expect(page).toHaveURL(/\/knowledges\/301$/);
-            await expect(page.getByRole('textbox', { name: 'Question' })).toHaveValue('What is the E2E answer?');
+            await expect(page.getByRole('textbox', { name: '问题' })).toHaveValue('What is the E2E answer?');
             expectCleanPage(pageErrorLog);
         });
     });
@@ -126,7 +126,7 @@ test.describe('knowledges crud', { tag: '@crud' }, () => {
                 await typeIntoEditor(page, 'Content', PLAIN);
                 await page.getByRole('button', { name: 'Anonymize' }).click();
 
-                await expect(page.getByText('No sensitive data detected')).toBeVisible();
+                await expect(page.getByText('未检测到敏感数据')).toBeVisible();
                 await expect(page.getByRole('textbox', { name: 'Content' })).toContainText(PLAIN);
             });
         });
@@ -262,7 +262,7 @@ test.describe('knowledges crud', { tag: '@crud' }, () => {
         test('says the document is gone and returns to the list', async ({ page }) => {
             await page.goto(`/knowledges/${KNOWLEDGE_DOC.id}`);
 
-            await expect(page.getByText('Knowledge document not found')).toBeVisible();
+            await expect(page.getByText('知识文档不存在')).toBeVisible();
             await expect(page).toHaveURL(/\/knowledges$/);
         });
     });

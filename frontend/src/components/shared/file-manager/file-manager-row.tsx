@@ -439,7 +439,7 @@ function FileManagerRowImpl({
                     {...skipRowClickProps}
                 >
                     <Checkbox
-                        aria-label={`Select ${file.name}`}
+                        aria-label={`选择 ${file.name}`}
                         // Directories surface a tri-state value derived from their
                         // descendants; files (and edge cases without a precomputed
                         // value) fall back to the row's own selection flag.

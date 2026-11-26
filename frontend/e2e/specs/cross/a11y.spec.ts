@@ -81,7 +81,7 @@ test.describe('dialog keyboard contract', { tag: '@cross' }, () => {
     test('Escape returns focus to the control that opened the dialog', async ({ page, pageErrorLog }) => {
         await page.goto('/resources');
 
-        const opener = page.getByRole('button', { name: 'New folder' });
+        const opener = page.getByRole('button', { name: '新建目录' });
 
         await opener.focus();
         await page.keyboard.press('Enter');

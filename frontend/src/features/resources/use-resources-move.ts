@@ -13,9 +13,9 @@ export const resourcesMoveFormSchema = z.object({
     destination: z
         .string()
         .trim()
-        .min(1, { message: 'Destination cannot be empty' })
-        .refine((value) => !value.startsWith('/'), { message: 'Destination must be a relative path' })
-        .refine((value) => !value.split('/').includes('..'), { message: 'Destination must not contain ".."' }),
+        .min(1, { message: '目标目录不能为空' })
+        .refine((value) => !value.startsWith('/'), { message: '目标必须是相对路径' })
+        .refine((value) => !value.split('/').includes('..'), { message: '目标路径不能包含 ".."' }),
 });
 
 export type ResourcesMoveFormValues = z.infer<typeof resourcesMoveFormSchema>;
@@ -67,7 +67,7 @@ export function useResourcesMove(): UseResourcesMoveResult {
                         ? `Moved to /${destination}`
                         : `Moved ${sources.length} ${pluralizeItems(sources.length)} into /${destination}`;
 
-                toast.success('Resource moved', { description });
+                toast.success('资源已移动', { description });
 
                 return { kind: 'ok' };
             } catch (error) {
@@ -79,9 +79,9 @@ export function useResourcesMove(): UseResourcesMoveResult {
                     return { kind: 'conflict' };
                 }
 
-                const description = getApiErrorMessage(error, 'Failed to move resource');
+                const description = getApiErrorMessage(error, '移动资源失败');
 
-                toast.error('Move failed', { description });
+                toast.error('移动失败', { description });
 
                 return { kind: 'error' };
             } finally {

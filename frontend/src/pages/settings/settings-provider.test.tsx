@@ -264,7 +264,7 @@ describe('SettingsProvider save feedback', () => {
         fireEvent.click(saveButton());
 
         await waitFor(() => expect(toast.error).toHaveBeenCalledTimes(1));
-        expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('Must be a valid JSON object'));
+        expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('必须是合法的 JSON 对象'));
         expect(mutate).not.toHaveBeenCalled();
     });
 
@@ -303,7 +303,7 @@ describe('SettingsProvider test feedback', () => {
         return controls;
     };
 
-    const blankName = '\u2022 Name: Provider name is required';
+    const blankName = '\u2022 Name: 请输入提供商名称';
 
     it('names the offending field the first time Test is pressed', async () => {
         renderCreateForm();
@@ -399,19 +399,19 @@ describe('SettingsProvider name validation', () => {
     it('refuses a blank name', async () => {
         submitWithName('');
 
-        await expectRefused('Provider name is required');
+        await expectRefused('请输入提供商名称');
     });
 
     it('refuses a name that is only whitespace', async () => {
         submitWithName('   ');
 
-        await expectRefused('Provider name is required');
+        await expectRefused('请输入提供商名称');
     });
 
     it('refuses a name one character over the 50-character cap', async () => {
         submitWithName('a'.repeat(51));
 
-        await expectRefused('Maximum 50 characters allowed');
+        await expectRefused('最多允许 50 个字符');
     });
 
     it('saves a name at the 50-character boundary', async () => {
@@ -429,7 +429,7 @@ describe('SettingsProvider name validation', () => {
     it('refuses an astral name one character over the cap', async () => {
         submitWithName('\u{1f512}'.repeat(51));
 
-        await expectRefused('Maximum 50 characters allowed');
+        await expectRefused('最多允许 50 个字符');
     });
 });
 
@@ -635,13 +635,13 @@ describe('SettingsProvider reasoning mode against extra body', () => {
     it('explains the mode is overwritten when extra body pins thinking', () => {
         typeExtraBody('{"thinking":{"type":"enabled"}}');
 
-        expect(screen.getByText(/Extra Body sets "thinking"/)).toBeInTheDocument();
+        expect(screen.getByText(/附加请求体设置了 "thinking"/)).toBeInTheDocument();
     });
 
     it('names the qwen spelling of the same conflict', () => {
         typeExtraBody('{"enable_thinking":true}');
 
-        expect(screen.getByText(/Extra Body sets "enable_thinking"/)).toBeInTheDocument();
+        expect(screen.getByText(/附加请求体设置了 "enable_thinking"/)).toBeInTheDocument();
     });
 
     it('stays quiet for an extra body that leaves thinking alone', () => {
@@ -853,7 +853,7 @@ describe('SettingsProvider reasoning on the ollama catalogue', () => {
     it('says so when it resets an Off the model cannot honour', async () => {
         renderWith('gpt-oss:120b', 'off');
 
-        expect(await screen.findByRole('status')).toHaveTextContent(/gpt-oss:120b cannot disable, so it was reset/);
+        expect(await screen.findByRole('status')).toHaveTextContent(/gpt-oss:120b 无法关闭/);
         expect(await savedMode()).toBeNull();
     });
 
@@ -894,7 +894,7 @@ describe('SettingsProvider reasoning on the ollama catalogue', () => {
         renderWith('deepseek-r1:8b', 'off');
         await pick('gpt-oss:120b');
 
-        expect(await screen.findByRole('status')).toHaveTextContent(/gpt-oss:120b cannot disable/);
+        expect(await screen.findByRole('status')).toHaveTextContent(/gpt-oss:120b 无法关闭/);
 
         await pick('deepseek-r1:8b');
 
@@ -970,7 +970,7 @@ describe('SettingsProvider level refused alongside tools', () => {
 
         expect(screen.queryByText('推理强度')).toBeNull();
         expect(screen.queryByLabelText('推理最大 Token')).toBeNull();
-        expect(screen.getByText(/gpt-5.6-sol refuses a reasoning effort or budget/)).toBeInTheDocument();
+        expect(screen.getByText(/gpt-5.6-sol.*拒绝推理强度或预算/)).toBeInTheDocument();
         expect(await modeOptions()).toEqual(['未选择', '关闭（不推理）']);
     });
 
@@ -978,7 +978,7 @@ describe('SettingsProvider level refused alongside tools', () => {
         renderWith({ simple: agent('gpt-5.6-sol', { effort: 'medium' }) }, /Simple/);
 
         expect(await screen.findByRole('status')).toHaveTextContent(
-            'Reasoning Effort was Medium, which gpt-5.6-sol refuses on requests with function tools',
+            '中，但 gpt-5.6-sol 在带函数工具的请求中拒绝该设置',
         );
         expect(await savedReasoning('simple')).toEqual({ effort: null, maxTokens: null, mode: null });
     });
@@ -988,7 +988,7 @@ describe('SettingsProvider level refused alongside tools', () => {
         async (reasoning) => {
             renderWith({ simple: agent('gpt-5.6-sol', reasoning) }, /Simple/);
 
-            expect(await screen.findByRole('status')).toHaveTextContent('Reasoning Max Tokens was 2048');
+            expect(await screen.findByRole('status')).toHaveTextContent('推理最大 Token 原本为 2048');
             expect(await savedReasoning('simple')).toEqual({ effort: null, maxTokens: null, mode: null });
         },
     );
@@ -1017,7 +1017,7 @@ describe('SettingsProvider level refused alongside tools', () => {
 
         const effort = screen.getByRole('combobox', { name: '推理强度' });
 
-        expect(effort).toHaveTextContent('High');
+        expect(effort).toHaveTextContent('高');
 
         fireEvent.keyDown(effort, { key: 'Enter' });
         fireEvent.click(await screen.findByRole('option', { name: '未选择' }));
@@ -1055,7 +1055,7 @@ describe('SettingsProvider level refused alongside tools', () => {
 
         expect(screen.queryByText('推理强度')).toBeNull();
         expect(await screen.findByRole('status')).toHaveTextContent(
-            'Reasoning Effort was Medium, which gpt-5.6-sol refuses on requests with function tools',
+            '中，但 gpt-5.6-sol 在带函数工具的请求中拒绝该设置',
         );
         expect(await savedReasoning(key)).toEqual({ effort: null, maxTokens: null, mode: null });
     });
@@ -1095,7 +1095,7 @@ describe('SettingsProvider reasoning on a model that does not reason', () => {
 
     it('offers no reasoning budget and says why', () => {
         expect(screen.queryByLabelText('推理最大 Token')).toBeNull();
-        expect(screen.getByText('llama3.1:8b does not reason, so it has no reasoning settings.')).toBeInTheDocument();
+        expect(screen.getByText('llama3.1:8b 不支持推理，因此没有推理相关设置。')).toBeInTheDocument();
     });
 
     it('keeps the budget for a model whose catalogue entry says nothing about reasoning', async () => {
@@ -1103,7 +1103,7 @@ describe('SettingsProvider reasoning on a model that does not reason', () => {
         fireEvent.click(await screen.findByRole('option', { name: /qwen3:8b/ }));
 
         expect(await screen.findByLabelText('推理最大 Token')).toBeInTheDocument();
-        expect(screen.queryByText(/does not reason/)).toBeNull();
+        expect(screen.queryByText(/不支持推理/)).toBeNull();
     });
 });
 
@@ -1127,7 +1127,7 @@ describe('SettingsProvider saved effort on a model that does not reason', () => 
         render(<SettingsProvider />);
         fireEvent.click(screen.getByRole('button', { name: /Simple/ }));
 
-        expect(screen.getByText('llama3.1:8b does not reason, so it has no reasoning settings.')).toBeInTheDocument();
+        expect(screen.getByText('llama3.1:8b 不支持推理，因此没有推理相关设置。')).toBeInTheDocument();
         expect(screen.queryByText('推理强度')).toBeNull();
     });
 });
@@ -1219,15 +1219,15 @@ describe('SettingsProvider Off reset on a model that does not reason', () => {
     it('gives the model not reasoning as the reason', async () => {
         const notice = await screen.findByRole('status');
 
-        expect(notice).toHaveTextContent('Reasoning Mode was Off, but llama3.1:8b does not reason, so it was reset.');
-        expect(notice).not.toHaveTextContent('cannot disable');
+        expect(notice).toHaveTextContent('llama3.1:8b 不支持推理，因此“推理模式=关闭”已被重置。');
+        expect(notice).not.toHaveTextContent('无法关闭');
     });
 
     it('keeps saying the model cannot disable where it thinks', async () => {
         fireEvent.click(screen.getByRole('button', { name: /打开模型列表/i }));
         fireEvent.click(await screen.findByRole('option', { name: /gpt-oss:120b/ }));
 
-        expect(await screen.findByRole('status')).toHaveTextContent('gpt-oss:120b cannot disable, so it was reset');
+        expect(await screen.findByRole('status')).toHaveTextContent('gpt-oss:120b 无法关闭推理');
     });
 });
 
@@ -1407,7 +1407,7 @@ describe('SettingsProvider budget saved without a mode', () => {
 
     it('leaves Budget for the effort picked, since the server runs the effort then', async () => {
         renderWith({ maxTokens: 2048 });
-        await pick('推理强度', 'High');
+        await pick('推理强度', '高');
 
         expect(modeSelect()).toHaveTextContent('未选择');
         expect(await created()).toEqual({ effort: 'high', maxTokens: null, mode: null });
@@ -1626,7 +1626,7 @@ describe('SettingsProvider budget on a model that takes none', () => {
             renderWith(reasoning);
 
             expect(await screen.findByRole('status')).toHaveTextContent(
-                'Reasoning Max Tokens was 2048, which glm-5-turbo does not take, so it was reset',
+                '推理最大 Token 原本为 2048，但 glm-5-turbo 不接受该值',
             );
             expect(await created()).toEqual({ effort: null, maxTokens: null, mode: null });
         },

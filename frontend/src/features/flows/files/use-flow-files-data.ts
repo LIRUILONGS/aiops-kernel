@@ -42,7 +42,7 @@ export function useFlowFilesData({ flowId }: UseFlowFilesDataParams): UseFlowFil
 
     useEffect(() => {
         if (flowFilesError) {
-            toast.error('Failed to load files', {
+            toast.error('加载文件失败', {
                 description: flowFilesError.message,
                 id: FLOW_FILES_ERROR_TOAST_ID,
             });

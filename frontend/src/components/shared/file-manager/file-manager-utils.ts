@@ -63,30 +63,30 @@ export const formatModifiedRelative = (modifiedAt?: Date | string): string => {
     const years = differenceInYears(now, date);
 
     if (seconds < 60 || !minutes) {
-        return 'just now';
+        return '刚刚';
     }
 
     if (minutes < 60 || !hours) {
-        return `${minutes}m ago`;
+        return `${minutes} 分钟前`;
     }
 
     if (hours < 24 || !days) {
-        return `${hours}h ago`;
+        return `${hours} 小时前`;
     }
 
     if (days < 7 || !weeks) {
-        return `${days}d ago`;
+        return `${days} 天前`;
     }
 
     if (weeks < 4 || !months) {
-        return `${weeks}w ago`;
+        return `${weeks} 周前`;
     }
 
     if (months < 12 || !years) {
-        return `${months}mo ago`;
+        return `${months} 个月前`;
     }
 
-    return `${years}y ago`;
+    return `${years} 年前`;
 };
 
 /**
@@ -595,9 +595,9 @@ export const collectSubtreePaths = (node: FileManagerInternalNode): string[] => 
     return result;
 };
 
-export const pluralizeItems = (count: number): string => (count === 1 ? 'item' : 'items');
+export const pluralizeItems = (count: number): string => (count === 1 ? '项' : '项');
 
-export const pluralizeItemsEnglish = (count: number): string => `${count} ${pluralizeItems(count)}`;
+export const formatItemCount = (count: number): string => `${count} ${pluralizeItems(count)}`;
 
 /**
  * Recursively sum every file's `size` inside a node's subtree. Synthetic group

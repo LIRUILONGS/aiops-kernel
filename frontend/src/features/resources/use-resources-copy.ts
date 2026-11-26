@@ -13,9 +13,9 @@ export const resourcesCopyFormSchema = z.object({
     destination: z
         .string()
         .trim()
-        .min(1, { message: 'Destination cannot be empty' })
-        .refine((value) => !value.startsWith('/'), { message: 'Destination must be a relative path' })
-        .refine((value) => !value.split('/').includes('..'), { message: 'Destination must not contain ".."' }),
+        .min(1, { message: '目标目录不能为空' })
+        .refine((value) => !value.startsWith('/'), { message: '目标必须是相对路径' })
+        .refine((value) => !value.split('/').includes('..'), { message: '目标路径不能包含 ".."' }),
 });
 
 export type ResourcesCopyFormValues = z.infer<typeof resourcesCopyFormSchema>;
@@ -67,7 +67,7 @@ export function useResourcesCopy(): UseResourcesCopyResult {
                         ? `Copied to /${destination}`
                         : `Copied ${sources.length} ${pluralizeItems(sources.length)} into /${destination}`;
 
-                toast.success('Resource copied', { description });
+                toast.success('资源已复制', { description });
 
                 return { kind: 'ok' };
             } catch (error) {
@@ -75,9 +75,9 @@ export function useResourcesCopy(): UseResourcesCopyResult {
                     return { kind: 'conflict' };
                 }
 
-                const description = getApiErrorMessage(error, 'Failed to copy resource');
+                const description = getApiErrorMessage(error, '复制资源失败');
 
-                toast.error('Copy failed', { description });
+                toast.error('复制失败', { description });
 
                 return { kind: 'error' };
             } finally {

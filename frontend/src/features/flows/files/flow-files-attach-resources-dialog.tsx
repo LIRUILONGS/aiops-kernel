@@ -176,7 +176,7 @@ function FlowFilesAttachResourcesDialogBody({
     const hasResources = resources.length > 0;
     const isAttachDisabled = selectedCount === 0;
     const primaryLabel = selectedCount > 0 ? `Attach ${selectedCount}` : 'Attach';
-    const overwriteLabel = selectedCount > 0 ? `Attach ${selectedCount} with overwrite` : 'Attach with overwrite';
+    const overwriteLabel = selectedCount > 0 ? `Attach ${selectedCount} with overwrite` : '覆盖挂载';
 
     const emptyState = (
         <Empty className="border-0">
@@ -198,7 +198,7 @@ function FlowFilesAttachResourcesDialogBody({
                 </EmptyMedia>
                 <EmptyTitle>没有匹配</EmptyTitle>
                 <EmptyDescription>
-                    No resources match <code>{searchQuery.trim()}</code>.
+                    没有匹配 <code>{searchQuery.trim()}</code> 的资源。
                 </EmptyDescription>
             </EmptyHeader>
         </Empty>
@@ -210,12 +210,11 @@ function FlowFilesAttachResourcesDialogBody({
                 <DialogHeader className="text-left">
                     <DialogTitle className="flex items-center gap-2">
                         <FolderInput className="size-4" />
-                        Attach resources
+                        挂载资源
                     </DialogTitle>
                     <DialogDescription>
-                        Pick files and/or folders from your global library — they will be copied into{' '}
-                        <code>resources/</code> of this flow and made available at <code>/work/resources</code> inside
-                        the container.
+                        从全局资源库中选择文件或目录，它们会被复制到本会话的 <code>resources/</code>，并在容器内的{' '}
+                        <code>/work/resources</code> 可用。
                     </DialogDescription>
                 </DialogHeader>
 
@@ -264,11 +263,7 @@ function FlowFilesAttachResourcesDialogBody({
 
                 <DialogFooter className="flex-wrap gap-4 sm:items-center">
                     <span className="text-muted-foreground order-last mr-auto text-xs sm:order-first">
-                        {selectedCount > 0
-                            ? `${selectedCount} selected`
-                            : hasResources
-                              ? 'Select one or more items'
-                              : ''}
+                        {selectedCount > 0 ? `已选择 ${selectedCount} 项` : hasResources ? '请选择一项或多项' : ''}
                     </span>
                     <div className="flex flex-col-reverse gap-2 sm:ml-auto sm:flex-row sm:justify-end">
                         <Button
@@ -277,7 +272,7 @@ function FlowFilesAttachResourcesDialogBody({
                             type="button"
                             variant="outline"
                         >
-                            Cancel
+                            取消
                         </Button>
                         <OverwriteButtons
                             isDisabled={isAttachDisabled}

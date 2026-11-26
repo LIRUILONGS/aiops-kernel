@@ -182,8 +182,8 @@ function FlowFilesPromoteDialogForm({ files, flowId, onClose }: FlowFilesPromote
     // Convention: stay enabled until the first submit, then reflect validity (so an invalid submit surfaces
     // errors instead of a silently-dead button). Mirrors FormSubmitButton's requireValid gate.
     const isSubmitDisabled = form.formState.isSubmitted && !form.formState.isValid;
-    const titleText = isMulti ? `Save ${files.length} items as resources` : 'Save as resource';
-    const overwriteCtaLabel = isMulti ? `Save ${files.length} with overwrite` : 'Save with overwrite';
+    const titleText = isMulti ? `Save ${files.length} items as resources` : '保存为资源';
+    const overwriteCtaLabel = isMulti ? `Save ${files.length} with overwrite` : '覆盖保存';
 
     return (
         <>
@@ -195,14 +195,10 @@ function FlowFilesPromoteDialogForm({ files, flowId, onClose }: FlowFilesPromote
                     </DialogTitle>
                     <DialogDescription>
                         {isMulti ? (
-                            <>
-                                Promote every selected entry from this flow into your global resource library so you can
-                                reuse them in other flows.
-                            </>
+                            <>把选中的条目从本会话提升到全局资源库，以便在其他会话中复用。</>
                         ) : (
                             <>
-                                Promote <code>{files[0].path}</code> from this flow into your global resource library so
-                                you can reuse it in other flows.
+                                把 <code>{files[0].path}</code> 从本会话提升到全局资源库，以便在其他会话中复用。
                             </>
                         )}
                     </DialogDescription>
@@ -226,23 +222,15 @@ function FlowFilesPromoteDialogForm({ files, flowId, onClose }: FlowFilesPromote
                                             autoComplete="off"
                                             autoFocus
                                             disabled={isPromoting}
-                                            placeholder={
-                                                isMulti
-                                                    ? 'Leave empty to save into the library root'
-                                                    : 'results/scan.txt'
-                                            }
+                                            placeholder={isMulti ? '留空表示保存到资源库根目录' : 'results/scan.txt'}
                                         />
                                     </FormControl>
                                     <FormDescription>
                                         {isMulti ? (
-                                            <>
-                                                Relative directory inside your resource library. Leave empty for the
-                                                root. Each item keeps its current filename.
-                                            </>
+                                            <>资源库内的相对目录。留空表示根目录。每项保留其现有文件名。</>
                                         ) : (
                                             <>
-                                                Relative path inside your resource library. Use <code>/</code> to nest
-                                                into subdirectories.
+                                                资源库内的相对路径。用 <code>/</code> 嵌套子目录。
                                             </>
                                         )}
                                     </FormDescription>
@@ -258,7 +246,7 @@ function FlowFilesPromoteDialogForm({ files, flowId, onClose }: FlowFilesPromote
                                 type="button"
                                 variant="outline"
                             >
-                                Cancel
+                                取消
                             </Button>
                             <OverwriteButtons
                                 isDisabled={isSubmitDisabled}

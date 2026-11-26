@@ -63,13 +63,13 @@ function NewFlow() {
                                     disabled={isLoading}
                                     value="automation"
                                 >
-                                    Automation
+                                    自动化
                                 </TabsTrigger>
                                 <TabsTrigger
                                     disabled={isLoading}
                                     value="assistant"
                                 >
-                                    Assistant
+                                    助手
                                 </TabsTrigger>
                             </TabsList>
                         </Tabs>
@@ -82,9 +82,9 @@ function NewFlow() {
                             placeholder={
                                 !isLoading
                                     ? flowType === 'automation'
-                                        ? 'Describe the incident to diagnose, or the service to optimise...'
-                                        : 'What would you like me to help you with?'
-                                    : 'Creating a new flow...'
+                                        ? '描述要诊断的故障，或要优化的服务…'
+                                        : '需要我帮你做什么？'
+                                    : '正在创建会话…'
                             }
                         />
                     </CardContent>

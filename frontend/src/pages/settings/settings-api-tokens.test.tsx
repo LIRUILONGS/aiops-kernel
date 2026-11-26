@@ -178,7 +178,7 @@ describe('the create row date picker', () => {
         expect(screen.getByRole('button', { name: '选择日期' })).toBeInTheDocument();
 
         fireEvent.click(dayButton(lastAllowed));
-        expect(screen.getByRole('button', { name: format(lastAllowed, 'd MMM yyyy') })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: format(lastAllowed, 'yyyy年M月d日') })).toBeInTheDocument();
         await waitFor(() => expect(submitButton()).toBeEnabled());
     }, 30_000);
 });
@@ -273,8 +273,8 @@ describe('a token created in an earlier year', () => {
             </MemoryRouter>,
         );
 
-        expect(screen.getByText(format(new Date('2025-06-15T12:00:00Z'), 'd MMM yyyy'))).toBeInTheDocument();
-        expect(screen.getByText(format(new Date('2025-06-16T12:00:00Z'), 'd MMM yyyy'))).toBeInTheDocument();
+        expect(screen.getByText(format(new Date('2025-06-15T12:00:00Z'), 'yyyy年M月d日'))).toBeInTheDocument();
+        expect(screen.getByText(format(new Date('2025-06-16T12:00:00Z'), 'yyyy年M月d日'))).toBeInTheDocument();
     });
 });
 
@@ -313,7 +313,7 @@ describe('creating the very first token', () => {
 
         await waitFor(() => expect(mutationSpy).toHaveBeenCalled());
         expect(await screen.findByText('令牌已创建')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Copy Token' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: '复制令牌' })).toBeInTheDocument();
     }, 30_000);
 });
 
@@ -351,7 +351,7 @@ describe('renaming an expired token', () => {
             screen.getByRole('button', { name: '打开菜单' }),
             new MouseEvent('pointerdown', { bubbles: true, cancelable: true }),
         );
-        fireEvent.click(await screen.findByRole('menuitem', { name: 'Edit' }));
+        fireEvent.click(await screen.findByRole('menuitem', { name: '编辑' }));
 
         fireEvent.change(screen.getByPlaceholderText('令牌名称（可选）'), { target: { value: 'renamed' } });
 

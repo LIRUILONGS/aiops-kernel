@@ -129,10 +129,10 @@ function text(value: unknown): string | undefined {
 }
 
 const VERDICT_LABELS: Record<string, string> = {
-    degraded: 'Degraded',
-    improved: 'Improved',
-    no_measurable_effect: 'No measurable effect',
-    unverified: 'Not re-measured',
+    degraded: '变差',
+    improved: '改善',
+    no_measurable_effect: '无可测效果',
+    unverified: '未重新测量',
 };
 
 const VERDICT_VARIANTS: Record<string, BadgeProps['variant']> = {
@@ -217,7 +217,7 @@ function FlowMessageConclusion({ conclusion, footer, raw, searchValue = '' }: Fl
                     onClick={() => setIsRawVisible((previous) => !previous)}
                     type="button"
                 >
-                    {isRawVisible ? 'Hide report' : 'Show report'}
+                    {isRawVisible ? '收起报告' : '展开报告'}
                 </button>
             </div>
 
@@ -273,7 +273,7 @@ function FlowMessageConclusion({ conclusion, footer, raw, searchValue = '' }: Fl
                             />
                             <Row
                                 label="实测收益"
-                                value={conclusion.observedGain ?? 'not re-measured'}
+                                value={conclusion.observedGain ?? '未重新测量'}
                             />
                             <Row
                                 label="回滚"

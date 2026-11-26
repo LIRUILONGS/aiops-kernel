@@ -175,7 +175,7 @@ function AssistantsDropdown({
                             </>
                         ) : (
                             <span className="bg-muted text-muted-foreground flex h-5 shrink-0 items-center justify-center rounded px-1 text-xs font-medium">
-                                New
+                                新建
                             </span>
                         )}
                         <ChevronDown className="opacity-50" />
@@ -201,7 +201,7 @@ function AssistantsDropdown({
                                         value="create-new-assistant"
                                     >
                                         <Plus />
-                                        Create new assistant
+                                        新建助手
                                     </CommandItem>
                                 </CommandGroup>
                             )}
@@ -241,7 +241,7 @@ function AssistantsDropdown({
                 handleOpenChange={setDeleteDialogOpen}
                 isOpen={deleteDialogOpen}
                 itemName={currentAssistant?.title}
-                itemType="assistant"
+                itemType="助手"
                 title="删除助手"
             />
         </>
@@ -409,37 +409,37 @@ function FlowAssistantMessages({ className }: FlowAssistantMessagesProps) {
 
     const placeholder = useMemo(() => {
         if (!flowId) {
-            return 'Select a flow...';
+            return '选择会话…';
         }
 
         if (isAssistantCreating) {
-            return 'Creating assistant...';
+            return '正在创建助手…';
         }
 
         if (!selectedAssistant?.status) {
-            return 'Type a message to create a new assistant...';
+            return '输入消息以创建新助手…';
         }
 
         switch (selectedAssistant.status) {
             case StatusType.Created: {
-                return 'Assistant is starting...';
+                return '助手正在启动…';
             }
 
             case StatusType.Failed:
             case StatusType.Finished: {
-                return 'This assistant session has ended. Create a new one to continue.';
+                return '该助手会话已结束，新建一个助手即可继续。';
             }
 
             case StatusType.Running: {
-                return 'Assistant is running... Click Stop to interrupt';
+                return '助手正在运行…点击「停止」可中断';
             }
 
             case StatusType.Waiting: {
-                return 'Continue the conversation...';
+                return '继续对话…';
             }
 
             default: {
-                return 'Type your message...';
+                return '输入消息…';
             }
         }
     }, [flowId, isAssistantCreating, selectedAssistant?.status]);
@@ -569,7 +569,7 @@ function FlowAssistantMessages({ className }: FlowAssistantMessagesProps) {
                                 variant="outline"
                             >
                                 <X />
-                                Reset filters
+                                重置筛选
                             </Button>
                         </EmptyContent>
                     </Empty>

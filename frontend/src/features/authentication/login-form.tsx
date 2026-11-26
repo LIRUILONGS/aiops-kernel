@@ -155,9 +155,7 @@ function LoginForm({ providers, returnUrl = routes.newFlow }: LoginFormProps) {
         return (
             <div className="mx-auto flex w-[350px] flex-col gap-6">
                 <h1 className="text-center text-3xl font-bold">更新密码</h1>
-                <p className="text-muted-foreground text-center text-sm">
-                    You need to change your password before continuing.
-                </p>
+                <p className="text-muted-foreground text-center text-sm">继续前需要先修改密码。</p>
                 <PasswordChangeForm
                     layout="vertical"
                     onSkip={handleSkipPasswordChange}

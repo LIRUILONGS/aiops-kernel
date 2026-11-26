@@ -11,16 +11,12 @@ import { api, resolveApiErrorMessage } from '@/lib/axios';
 import { useUser } from '@/providers/user-provider';
 
 const nameChangeFormSchema = z.object({
-    name: z
-        .string()
-        .trim()
-        .min(1, { message: 'Name is required' })
-        .max(70, { message: 'Name must not exceed 70 characters' }),
+    name: z.string().trim().min(1, { message: '请输入名称' }).max(70, { message: '名称不能超过 70 个字符' }),
 });
 
 const ERROR_BY_CODE: Record<string, string> = {
-    'Users.ChangeNameCurrentUser.InvalidName': 'New name does not meet requirements',
-    'Users.NotFound': 'User not found',
+    'Users.ChangeNameCurrentUser.InvalidName': '新名称不符合要求',
+    'Users.NotFound': '用户不存在',
 };
 
 interface NameChangeFormProps {
@@ -47,14 +43,14 @@ export function NameChangeForm({ onCancel, onSuccess }: NameChangeFormProps) {
         try {
             await api.put('/user/name', { name: values.name });
 
-            toast.success('Name successfully updated');
+            toast.success('名称已更新');
 
             patchUser({ name: values.name });
             await refreshAuthInfo();
 
             onSuccess?.();
         } catch (err: unknown) {
-            setError(resolveApiErrorMessage(err, ERROR_BY_CODE, 'Failed to update name'));
+            setError(resolveApiErrorMessage(err, ERROR_BY_CODE, '更新名称失败'));
         }
     };
 
@@ -92,7 +88,7 @@ export function NameChangeForm({ onCancel, onSuccess }: NameChangeFormProps) {
                             type="button"
                             variant="outline"
                         >
-                            Cancel
+                            取消
                         </Button>
                     )}
                     <FormSubmitButton size="sm">

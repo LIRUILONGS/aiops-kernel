@@ -54,14 +54,14 @@ export const formSchema = z.object({
     // limit counts all of it, as the mutation does.
     text: z
         .string()
-        .refine((value) => value.trim() !== '', { message: 'Text is required' })
+        .refine((value) => value.trim() !== '', { message: '请输入正文' })
         .refine((value) => [...value].length <= MAX_TEMPLATE_TEXT_LENGTH, {
             message: `正文不能超过 ${MAX_TEMPLATE_TEXT_LENGTH} 个字符`,
         }),
     title: z
         .string()
         .trim()
-        .min(1, { message: 'Title is required' })
+        .min(1, { message: '请输入标题' })
         .refine((value) => [...value].length <= MAX_TEMPLATE_TITLE_LENGTH, {
             message: `标题不能超过 ${MAX_TEMPLATE_TITLE_LENGTH} 个字符`,
         }),
@@ -312,7 +312,7 @@ function TemplateForm({ templateId }: { templateId?: string }) {
                                     </Tooltip>
                                 ) : (
                                     <BreadcrumbPage className="min-w-0 truncate">
-                                        {isNew ? 'New template' : (templateName ?? '模板')}
+                                        {isNew ? '新建模板' : (templateName ?? '模板')}
                                     </BreadcrumbPage>
                                 )}
                             </BreadcrumbItem>
@@ -361,7 +361,7 @@ function TemplateForm({ templateId }: { templateId?: string }) {
                                                     onSelect={(event) => event.preventDefault()}
                                                 >
                                                     <FileText />
-                                                    Templates
+                                                    模板
                                                     <div className="-my-1.5 -mr-2 ml-auto flex items-center">
                                                         <DetailNavigationButtons<Template>
                                                             controller={templateNav}
@@ -542,7 +542,7 @@ function TemplateForm({ templateId }: { templateId?: string }) {
 
     const introBlock = (
         <div className="flex flex-col gap-2 text-center">
-            <h2 className="text-2xl font-semibold">{isNew ? 'Create a new template' : 'Edit template'}</h2>
+            <h2 className="text-2xl font-semibold">{isNew ? '新建模板' : '编辑模板'}</h2>
             <p className="text-muted-foreground">填写标题与内容，或从预设开始。</p>
         </div>
     );
@@ -691,7 +691,7 @@ function TemplateForm({ templateId }: { templateId?: string }) {
                 handleOpenChange={setIsDeleteDialogOpen}
                 isOpen={isDeleteDialogOpen}
                 itemName={templateName ?? undefined}
-                itemType="template"
+                itemType="模板"
             />
             <UnsavedChangesDialog
                 canSave={isValid}

@@ -32,7 +32,7 @@ const buildUploadSuccessMessage = (uploadedCount: number, firstFileName?: string
     if (uploadedCount === 1) {
         return {
             description: `Available at ${UPLOADS_TARGET_DIRECTORY}/${firstFileName ?? ''}`,
-            title: 'File uploaded',
+            title: '文件已上传',
         };
     }
 
@@ -77,7 +77,7 @@ export function useFlowFilesUpload({ flowId }: UseFlowFilesUploadParams): UseFlo
             });
 
             if (validationError) {
-                toast.error('Upload failed', { description: validationError });
+                toast.error('上传失败', { description: validationError });
 
                 return;
             }
@@ -101,9 +101,9 @@ export function useFlowFilesUpload({ flowId }: UseFlowFilesUploadParams): UseFlo
 
                 toast.success(successMessage.title, { description: successMessage.description });
             } catch (error) {
-                const description = getApiErrorMessage(error, 'Failed to upload files');
+                const description = getApiErrorMessage(error, '上传文件失败');
 
-                toast.error('Upload failed', { description });
+                toast.error('上传失败', { description });
             } finally {
                 setIsUploading(false);
             }

@@ -28,18 +28,18 @@ const describeFailure = ({
     isOnline: boolean;
 }) => {
     if (isChunk && !isOnline) {
-        return 'You are offline, so this page could not load. It will reload once the connection is back.';
+        return '当前处于离线状态，页面无法加载。网络恢复后会自动重新加载。';
     }
 
     if (isChunk) {
-        return 'A new version was likely just deployed. Reloading will load the latest one.';
+        return '可能刚刚部署了新版本，重新加载即可用上最新版本。';
     }
 
     if (isDesync) {
-        return 'The page hit a display glitch. Reloading usually clears it.';
+        return '页面出现了显示异常，重新加载通常可以恢复。';
     }
 
-    return 'The page ran into an unexpected error. Reloading usually clears it.';
+    return '页面遇到了意外错误，重新加载通常可以恢复。';
 };
 
 /**
@@ -81,7 +81,7 @@ function RouteErrorBoundary() {
                         onClick={() => window.location.reload()}
                         variant="secondary"
                     >
-                        Reload
+                        重新加载
                     </Button>
                 </EmptyContent>
             </Empty>

@@ -331,8 +331,8 @@ function Templates() {
                 <DataTable
                     columns={columns}
                     data={templates}
-                    empty={{ entityName: 'templates' }}
-                    filterPlaceholder="Filter templates..."
+                    empty={{ entityName: '模板' }}
+                    filterPlaceholder="筛选模板…"
                     filterValue={filter}
                     label="模板"
                     onFilterChange={setFilter}
@@ -351,7 +351,7 @@ function Templates() {
                     handleOpenChange={setIsDeleteDialogOpen}
                     isOpen={isDeleteDialogOpen}
                     itemName={deletingTemplate?.title}
-                    itemType="template"
+                    itemType="模板"
                 />
             </div>
         </>

@@ -70,7 +70,7 @@ test.describe('flow assistants', { tag: '@flows' }, () => {
             await openPicker(page);
             await page.getByRole('option', { name: 'Create new assistant' }).click();
 
-            const composer = page.getByPlaceholder('Type a message to create a new assistant...');
+            const composer = page.getByPlaceholder('输入消息以创建新助手…');
             const picker = page.getByRole('button', { name: 'Select assistant' });
 
             await expect(composer).toBeVisible();
@@ -118,7 +118,7 @@ test.describe('flow assistants', { tag: '@flows' }, () => {
         test('sends a follow-up to the assistant the picker already selected', async ({ page, pageErrorLog }) => {
             await openAssistantTab(page);
 
-            const composer = page.getByPlaceholder('Continue the conversation...');
+            const composer = page.getByPlaceholder('继续对话…');
 
             await composer.fill('and the other ports?');
 
@@ -194,7 +194,7 @@ test.describe('flow assistants', { tag: '@flows' }, () => {
                 assistantId: RUNNING_ASSISTANT.id,
                 flowId: '5',
             });
-            await expect(page.getByPlaceholder('Continue the conversation...')).toBeVisible();
+            await expect(page.getByPlaceholder('继续对话…')).toBeVisible();
             expectCleanPage(pageErrorLog);
         });
     });

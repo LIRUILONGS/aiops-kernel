@@ -45,14 +45,14 @@ describe('FlowTask', () => {
     it('does not say a failed task waits for subtasks', () => {
         renderTask(task({ status: StatusType.Failed }));
 
-        expect(screen.queryByText('Waiting for subtasks to be created...')).not.toBeInTheDocument();
-        expect(screen.getByText('The task failed before any subtasks were created.')).toBeInTheDocument();
+        expect(screen.queryByText('正在等待创建子任务…')).not.toBeInTheDocument();
+        expect(screen.getByText('任务在创建子任务之前就失败了。')).toBeInTheDocument();
     });
 
     it('still says a running task waits for its subtasks', () => {
         renderTask(task({ status: StatusType.Running }));
 
-        expect(screen.getByText('Waiting for subtasks to be created...')).toBeInTheDocument();
+        expect(screen.getByText('正在等待创建子任务…')).toBeInTheDocument();
     });
 
     it('names the status icons of the task and its subtasks', () => {

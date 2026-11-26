@@ -79,7 +79,7 @@ test.describe('resources', { tag: '@coverage' }, () => {
 
         test('creates a directory and the new row arrives via subscription', async ({ page, pageErrorLog }) => {
             await page.goto('/resources');
-            await page.getByRole('button', { name: 'New folder' }).click();
+            await page.getByRole('button', { name: '新建目录' }).click();
 
             const dialog = page.getByRole('dialog');
 
@@ -88,7 +88,7 @@ test.describe('resources', { tag: '@coverage' }, () => {
             await dialog.getByLabel('Path').fill(TYPED_PATH);
             await dialog.getByRole('button', { name: 'Create' }).click();
 
-            await expect(page.getByText('Directory created')).toBeVisible();
+            await expect(page.getByText('目录已创建')).toBeVisible();
             await expect(page.getByRole('treeitem', { name: new RegExp(TYPED_PATH) })).toBeVisible();
             expectCleanPage(pageErrorLog);
         });
@@ -142,7 +142,7 @@ test.describe('resources', { tag: '@coverage' }, () => {
         test('move sends one destination directory for the whole selection', async ({ page, pageErrorLog }) => {
             await page.goto('/resources');
             await selectBoth(page);
-            await page.getByRole('button', { exact: true, name: 'Move to…' }).click();
+            await page.getByRole('button', { exact: true, name: '移动到…' }).click();
 
             const dialog = page.getByRole('dialog');
 
@@ -169,7 +169,7 @@ test.describe('resources', { tag: '@coverage' }, () => {
             await page.goto('/resources');
             await selectBoth(page);
             await page.getByRole('button', { name: 'More actions' }).click();
-            await page.getByRole('menuitem', { name: 'Copy to…' }).click();
+            await page.getByRole('menuitem', { name: '复制到…' }).click();
 
             const dialog = page.getByRole('dialog');
 
@@ -264,7 +264,7 @@ test.describe('resources', { tag: '@coverage' }, () => {
                 .getByRole('treeitem', { name: new RegExp(NESTED_RESOURCE.name) })
                 .getByRole('button', { name: 'Row actions' })
                 .click();
-            await page.getByRole('menuitem', { name: 'Copy path' }).click();
+            await page.getByRole('menuitem', { name: '复制路径' }).click();
 
             await expect(page.getByText('Path copied to clipboard')).toBeVisible();
             expect(await clipboardWrites(page)).toEqual([NESTED_RESOURCE.path]);
@@ -295,7 +295,7 @@ test.describe('resources', { tag: '@coverage' }, () => {
             );
 
             await openNestedRowActions(page);
-            await page.getByRole('menuitem', { name: 'Rename or move' }).click();
+            await page.getByRole('menuitem', { name: '重命名或移动' }).click();
 
             const dialog = page.getByRole('dialog');
 
@@ -318,7 +318,7 @@ test.describe('resources', { tag: '@coverage' }, () => {
             );
 
             await openNestedRowActions(page);
-            await page.getByRole('menuitem', { name: 'Copy to…' }).click();
+            await page.getByRole('menuitem', { name: '复制到…' }).click();
 
             const dialog = page.getByRole('dialog');
 
@@ -346,11 +346,11 @@ test.describe('resources', { tag: '@coverage' }, () => {
             });
 
             await rowActions(page, FILE_RESOURCE.name).click();
-            await page.getByRole('menuitem', { name: 'Copy to…' }).click();
+            await page.getByRole('menuitem', { name: '复制到…' }).click();
             await page.getByRole('dialog').getByLabel('Destination path').fill(FOLDER_RESOURCE.name);
             await page.getByRole('dialog').getByRole('button', { exact: true, name: 'Copy' }).click();
 
-            await expect(page.getByRole('dialog', { name: 'Replace existing item?' })).toBeVisible();
+            await expect(page.getByRole('dialog', { name: '替换已有条目？' })).toBeVisible();
             expect(copyRequests, 'nothing is sent while the guard is open').toBe(0);
 
             await page.getByRole('button', { name: 'Cancel' }).click();

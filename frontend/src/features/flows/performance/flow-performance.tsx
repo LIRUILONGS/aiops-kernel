@@ -123,7 +123,7 @@ function FlowPerformance({ flowId }: { flowId: string }) {
             })
             .catch((cause: unknown) => {
                 if (!cancelled) {
-                    setError(getApiErrorMessage(cause, 'the tool calls could not be read'));
+                    setError(getApiErrorMessage(cause, '工具调用无法读取'));
                 }
             });
 
@@ -148,7 +148,7 @@ function FlowPerformance({ flowId }: { flowId: string }) {
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Gauge className="size-4" />
-                    Performance
+                    性能
                 </CardTitle>
                 <CardDescription>
                     {samples.length} sample{samples.length === 1 ? '' : 's'} from ops_baseline, {diffs.length}{' '}
@@ -223,9 +223,7 @@ function Samples({ samples }: { samples: BaselineSample[] }) {
 
     return (
         <div>
-            <div className="text-muted-foreground mb-2 text-xs">
-                Samples — the first one is the baseline every later one is compared with
-            </div>
+            <div className="text-muted-foreground mb-2 text-xs">采样点 —— 第一个是基线，之后每次都与它比较</div>
             <Table aria-label="性能采样">
                 <TableHeader>
                     <TableRow>

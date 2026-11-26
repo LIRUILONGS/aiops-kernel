@@ -42,7 +42,7 @@ const UserContext = createContext<undefined | UserContextType>(undefined);
 
 export const AUTH_STORAGE_KEY = 'auth';
 
-export const LOGIN_LOCKED_MESSAGE = 'Too many login attempts. Wait a few minutes and try again.';
+export const LOGIN_LOCKED_MESSAGE = '登录尝试过于频繁，请等待几分钟后重试。';
 
 export function UserProvider({ children }: { children: ReactNode }) {
     const navigate = useNavigate();
@@ -163,9 +163,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
             try {
                 await api.post('/auth/logout');
-                toast.success('Successfully logged out');
+                toast.success('已退出登录');
             } catch {
-                toast.error('Logout failed, but clearing local session');
+                toast.error('退出登录失败，已清除本地会话');
             } finally {
                 clearAuth();
                 window.location.href = `${routes.login()}${finalReturnUrl}`;
@@ -180,7 +180,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
                 const loginResponse = await api.post<unknown>('/auth/login', credentials);
 
                 if (loginResponse?.status !== 'success') {
-                    const errorMessage = 'Invalid login or password';
+                    const errorMessage = '账号或密码不正确';
                     toast.error(errorMessage);
 
                     return { error: errorMessage, success: false };
@@ -190,7 +190,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
                 const infoResponse = await api.get<AuthInfo>('/info');
 
                 if (infoResponse?.status !== 'success' || !infoResponse.data) {
-                    const errorMessage = 'Failed to load user information';
+                    const errorMessage = '加载用户信息失败';
                     toast.error(errorMessage);
 
                     return { error: errorMessage, success: false };
@@ -199,7 +199,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
                 setAuth(infoResponse.data);
 
                 if (infoResponse.data.user?.type === 'local' && infoResponse.data.user.password_change_required) {
-                    toast.warning('Password change required');
+                    toast.warning('需要修改密码');
 
                     return { passwordChangeRequired: true, success: true };
                 }
@@ -207,9 +207,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
                 return { success: true };
             } catch (error) {
                 const errorMessage =
-                    getApiErrorCode(error) === 'Auth.TooManyAttempts'
-                        ? LOGIN_LOCKED_MESSAGE
-                        : 'Login failed. Please try again.';
+                    getApiErrorCode(error) === 'Auth.TooManyAttempts' ? LOGIN_LOCKED_MESSAGE : '登录失败，请重试。';
                 toast.error(errorMessage);
 
                 return { error: errorMessage, success: false };
@@ -253,7 +251,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
                         clearInterval(popupCheck);
                         clearTimeout(timeoutId);
                         window.removeEventListener('message', messageHandler);
-                        const errorMessage = 'Authentication cancelled';
+                        const errorMessage = '已取消登录';
                         toast.info(errorMessage);
                         resolve({
                             error: errorMessage,
@@ -272,7 +270,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
                             popup.close();
                         }
 
-                        const errorMessage = 'Authentication timeout';
+                        const errorMessage = '认证超时';
                         toast.error(errorMessage);
                         resolve({
                             error: errorMessage,
@@ -318,7 +316,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
                     }
 
                     cleanup();
-                    const errorMessage = event.data.error || 'Authentication failed';
+                    const errorMessage = event.data.error || '认证失败';
                     toast.error(errorMessage);
                     resolve({
                         error: errorMessage,
@@ -355,7 +353,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
                     setAuth(info.data);
                 } else {
                     clearAuth();
-                    toast.error('Session expired. Please login again.');
+                    toast.error('会话已过期，请重新登录。');
                     navigate(routes.login(location.pathname));
                 }
             } catch {

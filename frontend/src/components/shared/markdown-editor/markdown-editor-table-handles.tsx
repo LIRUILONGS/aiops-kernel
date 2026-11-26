@@ -98,16 +98,16 @@ export function TableHandles({ editor }: { editor: Editor }) {
                 >
                     <DropdownMenuItem onSelect={() => focusTarget().addColumnBefore().run()}>
                         <ArrowLeft className="text-muted-foreground size-4 shrink-0" />
-                        Insert left
+                        左侧插入
                     </DropdownMenuItem>
                     <DropdownMenuItem onSelect={() => focusTarget().addColumnAfter().run()}>
                         <ArrowRight className="text-muted-foreground size-4 shrink-0" />
-                        Insert right
+                        右侧插入
                     </DropdownMenuItem>
                     <DropdownMenuSub>
                         <DropdownMenuSubTrigger>
                             <AlignLeft className="text-muted-foreground size-4 shrink-0" />
-                            Align column
+                            列对齐
                         </DropdownMenuSubTrigger>
                         <DropdownMenuSubContent>
                             {ALIGN_OPTIONS.map((option) => (
@@ -131,12 +131,12 @@ export function TableHandles({ editor }: { editor: Editor }) {
                         }}
                     >
                         <Eraser className="text-muted-foreground size-4 shrink-0" />
-                        Clear contents
+                        清空内容
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onSelect={() => focusTarget().deleteColumn().run()}>
                         <Delete className="text-muted-foreground size-4 shrink-0" />
-                        Delete column
+                        删除列
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
@@ -175,11 +175,11 @@ export function TableHandles({ editor }: { editor: Editor }) {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onSelect={() => focusTarget().addRowBefore().run()}>
                         <ArrowUp className="text-muted-foreground size-4 shrink-0" />
-                        Insert above
+                        上方插入
                     </DropdownMenuItem>
                     <DropdownMenuItem onSelect={() => focusTarget().addRowAfter().run()}>
                         <ArrowDown className="text-muted-foreground size-4 shrink-0" />
-                        Insert below
+                        下方插入
                     </DropdownMenuItem>
                     <DropdownMenuItem
                         onSelect={() => {
@@ -188,12 +188,12 @@ export function TableHandles({ editor }: { editor: Editor }) {
                         }}
                     >
                         <Eraser className="text-muted-foreground size-4 shrink-0" />
-                        Clear contents
+                        清空内容
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onSelect={() => focusTarget().deleteRow().run()}>
                         <Delete className="text-muted-foreground size-4 shrink-0 -rotate-90" />
-                        Delete row
+                        删除行
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>

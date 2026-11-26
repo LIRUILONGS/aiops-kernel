@@ -28,6 +28,7 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTi
 import { Spinner } from '@/components/ui/spinner';
 import { DeleteProviderDocument, ProviderType, SettingsProvidersDocument } from '@/graphql/types';
 import { useTableState } from '@/hooks/use-table-state';
+import { formatPromptLabel } from '@/lib/prompt-labels';
 import { routes } from '@/lib/routes';
 import { formatTableDate } from '@/lib/utils/format';
 type Provider = ProviderConfigFragmentFragment;
@@ -54,6 +55,25 @@ const providerTypes = (Object.keys(providerLabels) as ProviderType[]).map((type)
     label: providerLabels[type],
     type,
 }));
+
+// Per-agent model config arrives as camelCase keys, so the expanded row names each
+// field from this map and falls back to the humanised key for anything new.
+const providerFieldLabels: Record<string, string> = {
+    cacheRead: '缓存读取',
+    cacheWrite: '缓存写入',
+    input: '输入',
+    json: 'JSON',
+    maxTokens: '最大 Token',
+    model: '模型',
+    output: '输出',
+    parallelism: '并行度',
+    price: '价格',
+    reasoning: '推理',
+    stream: '流式输出',
+    temperature: '温度',
+    topK: 'Top K',
+    topP: 'Top P',
+};
 
 export function SettingsProvidersHeader() {
     const navigate = useNavigate();
@@ -129,7 +149,7 @@ function SettingsProviders() {
 
                 setDeletingProvider(null);
             } catch (error) {
-                toast.error('Failed to delete provider', {
+                toast.error('删除提供商失败', {
                     description: error instanceof Error ? error.message : undefined,
                 });
             }
@@ -212,7 +232,7 @@ function SettingsProviders() {
                         title="创建时间"
                     />
                 ),
-                meta: { columnMenuLabel: 'Created' },
+                meta: { columnMenuLabel: '创建时间' },
                 size: 120,
                 sortingFn: (rowA, rowB) => {
                     const dateA = new Date(rowA.getValue('createdAt') as string);
@@ -264,11 +284,11 @@ function SettingsProviders() {
                                 >
                                     <DropdownMenuItem onClick={() => handleProviderEdit(provider.id)}>
                                         <Pencil className="size-3" />
-                                        Edit
+                                        编辑
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleProviderClone(provider.id)}>
                                         <Copy />
-                                        Clone
+                                        克隆
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem
@@ -283,7 +303,7 @@ function SettingsProviders() {
                                         ) : (
                                             <>
                                                 <Trash />
-                                                Delete
+                                                删除
                                             </>
                                         )}
                                     </DropdownMenuItem>
@@ -310,11 +330,10 @@ function SettingsProviders() {
             return <div className="text-muted-foreground p-4 text-sm">没有可用的智能体配置</div>;
         }
 
-        const getName = (key: string): string =>
-            key.replaceAll(/([A-Z])/g, ' $1').replace(/^./, (item) => item.toUpperCase());
+        const getName = (key: string): string => providerFieldLabels[key] ?? formatPromptLabel(key);
 
         const formatValue = (value: boolean | number | string): string =>
-            typeof value === 'boolean' ? (value ? 'yes' : 'no') : String(value);
+            typeof value === 'boolean' ? (value ? '是' : '否') : String(value);
 
         const getFields = (obj: unknown, prefix = '', isPrice = false): { label: string; value: string }[] => {
             if (!obj || typeof obj !== 'object') {
@@ -382,11 +401,11 @@ function SettingsProviders() {
             <>
                 <ContextMenuItem onClick={() => handleProviderEdit(provider.id)}>
                     <Pencil />
-                    Edit
+                    编辑
                 </ContextMenuItem>
                 <ContextMenuItem onClick={() => handleProviderClone(provider.id)}>
                     <Copy />
-                    Clone
+                    克隆
                 </ContextMenuItem>
                 <ContextMenuSeparator />
                 <ContextMenuItem
@@ -455,9 +474,7 @@ function SettingsProviders() {
                                 <Settings />
                             </EmptyMedia>
                             <EmptyTitle>还没有配置提供商</EmptyTitle>
-                            <EmptyDescription>
-                                Get started by adding your first language model provider
-                            </EmptyDescription>
+                            <EmptyDescription>先添加你的第一个语言模型提供商</EmptyDescription>
                         </EmptyHeader>
                         <EmptyContent>
                             <Button
@@ -465,7 +482,7 @@ function SettingsProviders() {
                                 variant="secondary"
                             >
                                 <Plus />
-                                Add Provider
+                                添加提供商
                             </Button>
                         </EmptyContent>
                     </Empty>
@@ -481,8 +498,8 @@ function SettingsProviders() {
                 <DataTable<Provider>
                     columns={columns}
                     data={providers}
-                    empty={{ entityName: 'providers' }}
-                    filterPlaceholder="Filter providers..."
+                    empty={{ entityName: '提供商' }}
+                    filterPlaceholder="筛选提供商…"
                     filterValue={filter}
                     label="模型提供商"
                     onFilterChange={setFilter}
@@ -499,7 +516,7 @@ function SettingsProviders() {
                     handleOpenChange={setIsDeleteDialogOpen}
                     isOpen={isDeleteDialogOpen}
                     itemName={deletingProvider?.name}
-                    itemType="provider"
+                    itemType="提供商"
                 />
             </div>
         </>
