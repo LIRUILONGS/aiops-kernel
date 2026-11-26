@@ -60,7 +60,7 @@ describe('SettingsAccount gating', () => {
         renderAccount();
 
         expect(screen.getByText('GitHub')).toBeInTheDocument();
-        expect(screen.getByText('Linked from your GitHub.')).toBeInTheDocument();
+        expect(screen.getByText('从 GitHub 关联。')).toBeInTheDocument();
         expect(screen.queryByText('Password')).not.toBeInTheDocument();
         expect(screen.getAllByRole('button', { name: '修改' })).toHaveLength(1);
     });

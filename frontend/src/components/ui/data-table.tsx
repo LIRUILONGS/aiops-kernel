@@ -574,7 +574,7 @@ function DataTable<TData, TValue = unknown>({
     // pagination mutations so `onPageChange` fires when the URL-driven
     // pageIndex needs to drop to 0. Without this, picking "All" on a high
     // page leaves `?page=5` stranded in the URL even though the display
-    // correctly clamps to "Page 1 of 1".
+    // correctly clamps to the last page.
     const handlePageSizeChange = useCallback(
         (newPageSize: number) => {
             handlePaginationChange({ pageIndex: 0, pageSize: newPageSize });
@@ -893,7 +893,7 @@ function DataTable<TData, TValue = unknown>({
                 </div>
                 {pageCount > 0 ? (
                     <div className="flex items-center justify-center text-xs font-medium lg:w-24">
-                        Page {safePageIndex + 1} of {pageCount}
+                        第 {safePageIndex + 1} / {pageCount} 页
                     </div>
                 ) : (
                     <div

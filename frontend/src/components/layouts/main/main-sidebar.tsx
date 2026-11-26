@@ -167,7 +167,7 @@ export function MainSidebar() {
                                 >
                                     <Link to={routes.templates}>
                                         <FileText />
-                                        Templates
+                                        模板
                                     </Link>
                                 </SidebarMenuButton>
                                 <SidebarMenuAction
@@ -190,7 +190,7 @@ export function MainSidebar() {
                                 >
                                     <Link to={routes.resources}>
                                         <Folder />
-                                        Resources
+                                        资源
                                     </Link>
                                 </SidebarMenuButton>
                                 <SidebarMenuAction
@@ -210,7 +210,7 @@ export function MainSidebar() {
                                 >
                                     <Link to={routes.knowledges}>
                                         <LibraryBig />
-                                        Knowledges
+                                        知识库
                                     </Link>
                                 </SidebarMenuButton>
                                 <SidebarMenuAction
@@ -234,7 +234,7 @@ export function MainSidebar() {
                     <SidebarGroup>
                         <SidebarGroupLabel className="flex items-center gap-2">
                             <Clock />
-                            Recent Flows
+                            最近会话
                         </SidebarGroupLabel>
                         <SidebarGroupContent>
                             <SidebarMenu>
@@ -257,7 +257,7 @@ export function MainSidebar() {
                     <SidebarGroup>
                         <SidebarGroupLabel className="flex items-center gap-2">
                             <Star />
-                            Favorite Flows
+                            收藏会话
                         </SidebarGroupLabel>
                         <SidebarGroupContent>
                             <SidebarMenu>
@@ -288,7 +288,7 @@ export function MainSidebar() {
                                 to={routes.settings.root}
                             >
                                 <Settings />
-                                Settings
+                                设置
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -344,7 +344,7 @@ export function MainSidebar() {
                                     onSelect={(event) => event.preventDefault()}
                                 >
                                     <Settings2 />
-                                    Theme
+                                    主题
                                     <Tabs
                                         className="-my-1.5 -mr-2 ml-auto"
                                         onValueChange={(value) => setTheme(value as Theme)}

@@ -49,7 +49,7 @@ describe('Knowledge detail load states', () => {
         render(<Knowledge />);
 
         expect(screen.getByText('知识文档加载失败')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /Try again/ })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /重试/ })).toBeInTheDocument();
         expect(navigate).not.toHaveBeenCalled();
     });
 

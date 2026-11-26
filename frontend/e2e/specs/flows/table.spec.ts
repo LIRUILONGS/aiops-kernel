@@ -83,14 +83,14 @@ test.describe('flows table', { tag: '@flows' }, () => {
         const forward = page.getByRole('button', { name: /next page/i });
 
         await expect(rows).toHaveCount(10);
-        await expect(page.getByText(/Page 1 of 2/)).toBeVisible();
+        await expect(page.getByText(/第 1 \/ 2 页/)).toBeVisible();
         await expect(back).toBeDisabled();
 
         const firstPage = await rows.first().locator('td').nth(1).innerText();
 
         await forward.click();
 
-        await expect(page.getByText(/Page 2 of 2/)).toBeVisible();
+        await expect(page.getByText(/第 2 \/ 2 页/)).toBeVisible();
         await expect(rows).toHaveCount(4);
         await expect(forward).toBeDisabled();
         await expect(rows.first().locator('td').nth(1)).not.toHaveText(firstPage);

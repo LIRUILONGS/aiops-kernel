@@ -151,13 +151,13 @@ describe('formatModifiedAbsolute', () => {
     });
 
     it('renders day, month and time within the current calendar year', () => {
-        expect(formatModifiedAbsolute(new Date(2026, 0, 3, 8, 7))).toBe('3 Jan, 08:07');
-        expect(formatModifiedAbsolute(new Date(2026, 11, 15, 18, 0))).toBe('15 Dec, 18:00');
+        expect(formatModifiedAbsolute(new Date(2026, 0, 3, 8, 7))).toBe('1月3日 08:07');
+        expect(formatModifiedAbsolute(new Date(2026, 11, 15, 18, 0))).toBe('12月15日 18:00');
     });
 
     it('includes the year for entries from previous calendar years', () => {
-        expect(formatModifiedAbsolute(new Date(2024, 5, 1, 6, 30))).toBe('1 Jun 2024, 06:30');
-        expect(formatModifiedAbsolute(new Date(2020, 11, 31, 23, 45))).toBe('31 Dec 2020, 23:45');
+        expect(formatModifiedAbsolute(new Date(2024, 5, 1, 6, 30))).toBe('2024年6月1日 06:30');
+        expect(formatModifiedAbsolute(new Date(2020, 11, 31, 23, 45))).toBe('2020年12月31日 23:45');
     });
 
     it('accepts ISO strings', () => {
@@ -166,7 +166,7 @@ describe('formatModifiedAbsolute', () => {
         // back through the local clock returns the original wall-clock time.
         const local = new Date(2026, 2, 14, 10, 5);
 
-        expect(formatModifiedAbsolute(local.toISOString())).toBe('14 Mar, 10:05');
+        expect(formatModifiedAbsolute(local.toISOString())).toBe('3月14日 10:05');
     });
 });
 

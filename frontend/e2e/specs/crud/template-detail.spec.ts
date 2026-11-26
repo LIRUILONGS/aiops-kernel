@@ -125,7 +125,7 @@ test.describe('template detail', { tag: '@coverage' }, () => {
         test('shows an in-page error with Retry, not "not found"', async ({ page }) => {
             await page.goto(`/templates/${TEMPLATE_DETAIL.id}`);
 
-            await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+            await expect(page.getByRole('button', { name: '重试' })).toBeVisible();
             await expect(page.getByText('模板不存在')).toBeHidden();
             await expect(page).toHaveURL(new RegExp(`/templates/${TEMPLATE_DETAIL.id}$`));
         });
@@ -143,7 +143,7 @@ test.describe('template detail', { tag: '@coverage' }, () => {
             await page.goto(`/templates/${TEMPLATE_DETAIL.id}`);
 
             await expect(page.getByRole('heading', { name: '模板不存在' })).toBeVisible();
-            await expect(page.getByRole('button', { name: 'Try again' })).toBeHidden();
+            await expect(page.getByRole('button', { name: '重试' })).toBeHidden();
         });
     });
 });

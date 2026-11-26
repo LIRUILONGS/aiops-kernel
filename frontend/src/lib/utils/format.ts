@@ -1,5 +1,4 @@
 import { format, isThisYear, isToday } from 'date-fns';
-import { enUS } from 'date-fns/locale';
 
 const PROVIDER_LABELS: Record<string, string> = {
     github: 'GitHub',
@@ -21,14 +20,13 @@ export const formatDate = (date: Date) => {
     }
 
     if (isThisYear(date)) {
-        return format(date, 'HH:mm, d MMM', { locale: enUS });
+        return format(date, 'M月d日 HH:mm');
     }
 
-    return format(date, 'HH:mm, d MMM yyyy', { locale: enUS });
+    return format(date, 'yyyy年M月d日 HH:mm');
 };
 
-export const formatTableDate = (date: Date) =>
-    isThisYear(date) ? formatDate(date) : format(date, 'd MMM yyyy', { locale: enUS });
+export const formatTableDate = (date: Date) => (isThisYear(date) ? formatDate(date) : format(date, 'yyyy年M月d日'));
 
 export const formatNumber = (value: number): string => new Intl.NumberFormat('en-US').format(value);
 

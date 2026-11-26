@@ -33,11 +33,11 @@ describe('formatTableDate', () => {
 
         expect(formatTableDate(today)).toBe(formatDate(today));
         expect(formatTableDate(today)).toBe('08:39:07');
-        expect(formatTableDate(earlier)).toBe('23:59, 4 Mar');
+        expect(formatTableDate(earlier)).toBe('3月4日 23:59');
     });
 
     it('drops the time for a date from another year', () => {
-        expect(formatTableDate(new Date('2025-09-30T23:59:00'))).toBe('30 Sep 2025');
-        expect(formatTableDate(new Date('2027-01-01T00:00:00'))).toBe('1 Jan 2027');
+        expect(formatTableDate(new Date('2025-09-30T23:59:00'))).toBe('2025年9月30日');
+        expect(formatTableDate(new Date('2027-01-01T00:00:00'))).toBe('2027年1月1日');
     });
 });

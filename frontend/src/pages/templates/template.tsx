@@ -56,14 +56,14 @@ export const formSchema = z.object({
         .string()
         .refine((value) => value.trim() !== '', { message: 'Text is required' })
         .refine((value) => [...value].length <= MAX_TEMPLATE_TEXT_LENGTH, {
-            message: `Text must not exceed ${MAX_TEMPLATE_TEXT_LENGTH} characters`,
+            message: `正文不能超过 ${MAX_TEMPLATE_TEXT_LENGTH} 个字符`,
         }),
     title: z
         .string()
         .trim()
         .min(1, { message: 'Title is required' })
         .refine((value) => [...value].length <= MAX_TEMPLATE_TITLE_LENGTH, {
-            message: `Title must not exceed ${MAX_TEMPLATE_TITLE_LENGTH} characters`,
+            message: `标题不能超过 ${MAX_TEMPLATE_TITLE_LENGTH} 个字符`,
         }),
 });
 
@@ -378,7 +378,7 @@ function TemplateForm({ templateId }: { templateId?: string }) {
                                             onClick={handleTemplateRenameStart}
                                         >
                                             <Pencil />
-                                            Rename
+                                            重命名
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
                                     </>
@@ -387,12 +387,12 @@ function TemplateForm({ templateId }: { templateId?: string }) {
                                     className="cursor-default gap-4 hover:bg-transparent focus:bg-transparent"
                                     onSelect={(event) => event.preventDefault()}
                                 >
-                                    View
+                                    视图
                                     <EditorViewModeToggle
                                         className="-my-1.5 -mr-2 ml-auto"
                                         mode={viewMode}
                                         onModeChange={setViewMode}
-                                        rawTooltip="Edit the raw template"
+                                        rawTooltip="编辑模板源码"
                                     />
                                 </DropdownMenuItem>
                                 {!isNew && (
@@ -405,12 +405,12 @@ function TemplateForm({ templateId }: { templateId?: string }) {
                                             {isDeleting ? (
                                                 <>
                                                     <Spinner variant="circle" />
-                                                    Deleting...
+                                                    删除中…
                                                 </>
                                             ) : (
                                                 <>
                                                     <Trash />
-                                                    Delete
+                                                    删除
                                                 </>
                                             )}
                                         </DropdownMenuItem>

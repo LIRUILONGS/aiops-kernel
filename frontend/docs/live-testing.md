@@ -1011,7 +1011,7 @@ conditional; these are the categories, with the ones most often missed:
   least one task. Seed
   the state or you have not tested the control.
 - **Empty-state-only** — the **New Flow** / **New Knowledge** buttons inside an
-  empty list, and **Try again**, which renders only when a query errored _and_
+  empty list, and **重试**, which renders only when a query errored _and_
   the list is empty. A failed refetch with data on screen shows nothing.
 - **Breakpoint-gated** — the flow header's favorite toggle and the
   previous/next navigation exist only at ≥768 px; on mobile the same writes move
@@ -1078,7 +1078,7 @@ behaviours are four different tests.
 
 - **Search and filters** — case-insensitive across mixed case, the empty state,
   clearing restores the list, and the URL carries the query.
-- **Pagination and sorting** — page size, "Page 1 of N", first/previous disabled
+- **Pagination and sorting** — page size, "第 1 / N 页", first/previous disabled
   on page 1, `aria-sort` correct before and after clicking a header.
 - **Theme** — toggles and survives a reload.
 - **Narrow viewport** — the tab strips collapse, nothing overflows horizontally

@@ -193,11 +193,11 @@ function Templates() {
                             >
                                 <DropdownMenuItem onClick={() => handleTemplateOpen(template.id)}>
                                     <Pencil />
-                                    Edit
+                                    编辑
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleTemplateRenameStart(template)}>
                                     <Pencil className="size-3" />
-                                    Rename
+                                    重命名
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
@@ -207,12 +207,12 @@ function Templates() {
                                     {deletingIds.has(template.id) ? (
                                         <>
                                             <Spinner variant="circle" />
-                                            Deleting...
+                                            删除中…
                                         </>
                                     ) : (
                                         <>
                                             <Trash />
-                                            Delete
+                                            删除
                                         </>
                                     )}
                                 </DropdownMenuItem>
@@ -233,11 +233,11 @@ function Templates() {
         <>
             <ContextMenuItem onClick={() => handleTemplateOpen(template.id)}>
                 <Pencil />
-                Edit
+                编辑
             </ContextMenuItem>
             <ContextMenuItem onClick={() => handleTemplateRenameStart(template)}>
                 <PencilLine />
-                Rename
+                重命名
             </ContextMenuItem>
             <ContextMenuSeparator />
             <ContextMenuItem
@@ -315,7 +315,7 @@ function Templates() {
                                 variant="secondary"
                             >
                                 <Plus />
-                                New Template
+                                新建模板
                             </Button>
                         </EmptyContent>
                     </Empty>

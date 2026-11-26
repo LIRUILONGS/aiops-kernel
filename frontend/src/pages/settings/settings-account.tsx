@@ -1,5 +1,4 @@
 import { format, isValid } from 'date-fns';
-import { enUS } from 'date-fns/locale';
 import { Lock, Mail, User } from 'lucide-react';
 import { useState } from 'react';
 
@@ -37,7 +36,7 @@ function SettingsAccount() {
     const displayName = user.name?.trim() || user.mail;
     const initial = ([...(displayName || '?')][0] ?? '?').toUpperCase();
     const createdAt = user.created_at ? new Date(user.created_at) : null;
-    const memberSince = createdAt && isValid(createdAt) ? format(createdAt, 'MMMM yyyy', { locale: enUS }) : null;
+    const memberSince = createdAt && isValid(createdAt) ? format(createdAt, 'yyyy年M月') : null;
     const accountLabel = isLocal ? '本地账户' : (formatAccountProvider(user.provider) ?? 'OAuth 账户');
 
     return (
@@ -104,7 +103,7 @@ function SettingsAccount() {
                         <div className="grid gap-1.5">
                             <CardTitle>邮箱地址</CardTitle>
                             <CardDescription>
-                                {isLocal ? 'The email you use to sign in.' : `Linked from your ${accountLabel}.`}
+                                {isLocal ? '登录时使用的邮箱。' : `从 ${accountLabel} 关联。`}
                             </CardDescription>
                         </div>
                         {isLocal && !editingSections.has('email') && (

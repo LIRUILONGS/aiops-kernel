@@ -13,7 +13,6 @@ import {
     isToday,
     isValid,
 } from 'date-fns';
-import { enUS } from 'date-fns/locale';
 
 import type {
     FileManagerInternalNode,
@@ -120,10 +119,10 @@ export const formatModifiedAbsolute = (modifiedAt?: Date | string): string => {
     }
 
     if (isThisYear(date)) {
-        return format(date, 'd MMM, HH:mm', { locale: enUS });
+        return format(date, 'M月d日 HH:mm');
     }
 
-    return format(date, 'd MMM yyyy, HH:mm', { locale: enUS });
+    return format(date, 'yyyy年M月d日 HH:mm');
 };
 
 /** Strip trailing slashes from a `pathPrefix`. Empty / `'/'` collapse to `''`. */

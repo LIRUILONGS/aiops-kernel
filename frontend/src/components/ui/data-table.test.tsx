@@ -722,7 +722,7 @@ describe('DataTable — controlled pageIndex reconciliation', () => {
 });
 
 describe('DataTable — empty results', () => {
-    it('does not render "Page 1 of 0" when there are no rows', () => {
+    it('does not render a page counter when there are no rows', () => {
         render(
             <DataTable<Row>
                 columns={COLUMNS}

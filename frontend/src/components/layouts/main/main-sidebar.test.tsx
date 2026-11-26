@@ -116,7 +116,7 @@ describe('MainSidebar settings entry points', () => {
         const user = userEvent.setup();
         renderSidebar();
 
-        await user.click(screen.getByRole('link', { name: 'Settings' }));
+        await user.click(screen.getByRole('link', { name: '设置' }));
 
         expect(screen.getByTestId('probe-origin')).toHaveTextContent('/dashboard');
     });

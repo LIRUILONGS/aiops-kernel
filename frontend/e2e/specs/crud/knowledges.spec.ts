@@ -244,7 +244,7 @@ test.describe('knowledges crud', { tag: '@crud' }, () => {
         test('shows an in-page error with Retry, not a bounce to the list', async ({ page }) => {
             await page.goto(`/knowledges/${KNOWLEDGE_DOC.id}`);
 
-            await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+            await expect(page.getByRole('button', { name: '重试' })).toBeVisible();
             await expect(page).toHaveURL(new RegExp(`/knowledges/${KNOWLEDGE_DOC.id}$`));
         });
     });
@@ -280,7 +280,7 @@ test.describe('knowledges crud', { tag: '@crud' }, () => {
         test('does not bounce a permission denial to the list', async ({ page }) => {
             await page.goto(`/knowledges/${KNOWLEDGE_DOC.id}`);
 
-            await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+            await expect(page.getByRole('button', { name: '重试' })).toBeVisible();
             await expect(page).toHaveURL(new RegExp(`/knowledges/${KNOWLEDGE_DOC.id}$`));
         });
     });

@@ -2,7 +2,6 @@ import type { ColumnDef } from '@tanstack/react-table';
 
 import { useMutation, useQuery, useSubscription } from '@apollo/client/react';
 import { addDays, addSeconds, differenceInSeconds, format, isPast, startOfDay } from 'date-fns';
-import { enUS } from 'date-fns/locale';
 import { CalendarIcon, Check, Copy, Ellipsis, ExternalLink, Key, Pencil, Plus, Trash, X } from 'lucide-react';
 import { useCallback, useId, useMemo, useState } from 'react';
 import { type Control, Controller, useFormState } from 'react-hook-form';
@@ -594,7 +593,7 @@ function SettingsAPITokens() {
                                             >
                                                 <CalendarIcon className="mr-2 size-4" />
                                                 {field.value ? (
-                                                    format(field.value, 'd MMM yyyy', { locale: enUS })
+                                                    format(field.value, 'yyyy年M月d日')
                                                 ) : (
                                                     <span>选择日期</span>
                                                 )}

@@ -94,7 +94,7 @@ test.describe('templates crud', { tag: '@crud' }, () => {
 
             await row.hover();
             await row.getByRole('button', { name: '打开菜单' }).click();
-            await page.getByRole('menuitem', { name: 'Rename' }).click();
+            await page.getByRole('menuitem', { name: '重命名' }).click();
             await page.getByPlaceholder('模板标题').fill('E2E Renamed Template');
             await page.getByPlaceholder('模板标题').press('Enter');
 
@@ -141,7 +141,7 @@ test.describe('templates crud', { tag: '@crud' }, () => {
 
             await row.hover();
             await row.getByRole('button', { name: '打开菜单' }).click();
-            await page.getByRole('menuitem', { name: 'Delete' }).click();
+            await page.getByRole('menuitem', { name: '删除' }).click();
 
             const dialog = page.getByRole('dialog');
 
