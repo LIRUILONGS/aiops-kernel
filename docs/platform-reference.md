@@ -3021,13 +3021,13 @@ OpsAGI allows you to configure Docker image selection for executing various task
 
 | Variable                           | Default                | Description                                                 |
 | ---------------------------------- | ---------------------- | ----------------------------------------------------------- |
-| `OPSAGI_IMAGE`                    | `local/opsagi:latest` | Docker image used for the main OpsAGI application service |
+| `OPSAGI_IMAGE`                    | `liruilong/aiops-kernel:latest` | Docker image used for the main OpsAGI application service |
 | `DOCKER_DEFAULT_IMAGE`             | `debian:latest`        | Default Docker image for general tasks and ambiguous cases  |
 | `OPSAGI_DEFAULT_SANDBOX_IMAGE` | `vxcontrol/kali-linux` | Image a flow runs in when no choice is made |
 | `DOCKER_ALLOWED_IMAGES`            | empty                  | Comma-separated allow-list the selected image must belong to |
 | `DOCKER_IMAGE_SELECTION_MODE`      | `llm`                  | `llm` lets the model pick the image, `fixed` always uses the sandbox image |
 
-`OPSAGI_IMAGE` changes the image used by the main `opsagi` service in `docker-compose.yml`. The `DOCKER_DEFAULT_IMAGE` and `OPSAGI_DEFAULT_SANDBOX_IMAGE` variables only affect automatic sandbox image selection for task execution inside OpsAGI. They do not rewrite the rest of the Compose stack, so services such as `pgvector`, `scraper`, and the optional `graphiti` stack still use the image references defined in the compose files.
+`OPSAGI_IMAGE` changes the image used by the main `opsagi` service in `docker-compose.yml`. This fork publishes that image at `liruilong/aiops-kernel`, tagged `latest` and once per build with the full version string (`X.Y.Z-ce.h<revision>`, the same string the binary reports); pin the versioned tag when a deployment must not move. The `DOCKER_DEFAULT_IMAGE` and `OPSAGI_DEFAULT_SANDBOX_IMAGE` variables only affect automatic sandbox image selection for task execution inside OpsAGI. They do not rewrite the rest of the Compose stack, so services such as `pgvector`, `scraper`, and the optional `graphiti` stack still use the image references defined in the compose files.
 
 `DOCKER_DEFAULT_IMAGE` and `OPSAGI_DEFAULT_SANDBOX_IMAGE` are suggestions the model receives in the image selection prompt, not limits: on their own they do not stop a model from answering with some other image. Two settings turn them into limits:
 

@@ -23,7 +23,7 @@ networks:
 
 services:
   opsagi:
-    image: ${OPSAGI_IMAGE:-local/opsagi:latest}
+    image: ${OPSAGI_IMAGE:-liruilong/aiops-kernel:latest}
     restart: unless-stopped
     container_name: opsagi
     hostname: opsagi

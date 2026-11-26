@@ -297,9 +297,11 @@ OpsAGI 需要两样东西：一个带 pgvector 的 PostgreSQL，和一个 OpenAI
 cp .env.example .env
 # 至少填一个模型提供商的 key，例如 OPEN_AI_KEY=sk-...
 # 把 COOKIE_SIGNING_SALT 从默认的 salt 改成随机值（默认的 salt 会禁用 API token 创建）
-docker build -t local/opsagi:latest .
+docker compose pull
 docker compose up -d
 ```
+
+应用镜像发布在 `liruilong/aiops-kernel`（`latest`，外加每次构建的完整版本标签，如 `2.2.0-ce.hc836b1f`）；要钉住版本就把 `.env` 里的 `OPSAGI_IMAGE` 指向那个标签。改了本仓库的代码要自己构建时：`docker build -t local/opsagi:latest .`，再把 `OPSAGI_IMAGE` 指回 `local/opsagi:latest`。
 
 打开 `https://localhost:8443`，用 `admin@opsagi.com` / `admin` 登录，首次登录会要求改密码。数据库、pgvector、scraper 等由 compose 提供。
 

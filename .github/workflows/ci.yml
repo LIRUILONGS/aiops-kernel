@@ -297,7 +297,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: local/opsagi
+          images: liruilong/aiops-kernel
           tags: |
             # For main branch - latest tag
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
