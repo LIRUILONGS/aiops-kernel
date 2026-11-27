@@ -54,8 +54,8 @@ test.describe('sidebar header', { tag: '@cross' }, () => {
 
             await expect(panel).toContainText('Update checks are disabled');
             await expect(page.locator('[data-slot^="version-indicator"]')).toHaveCount(0);
-            await expect(page.getByRole('menuitem', { name: /Release notes/ })).toHaveCount(0);
-            await expect(page.getByRole('menuitem', { name: 'All releases' })).toBeVisible();
+            await expect(page.getByRole('menuitem', { name: /发布说明/ })).toHaveCount(0);
+            await expect(page.getByRole('menuitem', { name: '所有版本' })).toBeVisible();
         });
 
         test('closes the panel on Escape', async ({ page }) => {
@@ -93,7 +93,7 @@ test.describe('sidebar header', { tag: '@cross' }, () => {
             await header(page).click();
 
             await expect(page.getByRole('menu')).toContainText('New version v2.4.0 is available');
-            await expect(page.getByRole('menuitem', { name: /Release notes for v2\.4\.0/ })).toHaveAttribute(
+            await expect(page.getByRole('menuitem', { name: /发布说明：v2\.4\.0/ })).toHaveAttribute(
                 'href',
                 'https://github.com/vxcontrol/pentagi/releases/tag/v2.4.0',
             );
@@ -123,7 +123,7 @@ test.describe('sidebar collapse', { tag: '@cross' }, () => {
         await page.goto('/flows');
         await expect(root(page)).toHaveAttribute('data-state', 'expanded');
 
-        const trigger = page.getByRole('button', { name: 'Toggle Sidebar' }).first();
+        const trigger = page.getByRole('button', { name: '折叠侧边栏' }).first();
 
         await trigger.click();
         await expect(root(page)).toHaveAttribute('data-state', 'collapsed');
@@ -145,7 +145,7 @@ test.describe('sidebar collapse', { tag: '@cross' }, () => {
 
     test('remembers the collapsed state across a reload', async ({ context, page }) => {
         await page.goto('/flows');
-        await page.getByRole('button', { name: 'Toggle Sidebar' }).first().click();
+        await page.getByRole('button', { name: '折叠侧边栏' }).first().click();
         await expect(root(page)).toHaveAttribute('data-state', 'collapsed');
 
         const cookie = (await context.cookies()).find((entry) => entry.name === 'sidebar:state');
@@ -173,7 +173,7 @@ test.describe('sidebar account badge', { tag: '@cross' }, () => {
         test('is named local', async ({ page, pageErrorLog }) => {
             await openMenu(page, 'admin@opsagi.com');
 
-            await expect(page.getByRole('menu').getByText('Local')).toBeVisible();
+            await expect(page.getByRole('menu').getByText('本地')).toBeVisible();
             expectCleanPage(pageErrorLog);
         });
     });

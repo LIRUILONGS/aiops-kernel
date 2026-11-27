@@ -71,7 +71,7 @@ export function useFlowFilesAttachResources({
                 );
 
                 toast.success('资源已挂载', {
-                    description: `Copied ${numericIds.length} ${numericIds.length === 1 ? 'item' : 'items'} to ${RESOURCES_TARGET_DIRECTORY}`,
+                    description: `已复制 ${numericIds.length} 项到 ${RESOURCES_TARGET_DIRECTORY}`,
                 });
                 onSuccess?.();
 

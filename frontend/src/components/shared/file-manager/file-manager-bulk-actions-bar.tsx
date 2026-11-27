@@ -135,7 +135,7 @@ export function FileManagerBulkActionsBar({
 
     const pluralize = labels.pluralizeItems ?? formatItemCount;
     const countLabel = pluralize(affectedCount);
-    const baseSelectedText = labels.selectedLabel?.(affectedCount) ?? `${affectedCount} selected`;
+    const baseSelectedText = labels.selectedLabel?.(affectedCount) ?? `${affectedCount} 项已选择`;
     const sizeSuffix = (labels.formatSelectionSize ?? formatFileSize)(selectionTotalBytes);
     const selectedText = sizeSuffix ? `${baseSelectedText} · ${sizeSuffix}` : baseSelectedText;
     const cancelText = labels.bulkCancel ?? '取消';

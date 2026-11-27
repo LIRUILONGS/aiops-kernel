@@ -507,7 +507,7 @@ function SettingsAPITokens() {
                         title="令牌 ID"
                     />
                 ),
-                meta: { columnMenuLabel: 'Token ID', searchable: true },
+                meta: { columnMenuLabel: '令牌 ID', searchable: true },
                 size: 200,
             },
             {

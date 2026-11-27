@@ -100,7 +100,7 @@ function FlowReport() {
                         <div className="mx-auto size-8 animate-spin rounded-full border-b-2 border-blue-600" />
                         <p className="max-w-md text-gray-600 dark:text-gray-400">
                             {state === 'loading'
-                                ? 'Please wait while we prepare your penetration testing report.'
+                                ? '正在准备你的报告，请稍候。'
                                 : '正在生成 PDF 文档，可能需要一点时间。'}
                         </p>
                     </div>

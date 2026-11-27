@@ -162,13 +162,13 @@ export interface FileManagerLabels {
     pluralizeItems?: (count: number) => string;
     /** aria-label for the header "select all" checkbox. */
     selectAllAriaLabel?: string;
-    /** Label rendered in the bulk bar, e.g. "3 selected". */
+    /** Label rendered in the bulk bar, e.g. "3 项已选择". */
     selectedLabel?: (count: number) => string;
     /**
      * aria-label for a sortable column header button. Receives the column id and the
      * current sort direction (`null` when the column is not currently sorted), and
-     * should describe the action the next click will perform. Defaults to a plain
-     * English description like `"Sort by name (ascending)"`.
+     * should describe the action the next click will perform. Defaults to a description
+     * like `"按名称升序排列"`.
      */
     sortHeaderAriaLabel?: (column: FileManagerSortColumn, direction: FileManagerSortDirection | null) => string;
 }

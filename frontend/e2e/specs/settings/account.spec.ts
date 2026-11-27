@@ -25,18 +25,18 @@ const section = (page: Page, title: string): Locator =>
 const openSection = async (page: Page, title: string): Promise<Locator> => {
     const card = section(page, title);
 
-    await card.getByRole('button', { name: 'Change' }).click();
+    await card.getByRole('button', { name: '修改' }).click();
 
     return card;
 };
 
 const fillPasswordForm = async (page: Page, next: string, confirm = next): Promise<void> => {
-    await page.getByLabel('Current Password').fill(CURRENT_PASSWORD);
-    await page.getByLabel('New Password', { exact: true }).fill(next);
-    await page.getByLabel('Confirm New Password').fill(confirm);
+    await page.getByLabel('当前密码').fill(CURRENT_PASSWORD);
+    await page.getByLabel('新密码', { exact: true }).fill(next);
+    await page.getByLabel('确认新密码').fill(confirm);
 };
 
-const submitPasswordForm = (page: Page): Promise<void> => page.getByRole('button', { name: 'Update Password' }).click();
+const submitPasswordForm = (page: Page): Promise<void> => page.getByRole('button', { name: '更新密码' }).click();
 
 test.describe('account settings', { tag: '@settings' }, () => {
     test.describe('read', () => {
@@ -48,9 +48,9 @@ test.describe('account settings', { tag: '@settings' }, () => {
             await expect(page.getByRole('heading', { exact: true, name: SEEDED_USER.name })).toBeVisible();
             await expect(page.getByText('Member since January 2026')).toBeVisible();
             await expect(page.getByText('Local account')).toBeVisible();
-            await expect(section(page, 'Display name').getByText(SEEDED_USER.name)).toBeVisible();
+            await expect(section(page, '显示名称').getByText(SEEDED_USER.name)).toBeVisible();
             await expect(section(page, 'Email address').getByText(SEEDED_USER.mail)).toBeVisible();
-            await expect(section(page, 'Password').getByText('••••••••••••')).toBeVisible();
+            await expect(section(page, '密码').getByText('••••••••••••')).toBeVisible();
 
             expectCleanPage(pageErrorLog);
         });
@@ -85,8 +85,8 @@ test.describe('account settings', { tag: '@settings' }, () => {
             await seedAuthenticatedAs(page, ANON_USER);
             await page.goto('/settings/account');
 
-            await expect(page.getByText('OAuth account', { exact: true })).toBeVisible();
-            await expect(page.getByText('Linked from your OAuth account.')).toBeVisible();
+            await expect(page.getByText('OAuth 账户', { exact: true })).toBeVisible();
+            await expect(page.getByText(/从 OAuth 账户\s*关联/)).toBeVisible();
         });
     });
 
@@ -105,13 +105,13 @@ test.describe('account settings', { tag: '@settings' }, () => {
             });
 
             await page.goto('/settings/account');
-            await openSection(page, 'Password');
+            await openSection(page, '密码');
 
             // Only the first row clicks: the submit disables itself once a submitted form is invalid,
             // and every later row is then validated live on change.
             await fillPasswordForm(page, 'NewPass1!abc', 'OtherPass1!abc');
             await submitPasswordForm(page);
-            await expect(page.getByText("Passwords don't match")).toBeVisible();
+            await expect(page.getByText('两次输入的密码不一致')).toBeVisible();
 
             await fillPasswordForm(page, 'newpass1');
             await expect(page.getByText('Password must be either longer than 15 characters')).toBeVisible();
@@ -148,12 +148,12 @@ test.describe('account settings', { tag: '@settings' }, () => {
 
         test('sends the three snake_case fields and closes the section', async ({ page, pageErrorLog }) => {
             await page.goto('/settings/account');
-            await openSection(page, 'Password');
+            await openSection(page, '密码');
             await fillPasswordForm(page, MAX_LENGTH_PASSWORD);
             await submitPasswordForm(page);
 
             await expect(page.getByText('密码已修改')).toBeVisible();
-            await expect(section(page, 'Password').getByText('••••••••••••')).toBeVisible();
+            await expect(section(page, '密码').getByText('••••••••••••')).toBeVisible();
 
             expectCleanPage(pageErrorLog);
         });
@@ -177,13 +177,13 @@ test.describe('account settings', { tag: '@settings' }, () => {
 
         test('translates the backend error code instead of showing the raw message', async ({ page, pageErrorLog }) => {
             await page.goto('/settings/account');
-            await openSection(page, 'Password');
+            await openSection(page, '密码');
             await fillPasswordForm(page, 'NewPass1!abc');
             await submitPasswordForm(page);
 
             await expect(page.getByText('当前密码不正确')).toBeVisible();
             await expect(page.getByText('invalid current password')).toBeHidden();
-            await expect(page.getByRole('button', { name: 'Update Password' })).toBeVisible();
+            await expect(page.getByRole('button', { name: '更新密码' })).toBeVisible();
 
             expect(pageErrorLog.pageErrors, 'no uncaught page errors').toEqual([]);
             expect(
@@ -211,17 +211,17 @@ test.describe('account settings', { tag: '@settings' }, () => {
         test('sends the display name and the credential-guarded email change', async ({ page, pageErrorLog }) => {
             await page.goto('/settings/account');
 
-            const nameCard = await openSection(page, 'Display name');
+            const nameCard = await openSection(page, '显示名称');
 
-            await nameCard.getByLabel('Display name').fill('E2E renamed admin');
-            await nameCard.getByRole('button', { name: 'Update Name' }).click();
+            await nameCard.getByLabel('显示名称').fill('E2E renamed admin');
+            await nameCard.getByRole('button', { name: '更新名称' }).click();
             await expect(page.getByText('名称已更新')).toBeVisible();
 
             const emailCard = await openSection(page, 'Email address');
 
-            await emailCard.getByLabel('Current Password').fill(CURRENT_PASSWORD);
-            await emailCard.getByLabel('New Email').fill('renamed@opsagi.com');
-            await emailCard.getByRole('button', { name: 'Update Email' }).click();
+            await emailCard.getByLabel('当前密码').fill(CURRENT_PASSWORD);
+            await emailCard.getByLabel('新邮箱').fill('renamed@opsagi.com');
+            await emailCard.getByRole('button', { name: '更新邮箱' }).click();
             await expect(page.getByText('邮箱已更新')).toBeVisible();
 
             expectCleanPage(pageErrorLog);

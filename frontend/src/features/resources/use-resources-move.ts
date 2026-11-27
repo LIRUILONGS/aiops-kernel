@@ -64,8 +64,8 @@ export function useResourcesMove(): UseResourcesMoveResult {
 
                 const description =
                     sources.length === 1
-                        ? `Moved to /${destination}`
-                        : `Moved ${sources.length} ${pluralizeItems(sources.length)} into /${destination}`;
+                        ? `已移动到 /${destination}`
+                        : `已移动 ${sources.length} ${pluralizeItems(sources.length)}到 /${destination}`;
 
                 toast.success('资源已移动', { description });
 

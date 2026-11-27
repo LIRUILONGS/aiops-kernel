@@ -52,14 +52,14 @@ test.describe('flow interrupt', { tag: '@flows' }, () => {
             const stop = page.getByRole('button', { name: 'Stop' });
 
             await expect(stop, 'a running flow offers Stop, not Submit').toBeVisible();
-            await expect(page.getByRole('button', { name: 'Submit' })).toBeHidden();
+            await expect(page.getByRole('button', { name: '提交' })).toBeHidden();
 
             const request = operationRequest(page, 'stopFlow');
 
             await stop.click();
             expect((await request).postDataJSON().variables).toEqual({ flowId: '5' });
 
-            await expect(page.getByRole('button', { name: 'Submit' })).toBeVisible();
+            await expect(page.getByRole('button', { name: '提交' })).toBeVisible();
             await expect(page.getByPlaceholder('Provide additional context or instructions...')).toBeVisible();
             expectCleanPage(pageErrorLog);
         });
@@ -104,7 +104,7 @@ test.describe('flow interrupt', { tag: '@flows' }, () => {
 
             const request = operationRequest(page, 'putUserInput');
 
-            await page.getByRole('button', { name: 'Submit' }).click();
+            await page.getByRole('button', { name: '提交' }).click();
 
             expect((await request).postDataJSON().variables).toEqual({
                 flowId: '5',

@@ -301,7 +301,7 @@ function Flow() {
                             controller={flowNav}
                             renderItem={renderFlowItem}
                             sheetIcon={<GitFork className="size-4" />}
-                            sheetTitle="Flows"
+                            sheetTitle="会话"
                         />
                     )}
                     {flowId && !isMobile && isFavoriteSlotShown && (
@@ -345,7 +345,7 @@ function Flow() {
                                         <div className="-my-1.5 -mr-2 ml-auto flex items-center">
                                             <DetailNavigationButtons<FlowItem>
                                                 controller={flowNav}
-                                                sheetTitle="Flows"
+                                                sheetTitle="会话"
                                                 size="sm"
                                             />
                                         </div>
@@ -362,7 +362,7 @@ function Flow() {
                                                         : 'size-4'
                                                 }
                                             />
-                                            {isFavoriteFlow(flowId) ? 'Remove from favorites' : 'Add to favorites'}
+                                            {isFavoriteFlow(flowId) ? '取消收藏' : '加入收藏'}
                                         </DropdownMenuItem>
                                     )}
                                     <DropdownMenuSeparator />
@@ -390,7 +390,7 @@ function Flow() {
                                     {isFinishing ? (
                                         <>
                                             <Spinner variant="circle" />
-                                            Finishing...
+                                            正在结束…
                                         </>
                                     ) : (
                                         <>
@@ -426,7 +426,7 @@ function Flow() {
                     controller={flowNav}
                     renderItem={renderFlowItem}
                     sheetIcon={<GitFork className="size-4" />}
-                    sheetTitle="Flows"
+                    sheetTitle="会话"
                 />
             )}
             <div className="relative flex h-[calc(100dvh-3rem)] w-full max-w-full flex-1">

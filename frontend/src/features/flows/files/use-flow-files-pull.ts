@@ -56,8 +56,8 @@ export function useFlowFilesPull({ flowId, onSuccess }: UseFlowFilesPullParams):
 
                 const description =
                     paths.length === 1
-                        ? `Saved to local cache under ${CONTAINER_TARGET_DIRECTORY}`
-                        : `Saved ${paths.length} ${pluralizeItems(paths.length)} to local cache under ${CONTAINER_TARGET_DIRECTORY}`;
+                        ? `已保存到本地缓存 ${CONTAINER_TARGET_DIRECTORY}`
+                        : `已保存 ${paths.length} ${pluralizeItems(paths.length)}到本地缓存 ${CONTAINER_TARGET_DIRECTORY}`;
 
                 toast.success('已从容器拉取', { description });
                 onSuccess();

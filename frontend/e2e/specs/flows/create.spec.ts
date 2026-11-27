@@ -40,10 +40,10 @@ test.describe('flow create', { tag: ['@flows', '@smoke'] }, () => {
 
         await expect(page.getByText(PROVIDER.name)).toBeVisible();
         await page.getByPlaceholder(/Describe what you would like OpsAGI to test/).fill('Say hello');
-        await page.getByRole('button', { name: 'Submit' }).click();
+        await page.getByRole('button', { name: '提交' }).click();
 
         await expect(page).toHaveURL(/\/flows\/7/);
-        await expect(page.locator('header').getByRole('button', { name: 'Toggle favorite' })).toBeEnabled();
+        await expect(page.locator('header').getByRole('button', { name: '切换收藏' })).toBeEnabled();
         await expect(page.locator('header').getByText('Say Hello Flow')).toBeVisible();
         expectCleanPage(pageErrorLog);
     });

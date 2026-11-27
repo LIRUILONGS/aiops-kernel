@@ -64,9 +64,9 @@ export function useResourcesDelete({ onAfterDelete }: UseResourcesDeleteParams =
 
                 if (filesToDelete.length === 1) {
                     const [single] = filesToDelete;
-                    toast.success(single?.isDir ? 'Directory deleted' : '资源已删除');
+                    toast.success(single?.isDir ? '目录已删除' : '资源已删除');
                 } else {
-                    toast.success(`${filesToDelete.length} ${pluralizeItems(filesToDelete.length)} deleted`);
+                    toast.success(`${filesToDelete.length} ${pluralizeItems(filesToDelete.length)}已删除`);
                 }
 
                 onAfterDelete?.();

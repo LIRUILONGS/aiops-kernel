@@ -1294,7 +1294,7 @@ function TestResultsDialog({ handleOpenChange, isOpen, results }: TestResultsDia
                                                     isNonePassed ? 'destructive' : isAllPassed ? 'green' : 'secondary'
                                                 }
                                             >
-                                                {successTestsCount}/{testsCount} passed
+                                                {successTestsCount}/{testsCount} 通过
                                             </Badge>
                                         </div>
                                     </AccordionTrigger>

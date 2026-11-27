@@ -49,7 +49,7 @@ const stubDataTransfer = () => {
     };
 };
 
-const barText = () => screen.getByText(/selected/).textContent;
+const barText = () => screen.getByText(/项已选择/).textContent;
 
 describe('bulk actions on a partially selected directory', () => {
     it('hands the action the ticked descendants instead of the directory', () => {
@@ -60,7 +60,7 @@ describe('bulk actions on a partially selected directory', () => {
         fireEvent.click(screen.getByRole('checkbox', { name: '选择 docs' }));
         fireEvent.click(screen.getByRole('checkbox', { name: '选择 a.txt' }));
 
-        expect(barText()).toMatch(/^1 selected/);
+        expect(barText()).toMatch(/^1 项已选择/);
 
         fireEvent.click(screen.getByRole('button', { name: '删除' }));
 
@@ -75,7 +75,7 @@ describe('bulk actions on a partially selected directory', () => {
 
         fireEvent.click(screen.getByRole('checkbox', { name: '选择 docs' }));
 
-        expect(barText()).toMatch(/^3 selected/);
+        expect(barText()).toMatch(/^3 项已选择/);
 
         fireEvent.click(screen.getByRole('button', { name: '删除' }));
 
@@ -91,7 +91,7 @@ describe('bulk actions on a partially selected directory', () => {
         fireEvent.click(screen.getByRole('checkbox', { name: '选择 a.txt' }));
         fireEvent.click(screen.getByRole('checkbox', { name: '选择 b.txt' }));
 
-        expect(barText()).toMatch(/^0 selected/);
+        expect(barText()).toMatch(/^0 项已选择/);
         expect(screen.getByRole('button', { name: '取消' })).toBeEnabled();
         expect(screen.getByRole('button', { name: '删除' })).toBeDisabled();
     });

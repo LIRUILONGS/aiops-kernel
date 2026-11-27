@@ -24,7 +24,7 @@ const TITLES = [
 
 const manyFlows = TITLES.map((title, index) => makeFlow(String(100 + index), title));
 
-const titleColumn = () => /flow|title|name/i;
+const titleColumn = () => /标题/;
 
 test.describe('flows table', { tag: '@flows' }, () => {
     test.use({ cassette: flowsCassette({ queries: { flows: [{ data: { flows: manyFlows } }] } }) });
@@ -79,8 +79,8 @@ test.describe('flows table', { tag: '@flows' }, () => {
         await page.goto('/flows');
 
         const rows = page.locator('tbody tr');
-        const back = page.getByRole('button', { name: /previous page/i });
-        const forward = page.getByRole('button', { name: /next page/i });
+        const back = page.getByRole('button', { name: '上一页' });
+        const forward = page.getByRole('button', { name: '下一页' });
 
         await expect(rows).toHaveCount(10);
         await expect(page.getByText(/第 1 \/ 2 页/)).toBeVisible();
@@ -117,10 +117,10 @@ test.describe('a flow from last year on a provider since removed', { tag: '@flow
 
         const row = page.getByRole('row', { name: /Last year recon/ });
         const name = row.locator('[data-slot="flow-provider-label"] span', { hasText: 'retired' });
-        const mark = row.getByRole('img', { name: 'Unavailable' });
+        const mark = row.getByRole('img', { name: '不可用' });
 
-        await expect(row.getByRole('cell', { exact: true, name: '15 Jun 2025' })).toBeVisible();
-        await expect(row.getByRole('cell', { exact: true, name: '16 Jun 2025' })).toBeVisible();
+        await expect(row.getByRole('cell', { exact: true, name: '2025年6月15日' })).toBeVisible();
+        await expect(row.getByRole('cell', { exact: true, name: '2025年6月16日' })).toBeVisible();
         await expect(mark).toBeVisible();
         expect(
             await name.evaluate((element) => element.scrollWidth <= element.clientWidth),

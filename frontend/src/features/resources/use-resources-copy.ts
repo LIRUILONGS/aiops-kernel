@@ -64,8 +64,8 @@ export function useResourcesCopy(): UseResourcesCopyResult {
 
                 const description =
                     sources.length === 1
-                        ? `Copied to /${destination}`
-                        : `Copied ${sources.length} ${pluralizeItems(sources.length)} into /${destination}`;
+                        ? `已复制到 /${destination}`
+                        : `已复制 ${sources.length} ${pluralizeItems(sources.length)}到 /${destination}`;
 
                 toast.success('资源已复制', { description });
 

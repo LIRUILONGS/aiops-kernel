@@ -27,21 +27,21 @@ test.describe('settings providers', { tag: '@coverage' }, () => {
     test('shows the empty state when no providers are configured', async ({ page, pageErrorLog }) => {
         await page.goto('/settings/providers');
 
-        await expect(page.getByText('No providers configured')).toBeVisible();
-        await expect(page.getByRole('button', { name: 'Add Provider' })).toBeVisible();
+        await expect(page.getByText('还没有配置提供商')).toBeVisible();
+        await expect(page.getByRole('button', { name: '新建提供商' })).toBeVisible();
 
         expectCleanPage(pageErrorLog);
     });
 
     test('opens the create form from the empty state', async ({ page, pageErrorLog }) => {
         await page.goto('/settings/providers');
-        await page.getByRole('button', { name: 'Add Provider' }).click();
+        await page.getByRole('button', { name: '新建提供商' }).click();
 
         await expect(page).toHaveURL(/\/settings\/providers\/new$/);
-        await expect(page.getByRole('heading', { name: 'Create a new provider' })).toBeVisible();
+        await expect(page.getByRole('heading', { name: '新建提供商' })).toBeVisible();
         await expect(page.getByText('类型', { exact: true })).toBeVisible();
-        await expect(page.getByRole('button', { name: 'Select provider' })).toBeVisible();
-        await expect(page.getByLabel('Name', { exact: true })).toBeVisible();
+        await expect(page.getByRole('button', { name: '选择提供商' })).toBeVisible();
+        await expect(page.getByLabel('名称', { exact: true })).toBeVisible();
 
         expectCleanPage(pageErrorLog);
     });
@@ -59,8 +59,8 @@ test.describe('settings providers create form', { tag: '@coverage' }, () => {
     test('seeds the agent model from the selected type catalog', async ({ page, pageErrorLog }) => {
         await page.goto('/settings/providers/new?type=anthropic');
 
-        await page.getByRole('button', { name: /^Adviser/ }).click();
-        await page.getByRole('button', { name: 'Open model list' }).first().click();
+        await page.getByRole('button', { name: /^分析师|^Analyst/ }).click();
+        await page.getByRole('button', { name: '打开模型列表' }).first().click();
 
         // A catalog-only model (not the seeded agent default), so it can only appear if the type's
         // model list reached the dropdown — the path an empty catalog leaves unreachable.
@@ -95,8 +95,8 @@ test.describe('settings providers write path', { tag: '@coverage' }, () => {
     }) => {
         await page.goto('/settings/providers/new?type=anthropic');
 
-        await expect(page.getByLabel('Name', { exact: true })).toBeVisible();
-        await page.getByLabel('Name', { exact: true }).fill(CREATED_NAME);
+        await expect(page.getByLabel('名称', { exact: true })).toBeVisible();
+        await page.getByLabel('名称', { exact: true }).fill(CREATED_NAME);
 
         const request = page.waitForRequest(
             (candidate) =>
@@ -128,7 +128,7 @@ test.describe('settings provider edit paths', { tag: '@coverage' }, () => {
 
     const openProvider = async (page: Page) => {
         await page.goto(`/settings/providers/${SEEDED_PROVIDER.id}`);
-        await expect(page.getByLabel('Name', { exact: true })).toHaveValue(SEEDED_PROVIDER.name);
+        await expect(page.getByLabel('名称', { exact: true })).toHaveValue(SEEDED_PROVIDER.name);
     };
 
     const mutationRequest = (page: Page, operationName: string) =>
@@ -163,7 +163,7 @@ test.describe('settings provider edit paths', { tag: '@coverage' }, () => {
 
         test('Save carries the id of the provider being edited', async ({ page, pageErrorLog }) => {
             await openProvider(page);
-            await page.getByLabel('Name', { exact: true }).fill(RENAMED);
+            await page.getByLabel('名称', { exact: true }).fill(RENAMED);
 
             const request = mutationRequest(page, 'updateProvider');
 
@@ -195,7 +195,7 @@ test.describe('settings provider edit paths', { tag: '@coverage' }, () => {
 
         test('Delete confirms by name, sends the id, and returns to the list', async ({ page, pageErrorLog }) => {
             await openProvider(page);
-            await page.getByRole('button', { name: 'Provider actions' }).click();
+            await page.getByRole('button', { name: '提供商操作' }).click();
             await page.getByRole('menuitem', { name: '删除' }).click();
 
             const dialog = page.getByRole('dialog');
@@ -243,7 +243,7 @@ test.describe('settings provider edit paths', { tag: '@coverage' }, () => {
 
             await expect(row).toBeVisible();
             await row.hover();
-            await row.getByRole('button', { name: 'Open menu' }).click();
+            await row.getByRole('button', { name: '打开菜单' }).click();
             await page.getByRole('menuitem', { name: '删除' }).click();
 
             const request = mutationRequest(page, 'deleteProvider');
@@ -266,7 +266,7 @@ test.describe('settings provider edit paths', { tag: '@coverage' }, () => {
                     testAgent: [
                         {
                             data: { testAgent: agentTestResult() } as never,
-                            variables: { agentType: 'adviser', type: SEEDED_PROVIDER.type },
+                            variables: { agentType: 'commander', type: SEEDED_PROVIDER.type },
                         },
                     ],
                 },
@@ -281,11 +281,11 @@ test.describe('settings provider edit paths', { tag: '@coverage' }, () => {
 
             const request = mutationRequest(page, 'testAgent');
 
-            await agentRow(page, 'Adviser').getByRole('button', { exact: true, name: 'Test' }).click();
+            await agentRow(page, 'Commander').getByRole('button', { exact: true, name: '测试' }).click();
 
             const { variables } = (await request).postDataJSON();
 
-            expect(variables.agentType, 'the enum the backend keys the agent by').toBe('adviser');
+            expect(variables.agentType, 'the enum the backend keys the agent by').toBe('commander');
             expect(variables.type).toBe(SEEDED_PROVIDER.type);
             expect(variables.agent, 'the edited agent config travels with the request').toMatchObject({
                 json: true,
@@ -298,8 +298,8 @@ test.describe('settings provider edit paths', { tag: '@coverage' }, () => {
 
             // Only the agent that was tested appears — the dialog is keyed by the clicked agent, so a
             // handler that tested the wrong one would name it here.
-            await expect(dialog.getByRole('heading', { name: 'Adviser 1/1 passed' })).toBeVisible();
-            await expect(dialog.getByRole('heading', { name: /passed/ })).toHaveCount(1);
+            await expect(dialog.getByRole('heading', { name: 'Commander 1/1 通过' })).toBeVisible();
+            await expect(dialog.getByRole('heading', { name: /通过/ })).toHaveCount(1);
             expectCleanPage(pageErrorLog);
         });
     });
@@ -323,19 +323,19 @@ test.describe('settings provider edit paths', { tag: '@coverage' }, () => {
 
             const request = mutationRequest(page, 'testProvider');
 
-            await page.locator('header').getByRole('button', { exact: true, name: 'Test' }).click();
+            await page.locator('header').getByRole('button', { exact: true, name: '测试' }).click();
 
             const { variables } = (await request).postDataJSON();
 
-            expect(Object.keys(variables.agents), 'the whole map is tested, not one agent').toHaveLength(13);
+            expect(Object.keys(variables.agents), 'the whole map is tested, not one agent').toHaveLength(8);
             expect(variables.type).toBe(SEEDED_PROVIDER.type);
 
             const dialog = page.getByRole('dialog');
 
-            await expect(dialog.getByRole('heading', { name: /passed/ }), 'one row per agent').toHaveCount(13);
-            await expect(dialog.getByRole('heading', { name: 'Pentester 0/1 passed' })).toBeVisible();
+            await expect(dialog.getByRole('heading', { name: /通过/ }), 'one row per agent').toHaveCount(8);
+            await expect(dialog.getByRole('heading', { name: 'Analyst 0/1 通过' })).toBeVisible();
 
-            await dialog.getByRole('button', { name: 'Pentester 0/1 passed' }).click();
+            await dialog.getByRole('button', { name: 'Analyst 0/1 通过' }).click();
 
             // The failing agent's own error must reach the operator; a dialog that renders only the
             // verdict leaves them with nothing to act on.
@@ -386,11 +386,11 @@ test.describe('settings providers, cloning', { tag: '@coverage' }, () => {
 
         const row = page.getByRole('row', { name: new RegExp(SEEDED_PROVIDER.name) });
 
-        await row.getByRole('button', { name: 'Open menu' }).click();
-        await page.getByRole('menuitem', { name: 'Clone' }).click();
+        await row.getByRole('button', { name: '打开菜单' }).click();
+        await page.getByRole('menuitem', { name: '克隆' }).click();
 
         await expect(page).toHaveURL(new RegExp(`/settings/providers/new\\?.*id=${SEEDED_PROVIDER.id}`));
-        await expect(page.getByLabel('Name', { exact: true })).toHaveValue(`${SEEDED_PROVIDER.name} (Copy)`);
+        await expect(page.getByLabel('名称', { exact: true })).toHaveValue(`${SEEDED_PROVIDER.name} (Copy)`);
         expectCleanPage(pageErrorLog);
     });
 });
@@ -406,8 +406,8 @@ test.describe('settings providers, cloning a type the server cannot serve', { ta
 
         const row = page.getByRole('row', { name: new RegExp(SEEDED_PROVIDER.name) });
 
-        await row.getByRole('button', { name: 'Open menu' }).click();
-        await page.getByRole('menuitem', { name: 'Clone' }).click();
+        await row.getByRole('button', { name: '打开菜单' }).click();
+        await page.getByRole('menuitem', { name: '克隆' }).click();
 
         await expect(page.getByText(`Provider type "${SEEDED_PROVIDER.type}" is not available`)).toBeVisible();
         await expect(page).toHaveURL(/\/settings\/providers$/);

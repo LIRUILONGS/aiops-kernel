@@ -145,7 +145,7 @@ test.describe('templates crud', { tag: '@crud' }, () => {
 
             const dialog = page.getByRole('dialog');
 
-            await expect(dialog.getByText('删除 template')).toBeVisible();
+            await expect(dialog.getByText('删除模板')).toBeVisible();
             await dialog.getByRole('button', { exact: true, name: '删除' }).click();
 
             await expect(page.getByRole('row', { name: /E2E Seed Template/ })).toBeHidden();

@@ -204,7 +204,7 @@ function Resources() {
         const wasCopied = await copyToClipboard(paths.join('\n'));
 
         if (wasCopied) {
-            toast.success(`${paths.length} ${pluralizeItems(paths.length)} copied to clipboard`);
+            toast.success(`${paths.length} ${pluralizeItems(paths.length)}已复制到剪贴板`);
 
             return;
         }
@@ -389,7 +389,7 @@ function Resources() {
                 </EmptyMedia>
                 <EmptyTitle>没有匹配</EmptyTitle>
                 <EmptyDescription>
-                    No resources match <code>{search.debouncedQuery.trim()}</code>. Try a different query.
+                    没有匹配的资源 <code>{search.debouncedQuery.trim()}</code>，换个搜索词试试。
                 </EmptyDescription>
             </EmptyHeader>
         </Empty>

@@ -45,15 +45,10 @@ const agentConfig = (model = 'e2e-model'): AgentConfigFragmentFragment =>
 
 const agentsConfig = (model?: string): AgentsConfigFragmentFragment =>
     entity('AgentsConfig', {
-        adviser: agentConfig(model),
         analyst: agentConfig(model),
         assistant: agentConfig(model),
-        coder: agentConfig(model),
         commander: agentConfig(model),
-        enricher: agentConfig(model),
         generator: agentConfig(model),
-        installer: agentConfig(model),
-        pentester: agentConfig(model),
         refiner: agentConfig(model),
         reflector: agentConfig(model),
         simple: agentConfig(model),
@@ -256,15 +251,10 @@ export const agentTestResult = (result = true): AgentTestResultFragmentFragment 
 /** One agent fails on purpose: a dialog that renders only the passing rows would still look right. */
 export const providerTestResult = (): ProviderTestResultFragmentFragment =>
     entity('ProviderTestResult', {
-        adviser: agentTestResult(),
-        analyst: agentTestResult(),
+        analyst: agentTestResult(false),
         assistant: agentTestResult(),
-        coder: agentTestResult(),
         commander: agentTestResult(),
-        enricher: agentTestResult(),
         generator: agentTestResult(),
-        installer: agentTestResult(),
-        pentester: agentTestResult(false),
         refiner: agentTestResult(),
         reflector: agentTestResult(),
         simple: agentTestResult(),

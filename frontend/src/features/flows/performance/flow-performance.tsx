@@ -159,7 +159,7 @@ function FlowPerformance({ flowId }: { flowId: string }) {
                 {error && (
                     <div className="text-muted-foreground flex items-center gap-2 text-sm">
                         <AlertTriangle className="size-4" />
-                        Could not read the measurements: {error}
+                        无法读取测量数据：{error}
                     </div>
                 )}
                 {groups.length > 0 && (

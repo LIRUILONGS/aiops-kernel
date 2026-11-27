@@ -2,6 +2,7 @@ import { type Control, useFormContext, useWatch } from 'react-hook-form';
 
 import type {
     KnowledgeAnswerType as KnowledgeAnswerTypeT,
+    KnowledgeDocType as KnowledgeDocTypeT,
     KnowledgeGuideType as KnowledgeGuideTypeT,
 } from '@/graphql/types';
 
@@ -25,6 +26,29 @@ import { KNOWLEDGE_LIMITS } from './knowledge-form';
 
 const docTypeValues = [KnowledgeDocType.Answer, KnowledgeDocType.Guide, KnowledgeDocType.Code] as const;
 const guideTypeValues = Object.values(KnowledgeGuideType) as KnowledgeGuideTypeT[];
+const docTypeLabels: Record<KnowledgeDocTypeT, string> = {
+    [KnowledgeDocType.Answer]: '答案',
+    [KnowledgeDocType.Code]: '代码',
+    [KnowledgeDocType.Guide]: '指南',
+};
+
+const guideTypeLabels: Record<KnowledgeGuideTypeT, string> = {
+    [KnowledgeGuideType.Configure]: '配置',
+    [KnowledgeGuideType.Development]: '开发',
+    [KnowledgeGuideType.Install]: '安装',
+    [KnowledgeGuideType.Other]: '其他',
+    [KnowledgeGuideType.Pentest]: '渗透测试',
+    [KnowledgeGuideType.Use]: '使用',
+};
+
+const answerTypeLabels: Record<KnowledgeAnswerTypeT, string> = {
+    [KnowledgeAnswerType.Code]: '代码',
+    [KnowledgeAnswerType.Guide]: '指南',
+    [KnowledgeAnswerType.Other]: '其他',
+    [KnowledgeAnswerType.Tool]: '工具',
+    [KnowledgeAnswerType.Vulnerability]: '漏洞',
+};
+
 const answerTypeValues = Object.values(KnowledgeAnswerType) as KnowledgeAnswerTypeT[];
 
 // The backend stores `code_lang` as a free-form string and uses it both as a
@@ -166,7 +190,7 @@ export function KnowledgeMetaFields({ control, isNew, isSaving }: KnowledgeMetaF
                                 <SelectContent>
                                     {docTypeValues.map((value) => (
                                         <SelectItem
-                                            key={value}
+                                            key={docTypeLabels[value]}
                                             value={value}
                                         >
                                             {value}
@@ -199,7 +223,7 @@ export function KnowledgeMetaFields({ control, isNew, isSaving }: KnowledgeMetaF
                                     <SelectContent>
                                         {guideTypeValues.map((value) => (
                                             <SelectItem
-                                                key={value}
+                                                key={guideTypeLabels[value]}
                                                 value={value}
                                             >
                                                 {value}
@@ -233,7 +257,7 @@ export function KnowledgeMetaFields({ control, isNew, isSaving }: KnowledgeMetaF
                                     <SelectContent>
                                         {answerTypeValues.map((value) => (
                                             <SelectItem
-                                                key={value}
+                                                key={answerTypeLabels[value]}
                                                 value={value}
                                             >
                                                 {value}

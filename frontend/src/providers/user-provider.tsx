@@ -226,12 +226,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
             const popup = window.open(
                 `${baseUrl}/auth/authorize?provider=${provider}&return_uri=${returnOAuthUri}`,
-                `${provider} Sign In`,
+                `${provider} 登录`,
                 `width=${width},height=${height},left=${left},top=${top}`,
             );
 
             if (!popup) {
-                const errorMessage = 'Popup blocked. Please allow popups for this site.';
+                const errorMessage = '弹窗被拦截，请允许本站弹出窗口。';
                 toast.error(errorMessage);
 
                 return {

@@ -18,13 +18,13 @@ import { PROVIDER } from '../../mocks/cassettes/flows.ts';
 
 const openAssistantTab = async (page: Page) => {
     await page.goto('/flows/5');
-    await page.getByRole('tab', { name: 'Assistant' }).click();
-    await expect(page.getByPlaceholder('Search messages...')).toBeVisible();
+    await page.getByRole('tab', { name: '助手' }).click();
+    await expect(page.getByPlaceholder('搜索消息…')).toBeVisible();
 };
 
 const openPicker = async (page: Page) => {
-    await page.getByRole('button', { name: 'Select assistant' }).click();
-    await expect(page.getByPlaceholder('Search assistants...')).toBeVisible();
+    await page.getByRole('button', { name: '选择助手' }).click();
+    await expect(page.getByPlaceholder('搜索助手…')).toBeVisible();
 };
 
 const operationRequest = (page: Page, operationName: string) =>
@@ -68,10 +68,10 @@ test.describe('flow assistants', { tag: '@flows' }, () => {
         test('creates an assistant from the empty composer and selects it', async ({ page, pageErrorLog }) => {
             await openAssistantTab(page);
             await openPicker(page);
-            await page.getByRole('option', { name: 'Create new assistant' }).click();
+            await page.getByRole('option', { name: '新建助手' }).click();
 
             const composer = page.getByPlaceholder('输入消息以创建新助手…');
-            const picker = page.getByRole('button', { name: 'Select assistant' });
+            const picker = page.getByRole('button', { name: '选择助手' });
 
             await expect(composer).toBeVisible();
             await expect(picker).toHaveText('New');
@@ -81,7 +81,7 @@ test.describe('flow assistants', { tag: '@flows' }, () => {
 
             const request = operationRequest(page, 'createAssistant');
 
-            await page.getByRole('button', { name: 'Submit' }).click();
+            await page.getByRole('button', { name: '提交' }).click();
 
             expect((await request).postDataJSON().variables).toEqual({
                 flowId: '5',
@@ -124,7 +124,7 @@ test.describe('flow assistants', { tag: '@flows' }, () => {
 
             const request = operationRequest(page, 'callAssistant');
 
-            await page.getByRole('button', { name: 'Submit' }).click();
+            await page.getByRole('button', { name: '提交' }).click();
 
             expect((await request).postDataJSON().variables).toEqual({
                 assistantId: WAITING_ASSISTANT.id,

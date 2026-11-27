@@ -39,16 +39,16 @@ test.describe('flow message rendering', { tag: '@flows' }, () => {
         await page.goto('/flows/5?tab=automation');
         await expect(page.locator(MESSAGE_ID_SELECTOR)).toHaveCount(4);
 
-        const thinkingToggle = page.getByText('Show thinking');
+        const thinkingToggle = page.getByText('展开思考过程');
 
         await expect(thinkingToggle).toBeVisible();
         // Collapsed first, so an always-expanded regression fails instead of passing.
         await expect(page.getByText('internal reasoning about the plan')).toBeHidden();
         await thinkingToggle.click();
-        await expect(page.getByText('Hide thinking')).toBeVisible();
+        await expect(page.getByText('隐藏思考过程')).toBeVisible();
         await expect(page.getByText('internal reasoning about the plan')).toBeVisible();
 
-        await expect(page.getByRole('heading', { name: 'Report' })).toBeVisible();
+        await expect(page.getByRole('heading', { name: '报告' })).toBeVisible();
         await expect(page.getByText('Hide details').first()).toBeVisible();
 
         // Only a report auto-expands, so the terminal message starts collapsed and its xterm is

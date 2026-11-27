@@ -69,14 +69,14 @@ const defaultSortHeaderAriaLabel = (
     const label = COLUMN_LABEL_FOR_ARIA[column];
 
     if (direction === 'asc') {
-        return `Sort by ${label} (descending)`;
+        return `按${label}降序排列`;
     }
 
     if (direction === 'desc') {
-        return `Clear sorting on ${label}`;
+        return `清除${label}的排序`;
     }
 
-    return `Sort by ${label} (ascending)`;
+    return `按${label}升序排列`;
 };
 
 const renderEmptyAreaItems = (items: readonly FileManagerEmptyAreaAction[]): ReactNode[] => {

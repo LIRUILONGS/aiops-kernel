@@ -4,7 +4,7 @@ import { expect, test } from '../../fixtures/test.ts';
 import { expectCleanPage } from '../../helpers/errors.ts';
 import { dashboardCassette } from '../../mocks/cassettes/dashboard.ts';
 
-const CHART_TITLES = ['Flows Activity Over Time', 'Tool Calls Over Time', 'Token Usage Over Time', 'Cost Over Time'];
+const CHART_TITLES = ['会话活动趋势', '工具调用趋势', 'Token 用量趋势', '费用趋势'];
 
 const cardWith = (page: Page, heading: string) =>
     page.locator('[data-slot="card"]', { has: page.getByRole('heading', { exact: true, name: heading }) });
@@ -28,18 +28,18 @@ test.describe('dashboard', { tag: '@coverage' }, () => {
             await page.goto('/dashboard');
             // The route is lazy, so this must wait for the Analytics panel first: a bare negative
             // assert is satisfied by "nothing has rendered yet" and can never fail.
-            await expect(page.getByRole('heading', { name: 'Flows Activity Over Time' })).toBeVisible();
+            await expect(page.getByRole('heading', { name: '会话活动趋势' })).toBeVisible();
             // not.toBeAttached, not toBeHidden — the latter also passes for a mounted-but-hidden node,
             // so it would not catch the panel being eagerly mounted (all its queries firing).
-            await expect(page.getByRole('heading', { exact: true, name: 'Total Flows' })).not.toBeAttached();
-            await page.getByRole('tab', { name: 'Overview' }).click();
+            await expect(page.getByRole('heading', { exact: true, name: '会话总数' })).not.toBeAttached();
+            await page.getByRole('tab', { name: '概览' }).click();
 
-            for (const title of ['Total Flows', '工具调用', 'Total Tokens', 'Total Cost']) {
+            for (const title of ['会话总数', '工具调用', 'Token 总数', '总成本']) {
                 await expect(page.getByRole('heading', { exact: true, name: title })).toBeVisible();
             }
 
-            await expect(page.getByRole('heading', { exact: true, name: 'Usage by Provider' })).toBeVisible();
-            await expect(page.getByRole('heading', { exact: true, name: 'Usage by Model' })).toBeVisible();
+            await expect(page.getByRole('heading', { exact: true, name: '各提供商用量' })).toBeVisible();
+            await expect(page.getByRole('heading', { exact: true, name: '各模型用量' })).toBeVisible();
             await expect(page.getByRole('cell', { exact: true, name: 'e2e-provider' })).toBeVisible();
             await expect(page.getByRole('cell', { name: 'e2e-model (e2e-provider)' })).toBeVisible();
             expectCleanPage(pageErrorLog);
@@ -48,7 +48,7 @@ test.describe('dashboard', { tag: '@coverage' }, () => {
         test('period switch refetches and renders the month range', async ({ page, pageErrorLog }) => {
             await page.goto('/dashboard');
 
-            await expect(page.getByRole('heading', { exact: true, name: 'Flows Activity Over Time' })).toBeVisible();
+            await expect(page.getByRole('heading', { exact: true, name: '会话活动趋势' })).toBeVisible();
 
             const periodCards = CHART_TITLES.map((title) => cardWith(page, title));
 
@@ -101,12 +101,12 @@ test.describe('dashboard', { tag: '@coverage' }, () => {
         test('a failed query degrades only its own card', async ({ page, pageErrorLog }) => {
             await page.goto('/dashboard');
 
-            await expect(cardWith(page, 'Token Usage Over Time').getByText("Couldn't load")).toBeVisible();
-            await expect(cardWith(page, 'Flows Activity Over Time').getByText("Couldn't load")).toBeHidden();
+            await expect(cardWith(page, 'Token 用量趋势').getByText("Couldn't load")).toBeVisible();
+            await expect(cardWith(page, '会话活动趋势').getByText("Couldn't load")).toBeHidden();
 
-            await page.getByRole('tab', { name: 'Overview' }).click();
+            await page.getByRole('tab', { name: '概览' }).click();
 
-            const totalFlowsCard = cardWith(page, 'Total Flows');
+            const totalFlowsCard = cardWith(page, '会话总数');
 
             await expect(totalFlowsCard.getByText("Couldn't load")).toBeVisible();
             await expect(totalFlowsCard.getByText('—')).toBeVisible();

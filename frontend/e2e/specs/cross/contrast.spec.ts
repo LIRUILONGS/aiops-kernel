@@ -108,11 +108,9 @@ for (const theme of THEMES) {
     test.describe(`contrast (${theme})`, { tag: '@cross' }, () => {
         test.use({ cassette: flowsCassette() });
 
-        if (theme === 'dark') {
-            test.beforeEach(async ({ page }) => {
-                await page.addInitScript(() => window.localStorage.setItem('theme', 'dark'));
-            });
-        }
+        test.beforeEach(async ({ page }) => {
+            await page.addInitScript((value) => window.localStorage.setItem('theme', value), theme);
+        });
 
         test('every badge variant clears AA at rest and on hover', async ({ page }) => {
             await page.goto('/flows');
@@ -176,11 +174,9 @@ for (const theme of THEMES) {
     test.describe(`contrast in a code block (${theme})`, { tag: '@cross' }, () => {
         test.use({ cassette: promptDetailCassette() });
 
-        if (theme === 'dark') {
-            test.beforeEach(async ({ page }) => {
-                await page.addInitScript(() => window.localStorage.setItem('theme', 'dark'));
-            });
-        }
+        test.beforeEach(async ({ page }) => {
+            await page.addInitScript((value) => window.localStorage.setItem('theme', value), theme);
+        });
 
         test('editor highlight tokens clear AA inside a fence', async ({ page }) => {
             await page.goto(`/settings/prompts/${PROMPT_DETAIL_AGENT}`);

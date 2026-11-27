@@ -82,7 +82,7 @@ export function useFlowFilesDelete({ flowId, onAfterDelete }: UseFlowFilesDelete
                     const [single] = filesToDelete;
                     toast.success(single?.isDir ? '目录已删除' : '文件已删除');
                 } else {
-                    toast.success(`${filesToDelete.length} ${pluralizeItems(filesToDelete.length)} deleted`);
+                    toast.success(`${filesToDelete.length} ${pluralizeItems(filesToDelete.length)}已删除`);
                 }
 
                 onAfterDelete?.();

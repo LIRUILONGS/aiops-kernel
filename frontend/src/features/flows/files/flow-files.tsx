@@ -86,7 +86,7 @@ function FlowFiles() {
         const wasCopied = await copyToClipboard(paths.join('\n'));
 
         if (wasCopied) {
-            toast.success(`${paths.length} ${pluralizeItems(paths.length)} copied to clipboard`);
+            toast.success(`${paths.length} ${pluralizeItems(paths.length)}已复制到剪贴板`);
 
             return;
         }
@@ -181,7 +181,7 @@ function FlowFiles() {
                 </EmptyMedia>
                 <EmptyTitle>没有匹配</EmptyTitle>
                 <EmptyDescription>
-                    No files match <code>{search.debouncedQuery.trim()}</code>. Try a different query.
+                    没有匹配的文件 <code>{search.debouncedQuery.trim()}</code>，换个搜索词试试。
                 </EmptyDescription>
             </EmptyHeader>
         </Empty>
@@ -289,8 +289,7 @@ function FlowFiles() {
                             <TooltipContent className="max-w-64 text-center text-xs">
                                 <p className="font-medium">附加资源</p>
                                 <p className="mt-1">
-                                    Copied from the library to <code>/work/resources</code> — immediately accessible
-                                    inside the container.
+                                    从资源库复制到 <code>/work/resources</code>，在容器内可直接访问。
                                 </p>
                             </TooltipContent>
                         </Tooltip>

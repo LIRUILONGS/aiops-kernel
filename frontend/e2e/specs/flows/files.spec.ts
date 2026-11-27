@@ -52,14 +52,14 @@ const promoteRequest = (page: Page) =>
 const openRowMenu = async (page: Page, name: string) => {
     await page
         .getByRole('treeitem', { name: new RegExp(name) })
-        .getByRole('button', { name: 'Row actions' })
+        .getByRole('button', { name: '行操作' })
         .click();
 };
 
 const openFilesTab = async (page: Page) => {
     await page.goto('/flows/5');
-    await expect(page.locator('header').getByRole('button', { name: 'Toggle favorite' })).toBeEnabled();
-    await page.getByRole('tab', { name: 'Files' }).click();
+    await expect(page.locator('header').getByRole('button', { name: '切换收藏' })).toBeEnabled();
+    await page.getByRole('tab', { name: '文件' }).click();
     await expect(page.getByRole('treeitem', { name: new RegExp(TABS_FILE_NAME) })).toBeVisible();
 };
 
@@ -149,12 +149,12 @@ test.describe('flow files', { tag: '@flows' }, () => {
 
             const row = page.getByRole('treeitem', { name: new RegExp(TABS_FILE_NAME) });
 
-            await row.getByRole('button', { name: 'Row actions' }).click();
+            await row.getByRole('button', { name: '行操作' }).click();
             await page.getByRole('menuitem', { name: '删除' }).click();
 
             const dialog = page.getByRole('dialog');
 
-            await expect(dialog.getByRole('heading', { name: 'Delete File' })).toBeVisible();
+            await expect(dialog.getByRole('heading', { name: '删除文件' })).toBeVisible();
 
             const request = page.waitForRequest(
                 (candidate) =>
@@ -189,8 +189,8 @@ test.describe('flow files', { tag: '@flows' }, () => {
         test('sends every checked path in one request', async ({ page, pageErrorLog }) => {
             await openFilesTab(page);
 
-            await page.getByRole('checkbox', { name: `Select ${TABS_FILE_NAME}` }).click();
-            await page.getByRole('checkbox', { name: `Select ${TABS_RESOURCE_FILE_NAME}` }).click();
+            await page.getByRole('checkbox', { name: `选择 ${TABS_FILE_NAME}` }).click();
+            await page.getByRole('checkbox', { name: `选择 ${TABS_RESOURCE_FILE_NAME}` }).click();
 
             const request = page.waitForRequest(
                 (candidate) =>
@@ -204,7 +204,7 @@ test.describe('flow files', { tag: '@flows' }, () => {
                 TABS_FILE_PATH,
                 TABS_RESOURCE_FILE_PATH,
             ]);
-            await expect(page.getByText('2 items deleted')).toBeVisible();
+            await expect(page.getByText('2 项已删除')).toBeVisible();
             expectCleanPage(pageErrorLog);
         });
     });
@@ -226,14 +226,14 @@ test.describe('flow files', { tag: '@flows' }, () => {
 
         test('promotes the file to the path the operator typed', async ({ page, pageErrorLog }) => {
             await openFilesTab(page);
-            await page.getByRole('button', { name: 'Expand all' }).click();
+            await page.getByRole('button', { name: '全部展开' }).click();
             await openRowMenu(page, NESTED_FLOW_FILE.name);
             await page.getByRole('menuitem', { name: '保存为资源' }).click();
 
             const dialog = page.getByRole('dialog');
 
-            await expect(dialog.getByLabel('Destination path')).toHaveValue(NESTED_FLOW_FILE_DEFAULT);
-            await dialog.getByLabel('Destination path').fill(PROMOTE_PATH);
+            await expect(dialog.getByLabel('目标路径')).toHaveValue(NESTED_FLOW_FILE_DEFAULT);
+            await dialog.getByLabel('目标路径').fill(PROMOTE_PATH);
 
             const request = promoteRequest(page);
 
@@ -299,7 +299,7 @@ test.describe('flow files', { tag: '@flows' }, () => {
                 }
             });
 
-            await dialog.getByLabel('Destination path').fill(PROMOTE_PATH);
+            await dialog.getByLabel('目标路径').fill(PROMOTE_PATH);
             await dialog.getByRole('button', { exact: true, name: '保存' }).click();
 
             await expect(page.getByRole('heading', { name: '替换已有条目？' })).toBeVisible();
@@ -307,7 +307,7 @@ test.describe('flow files', { tag: '@flows' }, () => {
 
             const request = promoteRequest(page);
 
-            await page.getByRole('button', { exact: true, name: 'Replace' }).click();
+            await page.getByRole('button', { exact: true, name: '替换' }).click();
 
             expect((await request).postDataJSON()).toMatchObject({
                 destination: PROMOTE_PATH,
@@ -356,12 +356,12 @@ test.describe('flow files', { tag: '@flows' }, () => {
 
         test('copies the picked library entry into the flow', async ({ page, pageErrorLog }) => {
             await openFilesTab(page);
-            await page.getByRole('button', { name: 'Attach resources' }).click();
+            await page.getByRole('button', { name: '附加资源' }).click();
 
             const dialog = page.getByRole('dialog');
 
-            await expect(dialog.getByRole('heading', { name: 'Attach resources' })).toBeVisible();
-            await dialog.getByRole('checkbox', { name: `Select ${ATTACHED_RESOURCE.name}` }).click();
+            await expect(dialog.getByRole('heading', { name: '附加资源' })).toBeVisible();
+            await dialog.getByRole('checkbox', { name: `选择 ${ATTACHED_RESOURCE.name}` }).click();
 
             const request = page.waitForRequest(
                 (candidate) =>
@@ -369,10 +369,10 @@ test.describe('flow files', { tag: '@flows' }, () => {
                     new URL(candidate.url()).pathname === '/api/v1/flows/5/files/resources',
             );
 
-            await dialog.getByRole('button', { exact: true, name: 'Attach 1' }).click();
+            await dialog.getByRole('button', { exact: true, name: '附加 1' }).click();
 
             expect((await request).postDataJSON()).toMatchObject({ force: false, ids: [ATTACHED_RESOURCE.id] });
-            await expect(page.getByText('Copied 1 item to /work/resources')).toBeVisible();
+            await expect(page.getByText('已复制 1 项到 /work/resources')).toBeVisible();
             expectCleanPage(pageErrorLog);
         });
     });
@@ -386,7 +386,7 @@ test.describe('flow files', { tag: '@flows' }, () => {
             await openRowMenu(page, TABS_FILE_NAME);
             await page.getByRole('menuitem', { name: '复制路径' }).click();
 
-            await expect(page.getByText('Path copied to clipboard')).toBeVisible();
+            await expect(page.getByText('路径已复制')).toBeVisible();
             expect(await clipboardWrites(page)).toEqual([TABS_FILE_PATH]);
             expectCleanPage(pageErrorLog);
         });
@@ -394,10 +394,10 @@ test.describe('flow files', { tag: '@flows' }, () => {
         test('puts every checked path on the clipboard, one per line', async ({ page, pageErrorLog }) => {
             await recordClipboardWrites(page);
             await openFilesTab(page);
-            await page.getByRole('checkbox', { name: `Select ${TABS_FILE_NAME}` }).click();
-            await page.getByRole('checkbox', { name: `Select ${TABS_RESOURCE_FILE_NAME}` }).click();
-            await page.getByRole('button', { name: 'More actions' }).click();
-            await page.getByRole('menuitem', { name: 'Copy paths' }).click();
+            await page.getByRole('checkbox', { name: `选择 ${TABS_FILE_NAME}` }).click();
+            await page.getByRole('checkbox', { name: `选择 ${TABS_RESOURCE_FILE_NAME}` }).click();
+            await page.getByRole('button', { name: '更多操作' }).click();
+            await page.getByRole('menuitem', { name: '复制路径' }).click();
 
             await expect(page.getByText('2 items copied to clipboard')).toBeVisible();
             expect(await clipboardWrites(page)).toEqual([`${TABS_FILE_PATH}\n${TABS_RESOURCE_FILE_PATH}`]);
@@ -449,24 +449,24 @@ test.describe('flow files', { tag: '@flows' }, () => {
                     new URL(candidate.url()).pathname === '/api/v1/flows/5/files/container',
             );
 
-            await page.getByRole('button', { name: 'Pull from container' }).click();
+            await page.getByRole('button', { name: '从容器拉取' }).click();
 
             const dialog = page.getByRole('dialog');
 
-            await expect(dialog.getByRole('heading', { name: 'Pull from container' })).toBeVisible();
+            await expect(dialog.getByRole('heading', { name: '从容器拉取' })).toBeVisible();
             expect(new URL((await listing).url()).searchParams.getAll('paths[]')).toEqual(['/work']);
 
-            await dialog.getByRole('checkbox', { name: `Select ${CONTAINER_FILE.name}` }).click();
+            await dialog.getByRole('checkbox', { name: `选择 ${CONTAINER_FILE.name}` }).click();
 
             const request = page.waitForRequest(
                 (candidate) =>
                     candidate.method() === 'POST' && new URL(candidate.url()).pathname === '/api/v1/flows/5/files/pull',
             );
 
-            await dialog.getByRole('button', { exact: true, name: 'Pull 1 item' }).click();
+            await dialog.getByRole('button', { exact: true, name: '拉取 1 项' }).click();
 
             expect((await request).postDataJSON()).toMatchObject({ force: false, paths: [CONTAINER_FILE.path] });
-            await expect(page.getByText('Saved to local cache under container/')).toBeVisible();
+            await expect(page.getByText('已保存到本地缓存 container/')).toBeVisible();
             expectCleanPage(pageErrorLog);
         });
     });
