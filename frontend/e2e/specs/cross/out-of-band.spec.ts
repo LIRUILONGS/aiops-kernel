@@ -179,7 +179,7 @@ test.describe('a token changed outside the tab', { tag: '@cross' }, () => {
                         {
                             frames: [
                                 {
-                                    delayMs: 50,
+                                    delayMs: 500,
                                     payload: { data: { apiTokenCreated: makeToken('9', 'Minted elsewhere') } },
                                 },
                             ],
