@@ -46,10 +46,10 @@ test.describe('account settings', { tag: '@settings' }, () => {
             await page.goto('/settings/account');
 
             await expect(page.getByRole('heading', { exact: true, name: SEEDED_USER.name })).toBeVisible();
-            await expect(page.getByText('Member since January 2026')).toBeVisible();
-            await expect(page.getByText('Local account')).toBeVisible();
+            await expect(page.getByText(/注册于 2026年1月/)).toBeVisible();
+            await expect(page.getByText('本地账户')).toBeVisible();
             await expect(section(page, '显示名称').getByText(SEEDED_USER.name)).toBeVisible();
-            await expect(section(page, 'Email address').getByText(SEEDED_USER.mail)).toBeVisible();
+            await expect(section(page, '邮箱地址').getByText(SEEDED_USER.mail)).toBeVisible();
             await expect(section(page, '密码').getByText('••••••••••••')).toBeVisible();
 
             expectCleanPage(pageErrorLog);
@@ -114,7 +114,7 @@ test.describe('account settings', { tag: '@settings' }, () => {
             await expect(page.getByText('两次输入的密码不一致')).toBeVisible();
 
             await fillPasswordForm(page, 'newpass1');
-            await expect(page.getByText('Password must be either longer than 15 characters')).toBeVisible();
+            await expect(page.getByText(/至少 16 个字符/)).toBeVisible();
 
             await fillPasswordForm(page, 'short1!');
             await expect(page.getByText('密码至少 8 个字符')).toBeVisible();
@@ -217,7 +217,7 @@ test.describe('account settings', { tag: '@settings' }, () => {
             await nameCard.getByRole('button', { name: '更新名称' }).click();
             await expect(page.getByText('名称已更新')).toBeVisible();
 
-            const emailCard = await openSection(page, 'Email address');
+            const emailCard = await openSection(page, '邮箱地址');
 
             await emailCard.getByLabel('当前密码').fill(CURRENT_PASSWORD);
             await emailCard.getByLabel('新邮箱').fill('renamed@opsagi.com');

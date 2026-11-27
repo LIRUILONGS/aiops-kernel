@@ -101,20 +101,20 @@ test.describe('dashboard', { tag: '@coverage' }, () => {
         test('a failed query degrades only its own card', async ({ page, pageErrorLog }) => {
             await page.goto('/dashboard');
 
-            await expect(cardWith(page, 'Token 用量趋势').getByText("Couldn't load")).toBeVisible();
-            await expect(cardWith(page, '会话活动趋势').getByText("Couldn't load")).toBeHidden();
+            await expect(cardWith(page, 'Token 用量趋势').getByText('加载失败')).toBeVisible();
+            await expect(cardWith(page, '会话活动趋势').getByText('加载失败')).toBeHidden();
 
             await page.getByRole('tab', { name: '概览' }).click();
 
             const totalFlowsCard = cardWith(page, '会话总数');
 
-            await expect(totalFlowsCard.getByText("Couldn't load")).toBeVisible();
+            await expect(totalFlowsCard.getByText('加载失败')).toBeVisible();
             await expect(totalFlowsCard.getByText('—')).toBeVisible();
 
             const toolCallsCard = cardWith(page, '工具调用');
 
             await expect(toolCallsCard.getByText('42')).toBeVisible();
-            await expect(toolCallsCard.getByText("Couldn't load")).toBeHidden();
+            await expect(toolCallsCard.getByText('加载失败')).toBeHidden();
             expectCleanPage(pageErrorLog);
         });
     });

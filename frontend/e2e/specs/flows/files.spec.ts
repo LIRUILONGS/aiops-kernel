@@ -399,7 +399,7 @@ test.describe('flow files', { tag: '@flows' }, () => {
             await page.getByRole('button', { name: '更多操作' }).click();
             await page.getByRole('menuitem', { name: '复制路径' }).click();
 
-            await expect(page.getByText('2 items copied to clipboard')).toBeVisible();
+            await expect(page.getByText('2 项已复制到剪贴板')).toBeVisible();
             expect(await clipboardWrites(page)).toEqual([`${TABS_FILE_PATH}\n${TABS_RESOURCE_FILE_PATH}`]);
             expectCleanPage(pageErrorLog);
         });

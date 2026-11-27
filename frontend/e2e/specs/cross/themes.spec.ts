@@ -12,8 +12,8 @@ test.describe('themes', { tag: '@cross' }, () => {
 
     test('renders the flow detail in seeded dark theme', async ({ page, pageErrorLog }) => {
         await page.addInitScript(() => window.localStorage.setItem('theme', 'dark'));
-        await page.goto('/flows');
-        await page.getByRole('row', { name: /E2E Alpha/ }).click();
+        await page.goto('/flows/5?tab=terminal');
+        await expect(page.getByText(/E2E Alpha/).first()).toBeVisible();
 
         await expect(page.locator('html')).toHaveClass(/dark/);
         await expect(page.locator(MESSAGE_ID_SELECTOR).first()).toBeVisible();

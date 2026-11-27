@@ -239,7 +239,7 @@ test.describe('flow assistants', { tag: '@flows' }, () => {
 
             const dialog = page.getByRole('dialog');
 
-            await expect(dialog.getByText('Delete Assistant')).toBeVisible();
+            await expect(dialog.getByText('删除助手')).toBeVisible();
 
             const request = operationRequest(page, 'deleteAssistant');
 

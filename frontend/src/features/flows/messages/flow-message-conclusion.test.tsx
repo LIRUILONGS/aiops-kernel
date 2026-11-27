@@ -103,7 +103,7 @@ describe('FlowMessageConclusion', () => {
 
         expect(screen.getAllByText('未重新测量')).toHaveLength(2);
         expect(screen.queryByText('Improved')).not.toBeInTheDocument();
-        expect(screen.getByText('Evidence (1)')).toBeInTheDocument();
+        expect(screen.getByText('证据 (1)')).toBeInTheDocument();
     });
 
     test('the raw report is one click away', async () => {

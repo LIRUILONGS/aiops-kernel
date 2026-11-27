@@ -7,8 +7,8 @@ test.describe('flow terminal', { tag: '@flows' }, () => {
     test.use({ cassette: flowsCassette() });
 
     test('renders sandbox output readable through the xterm buffer', async ({ page, pageErrorLog }) => {
-        await page.goto('/flows');
-        await page.getByRole('row', { name: /E2E Alpha/ }).click();
+        await page.goto('/flows/5?tab=terminal');
+        await expect(page.getByText(/E2E Alpha/).first()).toBeVisible();
 
         await expect(page.locator('.xterm')).toBeVisible();
         await expect(async () => {

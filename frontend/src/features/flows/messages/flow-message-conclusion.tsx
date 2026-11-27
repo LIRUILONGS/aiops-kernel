@@ -157,7 +157,7 @@ function EvidenceList({ items }: { items: EvidenceItem[] }) {
 
     return (
         <div className="mt-3">
-            <div className="text-muted-foreground mb-1 text-xs">Evidence ({items.length})</div>
+            <div className="text-muted-foreground mb-1 text-xs">证据 ({items.length})</div>
             <ol className="flex flex-col gap-2">
                 {items.map((item, index) => (
                     <li
@@ -200,15 +200,13 @@ function FlowMessageConclusion({ conclusion, footer, raw, searchValue = '' }: Fl
             data-testid="flow-message-conclusion"
         >
             <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-semibold">
-                    {conclusion.kind === 'diagnosis' ? 'Diagnosis' : 'Optimization'}
-                </span>
+                <span className="text-sm font-semibold">{conclusion.kind === 'diagnosis' ? '诊断' : '优化'}</span>
                 {conclusion.kind === 'optimization' && (
                     <Badge variant={VERDICT_VARIANTS[conclusion.verdict] ?? 'secondary'}>
                         {VERDICT_LABELS[conclusion.verdict] ?? conclusion.verdict}
                     </Badge>
                 )}
-                {confidence && <Badge variant="outline">confidence {confidence}</Badge>}
+                {confidence && <Badge variant="outline">置信度 {confidence}</Badge>}
                 {conclusion.kind === 'diagnosis' && conclusion.needsHuman && (
                     <Badge variant="orange">需要人工介入</Badge>
                 )}

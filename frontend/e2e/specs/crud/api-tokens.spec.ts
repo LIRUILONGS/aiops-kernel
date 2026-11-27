@@ -63,7 +63,7 @@ test.describe('api tokens crud', { tag: '@crud' }, () => {
 
             await expect(submit).toBeDisabled();
 
-            await page.getByRole('button', { name: '选择日期' }).click();
+            await page.getByRole('button', { name: /选择日期/ }).click();
             await page.getByRole('button', { name: 'Tuesday, January 20th, 2026' }).click();
             await page.keyboard.press('Escape');
 
