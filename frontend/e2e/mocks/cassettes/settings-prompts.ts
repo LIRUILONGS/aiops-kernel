@@ -37,6 +37,7 @@ export const RICH_PROMPT_TEMPLATE = [
     '',
     '```bash',
     'kubectl get pods -n {{.Target}} -o wide',
+    '<ops_probes>',
     '```',
     '',
     '| Field | Value |',
