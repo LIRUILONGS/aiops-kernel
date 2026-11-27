@@ -43,7 +43,7 @@ test.describe('settings prompt detail', { tag: '@coverage' }, () => {
     // The raw/rich switch lives inside the actions menu, which stays open on select.
     const switchToRaw = async (page: Page) => {
         await page.getByRole('button', { name: '提示词操作' }).click();
-        await page.getByLabel('Raw source').click();
+        await page.getByLabel('源码').click();
         await page.keyboard.press('Escape');
     };
 
@@ -54,7 +54,7 @@ test.describe('settings prompt detail', { tag: '@coverage' }, () => {
 
         await expect(editor).toBeVisible();
         await expect(editor.getByRole('heading', { name: 'Refiner' })).toBeVisible();
-        await expect(editor.getByText('kubectl get pods {{.Target}}')).toBeVisible();
+        await expect(editor.getByText('kubectl get pods -n {{.Target}} -o wide')).toBeVisible();
 
         await switchToRaw(page);
 
@@ -90,7 +90,7 @@ test.describe('settings prompt detail', { tag: '@coverage' }, () => {
             '{{.Target}}',
             '{{.Scope}}',
             'kubectl get pods',
-            'stay inside the agreed scope',
+            'keep the plan inside the agreed scope',
         ]) {
             expect(raw, `"${atom}" survived the editor round-trip`).toContain(atom);
         }
@@ -184,7 +184,7 @@ test.describe('settings prompt validation', { tag: '@coverage' }, () => {
             await expect(dialog).toContainText('校验失败');
             await expect(dialog).toContainText('unclosed action started at validation:3');
             await expect(dialog).toContainText('Template appears to be incomplete - missing closing braces');
-            await expect(dialog).toContainText('Line: 4');
+            await expect(dialog).toContainText('行号： 4');
         });
     });
 });
@@ -260,7 +260,7 @@ test.describe('settings prompt detail, already overridden', { tag: '@coverage' }
             await expect(dialog).toContainText('# Refiner');
             await expect(dialog).toContainText('# Operator override');
             await expect(dialog).toContainText('This copy replaces the shipped prompt for {{.Target}}.');
-            await expect(dialog).toContainText('You are assessing **{{.Target}}** within {{.Scope}}.');
+            await expect(dialog).toContainText('You are re-planning **{{.Target}}** within {{.Scope}}.');
 
             expectCleanPage(pageErrorLog);
         });
@@ -289,14 +289,14 @@ test.describe('settings prompt detail, already overridden', { tag: '@coverage' }
             await expect(editor.getByRole('heading', { name: 'Operator override' })).toBeVisible();
 
             await page.getByRole('button', { name: '提示词操作' }).click();
-            await page.getByRole('menuitem', { name: 'Reset' }).click();
+            await page.getByRole('menuitem', { exact: true, name: '重置' }).click();
 
             const request = page.waitForRequest(
                 (candidate) =>
                     candidate.method() === 'POST' && candidate.postDataJSON()?.operationName === 'deletePrompt',
             );
 
-            await page.getByRole('dialog').getByRole('button', { exact: true, name: 'Reset' }).click();
+            await page.getByRole('dialog').getByRole('button', { exact: true, name: '重置' }).click();
 
             expect((await request).postDataJSON().variables).toEqual({ promptId: PROMPT_OVERRIDE.id });
 

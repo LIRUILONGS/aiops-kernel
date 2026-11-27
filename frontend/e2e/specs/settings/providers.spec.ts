@@ -16,7 +16,7 @@ import {
     settingsProvidersCassette,
 } from '../../mocks/cassettes/settings-providers.ts';
 
-/** The per-agent Test control repeats its name for all 13 agents, so it is addressed through the
+/** The per-agent Test control repeats its name for every agent, so it is addressed through the
  *  accordion item that names the agent. */
 const agentRow = (page: Page, agentName: string) =>
     page.locator('[data-slot="accordion-item"]').filter({ hasText: agentName });
@@ -32,15 +32,29 @@ test.describe('settings providers', { tag: '@coverage' }, () => {
 
         expectCleanPage(pageErrorLog);
     });
+});
+
+test.describe('settings providers, an empty list with one configured key', { tag: '@coverage' }, () => {
+    test.use({
+        cassette: settingsProvidersCassette({
+            queries: {
+                settingsProviders: [{ data: providersListWithEnabled({ openai: true }) }],
+            },
+        }),
+    });
 
     test('opens the create form from the empty state', async ({ page, pageErrorLog }) => {
         await page.goto('/settings/providers');
-        await page.getByRole('button', { name: '新建提供商' }).click();
 
-        await expect(page).toHaveURL(/\/settings\/providers\/new$/);
+        await expect(page.getByText('还没有配置提供商')).toBeVisible();
+
+        await page.getByRole('button', { name: '新建提供商' }).click();
+        await page.getByRole('menuitem', { name: 'OpenAI' }).click();
+
+        await expect(page).toHaveURL(/\/settings\/providers\/new\?type=openai$/);
         await expect(page.getByRole('heading', { name: '新建提供商' })).toBeVisible();
         await expect(page.getByText('类型', { exact: true })).toBeVisible();
-        await expect(page.getByRole('button', { name: '选择提供商' })).toBeVisible();
+        await expect(page.getByRole('button', { name: 'openai' })).toBeVisible();
         await expect(page.getByLabel('名称', { exact: true })).toBeVisible();
 
         expectCleanPage(pageErrorLog);
@@ -109,7 +123,9 @@ test.describe('settings providers write path', { tag: '@coverage' }, () => {
 
         expect(variables.name).toBe(CREATED_NAME);
         expect(variables.type).toBe('anthropic');
-        expect(Object.keys(variables.agents), 'every agent is serialised, not just the edited one').toHaveLength(13);
+        expect(Object.keys(variables.agents), 'every agent config is serialised, not just the edited one').toHaveLength(
+            8,
+        );
         expect(variables.agents.simpleJson).toMatchObject({
             json: true,
             maxTokens: 4096,
@@ -173,7 +189,7 @@ test.describe('settings provider edit paths', { tag: '@coverage' }, () => {
 
             expect(variables.providerId).toBe(SEEDED_PROVIDER.id);
             expect(variables.name).toBe(RENAMED);
-            expect(Object.keys(variables.agents), 'the whole agents map is resubmitted').toHaveLength(13);
+            expect(Object.keys(variables.agents), 'the whole agent config map is resubmitted').toHaveLength(8);
             await expect(page, 'a saved provider returns to the list').toHaveURL(/\/settings\/providers$/);
             expectCleanPage(pageErrorLog);
         });
@@ -409,7 +425,7 @@ test.describe('settings providers, cloning a type the server cannot serve', { ta
         await row.getByRole('button', { name: '打开菜单' }).click();
         await page.getByRole('menuitem', { name: '克隆' }).click();
 
-        await expect(page.getByText(`Provider type "${SEEDED_PROVIDER.type}" is not available`)).toBeVisible();
+        await expect(page.getByText(`提供商类型 "${SEEDED_PROVIDER.type}" 不可用`)).toBeVisible();
         await expect(page).toHaveURL(/\/settings\/providers$/);
         await expect(row).toBeVisible();
         expectCleanPage(pageErrorLog);
