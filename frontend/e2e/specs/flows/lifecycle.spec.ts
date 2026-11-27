@@ -55,8 +55,8 @@ test.describe('flow lifecycle', { tag: '@flows' }, () => {
             await openFlowA(page);
             await page.getByRole('button', { name: '会话操作' }).click();
             await page.getByRole('menuitem', { name: '重命名' }).click();
-            await page.getByPlaceholder('Flow title').fill('E2E Alpha Renamed');
-            await page.getByPlaceholder('Flow title').press('Enter');
+            await page.getByPlaceholder('会话标题').fill('E2E Alpha Renamed');
+            await page.getByPlaceholder('会话标题').press('Enter');
 
             await expect(page.getByText('会话已重命名')).toBeVisible();
             await expect(page.locator('header').getByText('E2E Alpha Renamed', { exact: true })).toBeVisible();

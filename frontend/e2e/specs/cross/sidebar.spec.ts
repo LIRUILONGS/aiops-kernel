@@ -52,7 +52,7 @@ test.describe('sidebar header', { tag: '@cross' }, () => {
 
             const panel = page.getByRole('menu');
 
-            await expect(panel).toContainText('Update checks are disabled');
+            await expect(panel).toContainText('更新检查已关闭');
             await expect(page.locator('[data-slot^="version-indicator"]')).toHaveCount(0);
             await expect(page.getByRole('menuitem', { name: /发布说明/ })).toHaveCount(0);
             await expect(page.getByRole('menuitem', { name: '所有版本' })).toBeVisible();
@@ -72,9 +72,9 @@ test.describe('sidebar header', { tag: '@cross' }, () => {
             await page.goto('/flows');
             await header(page).click();
 
-            await page.getByLabel('Update channel: preview').hover();
+            await page.getByLabel('更新通道：preview').hover();
 
-            await expect(page.getByRole('tooltip')).toContainText('preview channel');
+            await expect(page.getByRole('tooltip')).toContainText('更新来自 preview 通道');
         });
     });
 
@@ -92,7 +92,7 @@ test.describe('sidebar header', { tag: '@cross' }, () => {
 
             await header(page).click();
 
-            await expect(page.getByRole('menu')).toContainText('New version v2.4.0 is available');
+            await expect(page.getByRole('menu')).toContainText('新版本 v2.4.0 已发布');
             await expect(page.getByRole('menuitem', { name: /发布说明：v2\.4\.0/ })).toHaveAttribute(
                 'href',
                 'https://github.com/vxcontrol/pentagi/releases/tag/v2.4.0',
@@ -111,7 +111,7 @@ test.describe('sidebar header', { tag: '@cross' }, () => {
 
             await page.keyboard.press('Enter');
 
-            await expect(page.getByRole('menu')).toContainText('New version v2.4.0 is available');
+            await expect(page.getByRole('menu')).toContainText('新版本 v2.4.0 已发布');
         });
     });
 });

@@ -644,6 +644,7 @@ export const flowTabsCassette = (override: Cassette = {}): Cassette =>
                 ],
                 'GET /api/v1/flows/5/screenshots/70/file': [{ body: PNG_1X1, contentType: 'image/png' }],
                 'GET /api/v1/flows/5/screenshots/72/file': [{ body: PNG_1X1, contentType: 'image/png' }],
+                'GET /api/v1/flows/5/toolcalls/': [{ body: { data: { toolcalls: [] }, status: 'success' } }],
             },
             subscriptions: { messageLogAdded: [{ frames: [], variables: { flowId: '5' } }] },
         }),

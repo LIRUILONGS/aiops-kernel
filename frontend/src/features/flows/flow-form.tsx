@@ -567,7 +567,8 @@ export function FlowForm({
                                                         aria-pressed={targetField.value === option.value}
                                                         className={cn(
                                                             'text-xs',
-                                                            targetField.value === option.value && 'bg-accent',
+                                                            targetField.value === option.value &&
+                                                                'bg-accent text-accent-foreground',
                                                         )}
                                                         disabled={isFormDisabled}
                                                         key={option.value}
@@ -592,7 +593,7 @@ export function FlowForm({
                                                                     className={cn(
                                                                         'text-xs',
                                                                         leaseField.value === option.value &&
-                                                                            'bg-accent',
+                                                                            'bg-accent text-accent-foreground',
                                                                     )}
                                                                     disabled={isFormDisabled}
                                                                     key={option.value}

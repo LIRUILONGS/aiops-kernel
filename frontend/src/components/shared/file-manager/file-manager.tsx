@@ -491,7 +491,7 @@ export function FileManager({
                                     ? (effectiveLabels.collapseAllAriaLabel ?? '全部收起')
                                     : (effectiveLabels.expandAllAriaLabel ?? '全部展开')
                             }
-                            className="text-muted-foreground hover:bg-muted -mx-0.5 size-4 shrink-0 rounded hover:text-blue-400"
+                            className="text-muted-foreground hover:bg-muted hover:text-primary -mx-0.5 size-4 shrink-0 rounded"
                             onClick={toggleExpandAll}
                             size="icon-xs"
                             variant="ghost"

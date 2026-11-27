@@ -152,8 +152,8 @@ function ResourcesCopyDialogForm({ files, onClose }: ResourcesCopyDialogFormProp
     // Convention: stay enabled until the first submit, then reflect validity (so an invalid submit surfaces
     // errors instead of a silently-dead button). Mirrors FormSubmitButton's requireValid gate.
     const isSubmitDisabled = form.formState.isSubmitted && !form.formState.isValid;
-    const titleText = isMulti ? `Copy ${files.length} items` : files[0].isDir ? '复制目录' : '复制资源';
-    const overwriteCtaLabel = isMulti ? `Copy ${files.length} with overwrite` : '覆盖复制';
+    const titleText = isMulti ? `复制 ${files.length} 项` : files[0].isDir ? '复制目录' : '复制资源';
+    const overwriteCtaLabel = isMulti ? `覆盖复制 ${files.length} 项` : '覆盖复制';
 
     return (
         <>
@@ -168,7 +168,7 @@ function ResourcesCopyDialogForm({ files, onClose }: ResourcesCopyDialogFormProp
                             <>把所选项目复制到目标目录。</>
                         ) : (
                             <>
-                                Duplicate <code>{files[0].path}</code> to a new path.
+                                把 <code>{files[0].path}</code> 复制到新的路径。
                             </>
                         )}
                     </DialogDescription>

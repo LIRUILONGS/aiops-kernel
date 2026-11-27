@@ -55,11 +55,7 @@ const SANCTIONED_VARIANTS = [
  * Off-palette colours already on the page, keyed by scan surface. A route's default view is keyed by
  * its path; a tab panel by `${path} [${tab}]`. Exact strings: they waive one node, not a rule.
  */
-const ACCEPTED: Record<string, string[]> = {
-    // file-manager.tsx expand-all control, on /resources and embedded in the flow Files tab.
-    '/resources': ['button: hover:text-blue-400'],
-    [`${routes.flow('5')} [Files]`]: ['button: hover:text-blue-400'],
-};
+const ACCEPTED: Record<string, string[]> = {};
 
 const scanOffenders = (page: Page) =>
     page.evaluate(

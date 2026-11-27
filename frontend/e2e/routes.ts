@@ -74,7 +74,7 @@ export const ROUTE_MANIFEST: RouteManifestEntry[] = [
             { rule: 'color-contrast', target: /text-muted-foreground\\?\/50/ },
             { rule: 'aria-progressbar-name', tabs: ['任务'], target: /\.bg-primary\\\/20/ },
             { rule: 'button-name', tabs: ['文件'], target: /tooltip-trigger.*size-8\[data-slot="button"\]/ },
-            { rule: 'target-size', tabs: ['文件'], target: /text-blue-400|button\[aria-label="选择 / },
+            { rule: 'target-size', tabs: ['文件'], target: /hover\\:text-primary|button\[aria-label="选择 / },
             // The same file-manager row metadata waived on /resources — the Files tab embeds it.
             { rule: 'color-contrast', tabs: ['文件'], target: /text-muted-foreground\\?\/80/ },
             {
@@ -154,10 +154,10 @@ export const ROUTE_MANIFEST: RouteManifestEntry[] = [
         a11yWaivers: [
             { rule: 'color-contrast', target: /text-muted-foreground\\?\/80/ },
             // `.rounded` is anchored with a boundary so it can't match every rounded-* utility. axe
-            // emits the row-select buttons as a bare `button[aria-label="Select <name>"]` with no
+            // emits the row-select buttons as a bare `button[aria-label="选择 <name>"]` with no
             // parent path, so the label is the only available anchor — require the button tag at
             // least, rather than a bare `aria-label="Select ` that would also waive a non-button.
-            { rule: 'target-size', target: /\.rounded(?![-\w])|button\[aria-label="Select / },
+            { rule: 'target-size', target: /\.rounded(?![-\w])|hover\\:text-primary|button\[aria-label="选择 / },
         ],
         cassette: resourcesCassette,
         path: routes.resources,
