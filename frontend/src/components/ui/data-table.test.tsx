@@ -238,21 +238,29 @@ describe('DataTable — controlled filter projection', () => {
         // typed quickly and immediately clicked X, the still-pending timer
         // would land *after* the clear, re-emitting the typed value. The
         // refactor cancels the pending timer inside `handleClear` → `emit`.
+        //
+        // `fireEvent` dispatches synchronously, so the X is certainly reached
+        // while the timer is pending; typing through `userEvent` lets the real
+        // debounce elapse on a loaded runner and turns the case into an
+        // assertion about machine speed.
         const emitted: string[] = [];
-        const user = userEvent.setup();
 
         render(<FilterHost emitted={emitted} />, { wrapper: Wrapper });
 
         const input = screen.getByPlaceholderText('Filter...');
-        await user.type(input, 'bravo');
-        // No `waitFor` here — we want the X click to happen mid-debounce,
-        // before any emit has reached the parent.
+
+        act(() => {
+            fireEvent.change(input, { target: { value: 'bravo' } });
+        });
+
         expect(emitted).toEqual([]);
 
         const inputGroup = input.closest('[data-slot="input-group"]');
         const clearButton = within(inputGroup as HTMLElement).getByRole('button');
 
-        await user.click(clearButton);
+        act(() => {
+            fireEvent.click(clearButton);
+        });
 
         // Wait long enough for any stale timer to have fired by now.
         await new Promise((resolve) => setTimeout(resolve, 400));
