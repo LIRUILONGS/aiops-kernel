@@ -104,7 +104,7 @@ test.describe('knowledges crud', { tag: '@crud' }, () => {
                         candidate.method() === 'POST' && candidate.postDataJSON()?.operationName === 'anonymizeText',
                 );
 
-                await page.getByRole('button', { name: '匿名化' }).click();
+                await page.getByRole('button', { name: '脱敏' }).click();
 
                 expect((await request).postDataJSON().variables.text).toContain('admin@example.com');
                 await expect(page.getByRole('textbox', { name: '内容' })).toContainText(SCRUBBED);
@@ -124,7 +124,7 @@ test.describe('knowledges crud', { tag: '@crud' }, () => {
             test('leaves the body alone and says so', async ({ page }) => {
                 await openNewKnowledgeForm(page);
                 await typeIntoEditor(page, '内容', PLAIN);
-                await page.getByRole('button', { name: '匿名化' }).click();
+                await page.getByRole('button', { name: '脱敏' }).click();
 
                 await expect(page.getByText('未检测到敏感数据')).toBeVisible();
                 await expect(page.getByRole('textbox', { name: '内容' })).toContainText(PLAIN);

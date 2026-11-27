@@ -175,8 +175,8 @@ function FlowFilesAttachResourcesDialogBody({
     const selectedCount = selectedPaths.size;
     const hasResources = resources.length > 0;
     const isAttachDisabled = selectedCount === 0;
-    const primaryLabel = selectedCount > 0 ? `Attach ${selectedCount}` : 'Attach';
-    const overwriteLabel = selectedCount > 0 ? `Attach ${selectedCount} with overwrite` : '覆盖挂载';
+    const primaryLabel = selectedCount > 0 ? `附加 ${selectedCount}` : '附加';
+    const overwriteLabel = selectedCount > 0 ? `覆盖附加 ${selectedCount}` : '覆盖挂载';
 
     const emptyState = (
         <Empty className="border-0">

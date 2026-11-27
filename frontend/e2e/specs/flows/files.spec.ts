@@ -360,7 +360,7 @@ test.describe('flow files', { tag: '@flows' }, () => {
 
             const dialog = page.getByRole('dialog');
 
-            await expect(dialog.getByRole('heading', { name: '附加资源' })).toBeVisible();
+            await expect(dialog.getByRole('heading', { name: '挂载资源' })).toBeVisible();
             await dialog.getByRole('checkbox', { name: `选择 ${ATTACHED_RESOURCE.name}` }).click();
 
             const request = page.waitForRequest(

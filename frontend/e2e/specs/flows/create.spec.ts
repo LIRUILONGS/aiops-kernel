@@ -39,7 +39,7 @@ test.describe('flow create', { tag: ['@flows', '@smoke'] }, () => {
         await page.goto('/flows/new');
 
         await expect(page.getByText(PROVIDER.name)).toBeVisible();
-        await page.getByPlaceholder(/Describe what you would like OpsAGI to test/).fill('Say hello');
+        await page.getByPlaceholder(/描述要诊断的故障/).fill('Say hello');
         await page.getByRole('button', { name: '提交' }).click();
 
         await expect(page).toHaveURL(/\/flows\/7/);

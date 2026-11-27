@@ -245,7 +245,7 @@ export function KnowledgeHeader({
                                     {isAnonymizing ? (
                                         <>
                                             <Spinner variant="circle" />
-                                            Anonymizing...
+                                            匿名化中…
                                         </>
                                     ) : (
                                         <>

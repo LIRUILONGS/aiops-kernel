@@ -129,7 +129,7 @@ test.describe('a flow from last year on a provider since removed', { tag: '@flow
 
         await mark.hover();
 
-        await expect(page.getByRole('tooltip')).toHaveText('Unavailable');
+        await expect(page.getByRole('tooltip')).toHaveText('不可用');
         expectCleanPage(pageErrorLog);
     });
 });

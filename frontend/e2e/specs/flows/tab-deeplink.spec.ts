@@ -85,14 +85,14 @@ test.describe('flow side panel tab', { tag: '@flows' }, () => {
         await page.setViewportSize({ height: 800, width: 1440 });
         await page.goto('/flows/5?tab=assistant');
 
-        await page.getByRole('tab', { name: '搜索' }).click();
+        await page.getByRole('tab', { name: '工具调用' }).click();
 
         await expect(page).toHaveURL(/[?&]side=tools/);
-        await expectSelectedTab(page, '搜索');
+        await expectSelectedTab(page, '工具调用');
 
         await page.reload();
 
-        await expectSelectedTab(page, '搜索');
+        await expectSelectedTab(page, '工具调用');
         await expectSelectedTab(page, '助手');
         expectCleanPage(pageErrorLog);
     });

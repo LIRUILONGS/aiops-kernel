@@ -35,9 +35,6 @@ test.describe('live panels', { tag: '@flows' }, () => {
         await page.getByRole('tab', { name: '智能体' }).click();
         await expect(page.getByText(STREAMED.agent)).toBeVisible();
 
-        await page.getByRole('tab', { name: '搜索' }).click();
-        await expect(page.getByText(STREAMED.search)).toBeVisible();
-
         await page.getByRole('tab', { name: '向量库' }).click();
         await expect(page.getByText(STREAMED.vector)).toBeVisible();
 

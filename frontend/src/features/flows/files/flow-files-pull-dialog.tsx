@@ -307,10 +307,10 @@ function FlowFilesPullDialogForm({ cachedFiles, flowId, onClose, onSuccess }: Fl
 
     const primaryLabel = useMemo(() => {
         if (selectedPaths.size === 0) {
-            return `Pull ${currentPath}`;
+            return `拉取 ${currentPath}`;
         }
 
-        return `Pull ${selectedPaths.size} ${pluralizeItems(selectedPaths.size)}`;
+        return `拉取 ${selectedPaths.size} ${pluralizeItems(selectedPaths.size)}`;
     }, [currentPath, selectedPaths.size]);
 
     const overwriteLabel = useMemo(() => {
@@ -318,7 +318,7 @@ function FlowFilesPullDialogForm({ cachedFiles, flowId, onClose, onSuccess }: Fl
             return '覆盖拉取';
         }
 
-        return `Pull ${selectedPaths.size} with overwrite`;
+        return `覆盖拉取 ${selectedPaths.size}`;
     }, [selectedPaths.size]);
 
     // The FileManager doesn't ship a "selection only" mode — passing an empty

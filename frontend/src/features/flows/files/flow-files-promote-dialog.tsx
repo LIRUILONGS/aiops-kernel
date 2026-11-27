@@ -183,7 +183,7 @@ function FlowFilesPromoteDialogForm({ files, flowId, onClose }: FlowFilesPromote
     // errors instead of a silently-dead button). Mirrors FormSubmitButton's requireValid gate.
     const isSubmitDisabled = form.formState.isSubmitted && !form.formState.isValid;
     const titleText = isMulti ? `Save ${files.length} items as resources` : '保存为资源';
-    const overwriteCtaLabel = isMulti ? `Save ${files.length} with overwrite` : '覆盖保存';
+    const overwriteCtaLabel = isMulti ? `覆盖保存 ${files.length}` : '覆盖保存';
 
     return (
         <>

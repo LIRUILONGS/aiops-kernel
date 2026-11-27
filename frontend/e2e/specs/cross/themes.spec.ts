@@ -25,8 +25,9 @@ test.describe('themes', { tag: '@cross' }, () => {
         page,
         pageErrorLog,
     }) => {
-        await page.addInitScript(() => window.localStorage.setItem('theme', 'light'));
         await page.goto('/flows');
+        await page.evaluate(() => window.localStorage.setItem('theme', 'light'));
+        await page.reload();
 
         await expect(page.locator('html')).toHaveClass(/light/);
 

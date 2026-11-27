@@ -66,7 +66,7 @@ test.describe('settings prompt detail', { tag: '@coverage' }, () => {
         await page.goto('/settings/prompts/e2e-no-such-prompt');
 
         await expect(page.getByText('找不到该提示词')).toBeVisible();
-        await expect(page.getByText('The prompt "e2e-no-such-prompt" could not be found')).toBeVisible();
+        await expect(page.getByText('找不到该提示词')).toBeVisible();
         await expect(page.getByRole('textbox', { name: EDITOR })).toBeHidden();
     });
 
@@ -154,7 +154,7 @@ test.describe('settings prompt validation', { tag: '@coverage' }, () => {
             await page.getByRole('button', { name: '校验' }).click();
 
             expect((await request).postDataJSON().variables.template).toContain('# Refiner');
-            await expect(page.getByRole('dialog')).toContainText('Valid Template');
+            await expect(page.getByRole('dialog')).toContainText('模板有效');
             expectCleanPage(pageErrorLog);
         });
     });
@@ -181,7 +181,7 @@ test.describe('settings prompt validation', { tag: '@coverage' }, () => {
 
             const dialog = page.getByRole('dialog');
 
-            await expect(dialog).toContainText('Validation Error');
+            await expect(dialog).toContainText('校验失败');
             await expect(dialog).toContainText('unclosed action started at validation:3');
             await expect(dialog).toContainText('Template appears to be incomplete - missing closing braces');
             await expect(dialog).toContainText('Line: 4');

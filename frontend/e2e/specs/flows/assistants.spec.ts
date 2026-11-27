@@ -74,7 +74,7 @@ test.describe('flow assistants', { tag: '@flows' }, () => {
             const picker = page.getByRole('button', { name: '选择助手' });
 
             await expect(composer).toBeVisible();
-            await expect(picker).toHaveText('New');
+            await expect(picker).toHaveText('新建');
             await composer.fill('plan the recon');
 
             await expect(page.getByRole('button', { name: PROVIDER.name })).toBeVisible();

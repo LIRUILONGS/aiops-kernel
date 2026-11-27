@@ -88,7 +88,7 @@ test.describe('api tokens crud', { tag: '@crud' }, () => {
             await expect(dialog.getByText('令牌已创建')).toBeVisible();
             await expect(dialog.getByText(CREATED_TOKEN_SECRET)).toBeVisible();
 
-            await dialog.getByRole('button', { name: 'Copy Token' }).click();
+            await dialog.getByRole('button', { name: '复制令牌' }).click();
 
             await expect(page.getByText('令牌已复制到剪贴板')).toBeVisible();
             expect(await clipboardWrites(page)).toEqual([CREATED_TOKEN_SECRET]);
