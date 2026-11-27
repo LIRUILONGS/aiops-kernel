@@ -222,7 +222,7 @@ function ResourcesMoveDialogForm({ files, onClose }: ResourcesMoveDialogFormProp
                                 }}
                                 overwriteLabel={overwriteCtaLabel}
                                 primaryIcon={FolderInput}
-                                primaryLabel="Move"
+                                primaryLabel="移动"
                                 primaryType="submit"
                             />
                         </div>

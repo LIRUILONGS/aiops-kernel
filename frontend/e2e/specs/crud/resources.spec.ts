@@ -147,7 +147,7 @@ test.describe('resources', { tag: '@coverage' }, () => {
             const dialog = page.getByRole('dialog');
 
             await expect(dialog.getByRole('heading', { name: '移动 2 项' })).toBeVisible();
-            await dialog.getByLabel('Destination directory').fill(BULK_MOVE_DIRECTORY);
+            await dialog.getByLabel('目标目录').fill(BULK_MOVE_DIRECTORY);
 
             const request = page.waitForRequest(
                 (candidate) =>
@@ -174,7 +174,7 @@ test.describe('resources', { tag: '@coverage' }, () => {
             const dialog = page.getByRole('dialog');
 
             await expect(dialog.getByRole('heading', { name: '复制 2 项' })).toBeVisible();
-            await dialog.getByLabel('Destination directory').fill(BULK_COPY_DIRECTORY);
+            await dialog.getByLabel('目标目录').fill(BULK_COPY_DIRECTORY);
 
             const request = page.waitForRequest(
                 (candidate) =>
@@ -299,7 +299,7 @@ test.describe('resources', { tag: '@coverage' }, () => {
 
             const dialog = page.getByRole('dialog');
 
-            await dialog.getByLabel('New path').fill(RENAMED_PATH);
+            await dialog.getByLabel('新路径').fill(RENAMED_PATH);
             await dialog.getByRole('button', { exact: true, name: '移动' }).click();
 
             expect((await request).postDataJSON()).toMatchObject({

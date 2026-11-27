@@ -224,7 +224,7 @@ function ResourcesCopyDialogForm({ files, onClose }: ResourcesCopyDialogFormProp
                                 }}
                                 overwriteLabel={overwriteCtaLabel}
                                 primaryIcon={Copy}
-                                primaryLabel="Copy"
+                                primaryLabel="复制"
                                 primaryType="submit"
                             />
                         </div>
