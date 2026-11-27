@@ -2,6 +2,7 @@ import type { ResultOf } from '@graphql-typed-document-node/core';
 
 import type {
     FlowsDocument,
+    FlowTemplatePresetsDocument,
     FlowTemplatesDocument,
     ProvidersDocument,
     ResourcesDocument,
@@ -20,6 +21,20 @@ import { entity } from '../cassette.ts';
 const flows: ResultOf<typeof FlowsDocument> = { flows: [] };
 
 const flowTemplates: ResultOf<typeof FlowTemplatesDocument> = { flowTemplates: [] };
+
+export const PRESET_TITLE = 'E2E 内置模板';
+
+// The new-flow composer reads the presets on every route that can start a flow,
+// so a cassette without this entry leaves the query unresolved and the page empty.
+export const flowTemplatePresets: ResultOf<typeof FlowTemplatePresetsDocument> = {
+    flowTemplatePresets: [
+        entity('FlowTemplatePreset', {
+            domain: '告警诊断',
+            text: '用 ops_system 取负载与 Top 进程，再用 ops_logs 取同一时间窗的错误原文。',
+            title: PRESET_TITLE,
+        }),
+    ],
+};
 
 // After a websocket reconnect the app re-requests resources on the wire with {recursive:true};
 // removing this entry red-lights the reconnect spec on the 501 gate.
@@ -60,6 +75,7 @@ const settingsUser: ResultOf<typeof SettingsUserDocument> = {
 
 export const baseQueries = (): NonNullable<Cassette['queries']> => ({
     flows: [{ data: flows }],
+    flowTemplatePresets: [{ data: flowTemplatePresets }],
     flowTemplates: [{ data: flowTemplates }],
     providers: [{ data: providers }],
     resources: [{ data: resources }],

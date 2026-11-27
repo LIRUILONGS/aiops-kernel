@@ -150,15 +150,7 @@ Backend startup replays flows and can take a minute; poll rather than sleep.
   base of its own. Containers left behind by a previous database are orphans —
   their flow ids no longer exist, and they still hold ports.
 
-          The name collides before the port does, and it fails the whole mutation:
-          `createFlow` answers `Conflict. The container name "/opsagi-terminal-<id>" is
-
-    already in use`, so a stack whose database you recreated cannot start a flow
-  until the old sandboxes are removed. `run-local-tier.sh`handles both halves —
-  it removes`opsagi-terminal-9xxxx`and their`-data`volumes, then runs
- `ALTER SEQUENCE flows_id_seq RESTART WITH 90001`. Bringing the same compose
-    project up by hand does neither, and ids restart at 1 straight into a developer
-    stack's names.
+    The name collides before the port does, and it fails the whole mutation: `createFlow` answers `Conflict. The container name "/opsagi-terminal-<id>" is already in use`, so a stack whose database you recreated cannot start a flow until the old sandboxes are removed. `run-local-tier.sh` handles both halves — it removes `opsagi-terminal-9xxxx` and their `-data` volumes, then runs `ALTER SEQUENCE flows_id_seq RESTART WITH 90001`. Bringing the same compose project up by hand does neither, and ids restart at 1 straight into a developer stack's names.
 
 ## Driving the UI
 

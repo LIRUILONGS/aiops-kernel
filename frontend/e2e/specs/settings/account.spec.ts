@@ -69,7 +69,7 @@ test.describe('account settings', { tag: '@settings' }, () => {
             await page.goto('/settings/account');
 
             await expect(page.getByText('GitHub', { exact: true })).toBeVisible();
-            await expect(page.getByText('Linked from your GitHub.')).toBeVisible();
+            await expect(page.getByText('从 GitHub 关联。')).toBeVisible();
         });
     });
 
