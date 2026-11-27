@@ -50,7 +50,7 @@ func (r *queryResolver) Credentials(ctx context.Context) ([]*model.CredentialInf
 		return nil, err
 	}
 
-	store := r.Resolver.CredentialStore
+	store := r.CredentialStore
 	if store == nil || !store.Available() {
 		return nil, errors.New("no credential master key is configured")
 	}
@@ -77,7 +77,7 @@ func (r *mutationResolver) CreateCredential(ctx context.Context, input model.Cre
 		return nil, err
 	}
 
-	store := r.Resolver.CredentialStore
+	store := r.CredentialStore
 	if store == nil || !store.Available() {
 		return nil, errors.New("no credential master key is configured")
 	}
@@ -116,7 +116,7 @@ func (r *mutationResolver) RotateCredential(ctx context.Context, credentialID in
 		return nil, err
 	}
 
-	store := r.Resolver.CredentialStore
+	store := r.CredentialStore
 	if store == nil || !store.Available() {
 		return nil, errors.New("no credential master key is configured")
 	}
@@ -147,7 +147,7 @@ func (r *mutationResolver) DeleteCredential(ctx context.Context, credentialID in
 		return false, err
 	}
 
-	store := r.Resolver.CredentialStore
+	store := r.CredentialStore
 	if store == nil || !store.Available() {
 		return false, errors.New("no credential master key is configured")
 	}
