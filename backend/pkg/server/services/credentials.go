@@ -200,17 +200,20 @@ func (s *CredentialService) DeleteCredential(c *gin.Context) {
 	response.Success(c, http.StatusOK, nil)
 }
 
-// authorizeView gates the list. `settings.admin` still passes: it means the
-// operator may change how the deployment works at all, and a deployment that
-// installed before the credential area existed grants no credential privilege.
+// authorizeView gates the list. `credentials.admin` covers both halves, matching
+// what `validatePermission` does on the GraphQL side: the two entries must agree
+// on a role, or a grant passes one door and is refused at the other.
+// `settings.admin` passes because it already means "this operator may change how
+// the deployment works", and an instance installed before the credential area
+// existed holds no `credentials.*` at all.
 func (s *CredentialService) authorizeView(c *gin.Context) bool {
-	return s.authorize(c, "credentials.view", "credentials.manage", "settings.admin")
+	return s.authorize(c, "credentials.view", "credentials.manage", "credentials.admin", "settings.admin")
 }
 
 // authorizeManage gates the writes. A caller holding only `credentials.view`
 // reads the inventory and changes nothing.
 func (s *CredentialService) authorizeManage(c *gin.Context) bool {
-	return s.authorize(c, "credentials.manage", "settings.admin")
+	return s.authorize(c, "credentials.manage", "credentials.admin", "settings.admin")
 }
 
 func (s *CredentialService) authorize(c *gin.Context, accepted ...string) bool {

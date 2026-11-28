@@ -2524,7 +2524,7 @@ flow 69 却在消息日志里写下「未在 pg_stat_activity 中发现长事务
 
 返回结构体 `models.CredentialInfo` 没有能装密文的字段，列表查询也不 select `secret`，"不返回密钥"因此在类型和 SQL 两层都做不到，而不是靠 handler 自觉。
 
-权限先用 `settings.admin`：凭据表是部署级的、不是每个用户一份，新增 `credentials.*` 权限要连带一次角色迁移，那是多租户那一步的事。没有主密钥时四个端点都答 `503 Credentials.Unavailable`，而不是回一个空列表让人以为库是空的。
+权限在 §4.104 换成了专门的 `credentials.*`：读列表认 `credentials.view` 或 `credentials.manage`，写认 `credentials.manage`，三条 GraphQL 订阅认 `credentials.subscribe`，只授予管理员角色。`settings.admin` 仍然放行，让升级前就存在的部署不至于把自己关在门外。没有主密钥时四个端点都答 `503 Credentials.Unavailable`，而不是回一个空列表让人以为库是空的。
 
 #### 七、真机验证
 
@@ -2552,7 +2552,7 @@ the host presented SHA256:2SyNEy1+1XbxTGKl7OhCXURO5k1YN3xzGLRRm5YsXZ4
 #### 九、还没做的
 
 - 前端还没有凭据页面：接口齐了，运维现在还只能用 curl 或自己的脚本调 REST。
-- 权限从 `settings.admin` 换成专门的 `credentials.*`，需要一条把新权限授予管理员角色的数据迁移。
+- 权限从 `settings.admin` 换成专门的 `credentials.*`，需要一条把新权限授予管理员角色的数据迁移。（已完成，§4.104）
 - `ValidateOpsTargets` 仍然要求每个 target 带 `host`，只写 `credential_id` 的一行会被拒绝；要不要放宽到"host 或 credential_id 有一个就行"。
 - 第二步（`ops_apply` 的固定模板写目录、租约的 `actions` 维度、写默认拒绝 + 运维审批）已经在 §4.88 落地。
 - 第三步：基线 → 变更 → 差分 → 结论，证据缺失时结论必须是 `unverified` 而不是乐观收尾。
@@ -3227,6 +3227,70 @@ python scripts/opsagi_run.py "$(python -c "import json;print(json.load(open('scr
 
 第二，`pkg/providers/catalog_test.go` 里那个读 README 的测试（`TestCatalog_ReadmeProviderSectionsMatchTheShippedConfig`）在改完之后仍然是绿的——它的 gemini / qwen 两个子测试只校验"如果存在该节，其内容要与 catalogue 一致"，而本分支的 README 从来没有这两节。重写之前先确认过这一点，否则整篇会因为它变红。
 
+### 4.104 凭据的权限从 resources 搬走，页面进了扫描清单（2026-11-28）
+
+§4.87 记的那笔账在这里还上：那节说权限先用 `settings.admin`，换成专门的 `credentials.*` 要连带一次角色迁移。做的时候发现账比记录的更糟——GraphQL 侧和 REST 侧各认一套，而且两套都挂错了类别。
+
+#### 一、原来的两套口径，以及 role 2 能看到什么
+
+| 入口 | 原权限 | 后果 |
+|---|---|---|
+| GraphQL `credentials` 列表 | `resources.view` | |
+| GraphQL 增删轮换 | `resources.admin` | |
+| REST 四个端点 | `settings.admin` | 与 GraphQL 不一致：持 resources 权限的人一扇门进、另一扇门被拒 |
+
+`resources.view` 与 `resources.subscribe` 都授予了 role 2（`20260426_120000_user_resources.sql`），所以任何登录用户都能列出全部凭据的 host、port、username 和 hostKeyFingerprint。密钥本身回不来（§4.87 的类型设计仍然成立），但"生产机群的主机名与账号清单"已经是对所有登录用户公开的。
+
+#### 二、改成什么样
+
+迁移 `20261128120000_add_credentials_privileges.sql`：只给 role 1 授予 `credentials.admin` / `credentials.view` / `credentials.manage` / `credentials.subscribe`，带 `ON CONFLICT DO NOTHING`，Down 段反向删除。
+
+| 操作 | 认的权限 |
+|---|---|
+| 列表（GraphQL + REST） | `credentials.view`、`credentials.manage` 或 `credentials.admin` |
+| 增、轮换、删（GraphQL + REST） | `credentials.manage` 或 `credentials.admin` |
+| 三条订阅 | `credentials.subscribe` |
+
+读写分开是为了让"只读授权"真的只读：只有 `credentials.view` 的人能看清单，碰不了密钥。`credentials.admin` 覆盖读写两半，和 GraphQL 侧 `validatePermission` 的 admin 短路保持一致——两个入口对同一个角色必须给出同一个答案，否则一个授权过了一道门、被另一道门拒掉。`settings.admin` 两边也都仍然放行：它本来就意味着"这个人可以改部署怎么跑"，而升级前就存在的实例手里没有任何 `credentials.*`，不放行就等于升级即锁死。
+
+#### 三、为什么中间件挪进了服务层
+
+一开始给 REST 四条路由挂了 `auth.PrivilegesRequired(...)`，然后写路由测试证明它拦得住。测试通过了，但把守卫摘掉再跑，结果还是 403 —— 说明断言测的根本不是那个守卫。查下去才发现真正的门在 `CredentialService.authorize`，中间件摘掉后是它在拦。
+
+所以最后没有加中间件，而是把服务层的 `authorize` 拆成 `authorizeView` / `authorizeManage`，两套入口共用同一套判定。少一层重复的检查，也就不会出现"一层放行、另一层拒绝"的组合。
+
+#### 四、证明它真的会红
+
+四条变异，逐个在临时副本里做，各自看到 `--- FAIL` 再还原：
+
+| 变异 | 变红的用例 |
+|---|---|
+| `credentials.view` 换回 `resources.view` | 列表的 view 用例，以及 GraphQL 侧的资源区隔离用例 |
+| 读门放宽成只认 `settings.admin` | `AcceptsTheViewPrivilege` |
+| 写门放进 `credentials.view` | 三个写用例（create / rotate / delete）全部 |
+| 写门放进 `resources.admin` | `EveryHandler_IgnoresTheResourcesArea` |
+| 服务层不再认 `credentials.admin` | `AdminPrivilege_CoversEveryHandler` 四个子用例 |
+
+迁移没有只靠读代码确认：起一个一次性 `pgvector/pgvector:pg16`，建出 `roles` / `privileges` 的等价表，跑 Up 得 4 行且全部属于 role 1，重跑是 `INSERT 0 0`（幂等），跑 Down 回到 0 行。
+
+#### 五、凭据页进了 mock 层扫描
+
+`/settings/credentials` 之前只在单元测试里出现过，`e2e/specs` 没有它的 spec，a11y/palette 的路由清单也不收它。这次补了 cassette（`e2e/mocks/cassettes/settings-credentials.ts`）和四个用例（列表、新建表单初始态、新建成功、密钥不回显），并注册进 `e2e/routes.ts`。
+
+注册之后 a11y 与 palette 真的会扫这个页面，两条断言都没有豁免就过了：a11y 44/44（原 42 加浅色深色各一条），palette 64/64。
+
+过程中撞到两个选择器问题，都是真实的页面结构而不是测试写错：`AppHeaderTitle` 渲染的是面包屑不是 heading，所以标题断言改用 `role=table`；`getByLabel('密钥')` 会同时匹配"密钥""新密钥""主机密钥指纹"，要用 `exact: true`。
+
+#### 六、升级要注意的一件事
+
+这是权限语义变更：**升级后，除管理员角色外没有任何角色能访问凭据**。如果现网里有非管理员的运维账号在用这个功能，升级前先补授权：
+
+```sql
+INSERT INTO privileges (role_id, name) VALUES (2, 'credentials.view') ON CONFLICT DO NOTHING;
+```
+
+给 `credentials.view` 只开只读；要让那个账号也能轮换密钥，换成 `credentials.manage`。
+
 ## 5 环境
 
 ### 5.1 开发机
@@ -3312,6 +3376,8 @@ OPSAGI_TARGETS=[{"id":"lab","host":"lab-host","port":62154,"user":"root","passwo
 ## 6 提交记录
 
 ```
+feat(credentials): give the credential surface its own privileges        # 4.104
+test(frontend): stop the clear-cancel cases from racing the debounce
 fix(tools): say how many lines a truncated log cut dropped                    # 4.72 四-1
 docs(handover): sixteen flows on the shipped image, real model, real datasets  # 4.72
 refactor: rename the product, the environment and the container paths   # 4.10

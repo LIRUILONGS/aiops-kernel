@@ -239,8 +239,7 @@ func TestCredentials_Writes_RefuseAReadOnlyCaller(t *testing.T) {
 	}
 }
 
-func TestCredentials_EveryHandler_IgnoresTheResourcesArea(t *testing.T) {
-	store := &fakeCredentialStore{available: true}
+func TestCredentials_EveryHandler_IgnoresTheResourcesArea(t *testing.T) {	store := &fakeCredentialStore{available: true}
 	resources := []string{"resources.admin", "resources.view", "resources.subscribe"}
 
 	w := credentialRequest(t, store, (*CredentialService).GetCredentials, http.MethodGet, "/credentials/",
@@ -251,6 +250,33 @@ func TestCredentials_EveryHandler_IgnoresTheResourcesArea(t *testing.T) {
 		`{"name":"lab-root","kind":"ssh_key","secret":"s"}`, resources)
 	assert.Equal(t, http.StatusForbidden, w.Code)
 	assert.Empty(t, store.created)
+}
+
+func TestCredentials_AdminPrivilege_CoversEveryHandler(t *testing.T) {
+	handlers := []struct {
+		name    string
+		handler func(*CredentialService, *gin.Context)
+		method  string
+		target  string
+		body    string
+	}{
+		{"list", (*CredentialService).GetCredentials, http.MethodGet, "/credentials/", ""},
+		{"create", (*CredentialService).CreateCredential, http.MethodPost, "/credentials/",
+			`{"name":"lab-root","kind":"ssh_key","secret":"s"}`},
+		{"rotate", (*CredentialService).RotateCredential, http.MethodPut, "/credentials/12/secret", `{"secret":"new"}`},
+		{"delete", (*CredentialService).DeleteCredential, http.MethodDelete, "/credentials/12", ""},
+	}
+
+	for _, tc := range handlers {
+		t.Run(tc.name, func(t *testing.T) {
+			store := &fakeCredentialStore{available: true}
+
+			w := credentialRequest(t, store, tc.handler, tc.method, tc.target, tc.body, []string{"credentials.admin"})
+
+			assert.NotEqual(t, http.StatusForbidden, w.Code,
+				"credentials.admin must reach %s, as validatePermission lets it on the GraphQL side", tc.name)
+		})
+	}
 }
 
 func TestCredentials_RotateCredential_ReportsAMissingRecordAs404(t *testing.T) {
