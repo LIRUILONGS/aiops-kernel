@@ -41,7 +41,7 @@ func NewCredentialService(store credentialStore) *CredentialService {
 // @Failure 503 {object} response.errorResp "no master key configured"
 // @Router /credentials/ [get]
 func (s *CredentialService) GetCredentials(c *gin.Context) {
-	if !s.authorize(c) {
+	if !s.authorizeView(c) {
 		return
 	}
 	if !s.store.Available() {
@@ -79,7 +79,7 @@ func (s *CredentialService) GetCredentials(c *gin.Context) {
 // @Failure 503 {object} response.errorResp "no master key configured"
 // @Router /credentials/ [post]
 func (s *CredentialService) CreateCredential(c *gin.Context) {
-	if !s.authorize(c) {
+	if !s.authorizeManage(c) {
 		return
 	}
 	if !s.store.Available() {
@@ -135,7 +135,7 @@ func (s *CredentialService) CreateCredential(c *gin.Context) {
 // @Failure 503 {object} response.errorResp "no master key configured"
 // @Router /credentials/{id}/secret [put]
 func (s *CredentialService) RotateCredential(c *gin.Context) {
-	if !s.authorize(c) {
+	if !s.authorizeManage(c) {
 		return
 	}
 	if !s.store.Available() {
@@ -182,7 +182,7 @@ func (s *CredentialService) RotateCredential(c *gin.Context) {
 // @Failure 403 {object} response.errorResp "deleting credentials not permitted"
 // @Router /credentials/{id} [delete]
 func (s *CredentialService) DeleteCredential(c *gin.Context) {
-	if !s.authorize(c) {
+	if !s.authorizeManage(c) {
 		return
 	}
 
@@ -200,18 +200,29 @@ func (s *CredentialService) DeleteCredential(c *gin.Context) {
 	response.Success(c, http.StatusOK, nil)
 }
 
-// authorize gates the whole surface on the privilege that already means "this
-// operator may change how the deployment reaches its machines". A dedicated
-// credential privilege needs a role migration, and the surface is deployment
-// wide rather than per user.
-func (s *CredentialService) authorize(c *gin.Context) bool {
+// authorizeView gates the list. `settings.admin` still passes: it means the
+// operator may change how the deployment works at all, and a deployment that
+// installed before the credential area existed grants no credential privilege.
+func (s *CredentialService) authorizeView(c *gin.Context) bool {
+	return s.authorize(c, "credentials.view", "credentials.manage", "settings.admin")
+}
+
+// authorizeManage gates the writes. A caller holding only `credentials.view`
+// reads the inventory and changes nothing.
+func (s *CredentialService) authorizeManage(c *gin.Context) bool {
+	return s.authorize(c, "credentials.manage", "settings.admin")
+}
+
+func (s *CredentialService) authorize(c *gin.Context, accepted ...string) bool {
 	for _, priv := range c.GetStringSlice("prm") {
-		if priv == "settings.admin" {
-			return true
+		for _, allowed := range accepted {
+			if priv == allowed {
+				return true
+			}
 		}
 	}
 
-	logger.FromContext(c).Errorf("error filtering user role permissions: settings.admin not found")
+	logger.FromContext(c).Errorf("error filtering user role permissions: trying %v", accepted)
 	response.Error(c, response.ErrNotPermitted, nil)
 
 	return false

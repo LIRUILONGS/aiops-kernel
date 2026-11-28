@@ -119,7 +119,7 @@ func TestCredentials_Credentials_ReturnsTheMetadataButNoSecret(t *testing.T) {
 	resolver := graphResolver(&graphDB{})
 	resolver.CredentialStore = store
 
-	got, err := resolver.Query().Credentials(graphSessionContext("resources.view"))
+	got, err := resolver.Query().Credentials(graphSessionContext("credentials.view"))
 	require.NoError(t, err)
 	require.Len(t, got, 1)
 
@@ -138,7 +138,7 @@ func TestCredentials_Credentials_RefusesADeploymentWithoutAMasterKey(t *testing.
 	t.Run("no store wired", func(t *testing.T) {
 		resolver := graphResolver(&graphDB{})
 
-		_, err := resolver.Query().Credentials(graphSessionContext("resources.view"))
+		_, err := resolver.Query().Credentials(graphSessionContext("credentials.view"))
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "master key")
 	})
@@ -148,7 +148,7 @@ func TestCredentials_Credentials_RefusesADeploymentWithoutAMasterKey(t *testing.
 		resolver := graphResolver(&graphDB{})
 		resolver.CredentialStore = store
 
-		_, err := resolver.Query().Credentials(graphSessionContext("resources.view"))
+		_, err := resolver.Query().Credentials(graphSessionContext("credentials.view"))
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "master key")
 		assert.Equal(t, 0, store.listCalls, "an unavailable store must not be read")
@@ -172,7 +172,7 @@ func TestCredentials_CreateCredential_StoresTheSealedInputAndReturnsItsMetadata(
 	resolver.CredentialStore = store
 
 	port := 2222
-	got, err := resolver.Mutation().CreateCredential(graphSessionContext("resources.admin"), model.CredentialCreateInput{
+	got, err := resolver.Mutation().CreateCredential(graphSessionContext("credentials.manage"), model.CredentialCreateInput{
 		Name:               "lab-root",
 		Kind:               model.CredentialKindSSHKey,
 		Secret:             "-----BEGIN OPENSSH PRIVATE KEY-----",
@@ -204,7 +204,7 @@ func TestCredentials_CreateCredential_TreatsAnOmittedHostAsEmpty(t *testing.T) {
 	resolver := graphResolver(&graphDB{})
 	resolver.CredentialStore = store
 
-	_, err := resolver.Mutation().CreateCredential(graphSessionContext("resources.admin"), model.CredentialCreateInput{
+	_, err := resolver.Mutation().CreateCredential(graphSessionContext("credentials.manage"), model.CredentialCreateInput{
 		Name:   "k8s",
 		Kind:   model.CredentialKindK8sToken,
 		Secret: "token",
@@ -223,7 +223,7 @@ func TestCredentials_CreateCredential_RefusesAPortOutsideTheRange(t *testing.T) 
 	resolver.CredentialStore = store
 
 	port := 70000
-	_, err := resolver.Mutation().CreateCredential(graphSessionContext("resources.admin"), model.CredentialCreateInput{
+	_, err := resolver.Mutation().CreateCredential(graphSessionContext("credentials.manage"), model.CredentialCreateInput{
 		Name:   "lab-root",
 		Kind:   model.CredentialKindSSHPassword,
 		Secret: "hunter2",
@@ -239,7 +239,7 @@ func TestCredentials_CreateCredential_RefusesACallerWithoutTheAdminPermission(t 
 	resolver := graphResolver(&graphDB{})
 	resolver.CredentialStore = store
 
-	_, err := resolver.Mutation().CreateCredential(graphSessionContext("resources.view"), model.CredentialCreateInput{
+	_, err := resolver.Mutation().CreateCredential(graphSessionContext("credentials.view"), model.CredentialCreateInput{
 		Name:   "lab-root",
 		Kind:   model.CredentialKindSSHPassword,
 		Secret: "hunter2",
@@ -261,7 +261,7 @@ func TestCredentials_RotateCredential_ReportsTheRowItReadBack(t *testing.T) {
 	resolver.CredentialStore = store
 
 	got, err := resolver.Mutation().RotateCredential(
-		graphSessionContext("resources.admin"),
+		graphSessionContext("credentials.manage"),
 		3,
 		model.CredentialRotateInput{Secret: "new-secret"},
 	)
@@ -279,7 +279,7 @@ func TestCredentials_RotateCredential_ReportsAMissingRow(t *testing.T) {
 	resolver.CredentialStore = store
 
 	_, err := resolver.Mutation().RotateCredential(
-		graphSessionContext("resources.admin"),
+		graphSessionContext("credentials.manage"),
 		99,
 		model.CredentialRotateInput{Secret: "new-secret"},
 	)
@@ -292,7 +292,7 @@ func TestCredentials_DeleteCredential_RemovesTheRowAndReturnsTrue(t *testing.T) 
 	resolver := graphResolver(&graphDB{})
 	resolver.CredentialStore = store
 
-	ok, err := resolver.Mutation().DeleteCredential(graphSessionContext("resources.admin"), 5)
+	ok, err := resolver.Mutation().DeleteCredential(graphSessionContext("credentials.manage"), 5)
 	require.NoError(t, err)
 	assert.True(t, ok)
 	assert.Equal(t, []int64{5}, store.deleted)
@@ -303,8 +303,67 @@ func TestCredentials_DeleteCredential_RefusesACallerWithoutTheAdminPermission(t 
 	resolver := graphResolver(&graphDB{})
 	resolver.CredentialStore = store
 
-	ok, err := resolver.Mutation().DeleteCredential(graphSessionContext("resources.view"), 5)
+	ok, err := resolver.Mutation().DeleteCredential(graphSessionContext("credentials.view"), 5)
 	require.Error(t, err)
 	assert.False(t, ok)
 	assert.Empty(t, store.deleted)
+}
+
+func TestCredentials_EveryOperation_IgnoresTheResourcesArea(t *testing.T) {
+	port := 2222
+
+	cases := []struct {
+		name   string
+		invoke func(*Resolver) error
+	}{
+		{
+			name: "list",
+			invoke: func(r *Resolver) error {
+				_, err := r.Query().Credentials(graphSessionContext("resources.view", "resources.admin"))
+				return err
+			},
+		},
+		{
+			name: "create",
+			invoke: func(r *Resolver) error {
+				_, err := r.Mutation().CreateCredential(graphSessionContext("resources.admin"), model.CredentialCreateInput{
+					Name:   "lab-root",
+					Kind:   model.CredentialKindSSHKey,
+					Secret: "secret",
+					Port:   &port,
+				})
+				return err
+			},
+		},
+		{
+			name: "rotate",
+			invoke: func(r *Resolver) error {
+				_, err := r.Mutation().RotateCredential(graphSessionContext("resources.admin"), 1, model.CredentialRotateInput{Secret: "next"})
+				return err
+			},
+		},
+		{
+			name: "delete",
+			invoke: func(r *Resolver) error {
+				_, err := r.Mutation().DeleteCredential(graphSessionContext("resources.admin"), 1)
+				return err
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			store := &graphCredentialStore{available: true}
+			resolver := graphResolver(&graphDB{})
+			resolver.CredentialStore = store
+
+			err := tc.invoke(resolver)
+
+			require.Error(t, err, "the resources area must not reach credentials")
+			assert.True(t, errors.Is(err, ErrForbidden))
+			assert.Equal(t, 0, store.listCalls)
+			assert.Empty(t, store.created)
+			assert.Empty(t, store.deleted)
+		})
+	}
 }

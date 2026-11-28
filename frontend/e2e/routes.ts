@@ -10,6 +10,7 @@ import { dashboardCassette } from './mocks/cassettes/dashboard.ts';
 import { flowsCassette, flowTabsCassette, TABS_FILE_NAME, TABS_SCREENSHOT_URL } from './mocks/cassettes/flows.ts';
 import { knowledgesCassette } from './mocks/cassettes/knowledges.ts';
 import { resourcesCassette } from './mocks/cassettes/resources.ts';
+import { credentialsCassette } from './mocks/cassettes/settings-credentials.ts';
 import { settingsPromptsCassette } from './mocks/cassettes/settings-prompts.ts';
 import { settingsProvidersCassette } from './mocks/cassettes/settings-providers.ts';
 import { templatesCassette } from './mocks/cassettes/templates.ts';
@@ -146,6 +147,12 @@ export const ROUTE_MANIFEST: RouteManifestEntry[] = [
         path: routes.settings.providers,
         ready: (page) => page.getByText('还没有配置提供商'),
         sources: ['src/pages/settings/settings-providers.tsx'],
+    },
+    {
+        cassette: credentialsCassette,
+        path: routes.settings.credentials,
+        ready: (page) => page.getByRole('row', { name: /E2E lab key/ }),
+        sources: ['src/pages/settings/settings-credentials.tsx'],
     },
     {
         // Row size/modified metadata renders at 80% opacity and misses AA; the

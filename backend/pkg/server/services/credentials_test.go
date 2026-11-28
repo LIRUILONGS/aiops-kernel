@@ -171,6 +171,88 @@ func TestCredentials_GetCredentials_ListsWhatTheStoreHolds(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "lab-root")
 }
 
+func TestCredentials_GetCredentials_AcceptsTheViewPrivilege(t *testing.T) {
+	store := &fakeCredentialStore{available: true, records: []credentials.Credential{
+		{ID: 12, Name: "lab-root", Kind: credentials.KindSSHKey},
+	}}
+
+	w := credentialRequest(t, store, (*CredentialService).GetCredentials, http.MethodGet, "/credentials/",
+		"", []string{"credentials.view"})
+
+	require.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "lab-root")
+}
+
+func TestCredentials_Writes_AcceptTheManagePrivilege(t *testing.T) {
+	const body = `{"name":"lab-root","kind":"ssh_key","secret":"s"}`
+
+	writes := []struct {
+		name    string
+		handler func(*CredentialService, *gin.Context)
+		method  string
+		target  string
+		body    string
+	}{
+		{"create", (*CredentialService).CreateCredential, http.MethodPost, "/credentials/", body},
+		{"rotate", (*CredentialService).RotateCredential, http.MethodPut, "/credentials/12/secret", `{"secret":"new"}`},
+		{"delete", (*CredentialService).DeleteCredential, http.MethodDelete, "/credentials/12", ""},
+	}
+
+	for _, tc := range writes {
+		t.Run(tc.name, func(t *testing.T) {
+			store := &fakeCredentialStore{available: true}
+
+			w := credentialRequest(t, store, tc.handler, tc.method, tc.target, tc.body, []string{"credentials.manage"})
+
+			assert.NotEqual(t, http.StatusForbidden, w.Code,
+				"credentials.manage must reach %s", tc.name)
+		})
+	}
+}
+
+func TestCredentials_Writes_RefuseAReadOnlyCaller(t *testing.T) {
+	const body = `{"name":"lab-root","kind":"ssh_key","secret":"s"}`
+
+	writes := []struct {
+		name    string
+		handler func(*CredentialService, *gin.Context)
+		method  string
+		target  string
+		body    string
+	}{
+		{"create", (*CredentialService).CreateCredential, http.MethodPost, "/credentials/", body},
+		{"rotate", (*CredentialService).RotateCredential, http.MethodPut, "/credentials/12/secret", `{"secret":"new"}`},
+		{"delete", (*CredentialService).DeleteCredential, http.MethodDelete, "/credentials/12", ""},
+	}
+
+	for _, tc := range writes {
+		t.Run(tc.name, func(t *testing.T) {
+			store := &fakeCredentialStore{available: true}
+
+			w := credentialRequest(t, store, tc.handler, tc.method, tc.target, tc.body, []string{"credentials.view"})
+
+			assert.Equal(t, http.StatusForbidden, w.Code, "credentials.view must not reach %s", tc.name)
+			assert.Equal(t, "NotPermitted", credentialErrorCode(t, w))
+			assert.Empty(t, store.created)
+			assert.Empty(t, store.deleted)
+		})
+	}
+}
+
+func TestCredentials_EveryHandler_IgnoresTheResourcesArea(t *testing.T) {
+	store := &fakeCredentialStore{available: true}
+	resources := []string{"resources.admin", "resources.view", "resources.subscribe"}
+
+	w := credentialRequest(t, store, (*CredentialService).GetCredentials, http.MethodGet, "/credentials/",
+		"", resources)
+	assert.Equal(t, http.StatusForbidden, w.Code)
+
+	w = credentialRequest(t, store, (*CredentialService).CreateCredential, http.MethodPost, "/credentials/",
+		`{"name":"lab-root","kind":"ssh_key","secret":"s"}`, resources)
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	assert.Empty(t, store.created)
+}
+
 func TestCredentials_RotateCredential_ReportsAMissingRecordAs404(t *testing.T) {
 	store := &fakeCredentialStore{available: true, rotateErr: credentials.ErrNotFound}
 

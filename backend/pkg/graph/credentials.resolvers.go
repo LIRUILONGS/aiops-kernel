@@ -46,7 +46,7 @@ func derefInt(value *int) int {
 
 // Credentials is the resolver for the credentials field.
 func (r *queryResolver) Credentials(ctx context.Context) ([]*model.CredentialInfo, error) {
-	if _, _, err := validatePermission(ctx, "resources.view"); err != nil {
+	if _, _, err := validatePermission(ctx, "credentials.view"); err != nil {
 		return nil, err
 	}
 
@@ -72,7 +72,7 @@ func (r *queryResolver) Credentials(ctx context.Context) ([]*model.CredentialInf
 
 // CreateCredential is the resolver for the createCredential field.
 func (r *mutationResolver) CreateCredential(ctx context.Context, input model.CredentialCreateInput) (*model.CredentialInfo, error) {
-	uid, _, err := validatePermission(ctx, "resources.admin")
+	uid, _, err := validatePermission(ctx, "credentials.manage")
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func (r *mutationResolver) CreateCredential(ctx context.Context, input model.Cre
 
 // RotateCredential is the resolver for the rotateCredential field.
 func (r *mutationResolver) RotateCredential(ctx context.Context, credentialID int64, input model.CredentialRotateInput) (*model.CredentialInfo, error) {
-	uid, _, err := validatePermission(ctx, "resources.admin")
+	uid, _, err := validatePermission(ctx, "credentials.manage")
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +142,7 @@ func (r *mutationResolver) RotateCredential(ctx context.Context, credentialID in
 
 // DeleteCredential is the resolver for the deleteCredential field.
 func (r *mutationResolver) DeleteCredential(ctx context.Context, credentialID int64) (bool, error) {
-	uid, _, err := validatePermission(ctx, "resources.admin")
+	uid, _, err := validatePermission(ctx, "credentials.manage")
 	if err != nil {
 		return false, err
 	}
@@ -165,7 +165,7 @@ func (r *mutationResolver) DeleteCredential(ctx context.Context, credentialID in
 
 // CredentialAdded is the resolver for the credentialAdded field.
 func (r *subscriptionResolver) CredentialAdded(ctx context.Context) (<-chan *model.CredentialInfo, error) {
-	uid, _, err := validatePermission(ctx, "resources.subscribe")
+	uid, _, err := validatePermission(ctx, "credentials.subscribe")
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +175,7 @@ func (r *subscriptionResolver) CredentialAdded(ctx context.Context) (<-chan *mod
 
 // CredentialUpdated is the resolver for the credentialUpdated field.
 func (r *subscriptionResolver) CredentialUpdated(ctx context.Context) (<-chan *model.CredentialInfo, error) {
-	uid, _, err := validatePermission(ctx, "resources.subscribe")
+	uid, _, err := validatePermission(ctx, "credentials.subscribe")
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +185,7 @@ func (r *subscriptionResolver) CredentialUpdated(ctx context.Context) (<-chan *m
 
 // CredentialDeleted is the resolver for the credentialDeleted field.
 func (r *subscriptionResolver) CredentialDeleted(ctx context.Context) (<-chan *model.CredentialInfo, error) {
-	uid, _, err := validatePermission(ctx, "resources.subscribe")
+	uid, _, err := validatePermission(ctx, "credentials.subscribe")
 	if err != nil {
 		return nil, err
 	}
