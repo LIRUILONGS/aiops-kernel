@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OpsAGI — 面向 SRE 的多 Agent AIOps 智能体内核</title>
+<meta name="description" content="OpsAGI 是一个多 Agent 协作的 AIOps 智能体内核：给它一条告警，它自己规划、到真实主机上取证、下结论，必要时在授权范围内动手修，交回的是经过代码校验的结构化结论，不是聊天记录。开源自托管。" />
+<meta name="theme-color" content="#060b14" />
+<meta property="og:title" content="OpsAGI — 面向 SRE 的多 Agent AIOps 智能体内核" />
+<meta property="og:description" content="自主故障定位与性能优化：一支专业分工的智能体团队，只读取证 + 受控写入，任何 OpenAI 兼容模型。" />
+<meta property="og:type" content="website" />
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg" />
+<link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+
+<header class="site-header" id="top">
+  <div class="container">
+    <nav class="nav">
+      <a class="brand" href="#top" aria-label="OpsAGI 首页">
+        <img src="assets/logo.svg" alt="OpsAGI" width="34" height="34" />
+        <span>Ops</span>AGI
+      </a>
+      <div class="nav-links" id="navLinks">
+        <a href="#product">产品</a>
+        <a href="#how">工作原理</a>
+        <a href="#tour">界面</a>
+        <a href="#capabilities">能力</a>
+        <a href="#verify">验证记录</a>
+        <a href="#install">部署</a>
+      </div>
+      <div class="nav-right">
+        <a class="gh-link" href="https://github.com/LIRUILONGS/aiops-kernel" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+          <span class="count" data-stars>GitHub</span>
+        </a>
+        <a class="btn btn-primary btn-sm" href="#install">开始使用</a>
+        <button class="nav-toggle" id="navToggle" aria-label="打开菜单">☰</button>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <!-- HERO -->
+  <section class="hero" id="product">
+    <div class="container">
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <span class="pill"><span class="dot"></span>OpsAGI · 多 Agent 协作的 AIOps 智能体内核</span>
+          <h1>面向 SRE 的<br /><span class="accent">自主故障定位</span>与性能优化</h1>
+          <p class="lede">
+            给它一条告警，或一句"这台机器为什么慢"。它自己规划、到真实主机上取证、自己下结论，必要时在授权范围内动手修——交回来的是一份<strong>经过代码校验的结构化结论</strong>，不是一段聊天记录。
+          </p>
+          <ul class="hero-points">
+            <li><span class="tick">✓</span><span>一支专业分工的智能体团队：规划、指挥、日志 / 指标 / 变更 / 分诊分析师</span></li>
+            <li><span class="tick">✓</span><span>真实主机只读取证，修复只有一条受控通道，默认还要人工审批</span></li>
+            <li><span class="tick">✓</span><span>任何 OpenAI 兼容模型，含本地 Ollama 与自建网关</span></li>
+          </ul>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#install">快速开始</a>
+            <a class="btn btn-ghost" href="https://github.com/LIRUILONGS/aiops-kernel" target="_blank" rel="noopener">
+              在 GitHub 查看
+            </a>
+          </div>
+          <div class="hero-stats">
+            <div class="stat"><b data-stars>—</b><span>GitHub stars</span></div>
+            <div class="stat"><b data-forks>—</b><span>Forks</span></div>
+            <div class="stat"><b>MIT</b><span>开源许可</span></div>
+            <div class="stat"><b>自托管</b><span>数据不出内网</span></div>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <div class="hero-glow"></div>
+          <div class="hero-shot">
+            <img src="assets/screenshots/dashboard-dark.png" alt="OpsAGI 概览界面" width="1200" height="750" />
+          </div>
+          <div class="float-card">
+            <span class="badge-ok">✓</span>
+            <div>
+              <b>diagnosis 已接受</b>
+              <small>证据来自 ops_trace / ops_logs</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROVIDERS -->
+  <div class="providers">
+    <div class="container">
+      <p class="label">适配你已经在用的模型与端点</p>
+      <div class="chips">
+        <span class="chip"><span class="dot"></span>OpenAI</span>
+        <span class="chip"><span class="dot"></span>Anthropic</span>
+        <span class="chip"><span class="dot"></span>Google Gemini</span>
+        <span class="chip"><span class="dot"></span>AWS Bedrock</span>
+        <span class="chip"><span class="dot"></span>Ollama</span>
+        <span class="chip"><span class="dot"></span>DeepSeek</span>
+        <span class="chip"><span class="dot"></span>智谱 GLM</span>
+        <span class="chip"><span class="dot"></span>Kimi</span>
+        <span class="chip"><span class="dot"></span>Qwen</span>
+        <span class="chip"><span class="dot"></span>MiniMax</span>
+        <span class="chip"><span class="dot"></span>Mistral</span>
+        <span class="chip"><span class="dot"></span>xAI</span>
+        <span class="chip custom"><span class="dot"></span>任意 OpenAI 兼容端点</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOW -->
+  <section class="block" id="how">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">How it works</span>
+        <h2>一次诊断，从告警到可复核的结论</h2>
+        <p>每条 flow 都走一遍分工明确的链条。计划是数据，委派是子 chain，结论文本之外还有可追的证据。</p>
+      </div>
+      <div class="steps reveal">
+        <div class="step">
+          <span class="n">1</span>
+          <h3>目标</h3>
+          <p>用自然语言给出告警或性能目标，选 flow 类型：<span class="role">diagnosis</span> / <span class="role">optimization</span> / <span class="role">auto</span>。</p>
+          <span class="role">flow</span>
+        </div>
+        <div class="step">
+          <span class="n">2</span>
+          <h3>规划</h3>
+          <p>规划器把目标拆成几条可证伪的假设，每条带 mode、建议执行者与期望信号。硬上限 5 条。</p>
+          <span class="role">generator</span>
+        </div>
+        <div class="step">
+          <span class="n">3</span>
+          <h3>执行 / 委派</h3>
+          <p>事故指挥逐条推进：一次调用能查清的自己查，需要专业视角时派给分析师，跑完一整条专家 chain。</p>
+          <span class="role">commander</span>
+        </div>
+        <div class="step">
+          <span class="n">4</span>
+          <h3>取证</h3>
+          <p>分析师用只读工具取证，用类型化 finding 交回结论；每条都带可复现的 query 与原始 excerpt。</p>
+          <span class="role">analysts</span>
+        </div>
+        <div class="step">
+          <span class="n">5</span>
+          <h3>收尾</h3>
+          <p>用 diagnosis 或 optimization_result 结束，代码校验证据数量与字段；需要变更时先采基线、再动手、再复测。</p>
+          <span class="role">reporter</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TOUR -->
+  <section class="block" id="tour">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Product tour</span>
+        <h2>看清智能体走过的每一步</h2>
+        <p>计划、命令与结果在发生时就能看到，而且都留得下来。下图来自项目在参照靶场上的真实运行。</p>
+      </div>
+      <div class="reveal">
+        <div class="tour-tabs" role="tablist">
+          <button class="tour-tab active" data-shot="dashboard" role="tab">概览</button>
+          <button class="tour-tab" data-shot="flows" role="tab">会话列表</button>
+          <button class="tour-tab" data-shot="conclusion" role="tab">会话详情</button>
+          <button class="tour-tab" data-shot="roles" role="tab">角色视图</button>
+        </div>
+        <div class="tour-frame">
+          <div class="tour-bar">
+            <i></i><i></i><i></i>
+            <span class="url">https://localhost:8443/flows</span>
+          </div>
+          <div class="tour-stage">
+            <img class="active" data-key="dashboard" src="assets/screenshots/dashboard-dark.png" alt="概览：会话活动、工具调用与 Token 用量按天铺开" />
+            <img data-key="flows" src="assets/screenshots/flows-dark.png" alt="会话列表：标题就是告警原文，状态、耗时与终端镜像都在列表上" />
+            <img data-key="conclusion" src="assets/screenshots/flow-conclusion-dark.png" alt="会话详情：真跑出来的收尾报告，证据缺口逐条列明" />
+            <img data-key="roles" src="assets/screenshots/flow-roles-dark.png" alt="角色视图：十二个角色按层摆放，节点带 chain 数与 token 用量" />
+          </div>
+        </div>
+        <p class="tour-caption" id="tourCaption"><b>概览。</b> 会话活动、工具调用与 Token 用量按天铺开——哪几天真在干活，一眼看得出。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROLES -->
+  <section class="block" id="roles">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Agents</span>
+        <h2>十二个角色，各管一个证据面</h2>
+        <p>角色之间只有三样接口：一份结构化的计划、一次带 question 的委派、一张类型化的 finding。它们不共享对话上下文，也不共享工具表。</p>
+      </div>
+      <div class="role-grid reveal">
+        <div class="role-card feature">
+          <span class="tag">commander</span>
+          <h3>事故指挥</h3>
+          <p>执行计划、委派分析师、合并证据、收尾。唯一看过所有 finding 的角色。</p>
+          <span class="out">→ diagnosis / optimization_result</span>
+        </div>
+        <div class="role-card">
+          <span class="tag">generator</span>
+          <h3>诊断规划器</h3>
+          <p>把目标拆成几条可证伪假设，写清 mode、assigned_to 与 expected_signal。</p>
+          <span class="out">→ subtask_list</span>
+        </div>
+        <div class="role-card">
+          <span class="tag">triage</span>
+          <h3>分诊员</h3>
+          <p>分级、影响面、是否命中已知故障模式。</p>
+          <span class="out">→ triage_result</span>
+        </div>
+        <div class="role-card">
+          <span class="tag">log_analyst</span>
+          <h3>日志分析员</h3>
+          <p>日志面：错误模板、首次出现、实例分布。</p>
+          <span class="out">→ log_finding</span>
+        </div>
+        <div class="role-card">
+          <span class="tag">metrics_analyst</span>
+          <h3>指标分析员</h3>
+          <p>指标面：拐点、先后顺序、未动的序列。</p>
+          <span class="out">→ metric_finding</span>
+        </div>
+        <div class="role-card">
+          <span class="tag">change_analyst</span>
+          <h3>变更分析员</h3>
+          <p>变更面：变更时间线、与起始点的间隔。</p>
+          <span class="out">→ change_finding</span>
+        </div>
+        <div class="role-card">
+          <span class="tag">refiner</span>
+          <h3>计划修订器</h3>
+          <p>按已完成的结果调整剩余计划。</p>
+          <span class="out">→ subtask_patch</span>
+        </div>
+        <div class="role-card">
+          <span class="tag">reporter</span>
+          <h3>事故报告员</h3>
+          <p>任务结出结果后，把结果写成报告。</p>
+          <span class="out">→ report_result</span>
+        </div>
+        <div class="role-card">
+          <span class="tag">summarizer</span>
+          <h3>摘要员</h3>
+          <p>压缩长链上下文，让长流程留在窗口内。</p>
+          <span class="out">—</span>
+        </div>
+        <div class="role-card">
+          <span class="tag">reflector</span>
+          <h3>反思员</h3>
+          <p>工具调用接近上限时，给出收尾建议。</p>
+          <span class="out">—</span>
+        </div>
+        <div class="role-card">
+          <span class="tag">tool_call_fixer</span>
+          <h3>调用修复</h3>
+          <p>修复格式错误的工具调用参数。</p>
+          <span class="out">—</span>
+        </div>
+        <div class="role-card">
+          <span class="tag">assistant</span>
+          <h3>交互式助手</h3>
+          <p>挂在 flow 上，共享容器与 provider 设置；不参与诊断计划。</p>
+          <span class="out">record_finding</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CAPABILITIES -->
+  <section class="block" id="capabilities">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Capabilities</span>
+        <h2>一套自托管平台，覆盖排障需要的每一环</h2>
+        <p>规划、取证、记忆、报告、监控都在同一个界面里，开源版就是完整的内核。</p>
+      </div>
+      <div class="cap-grid reveal">
+        <div class="cap-card">
+          <div class="cap-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18" cy="18" r="2.2"/></svg>
+          </div>
+          <h3>只读取证</h3>
+          <p>在真实主机上走 SSH 采集，命令目录写死在代码里，模型只能选 ID 与参数。</p>
+          <ul>
+            <li>系统、容器、日志、基线 / 差异</li>
+            <li>预置只读命令目录，覆盖内核与数据库</li>
+            <li>时间窗内重复采样，抓正在发生的</li>
+          </ul>
+        </div>
+        <div class="cap-card">
+          <div class="cap-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 12h8M12 8v8"/></svg>
+          </div>
+          <h3>采集容器与 eBPF</h3>
+          <p>在目标主机上起一次性容器执行脚本，边界落在容器形状而不是提示词里。</p>
+          <ul>
+            <li>只读无网 probe / 可写出网 workshop</li>
+            <li>cap-drop=ALL，宿主 /proc 只读挂载</li>
+            <li>ops_trace：runqlat / offcputime / biolatency 等</li>
+          </ul>
+        </div>
+        <div class="cap-card">
+          <div class="cap-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-6 4 3 5-8 4 5"/><path d="M3 21h18"/></svg>
+          </div>
+          <h3>指标与集群旁路</h3>
+          <p>不经过主机 shell，直接问监控系统与集群 API。</p>
+          <ul>
+            <li>prom_query 对接 Prometheus</li>
+            <li>k8s_get 对接 Kubernetes API</li>
+            <li>没配就不出现，而不是出现了再报错</li>
+          </ul>
+        </div>
+        <div class="cap-card">
+          <div class="cap-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="12" cy="18" r="2.4"/><path d="M8.4 6h7.2M7 8.2l4 7.6M17 8.2l-4 7.6"/></svg>
+          </div>
+          <h3>多角色协作</h3>
+          <p>委派不是转贴，而是起一条独立的专家 chain：自己的 prompt、模型槽位、工具白名单。</p>
+          <ul>
+            <li>分析师的工具表只含取证工具与出口</li>
+            <li>委派只向下分叉一层，指挥是唯一全局视角</li>
+            <li>角色页把委派画成带次数的边</li>
+          </ul>
+        </div>
+        <div class="cap-card amber">
+          <div class="cap-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9Z"/></svg>
+          </div>
+          <h3>类型化结论</h3>
+          <p>出口只有 diagnosis 或 optimization_result，字段由代码校验；不合格就退回重填。</p>
+          <ul>
+            <li>根因 + 至少两条可复现证据</li>
+            <li>置信度、影响面、回滚方式、是否需人工</li>
+            <li>no_measurable_effect 也是合法结论</li>
+          </ul>
+        </div>
+        <div class="cap-card amber">
+          <div class="cap-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          </div>
+          <h3>能力租约</h3>
+          <p>每条 flow 创建时选"关闭 / 观察 / 强制"，判定逐条落库，切面在工具表最外层。</p>
+          <ul>
+            <li>shadow 只记录，enforce 才真拒绝</li>
+            <li>租约外调用走审批，批准后 4 小时有效</li>
+            <li>重启后恢复，不会重新放宽</li>
+          </ul>
+        </div>
+        <div class="cap-card">
+          <div class="cap-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.66 3.13 3 7 3s7-1.34 7-3V6"/><path d="M5 12v6c0 1.66 3.13 3 7 3s7-1.34 7-3v-6"/></svg>
+          </div>
+          <h3>记忆与知识</h3>
+          <p>每条命令与结果进入 flow 的向量记忆，可复用的知识跨 flow 检索。</p>
+          <ul>
+            <li>PostgreSQL + pgvector 语义搜索</li>
+            <li>知识库、资源、会话模板同界面</li>
+            <li>链摘要把长流程留在上下文窗口内</li>
+          </ul>
+        </div>
+        <div class="cap-card">
+          <div class="cap-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19h16"/><rect x="8" y="11" width="3" height="5"/><rect x="13" y="8" width="3" height="8"/><rect x="18" y="13" width="3" height="3"/></svg>
+          </div>
+          <h3>报告与分析</h3>
+          <p>按任务写报告，按 provider / 模型 / 角色统计 token 与成本。</p>
+          <ul>
+            <li>Markdown / PDF 报告</li>
+            <li>工具调用按函数统计</li>
+            <li>Langfuse、Grafana 可选接入</li>
+          </ul>
+        </div>
+        <div class="cap-card">
+          <div class="cap-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4Z"/><path d="M9 12l2 2 4-4"/></svg>
+          </div>
+          <h3>部署与团队</h3>
+          <p>安装向导、多用户与角色权限，REST 与 GraphQL 都带你自己的 Bearer token。</p>
+          <ul>
+            <li>Docker Compose 一键起栈</li>
+            <li>OpenTelemetry / Jaeger / Loki / VictoriaMetrics</li>
+            <li>多用户工作与权限控制</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SAFEGUARDS -->
+  <section class="block" id="safeguards">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Safeguards</span>
+        <h2>自主，但不是没有边界</h2>
+        <p>模型可以自由选工具，但它选不到的工具就是不存在；它想交的结论要过代码校验，过不了就重来。</p>
+      </div>
+      <div class="safe-grid reveal">
+        <div class="safe-card">
+          <span class="idx">01</span>
+          <div>
+            <h3>不做自由写入</h3>
+            <p>唯一的写通道是 ops_apply，只能执行代码里的修复动作目录，不接自由命令；默认还要一道审批，且修复后必须重新采集、与基线对比。</p>
+          </div>
+        </div>
+        <div class="safe-card">
+          <span class="idx">02</span>
+          <div>
+            <h3>不做单点猜测</h3>
+            <p>单一信号只能提示原因，下根因结论至少要两个独立来源交叉验证。</p>
+          </div>
+        </div>
+        <div class="safe-card">
+          <span class="idx">03</span>
+          <div>
+            <h3>不假装查过</h3>
+            <p>没调用的工具、没看到的日志行、没发生的对话，都不允许出现在报告里：每条证据都要点名它来自哪个工具，点不出来就被退回。</p>
+          </div>
+        </div>
+        <div class="safe-card">
+          <span class="idx">04</span>
+          <div>
+            <h3>不为工单编造故障</h3>
+            <p>日志全绿时，正确答案是顶回去，并说明下一步该查哪里。控制组比故障组更容易露馅。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VERIFY -->
+  <section class="block" id="verify">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Verification</span>
+        <h2>真模型、真主机跑出来的记录</h2>
+        <p>每个场景都写清了靶场怎么摆、对产品说哪句话、什么算答对、什么算糊弄，并留下实跑 flow。</p>
+      </div>
+      <div class="verify-wrap reveal">
+        <table>
+          <thead>
+            <tr><th>场景</th><th>验的是</th><th>实跑记录</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>s1-dependency-container-exit</td><td>健康检查绿着、接口 500 时，根因能否落到依赖容器退出</td><td><span class="flow">flow 125</span></td></tr>
+            <tr><td>s2-slow-query-missing-index</td><td>性能结论里的毫秒数是否量出来，没达目标敢不敢填 target_met=false</td><td><span class="flow">flow 126</span></td></tr>
+            <tr><td>s3-row-lock-wait</td><td>现场等待链与日志历史等待能否分开，阻塞方消失后会不会硬编 pid</td><td><span class="flow">flow 127</span></td></tr>
+            <tr><td>s4-log-archive-replay</td><td>读数是回放还是实时，能否从时间戳看出并改口</td><td><span class="flow">flow 128</span></td></tr>
+            <tr><td>s5-scheduling-latency-trace</td><td>ops_trace 直方图能否进结论，数字否定报障假设时敢不敢说</td><td><span class="flow">flow 136</span></td></tr>
+            <tr><td>s6-statement-baseline</td><td>ops_baseline → ops_diff 的闭环，自比对会不会被拦下</td><td><span class="flow">flow 129</span></td></tr>
+            <tr><td>l1-hdfs-block-warnings</td><td>从真实日志原文里读次数、block 数与故障性质</td><td><span class="flow">Loghub</span></td></tr>
+            <tr><td>l4-spark-healthy-control</td><td>对照组：日志全 INFO 时，敢不敢顶回"没病"</td><td><span class="flow">control</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="verify-note">八个里有两条控制组：故障场景答错只是不准，控制场景编造就是硬伤。</p>
+    </div>
+  </section>
+
+  <!-- INSTALL -->
+  <section class="block" id="install">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Install</span>
+        <h2>几分钟起一套能用的环境</h2>
+        <p>需要一个带 pgvector 的 PostgreSQL，和一个 OpenAI 兼容的模型端点；要取证，再配目标主机。</p>
+      </div>
+      <div class="install-grid reveal">
+        <div class="install-copy">
+          <h3>Docker Compose 起基础栈</h3>
+          <p>填好模型 key 与 session salt，一条命令拉起界面、数据库、导出器与浏览器采集服务。</p>
+          <ul class="req-list">
+            <li><span class="k">1</span><span>Docker 与 Docker Compose</span></li>
+            <li><span class="k">2</span><span>2 vCPU / 4 GB 内存 / 25 GB 磁盘（建议值）</span></li>
+            <li><span class="k">3</span><span>至少一个 LLM provider 的 key，或一个本地端点</span></li>
+            <li><span class="k">4</span><span>要取证时：OPSAGI_TARGETS 里的目标主机（SSH）</span></li>
+          </ul>
+        </div>
+        <div class="code-card">
+          <div class="code-head">
+            <span class="file">bash · 快速开始</span>
+            <button class="copy-btn" data-copy="install-code">复制</button>
+          </div>
+          <pre class="code" id="install-code"><span class="c"># 1. 准备环境变量</span>
+cp .env.example .env
+<span class="c"># 至少填一个模型 key，例如 OPEN_AI_KEY=sk-...</span>
+<span class="c"># 把 COOKIE_SIGNING_SALT 改成随机值</span>
+
+<span class="c"># 2. 拉起基础栈</span>
+docker compose pull
+docker compose up -d
+
+<span class="c"># 3. 打开界面（自签证书）</span>
+<span class="p">https</span>://localhost:8443
+<span class="c"># 首次登录：admin@opsagi.com / admin</span></pre>
+          <div class="code-foot">可选叠加层：-f docker-compose-observability.yml · langfuse · graphiti</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DOCS -->
+  <section class="block" id="docs">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Documentation</span>
+        <h2>再往下拆一层</h2>
+        <p>设计目标、验收到什么程度、能力租约的判定点，都写在仓库里。</p>
+      </div>
+      <div class="doc-grid reveal">
+        <a class="doc-card" href="https://github.com/LIRUILONGS/aiops-kernel/blob/main/docs/aiops/00-overview.md" target="_blank" rel="noopener">
+          <span class="t">总览</span>
+          <span class="d">目标、分层与阶段：从只读诊断到自治闭环的路线。</span>
+          <span class="arrow">阅读 →</span>
+        </a>
+        <a class="doc-card" href="https://github.com/LIRUILONGS/aiops-kernel/blob/main/docs/aiops/03-handover.md" target="_blank" rel="noopener">
+          <span class="t">交接文档</span>
+          <span class="d">当前状态、验证到什么程度、哪些还没验证。</span>
+          <span class="arrow">阅读 →</span>
+        </a>
+        <a class="doc-card" href="https://github.com/LIRUILONGS/aiops-kernel/blob/main/docs/aiops/04-capability-plan.md" target="_blank" rel="noopener">
+          <span class="t">能力租约</span>
+          <span class="d">判定点、审计、批准通道、策略文件与预算。</span>
+          <span class="arrow">阅读 →</span>
+        </a>
+        <a class="doc-card" href="https://github.com/LIRUILONGS/aiops-kernel/blob/main/README.md" target="_blank" rel="noopener">
+          <span class="t">README</span>
+          <span class="d">角色、工具、约束与快速开始的完整说明。</span>
+          <span class="arrow">阅读 →</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="block" style="padding-top: 20px;">
+    <div class="container">
+      <div class="cta-band reveal">
+        <h2>把下一条告警，交给一支会取证的团队</h2>
+        <p>开源自托管，MIT 许可。从一条 flow 开始，看看结论里的每条证据能不能追回它来自哪个工具。</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#install">快速开始</a>
+          <a class="btn btn-ghost" href="https://github.com/LIRUILONGS/aiops-kernel" target="_blank" rel="noopener">在 GitHub 查看</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="#top"><img src="assets/logo.svg" alt="OpsAGI" width="30" height="30" /><span>Ops</span>AGI</a>
+        <p>面向 SRE 的多 Agent AIOps 智能体内核。fork 自 PentAGI（MIT），把渗透测试的执行骨架改成运维排障的证据链。</p>
+      </div>
+      <div class="foot-links">
+        <div class="foot-col">
+          <h4>产品</h4>
+          <a href="#how">工作原理</a>
+          <a href="#capabilities">能力</a>
+          <a href="#tour">界面</a>
+          <a href="#safeguards">安全边界</a>
+        </div>
+        <div class="foot-col">
+          <h4>开发</h4>
+          <a href="https://github.com/LIRUILONGS/aiops-kernel" target="_blank" rel="noopener">GitHub 仓库</a>
+          <a href="https://github.com/LIRUILONGS/aiops-kernel/issues" target="_blank" rel="noopener">问题反馈</a>
+          <a href="https://github.com/LIRUILONGS/aiops-kernel/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">贡献指南</a>
+        </div>
+        <div class="foot-col">
+          <h4>文档</h4>
+          <a href="https://github.com/LIRUILONGS/aiops-kernel/blob/main/docs/aiops/00-overview.md" target="_blank" rel="noopener">总览</a>
+          <a href="https://github.com/LIRUILONGS/aiops-kernel/blob/main/docs/aiops/03-handover.md" target="_blank" rel="noopener">交接文档</a>
+          <a href="https://github.com/LIRUILONGS/aiops-kernel/blob/main/README.md" target="_blank" rel="noopener">README</a>
+        </div>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© <span id="year">2026</span> OpsAGI · MIT License</span>
+      <span>forked from vxcontrol/pentagi · 仅用于授权的运维排障</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/js/main.js"></script>
+</body>
+</html>
