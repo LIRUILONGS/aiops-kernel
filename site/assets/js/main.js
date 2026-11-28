@@ -65,9 +65,9 @@
 
   /* product tour tabs */
   var captions = {
-    dashboard: "<b>概览。</b> 会话活动、工具调用与 Token 用量按天铺开——哪几天真在干活，一眼看得出。",
-    flows: "<b>会话列表。</b> 标题就是告警原文，状态、耗时与终端镜像都在列表上。",
-    conclusion: "<b>会话详情。</b> 一份真跑出来的收尾报告：证据缺口逐条列明，置信度 0.60，<code>needs_human=true</code>。",
+    overview: "<b>概览。</b> 结论、证据与建议动作在同一页：哪些做过、哪些没做、需要谁拍板，都写明。",
+    tasks: "<b>任务执行。</b> 阻塞方的 pid、等待秒数与 <code>ops_watch</code> 的连续采样都在同一条分析里，不靠猜。",
+    report: "<b>报告。</b> 同一份结论的成稿视图，证据逐条点名来源，可直接交付。",
     roles: "<b>角色视图。</b> 十二个角色按层摆放，节点带各自的 chain 数、日志条数与 token 用量。"
   };
 

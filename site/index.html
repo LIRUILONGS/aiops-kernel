@@ -74,7 +74,7 @@
         <div class="hero-visual">
           <div class="hero-glow"></div>
           <div class="hero-shot">
-            <img src="assets/screenshots/hero-dark.webp" alt="OpsAGI 界面截图：多 Agent 诊断会话" width="1600" height="922" />
+            <img src="assets/screenshots/flow-overview.webp" alt="OpsAGI 界面截图：多 Agent 诊断会话" width="1600" height="922" />
           </div>
           <div class="float-card">
             <span class="badge-ok">✓</span>
@@ -163,9 +163,9 @@
       </div>
       <div class="reveal">
         <div class="tour-tabs" role="tablist">
-          <button class="tour-tab active" data-shot="dashboard" role="tab">概览</button>
-          <button class="tour-tab" data-shot="flows" role="tab">会话列表</button>
-          <button class="tour-tab" data-shot="conclusion" role="tab">会话详情</button>
+          <button class="tour-tab active" data-shot="overview" role="tab">概览</button>
+          <button class="tour-tab" data-shot="tasks" role="tab">任务执行</button>
+          <button class="tour-tab" data-shot="report" role="tab">报告</button>
           <button class="tour-tab" data-shot="roles" role="tab">角色视图</button>
         </div>
         <div class="tour-frame">
@@ -174,13 +174,13 @@
             <span class="url">https://localhost:8443/flows</span>
           </div>
           <div class="tour-stage">
-            <img class="active" data-key="dashboard" src="assets/screenshots/dashboard-dark.png" alt="概览：会话活动、工具调用与 Token 用量按天铺开" />
-            <img data-key="flows" src="assets/screenshots/flows-dark.png" alt="会话列表：标题就是告警原文，状态、耗时与终端镜像都在列表上" />
-            <img data-key="conclusion" src="assets/screenshots/flow-conclusion-dark.png" alt="会话详情：真跑出来的收尾报告，证据缺口逐条列明" />
+            <img class="active" data-key="overview" src="assets/screenshots/flow-overview.webp" alt="会话概览：结论、证据与建议动作" />
+            <img data-key="tasks" src="assets/screenshots/flow-tasks.webp" alt="任务执行：阻塞分析中 pg_locks 等待与 ops_watch 连续采样" />
+            <img data-key="report" src="assets/screenshots/flow-report.webp" alt="报告标签页：同一份结论的成稿视图" />
             <img data-key="roles" src="assets/screenshots/flow-roles-dark.png" alt="角色视图：十二个角色按层摆放，节点带 chain 数与 token 用量" />
           </div>
         </div>
-        <p class="tour-caption" id="tourCaption"><b>概览。</b> 会话活动、工具调用与 Token 用量按天铺开——哪几天真在干活，一眼看得出。</p>
+        <p class="tour-caption" id="tourCaption"><b>概览。</b> 结论、证据与建议动作在同一页：哪些做过、哪些没做、需要谁拍板，都写明。</p>
       </div>
     </div>
   </section>

@@ -5,7 +5,7 @@ Static, self-contained landing page — plain HTML, CSS and JS, no build step.
 - `index.html` — the page
 - `assets/css/style.css` — the theme
 - `assets/js/main.js` — nav, product-tour tabs, copy buttons, live GitHub star/fork counts
-- `assets/screenshots/` — copied from `../assets/screenshots/`
+- `assets/screenshots/` — the flow screenshots used by the tour and the hero
 
 ## Deploy
 
